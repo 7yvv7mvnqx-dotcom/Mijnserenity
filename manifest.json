@@ -1,0 +1,8 @@
+{
+  "name": "Serenity Cloud",
+  "short_name": "Serenity",
+  "start_url": "index.html",
+  "display": "standalone",
+  "theme_color": "#061525",
+  "background_color": "#061525"
+}

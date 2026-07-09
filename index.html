@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serenity Cloud</title>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#061525;color:#f5fbff}
+header{padding:24px 16px;background:#020b13;position:sticky;top:0;z-index:5}
+h1{margin:0}.sub,label,.small{color:#a9bdca}
+main{padding:14px;max-width:980px;margin:auto}
+.card{background:#102a3d;border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:14px;margin-bottom:12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:760px){.row{grid-template-columns:1fr}}
+input,textarea{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.15);background:#071827;color:white;border-radius:12px;padding:12px;font-size:16px}
+textarea{min-height:90px}
+button{border:0;border-radius:14px;padding:12px 14px;font-weight:800;background:#45c8ff;color:#03101b;font-size:16px}
+.secondary{background:#254a63;color:white}.danger{background:#ff6b6b;color:white}
+.tabs{display:flex;gap:8px;overflow:auto;margin-bottom:12px}.tab{background:#173a54;color:white}.tab.active{background:#45c8ff;color:#03101b}
+.hidden{display:none}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:rgba(255,255,255,.06);border-radius:14px;padding:10px}.value{font-size:24px;font-weight:900}
+.trip{border-top:1px solid rgba(255,255,255,.10);padding:12px 0}.trip h3{margin:0 0 4px}.trip p{margin:3px 0;color:#a9bdca}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+</style>
+</head>
+<body>
+<header><h1>⚓ Serenity Cloud</h1><div class="sub">Online logboek voor Waterkaarten, foto’s en vaargegevens</div></header>
+<main>
+<div class="tabs">
+<button class="tab active" onclick="showTab('home',this)">Dashboard</button>
+<button class="tab" onclick="newTrip();showTab('new',this)">Nieuwe tocht</button>
+<button class="tab" onclick="showTab('history',this)">Historie</button>
+<button class="tab" onclick="showTab('backup',this)">Back-up</button>
+</div>
+
+<section id="home">
+<div class="card"><h2>Serenity Logboek</h2><p class="sub">Deze versie is klaar om online te zetten. Zodra hij online staat werkt hij gewoon in Safari en kun je hem op het beginscherm zetten.</p>
+<div class="stats"><div class="stat"><div class="small">Tochten</div><div class="value" id="sTrips">0</div></div><div class="stat"><div class="small">Km</div><div class="value" id="sKm">0</div></div><div class="stat"><div class="small">Motoruren</div><div class="value" id="sHours">0</div></div></div></div>
+<div class="card"><h2>Laatste tocht</h2><div id="latest" class="small">Nog geen tocht ingevoerd.</div></div>
+</section>
+
+<section id="new" class="hidden"><div class="card"><h2>Nieuwe vaartocht</h2><p class="small" id="autoNote"></p>
+<div class="row"><div><label>Datum</label><input id="date" type="date"></div><div><label>Bemanning</label><input id="crew" value="Michel & Desiree"></div></div>
+<div class="row"><div><label>Vertrekhaven</label><input id="from"></div><div><label>Aankomsthaven</label><input id="to"></div></div>
+<div class="row"><div><label>Vertrektijd</label><input id="start" type="time"></div><div><label>Aankomsttijd</label><input id="end" type="time"></div></div>
+<div class="row"><div><label>Afstand Waterkaarten km</label><input id="km" type="number" step="0.1"></div><div><label>Vaartijd</label><input id="duration" placeholder="Bijv. 4:20"></div></div>
+<div class="row"><div><label>Begin motoruren</label><input id="mhStart" type="number" step="0.1"></div><div><label>Eind motoruren</label><input id="mhEnd" type="number" step="0.1"></div></div>
+<label>Waterkaarten info / link / bruggen / sluizen</label><textarea id="waterkaarten"></textarea>
+<label>Foto’s</label><input id="photos" type="file" accept="image/*" multiple>
+<label>Opmerkingen</label><textarea id="notes"></textarea>
+<div class="actions"><button onclick="saveTrip()">Tocht opslaan</button><button class="secondary" onclick="newTrip()">Automatisch invullen</button></div>
+</div></section>
+
+<section id="history" class="hidden"><div class="card"><h2>Historie</h2><div id="trips"></div></div></section>
+
+<section id="backup" class="hidden"><div class="card"><h2>Back-up</h2><p class="small">Zolang er nog geen echte database gekoppeld is, slaat deze starter lokaal in de browser op. Exporteren kan naar iCloud/OneDrive.</p>
+<div class="actions"><button onclick="exportJson()">Download JSON</button><button class="secondary" onclick="exportCsv()">Download CSV</button><button class="danger" onclick="resetAll()">Alles wissen</button></div></div></section>
+</main>
+<script>
+const KEY='serenity_cloud_logboek';
+const $=id=>document.getElementById(id);
+function trips(){return JSON.parse(localStorage.getItem(KEY)||'[]')}
+function setTrips(t){localStorage.setItem(KEY,JSON.stringify(t));render()}
+function pad(n){return String(n).padStart(2,'0')}
+function today(){return new Date().toISOString().slice(0,10)}
+function now(){let d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())}
+function val(id){return $(id).value.trim()}
+function showTab(id,el){document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));el.classList.add('active')}
+function lastTrip(){return trips()[0]||null}
+function newTrip(){let l=lastTrip();$('date').value=today();$('start').value=now();$('from').value=l&&l.to?l.to:'Hengelo';if(l&&l.mhEnd)$('mhStart').value=l.mhEnd;$('to').value='';$('end').value='';$('km').value='';$('duration').value='';$('waterkaarten').value='';$('notes').value='';$('autoNote').innerHTML=l?'Vertrek automatisch ingevuld vanuit vorige aankomsthaven: <b>'+l.to+'</b>':'Eerste tocht: vertrekpunt op Hengelo gezet.'}
+function hours(t){return t.mhEnd&&t.mhStart?Math.max(0,t.mhEnd-t.mhStart):0}
+function saveTrip(){let t={id:Date.now(),date:val('date'),crew:val('crew'),from:val('from'),to:val('to'),start:val('start'),end:val('end'),km:+val('km')||0,duration:val('duration'),mhStart:+val('mhStart')||0,mhEnd:+val('mhEnd')||0,waterkaarten:val('waterkaarten'),notes:val('notes')};if(!t.date||!t.from||!t.to){alert('Vul datum, vertrek en aankomst in.');return}let a=trips();a.unshift(t);setTrips(a);alert('Opgeslagen ⚓');newTrip()}
+function render(){let a=trips();$('sTrips').textContent=a.length;$('sKm').textContent=Math.round(a.reduce((s,t)=>s+(t.km||0),0));$('sHours').textContent=a.reduce((s,t)=>s+hours(t),0).toFixed(1);$('latest').innerHTML=a[0]?'<b>'+a[0].from+' → '+a[0].to+'</b><br>'+a[0].date+' · '+a[0].km+' km · '+(a[0].duration||''):'Nog geen tocht ingevoerd.';$('trips').innerHTML=a.length?a.map(t=>'<div class="trip"><h3>'+t.from+' → '+t.to+'</h3><p>'+t.date+' · '+(t.start||'?')+'-'+(t.end||'?')+' · '+t.km+' km · '+(t.duration||'')+'</p><p>'+t.waterkaarten+'</p><p>'+t.notes+'</p></div>').join(''):'<div class="small">Nog geen tochten.</div>'}
+function download(n,c,t){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click()}
+function exportJson(){download('serenity-cloud-backup.json',JSON.stringify(trips(),null,2),'application/json')}
+function exportCsv(){let a=trips();let rows=[['datum','vertrek','aankomst','km','vaartijd','motoruren','bemanning','notities'],...a.map(t=>[t.date,t.from,t.to,t.km,t.duration,hours(t).toFixed(1),t.crew,t.notes])];download('serenity-cloud.csv',rows.map(r=>r.map(x=>'"'+String(x??'').replaceAll('"','""')+'"').join(';')).join('\n'),'text/csv')}
+function resetAll(){if(confirm('Alles wissen?'))setTrips([])}
+render();newTrip();
+</script>
+</body>
+</html>
