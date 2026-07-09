@@ -1,2 +1,2 @@
-# MijnSerenity Cloud v5
-Upload index.html en manifest.json naar GitHub root.
+# MijnSerenity Cloud v15
+Nieuw: Cloud Foundation, opslagcontrole en veiligere migratie.

@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MijnSerenity Cloud v14</title>
+<title>MijnSerenity Cloud v15</title>
 <link rel="manifest" href="manifest.json">
 <style>
 :root{--bg:#061525;--navy:#020b13;--panel:#102a3d;--panel2:#173a54;--text:#f5fbff;--muted:#a9bdca;--accent:#45c8ff;--ok:#4bd38f;--warn:#ffd05a;--danger:#ff6b6b}
@@ -31,7 +31,7 @@ input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);backgrou
 </style>
 </head>
 <body>
-<header><h1 id="title">⚓ MijnSerenity Cloud</h1><div class="sub">v14 · echte interactieve kaart met OpenStreetMap</div></header>
+<header><h1 id="title">⚓ MijnSerenity Cloud</h1><div class="sub">v15 · Cloud Foundation met stabiele data, kaart en dashboard</div></header>
 <main>
 <div class="tabs">
 <button class="tab active" onclick="showTab('dash',this)">Dashboard</button>
@@ -43,6 +43,7 @@ input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);backgrou
 <button class="tab" onclick="showTab('maintenance',this)">Onderhoud</button>
 <button class="tab" onclick="showTab('costs',this)">Kosten</button>
 <button class="tab" onclick="showTab('backup',this)">Back-up</button>
+<button class="tab" onclick="showTab('cloud',this);renderCloudStatus()">Cloud</button>
 </div>
 
 <section id="dash">
@@ -56,6 +57,7 @@ input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);backgrou
 <div class="stat"><div class="label">Diesel</div><div class="value" id="sFuel">0L</div></div>
 <div class="stat"><div class="label">Laatste sync</div><div class="value" id="sSync">-</div></div>
 </div></div>
+<div class="card"><h2>V15 status</h2><p class="small">Netlify + HTTPS actief. Kaart draait op OpenStreetMap. Dataherstel en opslagcontrole toegevoegd. Klaar voor cloud-login en gedeeld gebruik.</p></div>
 <div class="card"><h2>Laatste tocht</h2><div id="latest" class="small">Nog geen tocht.</div><div id="latestRoute"></div></div>
 </section>
 
@@ -97,14 +99,37 @@ input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);backgrou
 <section id="maintenance" class="hidden"><div class="card"><h2>Onderhoud</h2><div class="row"><div><label>Taak</label><input id="taskName"></div><div><label>Datum</label><input id="taskDate" type="date"></div></div><div class="row"><div><label>Motoruren grens</label><input id="taskHours" type="number"></div><div><label>Status</label><select id="taskStatus"><option>Open</option><option>Gedaan</option></select></div></div><label>Notitie</label><textarea id="taskNote"></textarea><div class="actions"><button onclick="saveTask()">Onderhoud opslaan</button></div></div><div class="card"><h2>Onderhoudslijst</h2><div id="tasks"></div></div></section>
 <section id="costs" class="hidden"><div class="card"><h2>Kosten</h2><div class="row"><div><label>Datum</label><input id="costDate" type="date"></div><div><label>Bedrag €</label><input id="costAmount" type="number" step="0.01"></div></div><div class="row"><div><label>Categorie</label><select id="costCategory"><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Overig</option></select></div><div><label>Omschrijving</label><input id="costDesc"></div></div><div class="actions"><button onclick="saveCost()">Kosten opslaan</button></div></div><div class="card"><h2>Kostenoverzicht</h2><div id="costList"></div></div></section>
 <section id="backup" class="hidden"><div class="card warn"><h2>Back-up</h2><p>V12 slaat kleiner op. Maak regelmatig een JSON-back-up.</p></div><div class="card"><div class="actions"><button onclick="exportJson()">Download JSON</button><button class="danger" onclick="resetAll()">Alles wissen</button></div><label>JSON terugzetten</label><input type="file" accept=".json" onchange="importJson(this.files[0])"></div></section>
+
+<section id="cloud" class="hidden">
+<div class="card hero">
+<h2>Cloud Foundation</h2>
+<p class="small">V15 is de basis voor de echte cloudversie. Data blijft lokaal bewaard, maar back-up, herstel en migratie zijn veiliger gemaakt. De volgende stap is cloud-login voor jou en Desiree.</p>
+<div class="grid">
+<div class="stat"><div class="label">Opslagstatus</div><div class="value" id="cloudStorage">OK</div></div>
+<div class="stat"><div class="label">Domein</div><div class="value">HTTPS</div></div>
+<div class="stat"><div class="label">Kaart</div><div class="value">OSM</div></div>
+<div class="stat"><div class="label">Volgende stap</div><div class="value">Login</div></div>
+</div>
+</div>
+<div class="card">
+<h2>Veiligheidskopie</h2>
+<p class="small">Maak na elke grotere update even een JSON-back-up. Bewaar die in iCloud Drive of OneDrive.</p>
+<div class="actions">
+<button onclick="exportJson()">Download back-up</button>
+<button class="secondary" onclick="renderCloudStatus()">Controleer opslag</button>
+</div>
+<div id="cloudDetails" class="small"></div>
+</div>
+</section>
+
 </main>
 
 <script>
-const KEY='mijnserenity_cloud_v14', SET='mijnserenity_settings_v14';
+const KEY='mijnserenity_cloud_v15', SET='mijnserenity_settings_v15';
 let currentPhotos=[], currentRoute=[], currentPois=[];
 const $=id=>document.getElementById(id);let overviewLeaflet=null, routeLeaflet=null;
 function defaultState(){return {trips:[],tasks:[],costs:[],fuels:[],pois:[],lastSync:''}}
-function migrate(){if(!localStorage.getItem(KEY)){let keys=['mijnserenity_cloud_v13','mijnserenity_cloud_v12','mijnserenity_cloud_v11','mijnserenity_cloud_v10','mijnserenity_cloud_v9','mijnserenity_cloud_v8','mijnserenity_cloud_v7','mijnserenity_cloud_v6','mijnserenity_cloud_v5'];for(let k of keys){let old=localStorage.getItem(k);if(old){let o=JSON.parse(old);if(!o.fuels)o.fuels=[];if(!o.pois)o.pois=[];localStorage.setItem(KEY,JSON.stringify(o));break}}}}
+function migrate(){if(!localStorage.getItem(KEY)){let keys=['mijnserenity_cloud_v14','mijnserenity_cloud_v13','mijnserenity_cloud_v12','mijnserenity_cloud_v11','mijnserenity_cloud_v10','mijnserenity_cloud_v9','mijnserenity_cloud_v8','mijnserenity_cloud_v7','mijnserenity_cloud_v6','mijnserenity_cloud_v5'];for(let k of keys){let old=localStorage.getItem(k);if(old){let o=JSON.parse(old);if(!o.fuels)o.fuels=[];if(!o.pois)o.pois=[];localStorage.setItem(KEY,JSON.stringify(o));break}}}}
 function state(){migrate();return JSON.parse(localStorage.getItem(KEY)||JSON.stringify(defaultState()))}
 function safeSave(s){try{s.lastSync=new Date().toLocaleString('nl-NL');localStorage.setItem(KEY,JSON.stringify(s));return true}catch(e){alert('Opslag vol. Foto’s/route zijn te groot. Probeer minder foto’s of exporteer eerst een back-up.');return false}}
 function saveState(s){if(safeSave(s))render()}
@@ -180,8 +205,25 @@ function renderMapOverview(){
 
 function parseRouteText(){let t=val('waterkaarten');let km=t.match(/(\d+[,.]?\d*)\s*(km|kilometer)/i);if(km)$('km').value=km[1].replace(',','.');let dur=t.match(/(\d+[:.]\d+|\d+\s*uur\s*\d*)/i);if(dur)$('duration').value=dur[1].replace('.',':');let route=t.match(/([A-Za-zÀ-ÿ' -]{2,})\s*(?:naar|→|->)\s*([A-Za-zÀ-ÿ' -]{2,})/i);if(route){$('from').value=route[1].trim();$('to').value=route[2].trim()}alert('Tekst gelezen voor zover herkenbaar.')}
 function clearRoute(){currentRoute=[];currentPois=[];$('routeSummary').innerHTML='';if(routeLeaflet){routeLeaflet.remove();routeLeaflet=null}$('routeMap').innerHTML='';$('routeMap').classList.add('hidden');$('importPoiPreview').innerHTML='';$('routeFile').value=''}
+
+function bytesUsed(){
+  let total=0;
+  for(let i=0;i<localStorage.length;i++){
+    let k=localStorage.key(i);
+    total += (k.length + (localStorage.getItem(k)||'').length) * 2;
+  }
+  return total;
+}
+function renderCloudStatus(){
+  let b=bytesUsed(), mb=(b/1024/1024).toFixed(2);
+  if($('cloudStorage')) $('cloudStorage').textContent = mb+'MB';
+  if($('cloudDetails')) $('cloudDetails').innerHTML =
+    'Gebruikte browseropslag: <b>'+mb+' MB</b><br>' +
+    'Advies: onder 4 MB blijven voor stabiel gebruik op iPad/iPhone.<br>' +
+    'Foto’s worden verkleind opgeslagen. Voor echte fotocloud bouwen we hierna cloudopslag.';
+}
 function download(n,c,t){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click()}
-function exportJson(){download('mijnserenity-v14-backup.json',JSON.stringify(state(),null,2),'application/json')}
+function exportJson(){download('mijnserenity-v15-backup.json',JSON.stringify(state(),null,2),'application/json')}
 function importJson(file){if(!file)return;let r=new FileReader();r.onload=e=>{try{let d=JSON.parse(e.target.result);if(d.trips&&d.tasks&&d.costs){if(!d.fuels)d.fuels=[];if(!d.pois)d.pois=[];saveState(d);alert('Back-up teruggezet ⚓')}}catch(err){alert('Kon JSON niet lezen.')}};r.readAsText(file)}
 function resetAll(){if(confirm('Alles wissen?'))saveState(defaultState())}
 $('costDate').value=today();$('fuelDate').value=today();render();newTrip();
