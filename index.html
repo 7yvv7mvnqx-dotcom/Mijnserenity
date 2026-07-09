@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MijnSerenity Cloud v13</title>
+<title>MijnSerenity Cloud v14</title>
 <link rel="manifest" href="manifest.json">
 <style>
 :root{--bg:#061525;--navy:#020b13;--panel:#102a3d;--panel2:#173a54;--text:#f5fbff;--muted:#a9bdca;--accent:#45c8ff;--ok:#4bd38f;--warn:#ffd05a;--danger:#ff6b6b}
@@ -22,9 +22,16 @@ input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);backgrou
 .pill{display:inline-block;background:rgba(255,255,255,.07);border-radius:999px;padding:7px 10px;margin:4px 4px 0 0}.warn{background:#3b2a10;border:1px solid var(--warn)}
 .map{height:260px;border-radius:16px;background:#071827;border:1px solid rgba(255,255,255,.12);overflow:hidden;margin-top:10px;display:flex;align-items:center;justify-content:center}
 .map svg{width:100%;height:100%;display:block}.poi{background:rgba(255,255,255,.05);border-radius:14px;padding:10px;margin-top:8px}.stars{letter-spacing:2px;color:#ffd05a}
-</style></head>
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+.realmap{height:420px;border-radius:16px;overflow:hidden;margin-top:10px;border:1px solid rgba(255,255,255,.15)}
+.leaflet-container{background:#071827;color:#111}
+</style>
+</head>
 <body>
-<header><h1 id="title">⚓ MijnSerenity Cloud</h1><div class="sub">v13 · dataherstel en veilige migratie</div></header>
+<header><h1 id="title">⚓ MijnSerenity Cloud</h1><div class="sub">v14 · echte interactieve kaart met OpenStreetMap</div></header>
 <main>
 <div class="tabs">
 <button class="tab active" onclick="showTab('dash',this)">Dashboard</button>
@@ -38,7 +45,7 @@ input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);backgrou
 <button class="tab" onclick="showTab('backup',this)">Back-up</button>
 </div>
 
-<section id="dash"><div id="restoreNotice" class="card warn hidden"></div>
+<section id="dash">
 <div class="card hero"><h2>Serenity Control Center</h2><div class="grid">
 <div class="stat"><div class="label">Tochten</div><div class="value" id="sTrips">0</div></div>
 <div class="stat"><div class="label">Kilometers</div><div class="value" id="sKm">0</div></div>
@@ -58,7 +65,7 @@ input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);backgrou
 <label>GPX/KML-route</label><input id="routeFile" type="file" accept=".gpx,.kml,.xml" onchange="importRouteFile(this.files[0])">
 <label>Of plak route-info uit Waterkaarten</label><textarea id="waterkaarten" placeholder="Meppel naar Blokzijl, afstand 36 km, vaartijd 4:20, 7 bruggen, 2 sluizen..."></textarea>
 <div class="actions"><button class="secondary" onclick="parseRouteText()">Lees geplakte tekst</button><button class="secondary" onclick="clearRoute()">Route wissen</button></div>
-<div id="routeSummary" class="small"></div><div id="routeMap"></div><div id="importPoiPreview"></div></div>
+<div id="routeSummary" class="small"></div><div id="routeMap" class="realmap hidden"></div><div id="importPoiPreview"></div></div>
 <div class="row"><div><label>Datum</label><input id="date" type="date"></div><div><label>Bemanning</label><input id="crew"></div></div>
 <div class="row"><div><label>Vertrekhaven</label><input id="from"></div><div><label>Aankomsthaven</label><input id="to"></div></div>
 <div class="row"><div><label>Vertrektijd</label><input id="start" type="time"></div><div><label>Aankomsttijd</label><input id="end" type="time"></div></div>
@@ -73,7 +80,7 @@ input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);backgrou
 
 <section id="mapview" class="hidden"><div class="card"><h2>Kaartoverzicht</h2>
 <div class="row"><div><label>Filter</label><select id="mapFilter" onchange="renderMapOverview()"><option>Alles</option><option>Routes</option><option>POI’s</option><option>Favorieten</option></select></div><div><label>Zoeken</label><input id="mapSearch" oninput="renderMapOverview()"></div></div>
-<div id="overviewMap" class="map" style="height:380px"><div class="small">Nog geen kaartgegevens.</div></div>
+<div id="overviewMap" class="realmap"></div>
 <div id="mapItems"></div></div></section>
 
 <section id="history" class="hidden"><div class="card"><h2>Historie</h2><div id="trips"></div></div></section>
@@ -93,25 +100,11 @@ input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);backgrou
 </main>
 
 <script>
-const KEY='mijnserenity_cloud_v13', SET='mijnserenity_settings_v13';
+const KEY='mijnserenity_cloud_v14', SET='mijnserenity_settings_v14';
 let currentPhotos=[], currentRoute=[], currentPois=[];
-const $=id=>document.getElementById(id);
+const $=id=>document.getElementById(id);let overviewLeaflet=null, routeLeaflet=null;
 function defaultState(){return {trips:[],tasks:[],costs:[],fuels:[],pois:[],lastSync:''}}
-function validState(o){return o&&Array.isArray(o.trips)&&Array.isArray(o.tasks)&&Array.isArray(o.costs)}
-function scoreState(o){if(!validState(o))return -1;return (o.trips?.length||0)*100+(o.pois?.length||0)*10+(o.costs?.length||0)+(o.fuels?.length||0)+(o.tasks?.length||0)}
-function migrate(){
-  let keys=['mijnserenity_cloud_v13','mijnserenity_cloud_v12','mijnserenity_cloud_v11','mijnserenity_cloud_v10','mijnserenity_cloud_v9','mijnserenity_cloud_v8','mijnserenity_cloud_v7','mijnserenity_cloud_v6','mijnserenity_cloud_v5','mijnserenity_cloud_v4','mijnserenity_cloud_v3','mijnserenity_cloud_v2','mijnserenity_cloud_v1'];
-  let best=null,bestKey='';
-  keys.forEach(k=>{try{let raw=localStorage.getItem(k);if(raw){let o=JSON.parse(raw);if(!o.fuels)o.fuels=[];if(!o.pois)o.pois=[];let sc=scoreState(o);if(sc>scoreState(best)){best=o;bestKey=k}}}catch(e){}});
-  if(best){
-    let currentRaw=localStorage.getItem(KEY), current=null;
-    try{current=currentRaw?JSON.parse(currentRaw):null}catch(e){}
-    if(scoreState(best)>scoreState(current)){
-      localStorage.setItem(KEY,JSON.stringify(best));
-      localStorage.setItem('mijnserenity_last_restored_from',bestKey);
-    }
-  }
-}
+function migrate(){if(!localStorage.getItem(KEY)){let keys=['mijnserenity_cloud_v13','mijnserenity_cloud_v12','mijnserenity_cloud_v11','mijnserenity_cloud_v10','mijnserenity_cloud_v9','mijnserenity_cloud_v8','mijnserenity_cloud_v7','mijnserenity_cloud_v6','mijnserenity_cloud_v5'];for(let k of keys){let old=localStorage.getItem(k);if(old){let o=JSON.parse(old);if(!o.fuels)o.fuels=[];if(!o.pois)o.pois=[];localStorage.setItem(KEY,JSON.stringify(o));break}}}}
 function state(){migrate();return JSON.parse(localStorage.getItem(KEY)||JSON.stringify(defaultState()))}
 function safeSave(s){try{s.lastSync=new Date().toLocaleString('nl-NL');localStorage.setItem(KEY,JSON.stringify(s));return true}catch(e){alert('Opslag vol. Foto’s/route zijn te groot. Probeer minder foto’s of exporteer eerst een back-up.');return false}}
 function saveState(s){if(safeSave(s))render()}
@@ -123,7 +116,7 @@ function val(id){return $(id).value.trim()}function lastTrip(){return state().tr
 function newTrip(){let l=lastTrip(), st=settings();['to','end','km','duration','objects','speed','weather','tripCost','waterkaarten','notes'].forEach(id=>$(id).value='');currentPhotos=[];currentRoute=[];currentPois=[];$('photoPreview').innerHTML='';$('routeSummary').innerHTML='';$('routeMap').innerHTML='';$('importPoiPreview').innerHTML='';$('date').value=today();$('start').value=now();$('crew').value=st.crew;$('from').value=l&&l.to?l.to:st.home;if(l&&l.mhEnd)$('mhStart').value=l.mhEnd;$('autoNote').innerHTML=l?'Vertrek automatisch ingevuld vanuit vorige aankomsthaven: <b>'+l.to+'</b>':'Eerste tocht: vertrekpunt op '+st.home+' gezet.'}
 function hours(t){return t.mhEnd&&t.mhStart?Math.max(0,t.mhEnd-t.mhStart):0}
 function saveTrip(){let s=state();let t={id:Date.now(),date:val('date'),crew:val('crew'),from:val('from'),to:val('to'),start:val('start'),end:val('end'),km:+val('km')||0,duration:val('duration'),objects:val('objects'),speed:+val('speed')||0,mhStart:+val('mhStart')||0,mhEnd:+val('mhEnd')||0,weather:val('weather'),cost:+val('tripCost')||0,waterkaarten:val('waterkaarten'),notes:val('notes'),photos:currentPhotos,route:simplifyRoute(currentRoute,300),pois:currentPois};if(!t.date||!t.from||!t.to){alert('Vul datum, vertrek en aankomst in.');return}s.trips.unshift(t);currentPois.forEach(p=>s.pois.unshift({...p,trip:t.from+' → '+t.to,date:t.date}));if(t.cost)s.costs.unshift({id:t.id,date:t.date,amount:t.cost,category:'Havengeld',desc:t.from+' → '+t.to});if(safeSave(s)){alert('Tocht opgeslagen ⚓');newTrip();render()}}
-function render(){let s=ensurePoiIds(state()),tr=s.trips||[],cs=s.costs||[],ts=s.tasks||[],fu=s.fuels||[],po=s.pois||[],st=settings();$('title').textContent='⚓ '+st.boat+' Cloud';let rf=localStorage.getItem('mijnserenity_last_restored_from');if(rf&&$('restoreNotice')){$('restoreNotice').classList.remove('hidden');$('restoreNotice').innerHTML='Data hersteld uit: <b>'+rf+'</b>. Maak nu voor zekerheid een JSON back-up.';}let km=tr.reduce((a,t)=>a+(+t.km||0),0),h=tr.reduce((a,t)=>a+hours(t),0),c=cs.reduce((a,x)=>a+(+x.amount||0),0),fl=fu.reduce((a,x)=>a+(+x.liters||0),0);$('sTrips').textContent=tr.length;$('sKm').textContent=Math.round(km);$('sHours').textContent=h.toFixed(1);$('sPois').textContent=po.length;$('sCosts').textContent='€'+c.toFixed(0);$('sPort').textContent=tr[0]?.to||'-';$('sFuel').textContent=fl.toFixed(0)+'L';$('sSync').textContent=s.lastSync?String(s.lastSync).split(' ')[0]:'-';$('latest').innerHTML=tr[0]?'<b>'+tr[0].from+' → '+tr[0].to+'</b><br>'+tr[0].date+' · '+tr[0].km+' km · '+(tr[0].duration||hours(tr[0]).toFixed(1)+' motoruur'):'Nog geen tocht.';$('latestRoute').innerHTML=tr[0]?.route?.length?mapHtml(tr[0].route,tr[0].pois||[]):'';$('trips').innerHTML=tr.length?tr.map(t=>'<div class="item"><h3>'+t.from+' → '+t.to+'</h3><p>'+t.date+' · '+(t.start||'?')+'-'+(t.end||'?')+' · '+t.km+' km · '+(t.duration||'')+'</p>'+(t.route?.length?mapHtml(t.route,t.pois||[]):'')+(t.photos?.length?'<div class="photoGrid">'+t.photos.map(p=>'<img src="'+p+'">').join('')+'</div>':'')+'<p>'+t.notes+'</p></div>').join(''):'<div class="small">Nog geen tochten.</div>';renderPoiList(po);$('tasks').innerHTML=ts.length?ts.map(x=>'<div class="item"><h3>'+x.name+'</h3><p>'+x.date+' · '+(x.hours?x.hours+' motoruren · ':'')+x.status+'</p></div>').join(''):'<div class="small">Nog geen taken.</div>';$('costList').innerHTML=cs.length?cs.map(x=>'<div class="item"><h3>€'+(+x.amount||0).toFixed(2)+' · '+x.category+'</h3><p>'+x.date+' · '+x.desc+'</p></div>').join(''):'<div class="small">Nog geen kosten.</div>';$('fuelList').innerHTML=fu.length?fu.map(x=>'<div class="item"><h3>'+x.liters+' liter</h3><p>'+x.date+' · '+x.place+'</p></div>').join(''):'<div class="small">Nog geen tankbeurten.</div>'}
+function render(){let s=ensurePoiIds(state()),tr=s.trips||[],cs=s.costs||[],ts=s.tasks||[],fu=s.fuels||[],po=s.pois||[],st=settings();$('title').textContent='⚓ '+st.boat+' Cloud';let km=tr.reduce((a,t)=>a+(+t.km||0),0),h=tr.reduce((a,t)=>a+hours(t),0),c=cs.reduce((a,x)=>a+(+x.amount||0),0),fl=fu.reduce((a,x)=>a+(+x.liters||0),0);$('sTrips').textContent=tr.length;$('sKm').textContent=Math.round(km);$('sHours').textContent=h.toFixed(1);$('sPois').textContent=po.length;$('sCosts').textContent='€'+c.toFixed(0);$('sPort').textContent=tr[0]?.to||'-';$('sFuel').textContent=fl.toFixed(0)+'L';$('sSync').textContent=s.lastSync?String(s.lastSync).split(' ')[0]:'-';$('latest').innerHTML=tr[0]?'<b>'+tr[0].from+' → '+tr[0].to+'</b><br>'+tr[0].date+' · '+tr[0].km+' km · '+(tr[0].duration||hours(tr[0]).toFixed(1)+' motoruur'):'Nog geen tocht.';$('latestRoute').innerHTML=tr[0]?.route?.length?mapHtml(tr[0].route,tr[0].pois||[]):'';$('trips').innerHTML=tr.length?tr.map(t=>'<div class="item"><h3>'+t.from+' → '+t.to+'</h3><p>'+t.date+' · '+(t.start||'?')+'-'+(t.end||'?')+' · '+t.km+' km · '+(t.duration||'')+'</p>'+(t.route?.length?mapHtml(t.route,t.pois||[]):'')+(t.photos?.length?'<div class="photoGrid">'+t.photos.map(p=>'<img src="'+p+'">').join('')+'</div>':'')+'<p>'+t.notes+'</p></div>').join(''):'<div class="small">Nog geen tochten.</div>';renderPoiList(po);$('tasks').innerHTML=ts.length?ts.map(x=>'<div class="item"><h3>'+x.name+'</h3><p>'+x.date+' · '+(x.hours?x.hours+' motoruren · ':'')+x.status+'</p></div>').join(''):'<div class="small">Nog geen taken.</div>';$('costList').innerHTML=cs.length?cs.map(x=>'<div class="item"><h3>€'+(+x.amount||0).toFixed(2)+' · '+x.category+'</h3><p>'+x.date+' · '+x.desc+'</p></div>').join(''):'<div class="small">Nog geen kosten.</div>';$('fuelList').innerHTML=fu.length?fu.map(x=>'<div class="item"><h3>'+x.liters+' liter</h3><p>'+x.date+' · '+x.place+'</p></div>').join(''):'<div class="small">Nog geen tankbeurten.</div>'}
 function renderPoiList(po){let q=($('poiSearch')?$('poiSearch').value.toLowerCase():''),f=$('poiFilter')?$('poiFilter').value:'Alle';let shown=po.filter(p=>{let txt=(p.name+' '+(p.cat||'')+' '+(p.place||'')+' '+(p.trip||'')+' '+(p.review||'')+' '+(p.desc||'')).toLowerCase();return (!q||txt.includes(q))&&(f==='Alle'||(f==='Favorieten'?p.favorite:p.cat===f))});$('poiList').innerHTML=shown.length?shown.map(p=>'<div class="poi"><h3>'+(p.favorite?'❤️ ':'')+p.name+'</h3><p>'+p.cat+' · '+(p.place||p.trip||'')+' · <span class="stars">'+stars(p.rating)+'</span></p><p>'+(p.review||p.desc||'')+'</p><div class="actions"><button class="secondary" onclick="editPoi('+p.id+')">Bewerk</button><button class="ok" onclick="togglePoiFavorite('+p.id+')">'+(p.favorite?'Ontfavoriet':'Favoriet')+'</button><button class="danger" onclick="deletePoi('+p.id+')">Verwijder</button></div></div>').join(''):'<div class="small">Geen POI’s.</div>'}
 function stars(n){n=+n||0;return '★★★★★'.slice(0,n)+'☆☆☆☆☆'.slice(0,5-n)}
 function ensurePoiIds(s){let changed=false;(s.pois||[]).forEach((p,i)=>{if(!p.id){p.id=Date.now()+i;changed=true}});(s.trips||[]).forEach((t,ti)=>(t.pois||[]).forEach((p,pi)=>{if(!p.id){p.id=Date.now()+ti*100+pi;changed=true}}));if(changed)localStorage.setItem(KEY,JSON.stringify(s));return s}
@@ -139,7 +132,7 @@ async function loadPhotos(files){currentPhotos=[];$('photoPreview').innerHTML=''
 function resizeImage(file,max,quality){return new Promise(resolve=>{let img=new Image(),r=new FileReader();r.onload=e=>{img.onload=()=>{let scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);let ctx=c.getContext('2d');ctx.drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',quality))};img.src=e.target.result};r.readAsDataURL(file)})}
 function importRouteFile(file){if(!file)return;let r=new FileReader();r.onload=e=>parseRouteFile(e.target.result,file.name);r.readAsText(file)}
 function classify(name,desc){let t=(name+' '+desc).toLowerCase();if(t.match(/haven|marina|jachthaven|passantenhaven/))return 'Haven';if(t.match(/brug|bridge/))return 'Brug';if(t.match(/sluis|lock/))return 'Sluis';if(t.match(/restaurant|cafe|café|eten|lunch|diner/))return 'Restaurant';if(t.match(/diesel|tank|fuel|brandstof/))return 'Tankplaats';if(t.match(/anker|anchorage/))return 'Ankerplek';return 'Overig'}
-function parseRouteFile(txt,name){let xml=new DOMParser().parseFromString(txt,'text/xml');let pts=[],times=[],names=[],pois=[];xml.querySelectorAll('trkpt,rtept').forEach(p=>{let lat=+p.getAttribute('lat'),lon=+p.getAttribute('lon');if(lat&&lon){pts.push({lat:+lat.toFixed(6),lon:+lon.toFixed(6)});let time=p.querySelector('time');if(time&&time.textContent)times.push(new Date(time.textContent));let nm=p.querySelector('name');if(nm&&nm.textContent)names.push(nm.textContent.trim())}});xml.querySelectorAll('wpt').forEach(p=>{let lat=+p.getAttribute('lat'),lon=+p.getAttribute('lon'),nm=(p.querySelector('name')||{}).textContent||'POI',desc=(p.querySelector('desc')||{}).textContent||'';if(lat&&lon)pois.push({id:Date.now()+pois.length,name:nm.trim(),desc:strip(desc),cat:classify(nm,desc),lat:+lat.toFixed(6),lon:+lon.toFixed(6),rating:0,favorite:false})});xml.querySelectorAll('Placemark').forEach(pm=>{let nm=(pm.querySelector('name')||{}).textContent||'POI',desc=(pm.querySelector('description')||{}).textContent||'';let point=pm.querySelector('Point coordinates');if(point){let pair=point.textContent.trim().split(/\s+/)[0].split(',');if(pair.length>=2)pois.push({id:Date.now()+pois.length,name:nm.trim(),desc:strip(desc),cat:classify(nm,desc),lat:+(+pair[1]).toFixed(6),lon:+(+pair[0]).toFixed(6),rating:0,favorite:false})}let line=pm.querySelector('LineString coordinates');if(line){line.textContent.trim().split(/\s+/).forEach(pair=>{let x=pair.split(',');if(x.length>=2)pts.push({lat:+(+x[1]).toFixed(6),lon:+(+x[0]).toFixed(6)})})}});pts=simplifyRoute(pts,500);currentRoute=pts;currentPois=pois;if(pts.length){let km=distanceKm(pts);$('km').value=km.toFixed(1);if(names[0]&&!val('from'))$('from').value=names[0];if(names.length>1&&!val('to'))$('to').value=names[names.length-1];if(times.length>=2){let a=times[0],b=times[times.length-1],mins=Math.round((b-a)/60000);if(mins>0){$('date').value=a.toISOString().slice(0,10);$('start').value=timeOnly(a);$('end').value=timeOnly(b);$('duration').value=Math.floor(mins/60)+':'+pad(mins%60);$('speed').value=(km/(mins/60)).toFixed(1)}}$('routeSummary').innerHTML='<span class="pill">Routepunten: '+pts.length+'</span><span class="pill">POI’s: '+pois.length+'</span><span class="pill">Afstand: '+km.toFixed(1)+' km</span>';$('routeMap').innerHTML=mapHtml(pts,pois);previewPois()}else alert('Geen routepunten gevonden.')}
+function parseRouteFile(txt,name){let xml=new DOMParser().parseFromString(txt,'text/xml');let pts=[],times=[],names=[],pois=[];xml.querySelectorAll('trkpt,rtept').forEach(p=>{let lat=+p.getAttribute('lat'),lon=+p.getAttribute('lon');if(lat&&lon){pts.push({lat:+lat.toFixed(6),lon:+lon.toFixed(6)});let time=p.querySelector('time');if(time&&time.textContent)times.push(new Date(time.textContent));let nm=p.querySelector('name');if(nm&&nm.textContent)names.push(nm.textContent.trim())}});xml.querySelectorAll('wpt').forEach(p=>{let lat=+p.getAttribute('lat'),lon=+p.getAttribute('lon'),nm=(p.querySelector('name')||{}).textContent||'POI',desc=(p.querySelector('desc')||{}).textContent||'';if(lat&&lon)pois.push({id:Date.now()+pois.length,name:nm.trim(),desc:strip(desc),cat:classify(nm,desc),lat:+lat.toFixed(6),lon:+lon.toFixed(6),rating:0,favorite:false})});xml.querySelectorAll('Placemark').forEach(pm=>{let nm=(pm.querySelector('name')||{}).textContent||'POI',desc=(pm.querySelector('description')||{}).textContent||'';let point=pm.querySelector('Point coordinates');if(point){let pair=point.textContent.trim().split(/\s+/)[0].split(',');if(pair.length>=2)pois.push({id:Date.now()+pois.length,name:nm.trim(),desc:strip(desc),cat:classify(nm,desc),lat:+(+pair[1]).toFixed(6),lon:+(+pair[0]).toFixed(6),rating:0,favorite:false})}let line=pm.querySelector('LineString coordinates');if(line){line.textContent.trim().split(/\s+/).forEach(pair=>{let x=pair.split(',');if(x.length>=2)pts.push({lat:+(+x[1]).toFixed(6),lon:+(+x[0]).toFixed(6)})})}});pts=simplifyRoute(pts,500);currentRoute=pts;currentPois=pois;if(pts.length){let km=distanceKm(pts);$('km').value=km.toFixed(1);if(names[0]&&!val('from'))$('from').value=names[0];if(names.length>1&&!val('to'))$('to').value=names[names.length-1];if(times.length>=2){let a=times[0],b=times[times.length-1],mins=Math.round((b-a)/60000);if(mins>0){$('date').value=a.toISOString().slice(0,10);$('start').value=timeOnly(a);$('end').value=timeOnly(b);$('duration').value=Math.floor(mins/60)+':'+pad(mins%60);$('speed').value=(km/(mins/60)).toFixed(1)}}$('routeSummary').innerHTML='<span class="pill">Routepunten: '+pts.length+'</span><span class="pill">POI’s: '+pois.length+'</span><span class="pill">Afstand: '+km.toFixed(1)+' km</span>';routeLeaflet=drawLeaflet('routeMap',pts,pois,routeLeaflet);previewPois()}else alert('Geen routepunten gevonden.')}
 function simplifyRoute(pts,max){if(!pts||pts.length<=max)return pts||[];let step=Math.ceil(pts.length/max),out=[];for(let i=0;i<pts.length;i+=step)out.push(pts[i]);if(out[out.length-1]!==pts[pts.length-1])out.push(pts[pts.length-1]);return out}
 function strip(s){return String(s||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()}
 function previewPois(){$('importPoiPreview').innerHTML=currentPois.length?'<h3>Gevonden POI’s</h3>'+currentPois.slice(0,12).map(p=>'<div class="poi"><b>'+p.name+'</b><br><span class="small">'+p.cat+' · '+(p.desc||'')+'</span></div>').join(''):''}
@@ -148,10 +141,47 @@ function hav(a,b){let R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*M
 function mapSvg(pts,pois,w=800,h=260){let all=(pts||[]).concat((pois||[]).filter(p=>isFinite(p.lat)&&isFinite(p.lon)));if(!all.length)return '<svg viewBox="0 0 '+w+' '+h+'"><rect width="'+w+'" height="'+h+'" fill="#071827"/><text x="20" y="40" fill="#a9bdca">Geen kaartpunten</text></svg>';let lats=all.map(p=>p.lat),lons=all.map(p=>p.lon),minLat=Math.min(...lats),maxLat=Math.max(...lats),minLon=Math.min(...lons),maxLon=Math.max(...lons),pad=20;let xy=p=>[pad+(p.lon-minLon)/(maxLon-minLon||1)*(w-2*pad),h-pad-(p.lat-minLat)/(maxLat-minLat||1)*(h-2*pad)];let d=(pts||[]).map((p,i)=>{let q=xy(p);return (i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)}).join(' ');let path=d?'<path d="'+d+'" fill="none" stroke="#45c8ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>':'';let dots=(pois||[]).filter(p=>isFinite(p.lat)&&isFinite(p.lon)).map(p=>{let q=xy(p);return '<circle cx="'+q[0]+'" cy="'+q[1]+'" r="'+(p.favorite?8:6)+'" fill="'+(p.favorite?'#ff6b6b':'#ffd05a')+'"><title>'+p.name+'</title></circle>'}).join('');let se='';if((pts||[]).length){let s=xy(pts[0]),e=xy(pts[pts.length-1]);se='<circle cx="'+s[0]+'" cy="'+s[1]+'" r="7" fill="#4bd38f"/><circle cx="'+e[0]+'" cy="'+e[1]+'" r="7" fill="#ff6b6b"/>'}return '<svg viewBox="0 0 '+w+' '+h+'"><rect width="'+w+'" height="'+h+'" fill="#071827"/>'+path+dots+se+'</svg>'}
 function mapHtml(pts,pois){return '<div class="map">'+mapSvg(pts,pois)+'</div>'}
 function renderMapOverview(){let s=state(),filter=$('mapFilter')?$('mapFilter').value:'Alles',q=($('mapSearch')?$('mapSearch').value.toLowerCase():'');let routes=(s.trips||[]).filter(t=>t.route&&t.route.length),pois=[...(s.pois||[])];if(q){routes=routes.filter(t=>(t.from+' '+t.to+' '+t.date).toLowerCase().includes(q));pois=pois.filter(p=>(p.name+' '+(p.cat||'')+' '+(p.place||'')+' '+(p.trip||'')).toLowerCase().includes(q))}if(filter==='Routes')pois=[];if(filter==='POI’s')routes=[];if(filter==='Favorieten'){routes=[];pois=pois.filter(p=>p.favorite)}let pts=[];routes.forEach(t=>pts=pts.concat(t.route));let allpois=pois.filter(p=>isFinite(p.lat)&&isFinite(p.lon));$('overviewMap').innerHTML=(pts.length||allpois.length)?mapSvg(pts,allpois,800,380):'<div class="small">Nog geen routepunten of POI’s met GPS-locatie.</div>';$('mapItems').innerHTML=routes.map(t=>'<div class="item"><h3>🗺️ '+t.from+' → '+t.to+'</h3><p>'+t.date+' · '+t.km+' km</p></div>').join('')+pois.map(p=>'<div class="item"><h3>📍 '+(p.favorite?'❤️ ':'')+p.name+'</h3><p>'+p.cat+' · '+(p.place||p.trip||'')+'</p></div>').join('')}
+
+function hasLeaflet(){return typeof L!=='undefined'}
+function centerOf(pts,pois){let all=(pts||[]).concat((pois||[]).filter(p=>isFinite(p.lat)&&isFinite(p.lon)));if(!all.length)return [52.5,6.1];let lat=all.reduce((a,p)=>a+p.lat,0)/all.length,lon=all.reduce((a,p)=>a+p.lon,0)/all.length;return [lat,lon]}
+function drawLeaflet(containerId,pts,pois,existing){
+  if(!hasLeaflet()){document.getElementById(containerId).innerHTML='<div class="small" style="padding:16px">Kaartbibliotheek nog niet geladen. Ververs de pagina.</div>';return null}
+  const el=document.getElementById(containerId); if(!el) return null; el.classList.remove('hidden');
+  if(existing){existing.remove(); existing=null}
+  const map=L.map(containerId,{scrollWheelZoom:true});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  const layers=[];
+  if(pts&&pts.length){
+    const latlngs=pts.map(p=>[p.lat,p.lon]);
+    const line=L.polyline(latlngs,{weight:5}).addTo(map); layers.push(line);
+    L.marker(latlngs[0]).addTo(map).bindPopup('Start');
+    L.marker(latlngs[latlngs.length-1]).addTo(map).bindPopup('Einde');
+  }
+  (pois||[]).filter(p=>isFinite(p.lat)&&isFinite(p.lon)).forEach(p=>{
+    const m=L.marker([p.lat,p.lon]).addTo(map).bindPopup('<b>'+escapeHtml(p.name||'POI')+'</b><br>'+escapeHtml(p.cat||'')+'<br>'+escapeHtml(p.review||p.desc||''));
+    layers.push(m);
+  });
+  if(layers.length){const group=L.featureGroup(layers);map.fitBounds(group.getBounds().pad(0.2));}
+  else map.setView(centerOf(pts,pois),10);
+  setTimeout(()=>map.invalidateSize(),250);
+  return map;
+}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function mapHtml(pts,pois){return '<div class="small">Open tab Kaart voor interactieve kaart.</div>'}
+function renderMapOverview(){
+  let s=state(),filter=$('mapFilter')?$('mapFilter').value:'Alles',q=($('mapSearch')?$('mapSearch').value.toLowerCase():'');
+  let routes=(s.trips||[]).filter(t=>t.route&&t.route.length),pois=[...(s.pois||[])];
+  if(q){routes=routes.filter(t=>(t.from+' '+t.to+' '+t.date).toLowerCase().includes(q));pois=pois.filter(p=>(p.name+' '+(p.cat||'')+' '+(p.place||'')+' '+(p.trip||'')).toLowerCase().includes(q))}
+  if(filter==='Routes')pois=[]; if(filter==='POI’s')routes=[]; if(filter==='Favorieten'){routes=[];pois=pois.filter(p=>p.favorite)}
+  let pts=[];routes.forEach(t=>pts=pts.concat(t.route));
+  overviewLeaflet=drawLeaflet('overviewMap',pts,pois,overviewLeaflet);
+  $('mapItems').innerHTML=routes.map(t=>'<div class="item"><h3>🗺️ '+t.from+' → '+t.to+'</h3><p>'+t.date+' · '+t.km+' km</p></div>').join('')+pois.map(p=>'<div class="item"><h3>📍 '+(p.favorite?'❤️ ':'')+p.name+'</h3><p>'+p.cat+' · '+(p.place||p.trip||'')+'</p></div>').join('');
+}
+
 function parseRouteText(){let t=val('waterkaarten');let km=t.match(/(\d+[,.]?\d*)\s*(km|kilometer)/i);if(km)$('km').value=km[1].replace(',','.');let dur=t.match(/(\d+[:.]\d+|\d+\s*uur\s*\d*)/i);if(dur)$('duration').value=dur[1].replace('.',':');let route=t.match(/([A-Za-zÀ-ÿ' -]{2,})\s*(?:naar|→|->)\s*([A-Za-zÀ-ÿ' -]{2,})/i);if(route){$('from').value=route[1].trim();$('to').value=route[2].trim()}alert('Tekst gelezen voor zover herkenbaar.')}
-function clearRoute(){currentRoute=[];currentPois=[];$('routeSummary').innerHTML='';$('routeMap').innerHTML='';$('importPoiPreview').innerHTML='';$('routeFile').value=''}
+function clearRoute(){currentRoute=[];currentPois=[];$('routeSummary').innerHTML='';if(routeLeaflet){routeLeaflet.remove();routeLeaflet=null}$('routeMap').innerHTML='';$('routeMap').classList.add('hidden');$('importPoiPreview').innerHTML='';$('routeFile').value=''}
 function download(n,c,t){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click()}
-function exportJson(){download('mijnserenity-v13-backup.json',JSON.stringify(state(),null,2),'application/json')}
+function exportJson(){download('mijnserenity-v14-backup.json',JSON.stringify(state(),null,2),'application/json')}
 function importJson(file){if(!file)return;let r=new FileReader();r.onload=e=>{try{let d=JSON.parse(e.target.result);if(d.trips&&d.tasks&&d.costs){if(!d.fuels)d.fuels=[];if(!d.pois)d.pois=[];saveState(d);alert('Back-up teruggezet ⚓')}}catch(err){alert('Kon JSON niet lezen.')}};r.readAsText(file)}
 function resetAll(){if(confirm('Alles wissen?'))saveState(defaultState())}
 $('costDate').value=today();$('fuelDate').value=today();render();newTrip();
