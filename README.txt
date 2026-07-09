@@ -1,2 +1,2 @@
-# MijnSerenity Cloud v15
-Nieuw: Cloud Foundation, opslagcontrole en veiligere migratie.
+# MijnSerenity Cloud v16
+Eerste cloudsync-versie. Vereist Supabase setup voor gedeelde data.
