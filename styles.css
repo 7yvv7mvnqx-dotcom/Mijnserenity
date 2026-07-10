@@ -34,3 +34,17 @@ h1,h2,h3{margin:0 0 10px}main{max-width:980px;margin:auto;padding:14px}.sub,.sma
 @media(max-width:700px){.trip-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .finance-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}.finance-row:first-child{border-top:0}.finance-bar{height:9px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:5px}.finance-bar span{display:block;height:100%;background:var(--accent)}
+
+.dashboard-photo-card{position:relative;padding:0;overflow:hidden;min-height:260px;cursor:pointer}
+.dashboard-boat-photo{display:block;width:100%;height:300px;object-fit:cover}
+.dashboard-photo-placeholder{height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#173a54,#071827);color:var(--muted)}
+.dashboard-photo-placeholder .boat-icon{font-size:54px}.dashboard-photo-placeholder b{color:white;font-size:20px}
+.dashboard-photo-overlay{position:absolute;left:0;right:0;bottom:0;padding:35px 18px 16px;background:linear-gradient(transparent,rgba(0,0,0,.85))}
+.dashboard-photo-overlay h2{margin:0 0 4px;font-size:28px}.dashboard-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.dashboard-tile{min-height:118px;background:var(--panel);color:white;border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;text-align:left}
+.dashboard-tile:active{transform:scale(.98);background:var(--panel2)}.dashboard-tile .tile-icon{font-size:28px}.dashboard-tile b{font-size:17px}.dashboard-tile small{color:var(--muted)}
+.compact-status{padding:12px}
+.small-danger{background:rgba(255,107,107,.18);color:#ff9b9b;padding:7px 10px;font-size:13px;border:1px solid rgba(255,107,107,.35)}
+.item{position:relative;padding-right:42px}.item-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.edit-button{background:#254a63;color:white}
+.delete-mini{position:absolute;top:10px;right:0;background:rgba(255,107,107,.16);color:#ff9b9b;border:1px solid rgba(255,107,107,.35);padding:6px 8px;font-size:12px;border-radius:10px}
+@media(max-width:700px){.dashboard-actions{grid-template-columns:repeat(2,1fr)}.dashboard-boat-photo{height:250px}.dashboard-photo-card{min-height:230px}}

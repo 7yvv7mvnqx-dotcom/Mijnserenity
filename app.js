@@ -2,6 +2,7 @@ const SUPABASE_URL='https://wufslczbtguvtgmfufid.supabase.co';
 const SUPABASE_KEY='sb_publishable_LCJ5Oj0yG4guOvBFPS5ALg_WG57gAo9';
 const PHOTO_BUCKET='poi-photos';
 const TRIP_PHOTO_BUCKET='trip-photos';
+const BOAT_PHOTO_BUCKET='boat-photos';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -9,6 +10,15 @@ let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInsta
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 function setMsg(t){$('authMsg').textContent=t}
+function goToTab(id){
+  const buttons=[...document.querySelectorAll('.tab')];
+  const map={dashboard:0,map:1,pois:2,logbook:3,costs:4,finance:5,settings:6,boat:7};
+  const button=buttons[map[id]];
+  if(button)showTab(id,button);
+  if(id==='map')initMap();
+  if(id==='finance')renderFinance();
+  if(id==='settings')loadSettingsForm();
+}
 function showTab(id,b){document.querySelectorAll('#appView > section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
 function setPoiProgress(text){$('poiProgress').textContent=text;$('poiProgress').classList.toggle('hidden',!text)}
 function clearPoiForm(){$('poiFavorite').checked=false;['poiId','poiName','poiPlace','poiReview','poiRating','poiLatitude','poiLongitude'].forEach(id=>$(id).value='');$('poiCategory').value='Haven';$('poiPhotos').value='';$('poiFormTitle').textContent='POI toevoegen';$('poiSaveButton').textContent='Opslaan';$('poiCancelButton').classList.add('hidden');setPoiProgress('')}
@@ -96,7 +106,7 @@ async function loadPois(){
   poiCache=data;poiPhotoCache=photos;$('dPois').textContent=data.length;
   $('poiList').innerHTML=data.length?data.map(p=>{
     const photoHtml=(photos[p.id]||[]).map(ph=>`<div class="photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(p.name)}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="photo-delete" onclick="deletePhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
-    return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?'<span class="favorite-badge">⭐</span>':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${photoHtml?`<div class="photo-grid">${photoHtml}</div>`:''}<div class="actions"><button class="secondary" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`;
+    return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?'<span class="favorite-badge">⭐</span>':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${photoHtml?`<div class="photo-grid">${photoHtml}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>✏️ Bewerken</button></div></div>`;
   }).join(''):'<span class="small">Nog geen POI’s.</span>';if(mapInstance)renderPoiMarkers();
 }
 
@@ -106,8 +116,44 @@ async function loadCosts(){const {data,error}=await sb.from('costs').select('*')
 function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},loadSettings).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
 
 function resetPoiFilters(){$('poiSearch').value='';$('poiFilterCategory').value='';$('poiFilterRating').value='0';$('poiFilterExtra').value='';renderPoiList()}
-function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<div class="actions"><button class="secondary" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
+function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
 async function loadSettings(){if(!currentBoat)return;const{data,error}=await sb.from('boat_settings').select('*').eq('boat_id',currentBoat.id).maybeSingle();if(!error)settingsCache=data||{boat_id:currentBoat.id,boat_name:currentBoat.name}}
+
+async function loadDashboardPhoto(){
+  const img=$('dashboardBoatPhoto'),placeholder=$('dashboardPhotoPlaceholder');
+  if(!img||!placeholder)return;
+  if(!settingsCache?.dashboard_photo_path){
+    img.classList.add('hidden');placeholder.classList.remove('hidden');return;
+  }
+  const {data,error}=await sb.storage.from(BOAT_PHOTO_BUCKET).createSignedUrl(settingsCache.dashboard_photo_path,3600);
+  if(error){img.classList.add('hidden');placeholder.classList.remove('hidden');return}
+  img.src=data.signedUrl;img.classList.remove('hidden');placeholder.classList.add('hidden');
+}
+async function uploadDashboardPhoto(){
+  const file=$('settingBoatPhoto').files[0];
+  if(!file)return alert('Kies eerst een foto.');
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+  const path=`${currentBoat.id}/dashboard.${ext}`;
+  $('dashboardPhotoMsg').textContent='Foto uploaden…';$('dashboardPhotoMsg').classList.remove('hidden');
+  if(settingsCache?.dashboard_photo_path && settingsCache.dashboard_photo_path!==path){
+    await sb.storage.from(BOAT_PHOTO_BUCKET).remove([settingsCache.dashboard_photo_path]);
+  }
+  const {error:uploadError}=await sb.storage.from(BOAT_PHOTO_BUCKET).upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});
+  if(uploadError)return alert(uploadError.message);
+  const row={...(settingsCache||{}),boat_id:currentBoat.id,dashboard_photo_path:path,updated_at:new Date().toISOString()};
+  const {error}=await sb.from('boat_settings').upsert(row,{onConflict:'boat_id'});
+  if(error)return alert(error.message);
+  settingsCache=row;$('dashboardPhotoMsg').textContent='Dashboardfoto opgeslagen ✅';$('settingBoatPhoto').value='';await loadDashboardPhoto();
+}
+async function removeDashboardPhoto(){
+  if(!settingsCache?.dashboard_photo_path)return;
+  if(!confirm('Dashboardfoto verwijderen?'))return;
+  await sb.storage.from(BOAT_PHOTO_BUCKET).remove([settingsCache.dashboard_photo_path]);
+  const {error}=await sb.from('boat_settings').update({dashboard_photo_path:null,updated_at:new Date().toISOString()}).eq('boat_id',currentBoat.id);
+  if(error)return alert(error.message);
+  settingsCache.dashboard_photo_path=null;await loadDashboardPhoto();
+}
+
 function loadSettingsForm(){if(!settingsCache)return;$('settingBoatName').value=settingsCache.boat_name||'Serenity';$('settingFuelPrice').value=settingsCache.fuel_price??'';$('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';$('settingTankCapacity').value=settingsCache.tank_capacity??''}
 async function saveSettings(){const row={boat_id:currentBoat.id,boat_name:$('settingBoatName').value.trim()||'Serenity',fuel_price:Number($('settingFuelPrice').value)||null,fuel_per_hour:Number($('settingFuelPerHour').value)||null,tank_capacity:Number($('settingTankCapacity').value)||null,updated_at:new Date().toISOString()};const{error}=await sb.from('boat_settings').upsert(row,{onConflict:'boat_id'});if(error)return alert(error.message);settingsCache=row;$('settingsMsg').textContent='Instellingen opgeslagen ✅';$('settingsMsg').classList.remove('hidden');previewFuelCalculation()}
 function previewFuelCalculation(){if(!$('fuelPreview'))return;const h=Number($('tripHours').value)||0,l=Number($('tripFuelLiters').value)||(h&&settingsCache?.fuel_per_hour?h*Number(settingsCache.fuel_per_hour):0),c=Number($('tripFuelCost').value)||(l&&settingsCache?.fuel_price?l*Number(settingsCache.fuel_price):0);$('fuelPreview').textContent=l?`Geschat: ${l.toFixed(1)} liter · €${c.toFixed(2)}`:'Vul vaartijd in en stel verbruik/prijs in.'}
@@ -285,7 +331,7 @@ async function loadTrips(){
   tripCache=data;$('dTrips').textContent=data.length;
   $('tripList').innerHTML=data.length?data.map(t=>{
     const photoHtml=(photos[t.id]||[]).map(ph=>`<div class="trip-photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(t.title||'vaarttocht')}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="trip-photo-delete" onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
-    return `<div class="item"><h3>${esc(t.title||'Vaartocht')}</h3><div class="small">${esc(t.trip_date)} · ${esc(t.departure||'')} → ${esc(t.arrival||'')}</div><div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span><span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span><span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span></div><p>${esc(t.notes||'')}</p>${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}<div class="actions"><button class="secondary" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.fuel_liters)},${JSON.stringify(t.fuel_cost)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>Bewerken</button><button class="danger" onclick="deleteTrip('${t.id}')">Verwijderen</button></div></div>`;
+    return `<div class="item"><h3>${esc(t.title||'Vaartocht')}</h3><div class="small">${esc(t.trip_date)} · ${esc(t.departure||'')} → ${esc(t.arrival||'')}</div><div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span><span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span><span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span></div><p>${esc(t.notes||'')}</p>${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}<button class="delete-mini" onclick="deleteTrip('${t.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.fuel_liters)},${JSON.stringify(t.fuel_cost)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>✏️ Bewerken</button></div></div>`;
   }).join(''):'<span class="small">Nog geen vaartochten.</span>';
 }
 

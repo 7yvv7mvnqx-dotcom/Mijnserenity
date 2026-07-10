@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 2.2 · brandstof, financiën en POI-filters</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 2.3 · interactief dashboard en Serenity-foto</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -38,13 +38,46 @@
   </div>
 
   <section id="dashboard">
-    <div class="card hero"><h2 id="welcome">Welkom</h2><div class="grid">
-      <div class="stat"><div class="label">Boot</div><div class="value" id="dBoat">-</div></div>
-      <div class="stat"><div class="label">POI's</div><div class="value" id="dPois">0</div></div>
-      <div class="stat"><div class="label">Kosten</div><div class="value" id="dCosts">€0</div></div>
-      <div class="stat"><div class="label">Tochten</div><div class="value" id="dTrips">0</div></div>
-    </div></div>
-    <div class="card"><b>Cloudsync actief.</b><p class="small">POI's, wijzigingen en foto's worden centraal opgeslagen en zijn zichtbaar op jullie apparaten.</p></div>
+    <div class="card dashboard-photo-card" onclick="goToTab('settings')">
+      <img id="dashboardBoatPhoto" class="dashboard-boat-photo hidden" alt="Serenity">
+      <div id="dashboardPhotoPlaceholder" class="dashboard-photo-placeholder">
+        <div class="boat-icon">⚓</div>
+        <b>Voeg een foto van Serenity toe</b>
+        <span>Ga naar Instellingen om een foto te kiezen</span>
+      </div>
+      <div class="dashboard-photo-overlay">
+        <h2 id="welcome">Welkom</h2>
+        <span>VriJon Contessa 37E · Serenity</span>
+      </div>
+    </div>
+
+    <div class="dashboard-actions">
+      <button class="dashboard-tile" onclick="goToTab('map')">
+        <span class="tile-icon">🗺️</span><b>Kaart</b><small>POI's en positie</small>
+      </button>
+      <button class="dashboard-tile" onclick="goToTab('logbook')">
+        <span class="tile-icon">📖</span><b>Logboek</b><small id="dTrips">0 vaartochten</small>
+      </button>
+      <button class="dashboard-tile" onclick="goToTab('pois')">
+        <span class="tile-icon">📍</span><b>POI's</b><small id="dPois">0 locaties</small>
+      </button>
+      <button class="dashboard-tile" onclick="goToTab('finance')">
+        <span class="tile-icon">💶</span><b>Financieel</b><small id="dCosts">€0</small>
+      </button>
+      <button class="dashboard-tile" onclick="goToTab('costs')">
+        <span class="tile-icon">🧾</span><b>Kosten</b><small>Nieuwe kosten</small>
+      </button>
+      <button class="dashboard-tile" onclick="goToTab('settings')">
+        <span class="tile-icon">⚙️</span><b>Instellingen</b><small>Brandstof en boot</small>
+      </button>
+    </div>
+
+    <div class="card hero compact-status">
+      <div class="grid">
+        <div class="stat"><div class="label">Boot</div><div class="value" id="dBoat">-</div></div>
+        <div class="stat"><div class="label">Sync</div><div class="value" id="dSync">Live</div></div>
+      </div>
+    </div>
   </section>
 
 
@@ -125,7 +158,14 @@
   </section>
 
 <section id="finance" class="hidden"><div class="card hero"><h2>Financieel overzicht</h2><div class="grid"><div class="stat"><div class="label">Totale kosten</div><div class="value" id="fTotal">€0</div></div><div class="stat"><div class="label">Dit jaar</div><div class="value" id="fYear">€0</div></div><div class="stat"><div class="label">Brandstof</div><div class="value" id="fFuel">€0</div></div><div class="stat"><div class="label">Per vaaruur</div><div class="value" id="fPerHour">€0</div></div></div></div><div class="card"><h2>Filter</h2><div class="row"><div><label>Jaar</label><select id="financeYear" onchange="renderFinance()"></select></div><div><label>Categorie</label><select id="financeCategory" onchange="renderFinance()"><option value="">Alle categorieën</option><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Overig</option></select></div></div></div><div class="card"><h2>Kosten per categorie</h2><div id="financeBreakdown"></div></div><div class="card"><h2>Kosten per maand</h2><div id="financeMonths"></div></div></section>
-<section id="settings" class="hidden"><div class="card"><h2>Bootinstellingen</h2><div class="row"><div><label>Bootnaam</label><input id="settingBoatName" value="Serenity"></div><div><label>Tankinhoud liter</label><input id="settingTankCapacity" type="number" step="1"></div></div><div class="row"><div><label>Brandstofprijs per liter €</label><input id="settingFuelPrice" type="number" step="0.01"></div><div><label>Gemiddeld verbruik per uur</label><input id="settingFuelPerHour" type="number" step="0.1"></div></div><button onclick="saveSettings()">Instellingen opslaan</button><div id="settingsMsg" class="status small hidden"></div></div><div class="card"><p class="small">Geen reserveniveau. Als werkelijke liters of kosten leeg blijven, rekent MijnSerenity automatisch met vaartijd × verbruik per uur × literprijs.</p></div></section>
+<section id="settings" class="hidden"><div class="card"><h2>Bootinstellingen</h2>
+      <label>Foto van Serenity voor het dashboard</label>
+      <input id="settingBoatPhoto" type="file" accept="image/*">
+      <div class="actions">
+        <button class="secondary" onclick="uploadDashboardPhoto()">Foto opslaan</button>
+        <button class="small-danger" onclick="removeDashboardPhoto()">Foto verwijderen</button>
+      </div>
+      <div id="dashboardPhotoMsg" class="status small hidden"></div><div class="row"><div><label>Bootnaam</label><input id="settingBoatName" value="Serenity"></div><div><label>Tankinhoud liter</label><input id="settingTankCapacity" type="number" step="1"></div></div><div class="row"><div><label>Brandstofprijs per liter €</label><input id="settingFuelPrice" type="number" step="0.01"></div><div><label>Gemiddeld verbruik per uur</label><input id="settingFuelPerHour" type="number" step="0.1"></div></div><button onclick="saveSettings()">Instellingen opslaan</button><div id="settingsMsg" class="status small hidden"></div></div><div class="card"><p class="small">Geen reserveniveau. Als werkelijke liters of kosten leeg blijven, rekent MijnSerenity automatisch met vaartijd × verbruik per uur × literprijs.</p></div></section>
   <section id="boat" class="hidden">
     <div id="noBoatCard" class="card"><h2>Serenity koppelen</h2><p class="small">Michel maakt Serenity één keer aan. Desi gebruikt daarna de deelcode.</p><div class="row"><div><label>Bootnaam</label><input id="newBoatName" value="Serenity"><button onclick="createBoat()">Boot aanmaken</button></div><div><label>Deelcode</label><input id="joinCode" autocapitalize="characters" placeholder="Bijvoorbeeld A1B2C3"><button class="secondary" onclick="joinBoat()">Deelnemen</button></div></div></div>
     <div id="boatCard" class="card hidden"><h2 id="boatName">Serenity</h2><span class="pill" id="rolePill">Lid</span><div id="ownerInvite" class="hidden" style="margin-top:14px"><p class="small">Maak een tijdelijke deelcode voor Desi. De code blijft 7 dagen geldig.</p><button onclick="createInvite()">Deelcode maken</button><div id="inviteCode" class="invite-code"></div></div></div>
