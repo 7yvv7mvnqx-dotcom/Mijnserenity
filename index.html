@@ -9,10 +9,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 4.0.4 · Log verwijderen</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 4.0.5 · Waterkaarten KMZ</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -190,8 +191,8 @@
       <label>Bemanning</label><input id="tripCrew" placeholder="Michel, Desi">
       <label>Notities</label><textarea id="tripNotes"></textarea>
       <label>Route uit Waterkaarten toevoegen</label>
-      <input id="tripGpx" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml">
-      <p class="small">Exporteer de route uit Waterkaarten als GPX en kies het bestand hier.</p>
+      <input id="tripGpx" type="file" accept=".gpx,.kml,.kmz,application/gpx+xml,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/zip,application/xml,text/xml">
+      <p class="small">Kies een GPX-, KML- of KMZ-route uit Waterkaarten. KMZ wordt automatisch uitgepakt en op de kaart gezet.</p>
       <label>Foto's toevoegen</label>
       <input id="tripPhotos" type="file" accept="image/*" multiple>
       <p class="small">Kies foto's uit je bibliotheek of maak een nieuwe foto. Maximaal 10 foto's per keer.</p>

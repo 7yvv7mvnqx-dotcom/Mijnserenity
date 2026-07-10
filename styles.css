@@ -203,3 +203,11 @@ body{padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom))}
     width:100%;
   }
 }
+
+/* Cloud 4.0.5 — Waterkaarten KMZ */
+#tripGpx{
+  padding:12px;
+  background:#f5f8fa;
+  border:1px dashed #8ba0ad;
+  border-radius:12px;
+}

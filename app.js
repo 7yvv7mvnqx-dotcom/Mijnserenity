@@ -400,24 +400,49 @@ async function saveTrip(){
     if(error){setTripProgress('');return alert(error.message)}
     tripId=data.id;
   }
-  if(!row.fuel_liters&&row.duration_hours&&settingsCache?.fuel_per_hour)row.fuel_liters=Number(row.duration_hours)*Number(settingsCache.fuel_per_hour);if(!row.fuel_cost&&row.fuel_liters&&settingsCache?.fuel_price)row.fuel_cost=Number(row.fuel_liters)*Number(settingsCache.fuel_price);await sb.from('trips').update({fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost}).eq('id',tripId);const gpxFile=$('tripGpx').files[0];
-  if(gpxFile){
-    setTripProgress('GPX-route verwerken…');
-    const gpxText=await gpxFile.text();
-    const routeGeojson=parseGpxToGeoJson(gpxText);
-    if(!routeGeojson) return alert('Dit GPX-bestand bevat geen bruikbare route of track.');
-    const safeName=(gpxFile.name||'route.gpx').replace(/[^a-zA-Z0-9._-]/g,'_');
-    const gpxPath=`${currentBoat.id}/${tripId}/${Date.now()}-${safeName}`;
-    const {error:gpxUploadError}=await sb.storage.from(TRIP_GPX_BUCKET).upload(gpxPath,gpxFile,{
-      upsert:true,contentType:'application/gpx+xml'
-    });
-    if(gpxUploadError)return alert('GPX uploaden mislukt: '+gpxUploadError.message);
-    const {error:gpxDbError}=await sb.from('trips').update({
-      gpx_storage_path:gpxPath,
+  if(!row.fuel_liters&&row.duration_hours&&settingsCache?.fuel_per_hour)row.fuel_liters=Number(row.duration_hours)*Number(settingsCache.fuel_per_hour);if(!row.fuel_cost&&row.fuel_liters&&settingsCache?.fuel_price)row.fuel_cost=Number(row.fuel_liters)*Number(settingsCache.fuel_price);await sb.from('trips').update({fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost}).eq('id',tripId);const routeFile=$('tripGpx').files[0];
+  if(routeFile){
+    setTripProgress('Route uit Waterkaarten verwerken…');
+
+    let routeGeojson;
+    try{
+      routeGeojson=await parseRouteFile(routeFile);
+    }catch(error){
+      setTripProgress('');
+      return alert('Routebestand kon niet worden gelezen: '+(error?.message||'onbekende fout'));
+    }
+
+    if(!routeGeojson){
+      setTripProgress('');
+      return alert('Dit bestand bevat geen bruikbare GPX-, KML- of KMZ-route.');
+    }
+
+    const safeName=(routeFile.name||'waterkaarten-route').replace(/[^a-zA-Z0-9._-]/g,'_');
+    const routePath=`${currentBoat.id}/${tripId}/${Date.now()}-${safeName}`;
+    const contentType=getRouteContentType(routeFile);
+
+    const {error:routeUploadError}=await sb.storage
+      .from(TRIP_GPX_BUCKET)
+      .upload(routePath,routeFile,{
+        upsert:true,
+        contentType
+      });
+
+    if(routeUploadError){
+      setTripProgress('');
+      return alert('Route uploaden mislukt: '+routeUploadError.message);
+    }
+
+    const {error:routeDbError}=await sb.from('trips').update({
+      gpx_storage_path:routePath,
       route_geojson:routeGeojson,
       updated_at:new Date().toISOString()
     }).eq('id',tripId);
-    if(gpxDbError)return alert('GPX opslaan mislukt: '+gpxDbError.message);
+
+    if(routeDbError){
+      setTripProgress('');
+      return alert('Route opslaan mislukt: '+routeDbError.message);
+    }
   }
   const files=[...$('tripPhotos').files].slice(0,10);
   if(files.length)await uploadTripPhotos(tripId,files);
@@ -527,6 +552,14 @@ De route en alle gekoppelde foto's worden ook verwijderd.`))return;
       if(storageError)console.warn('Foto-opslag kon niet volledig worden opgeschoond:',storageError);
     }
 
+    if(trip?.gpx_storage_path){
+      const {error:routeStorageError}=await sb.storage
+        .from(TRIP_GPX_BUCKET)
+        .remove([trip.gpx_storage_path]);
+
+      if(routeStorageError)console.warn('Routebestand kon niet volledig worden opgeschoond:',routeStorageError);
+    }
+
     const {error:photoDeleteError}=await sb
       .from('trip_photos')
       .delete()
@@ -628,17 +661,144 @@ function captainNavigate(id, sourceButton=null){
 
 
 
+function getRouteContentType(file){
+  const name=(file?.name||'').toLowerCase();
+  if(name.endsWith('.kmz'))return 'application/vnd.google-earth.kmz';
+  if(name.endsWith('.kml'))return 'application/vnd.google-earth.kml+xml';
+  return 'application/gpx+xml';
+}
+
+async function parseRouteFile(file){
+  const name=(file?.name||'').toLowerCase();
+
+  if(name.endsWith('.kmz')){
+    if(typeof JSZip==='undefined')throw new Error('KMZ-module is niet geladen.');
+    if(file.size>50*1024*1024)throw new Error('Het KMZ-bestand is groter dan 50 MB.');
+
+    const zip=await JSZip.loadAsync(await file.arrayBuffer());
+    const kmlFiles=Object.values(zip.files)
+      .filter(entry=>!entry.dir&&entry.name.toLowerCase().endsWith('.kml'));
+
+    if(!kmlFiles.length)throw new Error('In dit KMZ-bestand staat geen KML-route.');
+
+    const preferred=kmlFiles.find(entry=>/(^|\/)doc\.kml$/i.test(entry.name))||kmlFiles[0];
+    const kmlText=await preferred.async('text');
+    return parseKmlToGeoJson(kmlText);
+  }
+
+  const text=await file.text();
+  if(name.endsWith('.kml'))return parseKmlToGeoJson(text);
+  return parseGpxToGeoJson(text);
+}
+
 function parseGpxToGeoJson(text){
   try{
     const doc=new DOMParser().parseFromString(text,'application/xml');
     if(doc.querySelector('parsererror'))return null;
-    let points=[...doc.querySelectorAll('trkpt')];
-    if(!points.length)points=[...doc.querySelectorAll('rtept')];
-    const coords=points.map(p=>[Number(p.getAttribute('lon')),Number(p.getAttribute('lat'))])
-      .filter(([lon,lat])=>Number.isFinite(lon)&&Number.isFinite(lat));
-    if(coords.length<2)return null;
-    return {type:'LineString',coordinates:coords};
-  }catch(e){return null}
+
+    const segments=[];
+
+    const tracks=[...doc.getElementsByTagNameNS('*','trkseg')];
+    tracks.forEach(segment=>{
+      const coords=[...segment.getElementsByTagNameNS('*','trkpt')]
+        .map(point=>[
+          Number(point.getAttribute('lon')),
+          Number(point.getAttribute('lat'))
+        ])
+        .filter(isValidRouteCoordinate);
+      if(coords.length>=2)segments.push(coords);
+    });
+
+    const routePoints=[...doc.getElementsByTagNameNS('*','rtept')]
+      .map(point=>[
+        Number(point.getAttribute('lon')),
+        Number(point.getAttribute('lat'))
+      ])
+      .filter(isValidRouteCoordinate);
+
+    if(routePoints.length>=2)segments.push(routePoints);
+
+    if(!segments.length){
+      const allTrackPoints=[...doc.getElementsByTagNameNS('*','trkpt')]
+        .map(point=>[
+          Number(point.getAttribute('lon')),
+          Number(point.getAttribute('lat'))
+        ])
+        .filter(isValidRouteCoordinate);
+      if(allTrackPoints.length>=2)segments.push(allTrackPoints);
+    }
+
+    return longestRouteSegment(segments);
+  }catch(error){
+    console.error('GPX lezen mislukt:',error);
+    return null;
+  }
+}
+
+function parseKmlToGeoJson(text){
+  try{
+    const doc=new DOMParser().parseFromString(text,'application/xml');
+    if(doc.querySelector('parsererror'))return null;
+
+    const segments=[];
+
+    const lineStrings=[...doc.getElementsByTagNameNS('*','LineString')];
+    lineStrings.forEach(line=>{
+      const coordinateNodes=[...line.getElementsByTagNameNS('*','coordinates')];
+      coordinateNodes.forEach(node=>{
+        const coords=parseKmlCoordinateText(node.textContent||'');
+        if(coords.length>=2)segments.push(coords);
+      });
+    });
+
+    const tracks=[...doc.getElementsByTagNameNS('*','Track')];
+    tracks.forEach(track=>{
+      const coords=[...track.getElementsByTagNameNS('*','coord')]
+        .map(node=>{
+          const values=(node.textContent||'').trim().split(/\s+/).map(Number);
+          return [values[0],values[1]];
+        })
+        .filter(isValidRouteCoordinate);
+      if(coords.length>=2)segments.push(coords);
+    });
+
+    if(!segments.length){
+      const coordinateNodes=[...doc.getElementsByTagNameNS('*','coordinates')];
+      coordinateNodes.forEach(node=>{
+        const coords=parseKmlCoordinateText(node.textContent||'');
+        if(coords.length>=2)segments.push(coords);
+      });
+    }
+
+    return longestRouteSegment(segments);
+  }catch(error){
+    console.error('KML/KMZ lezen mislukt:',error);
+    return null;
+  }
+}
+
+function parseKmlCoordinateText(text){
+  return String(text)
+    .trim()
+    .split(/\s+/)
+    .map(item=>{
+      const values=item.split(',').map(Number);
+      return [values[0],values[1]];
+    })
+    .filter(isValidRouteCoordinate);
+}
+
+function isValidRouteCoordinate([lon,lat]){
+  return Number.isFinite(lon)&&Number.isFinite(lat)&&
+    Math.abs(lon)<=180&&Math.abs(lat)<=90;
+}
+
+function longestRouteSegment(segments){
+  const usable=(segments||[]).filter(segment=>Array.isArray(segment)&&segment.length>=2);
+  if(!usable.length)return null;
+
+  const longest=usable.sort((a,b)=>b.length-a.length)[0];
+  return {type:'LineString',coordinates:longest};
 }
 function normaliseRouteGeojson(value){
   if(!value)return null;
@@ -691,7 +851,7 @@ function renderTripRouteMap(containerId,geojson,options={}){
 
   if(!route){
     el.className=(el.className+' route-map-error').trim();
-    el.innerHTML='Geen bruikbare GPX-route gevonden.';
+    el.innerHTML='Geen bruikbare route gevonden.';
     return;
   }
 
