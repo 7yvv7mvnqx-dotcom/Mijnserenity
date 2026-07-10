@@ -211,3 +211,19 @@ body{padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom))}
   border:1px dashed #8ba0ad;
   border-radius:12px;
 }
+
+/* Cloud 4.0.6 — Waterkaarten openen */
+.waterkaarten-tile{
+  border-color:#177c96;
+  background:linear-gradient(145deg,#eefbff,#dff4f8);
+}
+.waterkaarten-button{
+  background:#117d96;
+  border-color:#117d96;
+  color:#fff;
+}
+.waterkaarten-inline-button{
+  width:100%;
+  margin-top:0;
+  margin-bottom:14px;
+}

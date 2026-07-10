@@ -635,6 +635,16 @@ function updateLatestRouteDashboard(){
   },120);
 }
 
+
+const WATERKAARTEN_URL='https://mijn.waterkaarten.app/';
+
+function openWaterkaarten(){
+  const opened=window.open(WATERKAARTEN_URL,'_blank','noopener,noreferrer');
+  if(!opened){
+    window.location.href=WATERKAARTEN_URL;
+  }
+}
+
 function captainNavigate(id, sourceButton=null){
   const desktopButtons=[...document.querySelectorAll('.tab')];
   const map={dashboard:0,map:1,pois:2,logbook:3,costs:4,finance:5,settings:6,boat:7};

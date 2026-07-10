@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 4.0.5 · Waterkaarten KMZ</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 4.0.6 · Waterkaarten openen</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -65,6 +65,9 @@
       <button class="dashboard-tile" onclick="goToTab('map')">
         <span class="tile-icon">🗺️</span><b>Kaart</b><small>POI's en positie</small>
       </button>
+      <button class="dashboard-tile waterkaarten-tile" onclick="openWaterkaarten()">
+        <span class="tile-icon">🧭</span><b>Waterkaarten</b><small>Open routeplanner</small>
+      </button>
       <button class="dashboard-tile" onclick="goToTab('logbook')">
         <span class="tile-icon">📖</span><b>Logboek</b><small id="dTrips">0 vaartochten</small>
       </button>
@@ -112,6 +115,7 @@
         <button onclick="locateMe()">📍 Mijn positie</button>
         <button class="secondary" onclick="fitPoiMarkers()">Alle POI's</button>
         <button class="secondary" onclick="toggleFavoritesOnly()">⭐ Alleen favorieten</button>
+        <button class="waterkaarten-button" onclick="openWaterkaarten()">🧭 Open Waterkaarten</button>
       </div>
     </div>
     <div class="card map-card"><div id="mapCanvas"></div></div>
@@ -193,6 +197,9 @@
       <label>Route uit Waterkaarten toevoegen</label>
       <input id="tripGpx" type="file" accept=".gpx,.kml,.kmz,application/gpx+xml,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/zip,application/xml,text/xml">
       <p class="small">Kies een GPX-, KML- of KMZ-route uit Waterkaarten. KMZ wordt automatisch uitgepakt en op de kaart gezet.</p>
+      <button type="button" class="secondary waterkaarten-inline-button" onclick="openWaterkaarten()">
+        🧭 Route maken of openen in Waterkaarten
+      </button>
       <label>Foto's toevoegen</label>
       <input id="tripPhotos" type="file" accept="image/*" multiple>
       <p class="small">Kies foto's uit je bibliotheek of maak een nieuwe foto. Maximaal 10 foto's per keer.</p>
