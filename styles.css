@@ -238,3 +238,8 @@ body{padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom))}
 .waterkaarten-tile{
   -webkit-tap-highlight-color:transparent;
 }
+
+/* Cloud 4.0.9 — inklapbaar logboek zoeken */
+#tripSearchWrap{
+  padding-top:12px;
+}

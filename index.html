@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 4.0.8 · Waterkaarten Opdracht</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 4.0.9 · Inklapbaar zoeken</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -210,31 +210,35 @@
       <div id="tripProgress" class="status small hidden"></div>
       </div>
     </div>
-    <div class="card">
-      <h2>Logboek zoeken</h2>
-      <div class="row">
-        <div>
-          <label>Periode</label>
-          <select id="tripDateFilter" onchange="updateTripFilterInput()">
-            <option value="">Alles</option>
-            <option value="day">Dag</option>
-            <option value="week">Week</option>
-            <option value="month">Maand</option>
-            <option value="year">Jaar</option>
-          </select>
+    <div class="card collapsible-card">
+      <button class="section-toggle" type="button" onclick="toggleSection('tripSearchWrap',this)">
+        <span>Logboek zoeken</span><span class="chevron">⌄</span>
+      </button>
+      <div id="tripSearchWrap" class="collapsible-content hidden">
+        <div class="row">
+          <div>
+            <label>Periode</label>
+            <select id="tripDateFilter" onchange="updateTripFilterInput()">
+              <option value="">Alles</option>
+              <option value="day">Dag</option>
+              <option value="week">Week</option>
+              <option value="month">Maand</option>
+              <option value="year">Jaar</option>
+            </select>
+          </div>
+          <div>
+            <label id="tripFilterLabel">Kies periode</label>
+            <input id="tripFilterDay" class="trip-filter-input hidden" type="date" onchange="renderTripList()">
+            <input id="tripFilterWeek" class="trip-filter-input hidden" type="week" onchange="renderTripList()">
+            <input id="tripFilterMonth" class="trip-filter-input hidden" type="month" onchange="renderTripList()">
+            <select id="tripFilterYear" class="trip-filter-input hidden" onchange="renderTripList()"></select>
+            <div id="tripFilterEmpty" class="status small">Kies eerst dag, week, maand of jaar.</div>
+          </div>
         </div>
-        <div>
-          <label id="tripFilterLabel">Kies periode</label>
-          <input id="tripFilterDay" class="trip-filter-input hidden" type="date" onchange="renderTripList()">
-          <input id="tripFilterWeek" class="trip-filter-input hidden" type="week" onchange="renderTripList()">
-          <input id="tripFilterMonth" class="trip-filter-input hidden" type="month" onchange="renderTripList()">
-          <select id="tripFilterYear" class="trip-filter-input hidden" onchange="renderTripList()"></select>
-          <div id="tripFilterEmpty" class="status small">Kies eerst dag, week, maand of jaar.</div>
+        <div class="actions">
+          <button class="secondary" onclick="setTripFilterToday()">Vandaag</button>
+          <button class="secondary" onclick="clearTripFilters()">Wis filter</button>
         </div>
-      </div>
-      <div class="actions">
-        <button class="secondary" onclick="setTripFilterToday()">Vandaag</button>
-        <button class="secondary" onclick="clearTripFilters()">Wis filter</button>
       </div>
     </div>
     <div class="card"><h2>Logboek</h2><div id="tripList"></div></div>
