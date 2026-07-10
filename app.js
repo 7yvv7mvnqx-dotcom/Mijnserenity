@@ -1206,6 +1206,21 @@ function getIsoWeekRange(weekValue){
   const sunday=new Date(monday);sunday.setUTCDate(monday.getUTCDate()+6);
   return [monday.toISOString().slice(0,10),sunday.toISOString().slice(0,10)];
 }
+
+function getTripDateStatusClass(tripDate){
+  if(!tripDate)return '';
+
+  const today=new Date();
+  today.setHours(0,0,0,0);
+
+  const tripDay=new Date(`${tripDate}T00:00:00`);
+  if(Number.isNaN(tripDay.getTime()))return '';
+
+  if(tripDay<today)return 'trip-past';
+  if(tripDay>today)return 'trip-future';
+  return 'trip-today';
+}
+
 function renderTripList(){
   if(!$('tripList'))return;
   populateTripYears();
@@ -1239,7 +1254,8 @@ function renderTripList(){
       ?`<div id="${mapId}" class="trip-route-map"></div>`
       :'';
 
-    return `<details class="trip-row" data-trip-id="${t.id}" ontoggle="handleTripToggle(this,'${mapId}','${t.id}')">
+    const dateStatusClass=getTripDateStatusClass(t.trip_date);
+    return `<details class="trip-row ${dateStatusClass}" data-trip-id="${t.id}" ontoggle="handleTripToggle(this,'${mapId}','${t.id}')">
       <summary>
         <div class="trip-row-title">${esc(t.title||'Vaartocht')}</div>
         <div class="trip-row-date">${esc(t.trip_date)}</div>

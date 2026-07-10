@@ -368,3 +368,50 @@ header{
     padding-top:max(16px,env(safe-area-inset-top));
   }
 }
+
+/* Cloud 5.0.1 — logstatus op datum */
+.trip-row.trip-past{
+  border:2px solid #2fb66f;
+  box-shadow:0 0 0 1px rgba(47,182,111,.18),0 8px 24px rgba(47,182,111,.10);
+}
+.trip-row.trip-future{
+  border:2px solid #e55361;
+  box-shadow:0 0 0 1px rgba(229,83,97,.18),0 8px 24px rgba(229,83,97,.10);
+}
+.trip-row.trip-today{
+  border:2px solid #45c8ff;
+  box-shadow:0 0 0 1px rgba(69,200,255,.18),0 8px 24px rgba(69,200,255,.10);
+}
+.trip-row.trip-past summary::after{
+  content:"Gevaren";
+  margin-left:auto;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(47,182,111,.16);
+  color:#76e3a8;
+  font-size:12px;
+  font-weight:800;
+}
+.trip-row.trip-future summary::after{
+  content:"Nog te varen";
+  margin-left:auto;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(229,83,97,.16);
+  color:#ff9ca6;
+  font-size:12px;
+  font-weight:800;
+}
+.trip-row.trip-today summary::after{
+  content:"Vandaag";
+  margin-left:auto;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(69,200,255,.16);
+  color:#8ee1ff;
+  font-size:12px;
+  font-weight:800;
+}
+.trip-row summary{
+  gap:10px;
+}
