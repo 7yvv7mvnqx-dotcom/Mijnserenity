@@ -32,3 +32,5 @@ h1,h2,h3{margin:0 0 10px}main{max-width:980px;margin:auto;padding:14px}.sub,.sma
 .trip-photo-grid img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;cursor:zoom-in;background:#071827}
 .trip-photo-delete{position:absolute;right:5px;top:5px;padding:6px 8px;border-radius:999px;background:rgba(0,0,0,.72);color:white;font-size:12px}
 @media(max-width:700px){.trip-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.finance-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}.finance-row:first-child{border-top:0}.finance-bar{height:9px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:5px}.finance-bar span{display:block;height:100%;background:var(--accent)}

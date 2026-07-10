@@ -5,7 +5,7 @@ const TRIP_PHOTO_BUCKET='trip-photos';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],favoritesOnly=false;
+let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],tripCache=[],settingsCache=null,favoritesOnly=false;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 function setMsg(t){$('authMsg').textContent=t}
@@ -16,14 +16,14 @@ function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
 async function signOut(){await sb.auth.signOut()}
-async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+currentUser.email;await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}}
+async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+currentUser.email;await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}}
 sb.auth.onAuthStateChange((_e,s)=>initialise(s));
 
 async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
 function renderBoat(){$('noBoatCard').classList.toggle('hidden',!!currentBoat);$('boatCard').classList.toggle('hidden',!currentBoat);$('dBoat').textContent=currentBoat?.name||'-';if(currentBoat){$('boatName').textContent=currentBoat.name;$('rolePill').textContent=currentRole==='owner'?'Eigenaar':'Lid';$('ownerInvite').classList.toggle('hidden',currentRole!=='owner')}}
-async function createBoat(){const {error}=await sb.rpc('create_boat_with_owner',{boat_name:$('newBoatName').value.trim()||'Serenity'});if(error)return alert('Boot aanmaken mislukt: '+error.message);await loadMembership();renderBoat();await Promise.all([loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}
+async function createBoat(){const {error}=await sb.rpc('create_boat_with_owner',{boat_name:$('newBoatName').value.trim()||'Serenity'});if(error)return alert('Boot aanmaken mislukt: '+error.message);await loadMembership();renderBoat();await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}
 async function createInvite(){const {data,error}=await sb.rpc('create_boat_invite',{target_boat:currentBoat.id});if(error)return alert('Deelcode maken mislukt: '+error.message);$('inviteCode').textContent=data}
-async function joinBoat(){const code=$('joinCode').value.trim();if(!code)return alert('Vul eerst de deelcode in.');const {error}=await sb.rpc('join_boat_by_code',{invite_code:code});if(error)return alert('Deelnemen mislukt: '+error.message);await loadMembership();renderBoat();await Promise.all([loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}
+async function joinBoat(){const code=$('joinCode').value.trim();if(!code)return alert('Vul eerst de deelcode in.');const {error}=await sb.rpc('join_boat_by_code',{invite_code:code});if(error)return alert('Deelnemen mislukt: '+error.message);await loadMembership();renderBoat();await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}
 
 async function savePoi(){
   if(!currentBoat)return alert('Koppel eerst Serenity.');
@@ -93,7 +93,7 @@ async function loadPois(){
     loadPoiPhotos()
   ]);
   if(error)return alert(error.message);
-  poiCache=data;$('dPois').textContent=data.length;
+  poiCache=data;poiPhotoCache=photos;$('dPois').textContent=data.length;
   $('poiList').innerHTML=data.length?data.map(p=>{
     const photoHtml=(photos[p.id]||[]).map(ph=>`<div class="photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(p.name)}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="photo-delete" onclick="deletePhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
     return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?'<span class="favorite-badge">⭐</span>':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${photoHtml?`<div class="photo-grid">${photoHtml}</div>`:''}<div class="actions"><button class="secondary" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`;
@@ -102,8 +102,16 @@ async function loadPois(){
 
 async function addCost(){if(!currentBoat)return alert('Koppel eerst Serenity.');const row={boat_id:currentBoat.id,created_by:currentUser.id,expense_date:$('costDate').value,amount:Number($('costAmount').value)||0,category:$('costCategory').value,description:$('costDescription').value.trim()};const {error}=await sb.from('costs').insert(row);if(error)return alert(error.message);$('costAmount').value='';$('costDescription').value=''}
 async function deleteCost(id){const {error}=await sb.from('costs').delete().eq('id',id);if(error)alert(error.message)}
-async function loadCosts(){const {data,error}=await sb.from('costs').select('*').eq('boat_id',currentBoat.id).order('expense_date',{ascending:false});if(error)return alert(error.message);$('dCosts').textContent='€'+data.reduce((s,c)=>s+Number(c.amount||0),0).toFixed(0);$('costList').innerHTML=data.length?data.map(c=>`<div class="item"><h3>€${Number(c.amount).toFixed(2)} · ${esc(c.category)}</h3><div class="small">${esc(c.expense_date)} · ${esc(c.description)}</div><button class="danger" onclick="deleteCost('${c.id}')">Verwijder</button></div>`).join(''):'<span class="small">Nog geen kosten.</span>'}
-function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
+async function loadCosts(){const {data,error}=await sb.from('costs').select('*').eq('boat_id',currentBoat.id).order('expense_date',{ascending:false});if(error)return alert(error.message);costCache=data;$('dCosts').textContent='€'+data.reduce((s,c)=>s+Number(c.amount||0),0).toFixed(0);$('costList').innerHTML=data.length?data.map(c=>`<div class="item"><h3>€${Number(c.amount).toFixed(2)} · ${esc(c.category)}</h3><div class="small">${esc(c.expense_date)} · ${esc(c.description)}</div><button class="danger" onclick="deleteCost('${c.id}')">Verwijder</button></div>`).join(''):'<span class="small">Nog geen kosten.</span>'}
+function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},loadSettings).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
+
+function resetPoiFilters(){$('poiSearch').value='';$('poiFilterCategory').value='';$('poiFilterRating').value='0';$('poiFilterExtra').value='';renderPoiList()}
+function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<div class="actions"><button class="secondary" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
+async function loadSettings(){if(!currentBoat)return;const{data,error}=await sb.from('boat_settings').select('*').eq('boat_id',currentBoat.id).maybeSingle();if(!error)settingsCache=data||{boat_id:currentBoat.id,boat_name:currentBoat.name}}
+function loadSettingsForm(){if(!settingsCache)return;$('settingBoatName').value=settingsCache.boat_name||'Serenity';$('settingFuelPrice').value=settingsCache.fuel_price??'';$('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';$('settingTankCapacity').value=settingsCache.tank_capacity??''}
+async function saveSettings(){const row={boat_id:currentBoat.id,boat_name:$('settingBoatName').value.trim()||'Serenity',fuel_price:Number($('settingFuelPrice').value)||null,fuel_per_hour:Number($('settingFuelPerHour').value)||null,tank_capacity:Number($('settingTankCapacity').value)||null,updated_at:new Date().toISOString()};const{error}=await sb.from('boat_settings').upsert(row,{onConflict:'boat_id'});if(error)return alert(error.message);settingsCache=row;$('settingsMsg').textContent='Instellingen opgeslagen ✅';$('settingsMsg').classList.remove('hidden');previewFuelCalculation()}
+function previewFuelCalculation(){if(!$('fuelPreview'))return;const h=Number($('tripHours').value)||0,l=Number($('tripFuelLiters').value)||(h&&settingsCache?.fuel_per_hour?h*Number(settingsCache.fuel_per_hour):0),c=Number($('tripFuelCost').value)||(l&&settingsCache?.fuel_price?l*Number(settingsCache.fuel_price):0);$('fuelPreview').textContent=l?`Geschat: ${l.toFixed(1)} liter · €${c.toFixed(2)}`:'Vul vaartijd in en stel verbruik/prijs in.'}
+function renderFinance(){if(!$('fTotal'))return;const now=String(new Date().getFullYear()),allFuel=tripCache.reduce((s,t)=>s+Number(t.fuel_cost||0),0),allRegular=costCache.reduce((s,c)=>s+Number(c.amount||0),0),hours=tripCache.reduce((s,t)=>s+Number(t.duration_hours||0),0),year=costCache.filter(c=>String(c.expense_date).startsWith(now)).reduce((s,c)=>s+Number(c.amount||0),0)+tripCache.filter(t=>String(t.trip_date).startsWith(now)).reduce((s,t)=>s+Number(t.fuel_cost||0),0);$('fTotal').textContent='€'+(allFuel+allRegular).toFixed(0);$('fYear').textContent='€'+year.toFixed(0);$('fFuel').textContent='€'+allFuel.toFixed(0);$('fPerHour').textContent=hours?'€'+((allFuel+allRegular)/hours).toFixed(2):'€0';const groups={};costCache.forEach(c=>groups[c.category||'Overig']=(groups[c.category||'Overig']||0)+Number(c.amount||0));groups['Brandstof logboek']=allFuel;const max=Math.max(1,...Object.values(groups));$('financeBreakdown').innerHTML=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="finance-row"><div><b>${esc(k)}</b><div class="finance-bar"><span style="width:${Math.round(v/max*100)}%"></span></div></div><div>€${v.toFixed(2)}</div></div>`).join('');const months={};costCache.forEach(c=>{const m=String(c.expense_date).slice(0,7);months[m]=(months[m]||0)+Number(c.amount||0)});tripCache.forEach(t=>{const m=String(t.trip_date).slice(0,7);months[m]=(months[m]||0)+Number(t.fuel_cost||0)});$('financeMonths').innerHTML=Object.entries(months).sort().map(([m,v])=>`<div class="finance-row"><div>${m}</div><div>€${v.toFixed(2)}</div></div>`).join('')}
 
 function initMap(){
   if(mapInstance){setTimeout(()=>mapInstance.invalidateSize(),100);return}
@@ -169,7 +177,7 @@ async function saveTrip(){
     distance_km:Number($('tripDistance').value)||null,
     duration_hours:Number($('tripHours').value)||null,
     crew:$('tripCrew').value.trim(),
-    notes:$('tripNotes').value.trim(),
+    notes:$('tripNotes').value.trim(),fuel_liters:Number($('tripFuelLiters').value)||null,fuel_cost:Number($('tripFuelCost').value)||null,
     updated_at:new Date().toISOString()
   };
   setTripProgress(id?'Vaartocht bijwerken…':'Vaartocht opslaan…');
@@ -178,7 +186,7 @@ async function saveTrip(){
     const {error}=await sb.from('trips').update({
       trip_date:row.trip_date,title:row.title,departure:row.departure,arrival:row.arrival,
       distance_km:row.distance_km,duration_hours:row.duration_hours,crew:row.crew,
-      notes:row.notes,updated_at:row.updated_at
+      notes:row.notes,fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost,updated_at:row.updated_at
     }).eq('id',id);
     if(error){setTripProgress('');return alert(error.message)}
   }else{
@@ -186,7 +194,7 @@ async function saveTrip(){
     if(error){setTripProgress('');return alert(error.message)}
     tripId=data.id;
   }
-  const files=[...$('tripPhotos').files].slice(0,10);
+  if(!row.fuel_liters&&row.duration_hours&&settingsCache?.fuel_per_hour)row.fuel_liters=Number(row.duration_hours)*Number(settingsCache.fuel_per_hour);if(!row.fuel_cost&&row.fuel_liters&&settingsCache?.fuel_price)row.fuel_cost=Number(row.fuel_liters)*Number(settingsCache.fuel_price);await sb.from('trips').update({fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost}).eq('id',tripId);const files=[...$('tripPhotos').files].slice(0,10);
   if(files.length)await uploadTripPhotos(tripId,files);
   clearTripForm();
   await loadTrips();
@@ -197,7 +205,7 @@ function setTripProgress(text){
   $('tripProgress').classList.toggle('hidden',!text);
 }
 function clearTripForm(){
-  ['tripId','tripTitle','tripFrom','tripTo','tripDistance','tripHours','tripCrew','tripNotes'].forEach(id=>$(id).value='');
+  ['tripId','tripTitle','tripFrom','tripTo','tripDistance','tripHours','tripFuelLiters','tripFuelCost','tripCrew','tripNotes'].forEach(id=>$(id).value='');
   $('tripPhotos').value='';
   $('tripDate').value=new Date().toISOString().slice(0,10);
   $('tripFormTitle').textContent='Nieuwe vaartocht';
@@ -206,14 +214,14 @@ function clearTripForm(){
   setTripProgress('');
 }
 function cancelTripEdit(){clearTripForm()}
-function editTrip(id,tripDate,title,departure,arrival,distance,hours,crew,notes){
+function editTrip(id,tripDate,title,departure,arrival,distance,hours,fuelLiters,fuelCost,crew,notes){
   $('tripId').value=id;
   $('tripDate').value=tripDate||'';
   $('tripTitle').value=title||'';
   $('tripFrom').value=departure||'';
   $('tripTo').value=arrival||'';
   $('tripDistance').value=distance??'';
-  $('tripHours').value=hours??'';
+  $('tripHours').value=hours??'';$('tripFuelLiters').value=fuelLiters??'';$('tripFuelCost').value=fuelCost??'';
   $('tripCrew').value=crew||'';
   $('tripNotes').value=notes||'';
   $('tripFormTitle').textContent='Vaartocht bewerken';
@@ -274,10 +282,10 @@ async function loadTrips(){
     loadTripPhotos()
   ]);
   if(error){console.error(error);return}
-  $('dTrips').textContent=data.length;
+  tripCache=data;$('dTrips').textContent=data.length;
   $('tripList').innerHTML=data.length?data.map(t=>{
     const photoHtml=(photos[t.id]||[]).map(ph=>`<div class="trip-photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(t.title||'vaarttocht')}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="trip-photo-delete" onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
-    return `<div class="item"><h3>${esc(t.title||'Vaartocht')}</h3><div class="small">${esc(t.trip_date)} · ${esc(t.departure||'')} → ${esc(t.arrival||'')}</div><div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span></div><p>${esc(t.notes||'')}</p>${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}<div class="actions"><button class="secondary" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>Bewerken</button><button class="danger" onclick="deleteTrip('${t.id}')">Verwijderen</button></div></div>`;
+    return `<div class="item"><h3>${esc(t.title||'Vaartocht')}</h3><div class="small">${esc(t.trip_date)} · ${esc(t.departure||'')} → ${esc(t.arrival||'')}</div><div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span><span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span><span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span></div><p>${esc(t.notes||'')}</p>${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}<div class="actions"><button class="secondary" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.fuel_liters)},${JSON.stringify(t.fuel_cost)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>Bewerken</button><button class="danger" onclick="deleteTrip('${t.id}')">Verwijderen</button></div></div>`;
   }).join(''):'<span class="small">Nog geen vaartochten.</span>';
 }
 
