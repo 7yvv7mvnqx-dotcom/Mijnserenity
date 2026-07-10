@@ -125,17 +125,62 @@ function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveCh
 
 function resetPoiFilters(){$('poiSearch').value='';$('poiFilterCategory').value='';$('poiFilterRating').value='0';$('poiFilterExtra').value='';renderPoiList()}
 function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
-async function loadSettings(){if(!currentBoat)return;const{data,error}=await sb.from('boat_settings').select('*').eq('boat_id',currentBoat.id).maybeSingle();if(!error)settingsCache=data||{boat_id:currentBoat.id,boat_name:currentBoat.name}}
+async function loadSettings(){
+  if(!currentBoat)return;
+  const {data,error}=await sb
+    .from('boat_settings')
+    .select('*')
+    .eq('boat_id',currentBoat.id)
+    .maybeSingle();
+
+  if(error){
+    console.error('Instellingen laden mislukt:',error);
+    return;
+  }
+
+  settingsCache=data||{
+    boat_id:currentBoat.id,
+    boat_name:currentBoat.name,
+    dashboard_photo_path:null
+  };
+
+  await loadDashboardPhoto();
+}
 
 async function loadDashboardPhoto(){
-  const img=$('dashboardBoatPhoto'),placeholder=$('dashboardPhotoPlaceholder');
+  const img=$('dashboardBoatPhoto');
+  const placeholder=$('dashboardPhotoPlaceholder');
   if(!img||!placeholder)return;
-  if(!settingsCache?.dashboard_photo_path){
-    img.classList.add('hidden');placeholder.classList.remove('hidden');return;
+
+  const photoPath=settingsCache?.dashboard_photo_path;
+  if(!photoPath){
+    img.removeAttribute('src');
+    img.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    return;
   }
-  const {data,error}=await sb.storage.from(BOAT_PHOTO_BUCKET).createSignedUrl(settingsCache.dashboard_photo_path,3600);
-  if(error){img.classList.add('hidden');placeholder.classList.remove('hidden');return}
-  img.src=data.signedUrl+'&v='+Date.now();img.classList.remove('hidden');placeholder.classList.add('hidden');
+
+  const {data,error}=await sb.storage
+    .from(BOAT_PHOTO_BUCKET)
+    .createSignedUrl(photoPath,3600);
+
+  if(error||!data?.signedUrl){
+    console.error('Dashboardfoto laden mislukt:',error);
+    img.removeAttribute('src');
+    img.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    return;
+  }
+
+  img.onload=()=>{
+    img.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  };
+  img.onerror=()=>{
+    img.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+  };
+  img.src=data.signedUrl+(data.signedUrl.includes('?')?'&':'?')+'v='+Date.now();
 }
 async function uploadDashboardPhoto(){
   const file=$('settingBoatPhoto').files[0];
@@ -157,9 +202,9 @@ async function uploadDashboardPhoto(){
   const row={
     boat_id:currentBoat.id,
     boat_name:settingsCache?.boat_name||currentBoat.name||'Serenity',
-    fuel_price:settingsCache?.fuel_price||null,
-    fuel_per_hour:settingsCache?.fuel_per_hour||null,
-    tank_capacity:settingsCache?.tank_capacity||null,
+    fuel_price:settingsCache?.fuel_price??null,
+    fuel_per_hour:settingsCache?.fuel_per_hour??null,
+    tank_capacity:settingsCache?.tank_capacity??null,
     dashboard_photo_path:path,
     updated_at:new Date().toISOString()
   };
@@ -184,7 +229,26 @@ async function removeDashboardPhoto(){
 }
 
 function loadSettingsForm(){if(!settingsCache)return;$('settingBoatName').value=settingsCache.boat_name||'Serenity';$('settingFuelPrice').value=settingsCache.fuel_price??'';$('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';$('settingTankCapacity').value=settingsCache.tank_capacity??''}
-async function saveSettings(){const row={boat_id:currentBoat.id,boat_name:$('settingBoatName').value.trim()||'Serenity',fuel_price:Number($('settingFuelPrice').value)||null,fuel_per_hour:Number($('settingFuelPerHour').value)||null,tank_capacity:Number($('settingTankCapacity').value)||null,updated_at:new Date().toISOString()};const{error}=await sb.from('boat_settings').upsert(row,{onConflict:'boat_id'});if(error)return alert(error.message);settingsCache=row;$('settingsMsg').textContent='Instellingen opgeslagen ✅';$('settingsMsg').classList.remove('hidden');previewFuelCalculation()}
+async function saveSettings(){
+  const row={
+    boat_id:currentBoat.id,
+    boat_name:$('settingBoatName').value.trim()||'Serenity',
+    fuel_price:$('settingFuelPrice').value===''?null:Number($('settingFuelPrice').value),
+    fuel_per_hour:$('settingFuelPerHour').value===''?null:Number($('settingFuelPerHour').value),
+    tank_capacity:$('settingTankCapacity').value===''?null:Number($('settingTankCapacity').value),
+    dashboard_photo_path:settingsCache?.dashboard_photo_path??null,
+    updated_at:new Date().toISOString()
+  };
+
+  const {error}=await sb.from('boat_settings').upsert(row,{onConflict:'boat_id'});
+  if(error)return alert(error.message);
+
+  settingsCache={...(settingsCache||{}),...row};
+  $('settingsMsg').textContent='Instellingen opgeslagen ✅';
+  $('settingsMsg').classList.remove('hidden');
+  await loadDashboardPhoto();
+  previewFuelCalculation();
+}
 function previewFuelCalculation(){if(!$('fuelPreview'))return;const h=Number($('tripHours').value)||0,l=Number($('tripFuelLiters').value)||(h&&settingsCache?.fuel_per_hour?h*Number(settingsCache.fuel_per_hour):0),c=Number($('tripFuelCost').value)||(l&&settingsCache?.fuel_price?l*Number(settingsCache.fuel_price):0);$('fuelPreview').textContent=l?`Geschat: ${l.toFixed(1)} liter · €${c.toFixed(2)}`:'Vul vaartijd in en stel verbruik/prijs in.'}
 function renderFinance(){
   if(!$('fTotal'))return;
