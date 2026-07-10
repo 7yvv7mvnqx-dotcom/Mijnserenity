@@ -637,12 +637,110 @@ function updateLatestRouteDashboard(){
 
 
 const WATERKAARTEN_URL='https://mijn.waterkaarten.app/';
+const WATERKAARTEN_APPSTORE_URL='https://apps.apple.com/nl/app/waterkaarten-vaar-navigatie/id421372355';
+
+function isAppleMobile(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)||
+    (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+}
+
+function xmlEscape(value){
+  return String(value??'')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&apos;");
+}
+
+function tripToGpxFile(trip){
+  const route=normaliseRouteGeojson(trip?.route_geojson);
+  if(!route)return null;
+
+  const trackPoints=route.coordinates.map(([lon,lat])=>
+    `<trkpt lat="${Number(lat).toFixed(7)}" lon="${Number(lon).toFixed(7)}"></trkpt>`
+  ).join('');
+
+  const title=trip?.title||'Waterkaarten route';
+  const gpx=`<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1"
+  creator="MijnSerenity"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>${xmlEscape(title)}</name>
+    ${trip?.trip_date?`<time>${xmlEscape(trip.trip_date)}T00:00:00Z</time>`:''}
+  </metadata>
+  <trk>
+    <name>${xmlEscape(title)}</name>
+    <trkseg>${trackPoints}</trkseg>
+  </trk>
+</gpx>`;
+
+  const safeName=String(title)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zA-Z0-9_-]+/g,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,60)||'MijnSerenity-route';
+
+  return new File([gpx],`${safeName}.gpx`,{type:'application/gpx+xml'});
+}
+
+function downloadRouteFile(file){
+  const url=URL.createObjectURL(file);
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=file.name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+function openTripInWaterkaarten(tripId){
+  const trip=tripCache.find(item=>String(item.id)===String(tripId));
+  const file=tripToGpxFile(trip);
+
+  if(!file){
+    alert('Bij deze vaartocht staat geen route.');
+    return;
+  }
+
+  if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){
+    navigator.share({
+      files:[file],
+      title:trip?.title||'MijnSerenity-route',
+      text:'Open deze route met de Waterkaarten-app.'
+    }).catch(error=>{
+      if(error?.name!=='AbortError'){
+        console.error('Delen naar Waterkaarten mislukt:',error);
+        downloadRouteFile(file);
+        alert('De route is gedownload. Tik op Deel en kies Waterkaarten.');
+      }
+    });
+    return;
+  }
+
+  downloadRouteFile(file);
+  alert('De route is gedownload. Tik op Deel en kies Waterkaarten.');
+}
 
 function openWaterkaarten(){
-  const opened=window.open(WATERKAARTEN_URL,'_blank','noopener,noreferrer');
-  if(!opened){
-    window.location.href=WATERKAARTEN_URL;
+  if(isAppleMobile()){
+    const latestTrip=tripCache.find(item=>normaliseRouteGeojson(item.route_geojson));
+    if(latestTrip){
+      openTripInWaterkaarten(latestTrip.id);
+      return;
+    }
+
+    window.location.href=WATERKAARTEN_APPSTORE_URL;
+    return;
   }
+
+  const opened=window.open(WATERKAARTEN_URL,'_blank','noopener,noreferrer');
+  if(!opened)window.location.href=WATERKAARTEN_URL;
 }
 
 function captainNavigate(id, sourceButton=null){
@@ -1051,6 +1149,9 @@ function renderTripList(){
             ${JSON.stringify(t.crew)},
             ${JSON.stringify(t.notes)}
           )'>✏️ Bewerken</button>
+          ${normaliseRouteGeojson(t.route_geojson)
+            ?`<button class="waterkaarten-button" onclick="openTripInWaterkaarten('${t.id}')">🧭 Open in Waterkaarten</button>`
+            :''}
           <button class="danger-button" onclick="deleteTrip('${t.id}')">🗑️ Log verwijderen</button>
         </div>
       </div>

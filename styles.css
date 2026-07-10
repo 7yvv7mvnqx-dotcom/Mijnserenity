@@ -227,3 +227,8 @@ body{padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom))}
   margin-top:0;
   margin-bottom:14px;
 }
+
+/* Cloud 4.0.7 — Waterkaarten op iPhone en iPad */
+.trip-actions .waterkaarten-button{
+  font-weight:700;
+}
