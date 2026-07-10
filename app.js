@@ -638,6 +638,9 @@ function updateLatestRouteDashboard(){
 
 const WATERKAARTEN_URL='https://mijn.waterkaarten.app/';
 const WATERKAARTEN_APPSTORE_URL='https://apps.apple.com/nl/app/waterkaarten-vaar-navigatie/id421372355';
+const WATERKAARTEN_SHORTCUT_NAME='Open Waterkaarten';
+const WATERKAARTEN_SHORTCUT_URL=
+  'shortcuts://run-shortcut?name='+encodeURIComponent(WATERKAARTEN_SHORTCUT_NAME);
 
 function isAppleMobile(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent)||
@@ -729,13 +732,7 @@ function openTripInWaterkaarten(tripId){
 
 function openWaterkaarten(){
   if(isAppleMobile()){
-    const latestTrip=tripCache.find(item=>normaliseRouteGeojson(item.route_geojson));
-    if(latestTrip){
-      openTripInWaterkaarten(latestTrip.id);
-      return;
-    }
-
-    window.location.href=WATERKAARTEN_APPSTORE_URL;
+    window.location.href=WATERKAARTEN_SHORTCUT_URL;
     return;
   }
 
@@ -1150,7 +1147,7 @@ function renderTripList(){
             ${JSON.stringify(t.notes)}
           )'>✏️ Bewerken</button>
           ${normaliseRouteGeojson(t.route_geojson)
-            ?`<button class="waterkaarten-button" onclick="openTripInWaterkaarten('${t.id}')">🧭 Open in Waterkaarten</button>`
+            ?`<button class="waterkaarten-button" onclick="openTripInWaterkaarten('${t.id}')">🧭 Deel route naar Waterkaarten</button>`
             :''}
           <button class="danger-button" onclick="deleteTrip('${t.id}')">🗑️ Log verwijderen</button>
         </div>
