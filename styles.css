@@ -177,3 +177,29 @@ body{padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom))}
   .latest-route-head{flex-direction:column}
   .latest-route-head button{width:100%}
 }
+
+/* Cloud 4.0.4 — log verwijderen */
+.trip-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.danger-button{
+  border:1px solid #b93d49;
+  background:#fff1f2;
+  color:#9e2634;
+  font-weight:700;
+}
+.danger-button:active{
+  transform:scale(.98);
+}
+.trip-row.is-deleting{
+  opacity:.55;
+  filter:grayscale(.25);
+}
+@media(max-width:700px){
+  .trip-actions button{
+    width:100%;
+  }
+}

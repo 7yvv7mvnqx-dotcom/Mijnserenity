@@ -494,11 +494,72 @@ async function loadTripPhotos(){
 }
 
 async function deleteTrip(id){
-  if(!confirm('Deze vaartocht en alle bijbehorende foto’s verwijderen?'))return;
-  const {data:photos}=await sb.from('trip_photos').select('storage_path').eq('trip_id',id);
-  if(photos?.length)await sb.storage.from(TRIP_PHOTO_BUCKET).remove(photos.map(p=>p.storage_path));
-  const {error}=await sb.from('trips').delete().eq('id',id);
-  if(error)alert(error.message);
+  const trip=tripCache.find(item=>String(item.id)===String(id));
+  const title=trip?.title||'deze vaartocht';
+
+  if(!confirm(`Log "${title}" definitief verwijderen?
+
+De route en alle gekoppelde foto's worden ook verwijderd.`))return;
+
+  const details=document.querySelector(`[data-trip-id="${id}"]`);
+  if(details){
+    details.classList.add('is-deleting');
+    details.style.pointerEvents='none';
+  }
+
+  try{
+    const {data:photos,error:photoReadError}=await sb
+      .from('trip_photos')
+      .select('id,storage_path')
+      .eq('trip_id',id);
+
+    if(photoReadError)throw photoReadError;
+
+    const storagePaths=(photos||[])
+      .map(photo=>photo.storage_path)
+      .filter(Boolean);
+
+    if(storagePaths.length){
+      const {error:storageError}=await sb.storage
+        .from(TRIP_PHOTO_BUCKET)
+        .remove(storagePaths);
+
+      if(storageError)console.warn('Foto-opslag kon niet volledig worden opgeschoond:',storageError);
+    }
+
+    const {error:photoDeleteError}=await sb
+      .from('trip_photos')
+      .delete()
+      .eq('trip_id',id);
+
+    if(photoDeleteError)throw photoDeleteError;
+
+    const {error:tripDeleteError}=await sb
+      .from('trips')
+      .delete()
+      .eq('id',id)
+      .eq('boat_id',currentBoat.id);
+
+    if(tripDeleteError)throw tripDeleteError;
+
+    destroyRouteMap(`tripRouteMap-${id}`);
+    tripCache=tripCache.filter(item=>String(item.id)!==String(id));
+    if(window.tripPhotoCache)delete window.tripPhotoCache[id];
+
+    renderTripList();
+    renderFinance();
+    updateLatestRouteDashboard();
+    if($('dTrips'))$('dTrips').textContent=tripCache.length;
+
+    alert('Log verwijderd.');
+  }catch(error){
+    console.error('Log verwijderen mislukt:',error);
+    alert('Log verwijderen mislukt: '+(error?.message||'onbekende fout'));
+    if(details){
+      details.classList.remove('is-deleting');
+      details.style.pointerEvents='';
+    }
+  }
 }
 async function loadTrips(){
   if(!currentBoat)return;
@@ -806,8 +867,7 @@ function renderTripList(){
         <p>${esc(t.notes||'')}</p>
         ${routeHtml}
         ${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}
-        <button class="delete-mini" onclick="deleteTrip('${t.id}')">🗑️</button>
-        <div class="item-actions">
+        <div class="item-actions trip-actions">
           <button class="edit-button" onclick='editTrip(
             ${JSON.stringify(t.id)},
             ${JSON.stringify(t.trip_date)},
@@ -821,6 +881,7 @@ function renderTripList(){
             ${JSON.stringify(t.crew)},
             ${JSON.stringify(t.notes)}
           )'>✏️ Bewerken</button>
+          <button class="danger-button" onclick="deleteTrip('${t.id}')">🗑️ Log verwijderen</button>
         </div>
       </div>
     </details>`;
