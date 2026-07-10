@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 2.3 · interactief dashboard en Serenity-foto</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 3.0 · POI kiezen op kaart en adres</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -106,9 +106,28 @@
         <div><label>Plaats</label><input id="poiPlace"></div>
         <div><label>Beoordeling 1–5</label><input id="poiRating" type="number" min="1" max="5"></div>
       </div>
+      <label>Adres</label>
+      <input id="poiAddress" placeholder="Straat, huisnummer, postcode en plaats">
+      <div class="coordinate-card">
+        <div class="coordinate-title">GPS-locatie</div>
+        <div class="row">
+          <div>
+            <label>Breedtegraad</label>
+            <input id="poiLatitude" type="number" inputmode="decimal" step="any" placeholder="52.695000">
+          </div>
+          <div>
+            <label>Lengtegraad</label>
+            <input id="poiLongitude" type="number" inputmode="decimal" step="any" placeholder="6.194000">
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="secondary" onclick="useCurrentLocationForPoi()">📍 Gebruik huidige positie</button>
+          <button type="button" class="secondary" onclick="openPoiMapPicker()">🗺️ Selecteer op kaart</button>
+        </div>
+        <p class="small">Tik op de kaart om de locatie van deze POI vast te leggen.</p>
+      </div>
       <label>Notitie</label><textarea id="poiReview"></textarea>
-<div class="row"><div><label>Breedtegraad</label><input id="poiLatitude" type="number" step="any" placeholder="Bijv. 52.695"></div><div><label>Lengtegraad</label><input id="poiLongitude" type="number" step="any" placeholder="Bijv. 6.194"></div></div>
-<button type="button" class="secondary" onclick="useCurrentLocationForPoi()">Gebruik huidige positie</button>
+
 <label class="checkline"><input id="poiFavorite" type="checkbox"> ⭐ Markeer als favoriet</label>
       <label>Foto's toevoegen</label>
       <input id="poiPhotos" type="file" accept="image/*" multiple>
@@ -173,6 +192,27 @@
   </section>
 </section>
 </main>
+
+<div id="poiMapPicker" class="map-picker hidden">
+  <div class="map-picker-panel">
+    <div class="map-picker-header">
+      <div>
+        <h2>Selecteer POI op kaart</h2>
+        <p class="small">Tik op de gewenste plek. Je kunt daarna de keuze bevestigen.</p>
+      </div>
+      <button type="button" class="map-picker-close" onclick="closePoiMapPicker()">×</button>
+    </div>
+    <div id="poiPickerMap"></div>
+    <div class="map-picker-coordinates">
+      <span id="pickerCoordinates">Nog geen locatie geselecteerd</span>
+    </div>
+    <div class="actions">
+      <button type="button" onclick="confirmPoiMapSelection()">Locatie gebruiken</button>
+      <button type="button" class="secondary" onclick="closePoiMapPicker()">Annuleren</button>
+    </div>
+  </div>
+</div>
+
 <div id="lightbox" class="lightbox hidden" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">×</button>
   <img id="lightboxImage" alt="Vergrote POI-foto">

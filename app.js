@@ -6,7 +6,7 @@ const BOAT_PHOTO_BUCKET='boat-photos';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],tripCache=[],settingsCache=null,favoritesOnly=false;
+let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 function setMsg(t){$('authMsg').textContent=t}
@@ -21,7 +21,7 @@ function goToTab(id){
 }
 function showTab(id,b){document.querySelectorAll('#appView > section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
 function setPoiProgress(text){$('poiProgress').textContent=text;$('poiProgress').classList.toggle('hidden',!text)}
-function clearPoiForm(){$('poiFavorite').checked=false;['poiId','poiName','poiPlace','poiReview','poiRating','poiLatitude','poiLongitude'].forEach(id=>$(id).value='');$('poiCategory').value='Haven';$('poiPhotos').value='';$('poiFormTitle').textContent='POI toevoegen';$('poiSaveButton').textContent='Opslaan';$('poiCancelButton').classList.add('hidden');setPoiProgress('')}
+function clearPoiForm(){$('poiFavorite').checked=false;['poiId','poiName','poiPlace','poiAddress','poiReview','poiRating','poiLatitude','poiLongitude'].forEach(id=>$(id).value='');$('poiCategory').value='Haven';$('poiPhotos').value='';$('poiFormTitle').textContent='POI toevoegen';$('poiSaveButton').textContent='Opslaan';$('poiCancelButton').classList.add('hidden');setPoiProgress('')}
 function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
@@ -38,12 +38,12 @@ async function joinBoat(){const code=$('joinCode').value.trim();if(!code)return 
 async function savePoi(){
   if(!currentBoat)return alert('Koppel eerst Serenity.');
   const id=$('poiId').value.trim();
-  const row={boat_id:currentBoat.id,created_by:currentUser.id,name:$('poiName').value.trim(),category:$('poiCategory').value,place:$('poiPlace').value.trim(),review:$('poiReview').value.trim(),rating:Number($('poiRating').value)||null,is_favorite:$('poiFavorite').checked,latitude:Number($('poiLatitude').value)||null,longitude:Number($('poiLongitude').value)||null,updated_at:new Date().toISOString()};
+  const row={boat_id:currentBoat.id,created_by:currentUser.id,name:$('poiName').value.trim(),category:$('poiCategory').value,place:$('poiPlace').value.trim(),address:$('poiAddress').value.trim(),review:$('poiReview').value.trim(),rating:Number($('poiRating').value)||null,is_favorite:$('poiFavorite').checked,latitude:Number($('poiLatitude').value)||null,longitude:Number($('poiLongitude').value)||null,updated_at:new Date().toISOString()};
   if(!row.name)return alert('Vul een naam in.');
   setPoiProgress(id?'POI bijwerken…':'POI opslaan…');
   let poiId=id;
   if(id){
-    const {error}=await sb.from('pois').update({name:row.name,category:row.category,place:row.place,review:row.review,rating:row.rating,is_favorite:row.is_favorite,latitude:row.latitude,longitude:row.longitude,updated_at:row.updated_at}).eq('id',id);
+    const {error}=await sb.from('pois').update({name:row.name,category:row.category,place:row.place,address:row.address,review:row.review,rating:row.rating,is_favorite:row.is_favorite,latitude:row.latitude,longitude:row.longitude,updated_at:row.updated_at}).eq('id',id);
     if(error){setPoiProgress('');return alert(error.message)}
   }else{
     const {data,error}=await sb.from('pois').insert(row).select('id').single();
@@ -55,8 +55,8 @@ async function savePoi(){
   clearPoiForm();
   await loadPois();
 }
-function editPoi(id,name,category,place,rating,review,isFavorite,latitude,longitude){
-  $('poiId').value=id;$('poiName').value=name;$('poiCategory').value=category||'Haven';$('poiPlace').value=place||'';$('poiRating').value=rating||'';$('poiReview').value=review||'';$('poiFavorite').checked=!!isFavorite;$('poiLatitude').value=latitude??'';$('poiLongitude').value=longitude??'';
+function editPoi(id,name,category,place,address,rating,review,isFavorite,latitude,longitude){
+  $('poiId').value=id;$('poiName').value=name;$('poiCategory').value=category||'Haven';$('poiPlace').value=place||'';$('poiAddress').value=address||'';$('poiRating').value=rating||'';$('poiReview').value=review||'';$('poiFavorite').checked=!!isFavorite;$('poiLatitude').value=latitude??'';$('poiLongitude').value=longitude??'';
   $('poiFormTitle').textContent='POI bewerken';$('poiSaveButton').textContent='Wijzigingen opslaan';$('poiCancelButton').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -106,7 +106,7 @@ async function loadPois(){
   poiCache=data;poiPhotoCache=photos;$('dPois').textContent=data.length;
   $('poiList').innerHTML=data.length?data.map(p=>{
     const photoHtml=(photos[p.id]||[]).map(ph=>`<div class="photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(p.name)}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="photo-delete" onclick="deletePhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
-    return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?'<span class="favorite-badge">⭐</span>':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${photoHtml?`<div class="photo-grid">${photoHtml}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>✏️ Bewerken</button></div></div>`;
+    return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?'<span class="favorite-badge">⭐</span>':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${photoHtml?`<div class="photo-grid">${photoHtml}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>✏️ Bewerken</button></div></div>`;
   }).join(''):'<span class="small">Nog geen POI’s.</span>';if(mapInstance)renderPoiMarkers();
 }
 
@@ -116,7 +116,7 @@ async function loadCosts(){const {data,error}=await sb.from('costs').select('*')
 function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},loadSettings).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
 
 function resetPoiFilters(){$('poiSearch').value='';$('poiFilterCategory').value='';$('poiFilterRating').value='0';$('poiFilterExtra').value='';renderPoiList()}
-function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
+function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
 async function loadSettings(){if(!currentBoat)return;const{data,error}=await sb.from('boat_settings').select('*').eq('boat_id',currentBoat.id).maybeSingle();if(!error)settingsCache=data||{boat_id:currentBoat.id,boat_name:currentBoat.name}}
 
 async function loadDashboardPhoto(){
@@ -159,6 +159,48 @@ async function saveSettings(){const row={boat_id:currentBoat.id,boat_name:$('set
 function previewFuelCalculation(){if(!$('fuelPreview'))return;const h=Number($('tripHours').value)||0,l=Number($('tripFuelLiters').value)||(h&&settingsCache?.fuel_per_hour?h*Number(settingsCache.fuel_per_hour):0),c=Number($('tripFuelCost').value)||(l&&settingsCache?.fuel_price?l*Number(settingsCache.fuel_price):0);$('fuelPreview').textContent=l?`Geschat: ${l.toFixed(1)} liter · €${c.toFixed(2)}`:'Vul vaartijd in en stel verbruik/prijs in.'}
 function renderFinance(){if(!$('fTotal'))return;const now=String(new Date().getFullYear()),allFuel=tripCache.reduce((s,t)=>s+Number(t.fuel_cost||0),0),allRegular=costCache.reduce((s,c)=>s+Number(c.amount||0),0),hours=tripCache.reduce((s,t)=>s+Number(t.duration_hours||0),0),year=costCache.filter(c=>String(c.expense_date).startsWith(now)).reduce((s,c)=>s+Number(c.amount||0),0)+tripCache.filter(t=>String(t.trip_date).startsWith(now)).reduce((s,t)=>s+Number(t.fuel_cost||0),0);$('fTotal').textContent='€'+(allFuel+allRegular).toFixed(0);$('fYear').textContent='€'+year.toFixed(0);$('fFuel').textContent='€'+allFuel.toFixed(0);$('fPerHour').textContent=hours?'€'+((allFuel+allRegular)/hours).toFixed(2):'€0';const groups={};costCache.forEach(c=>groups[c.category||'Overig']=(groups[c.category||'Overig']||0)+Number(c.amount||0));groups['Brandstof logboek']=allFuel;const max=Math.max(1,...Object.values(groups));$('financeBreakdown').innerHTML=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="finance-row"><div><b>${esc(k)}</b><div class="finance-bar"><span style="width:${Math.round(v/max*100)}%"></span></div></div><div>€${v.toFixed(2)}</div></div>`).join('');const months={};costCache.forEach(c=>{const m=String(c.expense_date).slice(0,7);months[m]=(months[m]||0)+Number(c.amount||0)});tripCache.forEach(t=>{const m=String(t.trip_date).slice(0,7);months[m]=(months[m]||0)+Number(t.fuel_cost||0)});$('financeMonths').innerHTML=Object.entries(months).sort().map(([m,v])=>`<div class="finance-row"><div>${m}</div><div>€${v.toFixed(2)}</div></div>`).join('')}
 
+
+function openPoiMapPicker(){
+  $('poiMapPicker').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  const lat=Number($('poiLatitude').value);
+  const lon=Number($('poiLongitude').value);
+  const hasExisting=Number.isFinite(lat)&&Number.isFinite(lon)&&lat!==0&&lon!==0;
+  const start=hasExisting?[lat,lon]:[52.35,5.45];
+
+  setTimeout(()=>{
+    if(!poiPickerMap){
+      poiPickerMap=L.map('poiPickerMap').setView(start,hasExisting?14:8);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        maxZoom:19,
+        attribution:'&copy; OpenStreetMap'
+      }).addTo(poiPickerMap);
+      poiPickerMap.on('click',e=>setPoiPickerLocation(e.latlng.lat,e.latlng.lng));
+    }else{
+      poiPickerMap.invalidateSize();
+      poiPickerMap.setView(start,hasExisting?14:8);
+    }
+    if(hasExisting)setPoiPickerLocation(lat,lon,false);
+  },120);
+}
+function setPoiPickerLocation(lat,lon,move=true){
+  poiPickerSelection={lat:Number(lat),lon:Number(lon)};
+  if(poiPickerMarker)poiPickerMarker.setLatLng([lat,lon]);
+  else poiPickerMarker=L.marker([lat,lon]).addTo(poiPickerMap);
+  $('pickerCoordinates').textContent=`Breedtegraad ${Number(lat).toFixed(6)} · Lengtegraad ${Number(lon).toFixed(6)}`;
+  if(move)poiPickerMap.panTo([lat,lon]);
+}
+function confirmPoiMapSelection(){
+  if(!poiPickerSelection)return alert('Tik eerst op een plek op de kaart.');
+  $('poiLatitude').value=poiPickerSelection.lat.toFixed(6);
+  $('poiLongitude').value=poiPickerSelection.lon.toFixed(6);
+  closePoiMapPicker();
+}
+function closePoiMapPicker(){
+  $('poiMapPicker').classList.add('hidden');
+  document.body.style.overflow='';
+}
+
 function initMap(){
   if(mapInstance){setTimeout(()=>mapInstance.invalidateSize(),100);return}
   mapInstance=L.map('mapCanvas').setView([52.5,5.75],7);
@@ -177,7 +219,7 @@ function renderPoiMarkers(){
   poiCache.filter(p=>!favoritesOnly||p.is_favorite).forEach(p=>{
     if(typeof p.latitude!=='number'||typeof p.longitude!=='number')return;
     const marker=L.marker([p.latitude,p.longitude]).addTo(poiLayer);
-    marker.bindPopup(`<div class="map-popup"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><p>${esc(p.category||'')} · ${esc(p.place||'')}</p><p>${esc(p.review||'')}</p></div>`);
+    marker.bindPopup(`<div class="map-popup"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><p>${esc(p.category||'')} · ${esc(p.place||'')}</p>${p.address?`<p>📍 ${esc(p.address)}</p>`:''}<p>${esc(p.review||'')}</p></div>`);
     points.push([p.latitude,p.longitude]);
   });
   if(points.length===1)mapInstance.setView(points[0],14);
