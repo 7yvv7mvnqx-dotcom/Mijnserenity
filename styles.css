@@ -243,3 +243,128 @@ body{padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom))}
 #tripSearchWrap{
   padding-top:12px;
 }
+
+/* Cloud 5.0 — Native App Edition */
+body{
+  padding-top:env(safe-area-inset-top);
+}
+header{
+  padding-top:max(18px,env(safe-area-inset-top));
+}
+.header-title-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+}
+.connection-status{
+  flex:0 0 auto;
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.02em;
+}
+.connection-status.online{
+  color:#baf7d1;
+  background:rgba(37,183,100,.18);
+  border:1px solid rgba(68,219,135,.35);
+}
+.connection-status.offline{
+  color:#ffd3d3;
+  background:rgba(217,72,72,.18);
+  border:1px solid rgba(255,107,107,.35);
+}
+.install-app-tile{
+  border-color:rgba(69,200,255,.48);
+  background:linear-gradient(145deg,rgba(69,200,255,.19),rgba(75,211,143,.12));
+}
+.install-app-tile.installed{
+  border-color:rgba(75,211,143,.5);
+}
+.app-update-banner{
+  position:fixed;
+  left:14px;
+  right:14px;
+  bottom:calc(92px + env(safe-area-inset-bottom));
+  z-index:1000;
+  max-width:720px;
+  margin:auto;
+  padding:13px;
+  border-radius:16px;
+  background:#f2fbff;
+  color:#082034;
+  box-shadow:0 16px 40px rgba(0,0,0,.35);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.app-update-banner span{
+  display:block;
+  margin-top:3px;
+  font-size:13px;
+  color:#486170;
+}
+.app-update-banner button{
+  width:auto;
+  flex:0 0 auto;
+}
+.install-help{
+  position:fixed;
+  inset:0;
+  z-index:1100;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding:18px;
+  background:rgba(0,0,0,.62);
+}
+.install-help-card{
+  position:relative;
+  width:min(520px,100%);
+  padding:26px 20px 22px;
+  border-radius:24px;
+  background:#f4fbff;
+  color:#0a2235;
+  text-align:center;
+  box-shadow:0 24px 70px rgba(0,0,0,.4);
+}
+.install-help-card p{
+  line-height:1.55;
+}
+.install-help-icon{
+  font-size:48px;
+  margin-bottom:8px;
+}
+.install-help-close{
+  position:absolute;
+  right:12px;
+  top:10px;
+  width:38px;
+  min-height:38px;
+  padding:0;
+  border-radius:999px;
+  background:#dcebf2;
+  color:#163348;
+}
+@media(max-width:520px){
+  .header-title-row{
+    align-items:center;
+  }
+  .connection-status{
+    padding:5px 8px;
+  }
+  .app-update-banner{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .app-update-banner button{
+    width:100%;
+  }
+}
+@media(display-mode:standalone){
+  header{
+    padding-top:max(16px,env(safe-area-inset-top));
+  }
+}

@@ -1,8 +1,50 @@
 {
+  "id": "/",
   "name": "MijnSerenity Cloud",
   "short_name": "MijnSerenity",
-  "start_url": "/",
+  "description": "Logboek, routes, POI's, foto's en kosten van Serenity.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "theme_color": "#061525",
-  "background_color": "#061525"
+  "background_color": "#061525",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nieuwe vaartocht",
+      "short_name": "Nieuwe vaartocht",
+      "url": "/?open=logbook",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Kaart openen",
+      "short_name": "Kaart",
+      "url": "/?open=map",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

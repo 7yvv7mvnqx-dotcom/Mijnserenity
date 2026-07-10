@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MijnSerenity">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>MijnSerenity Cloud</title>
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -13,7 +18,15 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 4.0.9 · Inklapbaar zoeken</div></header>
+<header>
+  <div class="header-title-row">
+    <div>
+      <h1>⚓ MijnSerenity Cloud</h1>
+      <div class="sub">Cloud 5.0 · Native App Edition</div>
+    </div>
+    <span id="connectionStatus" class="connection-status online">Online</span>
+  </div>
+</header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -82,6 +95,9 @@
       </button>
       <button class="dashboard-tile" onclick="goToTab('settings')">
         <span class="tile-icon">⚙️</span><b>Instellingen</b><small>Brandstof en boot</small>
+      </button>
+      <button id="installAppTile" class="dashboard-tile install-app-tile" onclick="installMijnSerenity()">
+        <span class="tile-icon">📲</span><b>Installeer app</b><small>Zet MijnSerenity op beginscherm</small>
       </button>
     </div>
 
@@ -312,6 +328,25 @@
   <button class="lightbox-close" onclick="closeLightbox()">×</button>
   <img id="lightboxImage" alt="Vergrote POI-foto">
 </div>
+
+<div id="appUpdateBanner" class="app-update-banner hidden">
+  <div>
+    <b>Nieuwe MijnSerenity-versie beschikbaar</b>
+    <span>Laad de nieuwste versie zonder opnieuw in te loggen.</span>
+  </div>
+  <button onclick="applyAppUpdate()">Bijwerken</button>
+</div>
+
+<div id="installHelp" class="install-help hidden" onclick="closeInstallHelp(event)">
+  <div class="install-help-card">
+    <button class="install-help-close" onclick="closeInstallHelp()">×</button>
+    <div class="install-help-icon">📲</div>
+    <h2>MijnSerenity installeren</h2>
+    <p>Open deze site in Safari, tik op <b>Deel</b> en kies <b>Zet op beginscherm</b>.</p>
+    <button onclick="closeInstallHelp()">Begrepen</button>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>

@@ -766,6 +766,130 @@ function captainNavigate(id, sourceButton=null){
 
 
 
+
+const APP_VERSION='5.0.0';
+let deferredInstallPrompt=null;
+let waitingServiceWorker=null;
+
+function isStandaloneApp(){
+  return window.matchMedia('(display-mode: standalone)').matches||
+    window.navigator.standalone===true;
+}
+
+function updateInstallTile(){
+  const tile=$('installAppTile');
+  if(!tile)return;
+
+  if(isStandaloneApp()){
+    tile.classList.add('installed');
+    const title=tile.querySelector('b');
+    const subtitle=tile.querySelector('small');
+    if(title)title.textContent='App geïnstalleerd';
+    if(subtitle)subtitle.textContent='MijnSerenity draait als app';
+  }
+}
+
+function openInstallHelp(){
+  $('installHelp')?.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+
+function closeInstallHelp(event){
+  if(event&&event.target!==$('installHelp'))return;
+  $('installHelp')?.classList.add('hidden');
+  document.body.style.overflow='';
+}
+
+async function installMijnSerenity(){
+  if(isStandaloneApp()){
+    alert('MijnSerenity staat al als app op dit apparaat.');
+    return;
+  }
+
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt=null;
+    updateInstallTile();
+    return;
+  }
+
+  openInstallHelp();
+}
+
+function updateConnectionStatus(){
+  const status=$('connectionStatus');
+  if(!status)return;
+
+  const online=navigator.onLine;
+  status.textContent=online?'Online':'Offline';
+  status.classList.toggle('online',online);
+  status.classList.toggle('offline',!online);
+}
+
+function showAppUpdate(registration){
+  waitingServiceWorker=registration.waiting;
+  $('appUpdateBanner')?.classList.remove('hidden');
+}
+
+function applyAppUpdate(){
+  if(waitingServiceWorker){
+    waitingServiceWorker.postMessage({type:'SKIP_WAITING'});
+  }else{
+    window.location.reload();
+  }
+}
+
+async function registerMijnSerenityServiceWorker(){
+  if(!('serviceWorker' in navigator))return;
+
+  try{
+    const registration=await navigator.serviceWorker.register('/sw.js');
+
+    if(registration.waiting)showAppUpdate(registration);
+
+    registration.addEventListener('updatefound',()=>{
+      const worker=registration.installing;
+      if(!worker)return;
+
+      worker.addEventListener('statechange',()=>{
+        if(worker.state==='installed'&&navigator.serviceWorker.controller){
+          showAppUpdate(registration);
+        }
+      });
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      window.location.reload();
+    });
+
+    setInterval(()=>registration.update(),30*60*1000);
+  }catch(error){
+    console.warn('Service worker kon niet worden geregistreerd:',error);
+  }
+}
+
+window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();
+  deferredInstallPrompt=event;
+  updateInstallTile();
+});
+
+window.addEventListener('appinstalled',()=>{
+  deferredInstallPrompt=null;
+  updateInstallTile();
+});
+
+window.addEventListener('online',updateConnectionStatus);
+window.addEventListener('offline',updateConnectionStatus);
+
+window.addEventListener('load',()=>{
+  updateInstallTile();
+  updateConnectionStatus();
+  registerMijnSerenityServiceWorker();
+});
+
+
 function getRouteContentType(file){
   const name=(file?.name||'').toLowerCase();
   if(name.endsWith('.kmz'))return 'application/vnd.google-earth.kmz';
