@@ -10,7 +10,7 @@ $('costDate').value=new Date().toISOString().slice(0,10);
 function setMsg(t){$('authMsg').textContent=t}
 function showTab(id,b){document.querySelectorAll('#appView > section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
 function setPoiProgress(text){$('poiProgress').textContent=text;$('poiProgress').classList.toggle('hidden',!text)}
-function clearPoiForm(){['poiId','poiName','poiPlace','poiReview','poiRating'].forEach(id=>$(id).value='');$('poiCategory').value='Haven';$('poiPhotos').value='';$('poiFormTitle').textContent='POI toevoegen';$('poiSaveButton').textContent='Opslaan';$('poiCancelButton').classList.add('hidden');setPoiProgress('')}
+function clearPoiForm(){$('poiFavorite').checked=false;['poiId','poiName','poiPlace','poiReview','poiRating'].forEach(id=>$(id).value='');$('poiCategory').value='Haven';$('poiPhotos').value='';$('poiFormTitle').textContent='POI toevoegen';$('poiSaveButton').textContent='Opslaan';$('poiCancelButton').classList.add('hidden');setPoiProgress('')}
 function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
@@ -27,12 +27,12 @@ async function joinBoat(){const code=$('joinCode').value.trim();if(!code)return 
 async function savePoi(){
   if(!currentBoat)return alert('Koppel eerst Serenity.');
   const id=$('poiId').value.trim();
-  const row={boat_id:currentBoat.id,created_by:currentUser.id,name:$('poiName').value.trim(),category:$('poiCategory').value,place:$('poiPlace').value.trim(),review:$('poiReview').value.trim(),rating:Number($('poiRating').value)||null,updated_at:new Date().toISOString()};
+  const row={boat_id:currentBoat.id,created_by:currentUser.id,name:$('poiName').value.trim(),category:$('poiCategory').value,place:$('poiPlace').value.trim(),review:$('poiReview').value.trim(),rating:Number($('poiRating').value)||null,is_favorite:$('poiFavorite').checked,updated_at:new Date().toISOString()};
   if(!row.name)return alert('Vul een naam in.');
   setPoiProgress(id?'POI bijwerken…':'POI opslaan…');
   let poiId=id;
   if(id){
-    const {error}=await sb.from('pois').update({name:row.name,category:row.category,place:row.place,review:row.review,rating:row.rating,updated_at:row.updated_at}).eq('id',id);
+    const {error}=await sb.from('pois').update({name:row.name,category:row.category,place:row.place,review:row.review,rating:row.rating,is_favorite:row.is_favorite,updated_at:row.updated_at}).eq('id',id);
     if(error){setPoiProgress('');return alert(error.message)}
   }else{
     const {data,error}=await sb.from('pois').insert(row).select('id').single();
@@ -44,8 +44,8 @@ async function savePoi(){
   clearPoiForm();
   await loadPois();
 }
-function editPoi(id,name,category,place,rating,review){
-  $('poiId').value=id;$('poiName').value=name;$('poiCategory').value=category||'Haven';$('poiPlace').value=place||'';$('poiRating').value=rating||'';$('poiReview').value=review||'';
+function editPoi(id,name,category,place,rating,review,isFavorite){
+  $('poiId').value=id;$('poiName').value=name;$('poiCategory').value=category||'Haven';$('poiPlace').value=place||'';$('poiRating').value=rating||'';$('poiReview').value=review||'';$('poiFavorite').checked=!!isFavorite;
   $('poiFormTitle').textContent='POI bewerken';$('poiSaveButton').textContent='Wijzigingen opslaan';$('poiCancelButton').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -94,8 +94,8 @@ async function loadPois(){
   if(error)return alert(error.message);
   $('dPois').textContent=data.length;
   $('poiList').innerHTML=data.length?data.map(p=>{
-    const photoHtml=(photos[p.id]||[]).map(ph=>`<div class="photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(p.name)}"><button class="photo-delete" onclick="deletePhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
-    return `<div class="item"><h3>${esc(p.name)}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${photoHtml?`<div class="photo-grid">${photoHtml}</div>`:''}<div class="actions"><button class="secondary" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`;
+    const photoHtml=(photos[p.id]||[]).map(ph=>`<div class="photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(p.name)}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="photo-delete" onclick="deletePhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
+    return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?'<span class="favorite-badge">⭐</span>':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div><p>${esc(p.review)}</p>${photoHtml?`<div class="photo-grid">${photoHtml}</div>`:''}<div class="actions"><button class="secondary" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`;
   }).join(''):'<span class="small">Nog geen POI’s.</span>';
 }
 
@@ -104,3 +104,14 @@ async function deleteCost(id){const {error}=await sb.from('costs').delete().eq('
 async function loadCosts(){const {data,error}=await sb.from('costs').select('*').eq('boat_id',currentBoat.id).order('expense_date',{ascending:false});if(error)return alert(error.message);$('dCosts').textContent='€'+data.reduce((s,c)=>s+Number(c.amount||0),0).toFixed(0);$('costList').innerHTML=data.length?data.map(c=>`<div class="item"><h3>€${Number(c.amount).toFixed(2)} · ${esc(c.category)}</h3><div class="small">${esc(c.expense_date)} · ${esc(c.description)}</div><button class="danger" onclick="deleteCost('${c.id}')">Verwijder</button></div>`).join(''):'<span class="small">Nog geen kosten.</span>'}
 function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
 (async()=>{const {data:{session}}=await sb.auth.getSession();await initialise(session)})();
+
+function openLightbox(url){
+  $('lightboxImage').src=url;
+  $('lightbox').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+function closeLightbox(){
+  $('lightbox').classList.add('hidden');
+  $('lightboxImage').src='';
+  document.body.style.overflow='';
+}

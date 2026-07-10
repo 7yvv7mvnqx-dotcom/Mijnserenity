@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 1.1 · POI bewerken en foto's</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 1.2 · favorieten en fotogalerij</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -54,8 +54,9 @@
         <div><label>Beoordeling 1–5</label><input id="poiRating" type="number" min="1" max="5"></div>
       </div>
       <label>Notitie</label><textarea id="poiReview"></textarea>
+<label class="checkline"><input id="poiFavorite" type="checkbox"> ⭐ Markeer als favoriet</label>
       <label>Foto's toevoegen</label>
-      <input id="poiPhotos" type="file" accept="image/*" multiple>
+      <input id="poiPhotos" type="file" accept="image/*" capture="environment" multiple>
       <p class="small">Je kunt foto's maken of uit je fotobibliotheek kiezen. Maximaal 6 foto's per keer.</p>
       <div class="actions">
         <button id="poiSaveButton" onclick="savePoi()">Opslaan</button>
@@ -78,6 +79,10 @@
   </section>
 </section>
 </main>
+<div id="lightbox" class="lightbox hidden" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightboxImage" alt="Vergrote POI-foto">
+</div>
 <script src="app.js"></script>
 </body>
 </html>
