@@ -77,18 +77,9 @@ h1,h2,h3{margin:0 0 10px}main{max-width:980px;margin:auto;padding:14px}.sub,.sma
 .trip-route-map{height:260px;border-radius:12px;overflow:hidden;margin:10px 0;background:#071827}
 .trip-filter-input{min-height:46px}
 
-/* ===== MijnSerenity Cloud 4.0 Captain Edition ===== */
-:root{
-  --glass:rgba(16,42,61,.82);
-  --nav-height:78px;
-}
+/* Cloud 4.0.1 Captain Edition hotfix */
+:root{--nav-height:78px}
 body{padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom))}
-header{
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
-}
-header h1{letter-spacing:-.03em}
-header .sub{font-size:13px}
 .captain-strip{
   display:flex;justify-content:space-between;align-items:center;gap:14px;
   padding:14px 15px;margin-bottom:12px;border-radius:18px;
@@ -103,7 +94,7 @@ header .sub{font-size:13px}
   display:grid;grid-template-columns:repeat(6,1fr);
   height:calc(var(--nav-height) + env(safe-area-inset-bottom));
   padding:7px 6px env(safe-area-inset-bottom);
-  background:rgba(2,11,19,.94);
+  background:rgba(2,11,19,.95);
   border-top:1px solid rgba(255,255,255,.1);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)
 }
@@ -116,18 +107,8 @@ header .sub{font-size:13px}
 .bottom-nav-item small{font-size:10px;white-space:nowrap}
 .bottom-nav-item.active{color:white;background:rgba(69,200,255,.13)}
 .bottom-nav-item:active{transform:scale(.95)}
-.quick-actions-card{background:linear-gradient(145deg,var(--panel),#0a2030)}
-.quick-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.quick-action-grid button{background:var(--panel2);color:white;text-align:left;min-height:70px}
-.card{box-shadow:0 10px 28px rgba(0,0,0,.16)}
-.dashboard-tile,.stat,.trip-row{transition:transform .18s ease,background .18s ease}
-.dashboard-tile:active,.trip-row:active{transform:scale(.985)}
 @media(max-width:760px){
   .tabs{display:none}
-  main{padding-bottom:18px}
   .captain-strip{align-items:flex-start;flex-direction:column}
   .captain-strip button{width:100%}
-}
-@media(min-width:761px){
-  .bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(760px,96%);border:1px solid rgba(255,255,255,.1);border-bottom:0;border-radius:20px 20px 0 0}
 }

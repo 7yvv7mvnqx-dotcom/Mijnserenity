@@ -18,30 +18,50 @@ function toggleSection(id,button){
   el.classList.toggle('hidden');
   button?.classList.toggle('open',willOpen);
 }
-
-function navigateTo(id, sourceButton=null){
-  const sections=[...document.querySelectorAll('#appView > section')];
-  sections.forEach(section=>section.classList.add('hidden'));
-  const target=document.getElementById(id);
-  if(target)target.classList.remove('hidden');
-
-  document.querySelectorAll('.tab').forEach(button=>button.classList.remove('active'));
-  document.querySelectorAll('.bottom-nav-item').forEach(button=>button.classList.toggle('active',button.dataset.target===id));
-
-  const desktopButtons=[...document.querySelectorAll('.tab')];
-  const desktopMap={dashboard:0,map:1,pois:2,logbook:3,costs:4,finance:5,settings:6,boat:7};
-  const desktopButton=desktopButtons[desktopMap[id]];
-  if(desktopButton)desktopButton.classList.add('active');
-
-  if(id==='map')setTimeout(()=>initMap(),60);
+function goToTab(id){
+  const buttons=[...document.querySelectorAll('.tab')];
+  const map={dashboard:0,map:1,pois:2,logbook:3,costs:4,finance:5,settings:6,boat:7};
+  const button=buttons[map[id]];
+  if(button)showTab(id,button);
+  if(id==='map')initMap();
   if(id==='finance')renderFinance();
   if(id==='settings')loadSettingsForm();
-  window.scrollTo({top:0,behavior:'smooth'});
 }
+function showTab(id,b){document.querySelectorAll('#appView > section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
+function setPoiProgress(text){$('poiProgress').textContent=text;$('poiProgress').classList.toggle('hidden',!text)}
+function clearPoiForm(){$('poiFavorite').checked=false;['poiId','poiName','poiPlace','poiAddress','poiReview','poiRating','poiLatitude','poiLongitude'].forEach(id=>$(id).value='');$('poiCategory').value='Haven';$('poiPhotos').value='';$('poiFormTitle').textContent='POI toevoegen';$('poiSaveButton').textContent='Opslaan';$('poiCancelButton').classList.add('hidden');setPoiProgress('')}
+function cancelPoiEdit(){clearPoiForm()}
+async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
+async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
+async function signOut(){await sb.auth.signOut()}
+async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+currentUser.email;await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}setTimeout(()=>captainNavigate('dashboard'),0)}
+sb.auth.onAuthStateChange((_e,s)=>initialise(s));
 
-function goToTab(id){navigateTo(id)}
-function showTab(id,b){
-  navigateTo(id,b);
+async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
+function renderBoat(){$('noBoatCard').classList.toggle('hidden',!!currentBoat);$('boatCard').classList.toggle('hidden',!currentBoat);$('dBoat').textContent=currentBoat?.name||'-';if(currentBoat){$('boatName').textContent=currentBoat.name;$('rolePill').textContent=currentRole==='owner'?'Eigenaar':'Lid';$('ownerInvite').classList.toggle('hidden',currentRole!=='owner')}}
+async function createBoat(){const {error}=await sb.rpc('create_boat_with_owner',{boat_name:$('newBoatName').value.trim()||'Serenity'});if(error)return alert('Boot aanmaken mislukt: '+error.message);await loadMembership();renderBoat();await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}
+async function createInvite(){const {data,error}=await sb.rpc('create_boat_invite',{target_boat:currentBoat.id});if(error)return alert('Deelcode maken mislukt: '+error.message);$('inviteCode').textContent=data}
+async function joinBoat(){const code=$('joinCode').value.trim();if(!code)return alert('Vul eerst de deelcode in.');const {error}=await sb.rpc('join_boat_by_code',{invite_code:code});if(error)return alert('Deelnemen mislukt: '+error.message);await loadMembership();renderBoat();await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}
+
+async function savePoi(){
+  if(!currentBoat)return alert('Koppel eerst Serenity.');
+  const id=$('poiId').value.trim();
+  const row={boat_id:currentBoat.id,created_by:currentUser.id,name:$('poiName').value.trim(),category:$('poiCategory').value,place:$('poiPlace').value.trim(),address:$('poiAddress').value.trim(),review:$('poiReview').value.trim(),rating:Number($('poiRating').value)||null,is_favorite:$('poiFavorite').checked,latitude:Number($('poiLatitude').value)||null,longitude:Number($('poiLongitude').value)||null,updated_at:new Date().toISOString()};
+  if(!row.name)return alert('Vul een naam in.');
+  setPoiProgress(id?'POI bijwerken…':'POI opslaan…');
+  let poiId=id;
+  if(id){
+    const {error}=await sb.from('pois').update({name:row.name,category:row.category,place:row.place,address:row.address,review:row.review,rating:row.rating,is_favorite:row.is_favorite,latitude:row.latitude,longitude:row.longitude,updated_at:row.updated_at}).eq('id',id);
+    if(error){setPoiProgress('');return alert(error.message)}
+  }else{
+    const {data,error}=await sb.from('pois').insert(row).select('id').single();
+    if(error){setPoiProgress('');return alert(error.message)}
+    poiId=data.id;
+  }
+  const files=[...$('poiPhotos').files].slice(0,6);
+  if(files.length)await uploadPoiPhotos(poiId,files);
+  clearPoiForm();
+  await loadPois();
 }
 function editPoi(id,name,category,place,address,rating,review,isFavorite,latitude,longitude){
   $('poiId').value=id;$('poiName').value=name;$('poiCategory').value=category||'Haven';$('poiPlace').value=place||'';$('poiAddress').value=address||'';$('poiRating').value=rating||'';$('poiReview').value=review||'';$('poiFavorite').checked=!!isFavorite;$('poiLatitude').value=latitude??'';$('poiLongitude').value=longitude??'';
@@ -428,6 +448,28 @@ async function loadTrips(){
   $('dTrips').textContent=data.length;
   renderTripList();
   renderFinance();
+}
+
+
+function captainNavigate(id, sourceButton=null){
+  const desktopButtons=[...document.querySelectorAll('.tab')];
+  const map={dashboard:0,map:1,pois:2,logbook:3,costs:4,finance:5,settings:6,boat:7};
+  const desktopButton=desktopButtons[map[id]];
+
+  if(typeof showTab==='function' && desktopButton){
+    showTab(id,desktopButton);
+  }else{
+    document.querySelectorAll('#appView > section').forEach(section=>section.classList.add('hidden'));
+    document.getElementById(id)?.classList.remove('hidden');
+  }
+
+  document.querySelectorAll('.bottom-nav-item').forEach(button=>{
+    button.classList.toggle('active',button.dataset.target===id);
+  });
+
+  if(id==='map' && typeof initMap==='function')setTimeout(()=>initMap(),80);
+  if(id==='finance' && typeof renderFinance==='function')renderFinance();
+  if(id==='settings' && typeof loadSettingsForm==='function')loadSettingsForm();
 }
 
 (async()=>{const {data:{session}}=await sb.auth.getSession();await initialise(session)})();
