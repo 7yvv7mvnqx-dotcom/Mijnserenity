@@ -1,6 +1,7 @@
 const SUPABASE_URL='https://wufslczbtguvtgmfufid.supabase.co';
 const SUPABASE_KEY='sb_publishable_LCJ5Oj0yG4guOvBFPS5ALg_WG57gAo9';
 const PHOTO_BUCKET='poi-photos';
+const TRIP_PHOTO_BUCKET='trip-photos';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -102,7 +103,7 @@ async function loadPois(){
 async function addCost(){if(!currentBoat)return alert('Koppel eerst Serenity.');const row={boat_id:currentBoat.id,created_by:currentUser.id,expense_date:$('costDate').value,amount:Number($('costAmount').value)||0,category:$('costCategory').value,description:$('costDescription').value.trim()};const {error}=await sb.from('costs').insert(row);if(error)return alert(error.message);$('costAmount').value='';$('costDescription').value=''}
 async function deleteCost(id){const {error}=await sb.from('costs').delete().eq('id',id);if(error)alert(error.message)}
 async function loadCosts(){const {data,error}=await sb.from('costs').select('*').eq('boat_id',currentBoat.id).order('expense_date',{ascending:false});if(error)return alert(error.message);$('dCosts').textContent='€'+data.reduce((s,c)=>s+Number(c.amount||0),0).toFixed(0);$('costList').innerHTML=data.length?data.map(c=>`<div class="item"><h3>€${Number(c.amount).toFixed(2)} · ${esc(c.category)}</h3><div class="small">${esc(c.expense_date)} · ${esc(c.description)}</div><button class="danger" onclick="deleteCost('${c.id}')">Verwijder</button></div>`).join(''):'<span class="small">Nog geen kosten.</span>'}
-function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
+function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
 
 function initMap(){
   if(mapInstance){setTimeout(()=>mapInstance.invalidateSize(),100);return}
@@ -157,8 +158,10 @@ function useCurrentLocationForPoi(){
 
 async function saveTrip(){
   if(!currentBoat)return alert('Koppel eerst Serenity.');
+  const id=$('tripId').value.trim();
   const row={
-    boat_id:currentBoat.id,created_by:currentUser.id,
+    boat_id:currentBoat.id,
+    created_by:currentUser.id,
     trip_date:$('tripDate').value,
     title:$('tripTitle').value.trim()||`${$('tripFrom').value.trim()} naar ${$('tripTo').value.trim()}`,
     departure:$('tripFrom').value.trim(),
@@ -166,23 +169,116 @@ async function saveTrip(){
     distance_km:Number($('tripDistance').value)||null,
     duration_hours:Number($('tripHours').value)||null,
     crew:$('tripCrew').value.trim(),
-    notes:$('tripNotes').value.trim()
+    notes:$('tripNotes').value.trim(),
+    updated_at:new Date().toISOString()
   };
-  const {error}=await sb.from('trips').insert(row);
-  if(error)return alert(error.message);
-  ['tripTitle','tripFrom','tripTo','tripDistance','tripHours','tripCrew','tripNotes'].forEach(id=>$(id).value='');
+  setTripProgress(id?'Vaartocht bijwerken…':'Vaartocht opslaan…');
+  let tripId=id;
+  if(id){
+    const {error}=await sb.from('trips').update({
+      trip_date:row.trip_date,title:row.title,departure:row.departure,arrival:row.arrival,
+      distance_km:row.distance_km,duration_hours:row.duration_hours,crew:row.crew,
+      notes:row.notes,updated_at:row.updated_at
+    }).eq('id',id);
+    if(error){setTripProgress('');return alert(error.message)}
+  }else{
+    const {data,error}=await sb.from('trips').insert(row).select('id').single();
+    if(error){setTripProgress('');return alert(error.message)}
+    tripId=data.id;
+  }
+  const files=[...$('tripPhotos').files].slice(0,10);
+  if(files.length)await uploadTripPhotos(tripId,files);
+  clearTripForm();
+  await loadTrips();
 }
+
+function setTripProgress(text){
+  $('tripProgress').textContent=text;
+  $('tripProgress').classList.toggle('hidden',!text);
+}
+function clearTripForm(){
+  ['tripId','tripTitle','tripFrom','tripTo','tripDistance','tripHours','tripCrew','tripNotes'].forEach(id=>$(id).value='');
+  $('tripPhotos').value='';
+  $('tripDate').value=new Date().toISOString().slice(0,10);
+  $('tripFormTitle').textContent='Nieuwe vaartocht';
+  $('tripSaveButton').textContent='Vaartocht opslaan';
+  $('tripCancelButton').classList.add('hidden');
+  setTripProgress('');
+}
+function cancelTripEdit(){clearTripForm()}
+function editTrip(id,tripDate,title,departure,arrival,distance,hours,crew,notes){
+  $('tripId').value=id;
+  $('tripDate').value=tripDate||'';
+  $('tripTitle').value=title||'';
+  $('tripFrom').value=departure||'';
+  $('tripTo').value=arrival||'';
+  $('tripDistance').value=distance??'';
+  $('tripHours').value=hours??'';
+  $('tripCrew').value=crew||'';
+  $('tripNotes').value=notes||'';
+  $('tripFormTitle').textContent='Vaartocht bewerken';
+  $('tripSaveButton').textContent='Wijzigingen opslaan';
+  $('tripCancelButton').classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function uploadTripPhotos(tripId,files){
+  for(let i=0;i<files.length;i++){
+    const file=files[i];
+    setTripProgress(`Foto ${i+1} van ${files.length} uploaden…`);
+    const safeExt=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+    const path=`${currentBoat.id}/${tripId}/${crypto.randomUUID()}.${safeExt}`;
+    const {error:uploadError}=await sb.storage.from(TRIP_PHOTO_BUCKET).upload(path,file,{
+      cacheControl:'3600',upsert:false,contentType:file.type||'image/jpeg'
+    });
+    if(uploadError){alert('Foto uploaden mislukt: '+uploadError.message);continue}
+    const {error:metaError}=await sb.from('trip_photos').insert({
+      trip_id:tripId,boat_id:currentBoat.id,created_by:currentUser.id,
+      storage_path:path,original_name:file.name
+    });
+    if(metaError){
+      await sb.storage.from(TRIP_PHOTO_BUCKET).remove([path]);
+      alert('Foto registreren mislukt: '+metaError.message);
+    }
+  }
+}
+async function deleteTripPhoto(id,path){
+  if(!confirm('Foto verwijderen?'))return;
+  const {error:storageError}=await sb.storage.from(TRIP_PHOTO_BUCKET).remove([path]);
+  if(storageError)return alert(storageError.message);
+  const {error}=await sb.from('trip_photos').delete().eq('id',id);
+  if(error)alert(error.message);
+}
+async function loadTripPhotos(){
+  const {data,error}=await sb.from('trip_photos').select('*').eq('boat_id',currentBoat.id).order('created_at',{ascending:true});
+  if(error){console.error(error);return {}}
+  const grouped={};
+  for(const photo of data){
+    const {data:signed,error:signedError}=await sb.storage.from(TRIP_PHOTO_BUCKET).createSignedUrl(photo.storage_path,3600);
+    if(signedError)continue;
+    (grouped[photo.trip_id]??=[]).push({...photo,url:signed.signedUrl});
+  }
+  return grouped;
+}
+
 async function deleteTrip(id){
-  if(!confirm('Deze vaartocht verwijderen?'))return;
+  if(!confirm('Deze vaartocht en alle bijbehorende foto’s verwijderen?'))return;
+  const {data:photos}=await sb.from('trip_photos').select('storage_path').eq('trip_id',id);
+  if(photos?.length)await sb.storage.from(TRIP_PHOTO_BUCKET).remove(photos.map(p=>p.storage_path));
   const {error}=await sb.from('trips').delete().eq('id',id);
   if(error)alert(error.message);
 }
 async function loadTrips(){
   if(!currentBoat)return;
-  const {data,error}=await sb.from('trips').select('*').eq('boat_id',currentBoat.id).order('trip_date',{ascending:false});
+  const [{data,error},photos]=await Promise.all([
+    sb.from('trips').select('*').eq('boat_id',currentBoat.id).order('trip_date',{ascending:false}),
+    loadTripPhotos()
+  ]);
   if(error){console.error(error);return}
   $('dTrips').textContent=data.length;
-  $('tripList').innerHTML=data.length?data.map(t=>`<div class="item"><h3>${esc(t.title||'Vaartocht')}</h3><div class="small">${esc(t.trip_date)} · ${esc(t.departure||'')} → ${esc(t.arrival||'')}</div><div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span></div><p>${esc(t.notes||'')}</p><button class="danger" onclick="deleteTrip('${t.id}')">Verwijderen</button></div>`).join(''):'<span class="small">Nog geen vaartochten.</span>';
+  $('tripList').innerHTML=data.length?data.map(t=>{
+    const photoHtml=(photos[t.id]||[]).map(ph=>`<div class="trip-photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(t.title||'vaarttocht')}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="trip-photo-delete" onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
+    return `<div class="item"><h3>${esc(t.title||'Vaartocht')}</h3><div class="small">${esc(t.trip_date)} · ${esc(t.departure||'')} → ${esc(t.arrival||'')}</div><div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span></div><p>${esc(t.notes||'')}</p>${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}<div class="actions"><button class="secondary" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>Bewerken</button><button class="danger" onclick="deleteTrip('${t.id}')">Verwijderen</button></div></div>`;
+  }).join(''):'<span class="small">Nog geen vaartochten.</span>';
 }
 
 (async()=>{const {data:{session}}=await sb.auth.getSession();await initialise(session)})();

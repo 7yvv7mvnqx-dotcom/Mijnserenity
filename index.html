@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 2.0 · kaart en digitaal logboek</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 2.1 · logboek bewerken en foto's</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -90,7 +90,8 @@
 
   <section id="logbook" class="hidden">
     <div class="card">
-      <h2>Nieuwe vaartocht</h2>
+      <h2 id="tripFormTitle">Nieuwe vaartocht</h2>
+<input id="tripId" type="hidden">
       <div class="row">
         <div><label>Datum</label><input id="tripDate" type="date"></div>
         <div><label>Titel</label><input id="tripTitle" placeholder="Bijv. Meppel naar Gramsbergen"></div>
@@ -105,7 +106,14 @@
       </div>
       <label>Bemanning</label><input id="tripCrew" placeholder="Michel, Desi">
       <label>Notities</label><textarea id="tripNotes"></textarea>
-      <button onclick="saveTrip()">Vaartocht opslaan</button>
+      <label>Foto's toevoegen</label>
+      <input id="tripPhotos" type="file" accept="image/*" multiple>
+      <p class="small">Kies foto's uit je bibliotheek of maak een nieuwe foto. Maximaal 10 foto's per keer.</p>
+      <div class="actions">
+        <button id="tripSaveButton" onclick="saveTrip()">Vaartocht opslaan</button>
+        <button id="tripCancelButton" class="secondary hidden" onclick="cancelTripEdit()">Annuleren</button>
+      </div>
+      <div id="tripProgress" class="status small hidden"></div>
     </div>
     <div class="card"><h2>Logboek</h2><div id="tripList"></div></div>
   </section>
