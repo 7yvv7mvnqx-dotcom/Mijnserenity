@@ -7,10 +7,12 @@
 <title>MijnSerenity Cloud</title>
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 1.2 · favorieten en fotogalerij</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 2.0 · kaart en digitaal logboek</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -26,8 +28,10 @@
 <section id="appView" class="hidden">
   <div class="tabs">
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
-    <button class="tab" onclick="showTab('pois',this)">POI's</button>
-    <button class="tab" onclick="showTab('costs',this)">Kosten</button>
+    <button class="tab" onclick="showTab('map',this);initMap()">Kaart</button>
+<button class="tab" onclick="showTab('pois',this)">POI's</button>
+    <button class="tab" onclick="showTab('logbook',this)">Logboek</button>
+<button class="tab" onclick="showTab('costs',this)">Kosten</button>
     <button class="tab" onclick="showTab('boat',this)">Boot & delen</button>
   </div>
 
@@ -36,9 +40,23 @@
       <div class="stat"><div class="label">Boot</div><div class="value" id="dBoat">-</div></div>
       <div class="stat"><div class="label">POI's</div><div class="value" id="dPois">0</div></div>
       <div class="stat"><div class="label">Kosten</div><div class="value" id="dCosts">€0</div></div>
-      <div class="stat"><div class="label">Sync</div><div class="value" id="dSync">Live</div></div>
+      <div class="stat"><div class="label">Tochten</div><div class="value" id="dTrips">0</div></div>
     </div></div>
     <div class="card"><b>Cloudsync actief.</b><p class="small">POI's, wijzigingen en foto's worden centraal opgeslagen en zijn zichtbaar op jullie apparaten.</p></div>
+  </section>
+
+
+  <section id="map" class="hidden">
+    <div class="card hero">
+      <h2>Interactieve kaart</h2>
+      <p class="small">Toont jullie gedeelde POI's en, na toestemming, je actuele positie.</p>
+      <div class="actions">
+        <button onclick="locateMe()">📍 Mijn positie</button>
+        <button class="secondary" onclick="fitPoiMarkers()">Alle POI's</button>
+        <button class="secondary" onclick="toggleFavoritesOnly()">⭐ Alleen favorieten</button>
+      </div>
+    </div>
+    <div class="card map-card"><div id="mapCanvas"></div></div>
   </section>
 
   <section id="pois" class="hidden">
@@ -54,6 +72,8 @@
         <div><label>Beoordeling 1–5</label><input id="poiRating" type="number" min="1" max="5"></div>
       </div>
       <label>Notitie</label><textarea id="poiReview"></textarea>
+<div class="row"><div><label>Breedtegraad</label><input id="poiLatitude" type="number" step="any" placeholder="Bijv. 52.695"></div><div><label>Lengtegraad</label><input id="poiLongitude" type="number" step="any" placeholder="Bijv. 6.194"></div></div>
+<button type="button" class="secondary" onclick="useCurrentLocationForPoi()">Gebruik huidige positie</button>
 <label class="checkline"><input id="poiFavorite" type="checkbox"> ⭐ Markeer als favoriet</label>
       <label>Foto's toevoegen</label>
       <input id="poiPhotos" type="file" accept="image/*" capture="environment" multiple>
@@ -65,6 +85,29 @@
       <div id="poiProgress" class="status small hidden"></div>
     </div>
     <div class="card"><h2>Gedeelde POI's</h2><div id="poiList"></div></div>
+  </section>
+
+
+  <section id="logbook" class="hidden">
+    <div class="card">
+      <h2>Nieuwe vaartocht</h2>
+      <div class="row">
+        <div><label>Datum</label><input id="tripDate" type="date"></div>
+        <div><label>Titel</label><input id="tripTitle" placeholder="Bijv. Meppel naar Gramsbergen"></div>
+      </div>
+      <div class="row">
+        <div><label>Vertrek</label><input id="tripFrom"></div>
+        <div><label>Aankomst</label><input id="tripTo"></div>
+      </div>
+      <div class="row">
+        <div><label>Afstand km</label><input id="tripDistance" type="number" step="0.1"></div>
+        <div><label>Vaartijd uren</label><input id="tripHours" type="number" step="0.1"></div>
+      </div>
+      <label>Bemanning</label><input id="tripCrew" placeholder="Michel, Desi">
+      <label>Notities</label><textarea id="tripNotes"></textarea>
+      <button onclick="saveTrip()">Vaartocht opslaan</button>
+    </div>
+    <div class="card"><h2>Logboek</h2><div id="tripList"></div></div>
   </section>
 
   <section id="costs" class="hidden">

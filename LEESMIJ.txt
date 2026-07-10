@@ -1,12 +1,15 @@
-MIJNSERENITY CLOUD 1.2
+MIJNSERENITY CLOUD 2.0
 
 NIEUW
-- POI markeren als favoriet
-- Ster zichtbaar in het POI-overzicht
-- Foto aantikken voor fullscreen weergave
-- Fullscreen galerij sluiten met het kruisje of door buiten de foto te tikken
+- Interactieve OpenStreetMap-kaart
+- POI's met GPS-coördinaten op de kaart
+- Huidige positie tonen
+- Alleen favorieten tonen
+- Basis digitaal logboek voor vaartochten
+- Logboek realtime gedeeld
 
 INSTALLATIE
-1. Voer MIJNSERENITY_CLOUD_1_2.sql uit in Supabase.
+1. Voer MIJNSERENITY_CLOUD_2_0.sql uit in Supabase.
 2. Upload index.html, styles.css en app.js naar GitHub.
 3. Netlify publiceert automatisch.
+4. Open mijnserenity.nl en vernieuw.

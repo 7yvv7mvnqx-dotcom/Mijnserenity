@@ -17,3 +17,12 @@ h1,h2,h3{margin:0 0 10px}main{max-width:980px;margin:auto;padding:14px}.sub,.sma
 .lightbox{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:18px}
 .lightbox img{max-width:100%;max-height:92vh;object-fit:contain;border-radius:12px}
 .lightbox-close{position:absolute;top:max(18px,env(safe-area-inset-top));right:18px;background:rgba(255,255,255,.16);color:white;font-size:30px;line-height:1;padding:8px 13px;border-radius:999px}
+
+.map-card{padding:8px}
+#mapCanvas{height:58vh;min-height:420px;border-radius:14px;overflow:hidden;background:#071827}
+.leaflet-container{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.map-popup h3{margin:0 0 6px;color:#0b1d2a}
+.map-popup p{margin:2px 0;color:#334}
+.trip-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.trip-summary span{background:rgba(255,255,255,.06);padding:8px;border-radius:10px;font-size:13px}
+@media(max-width:700px){#mapCanvas{height:52vh;min-height:350px}.trip-summary{grid-template-columns:1fr}}
