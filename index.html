@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 3.0 · POI kiezen op kaart en adres</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 3.1 · uitklapbare formulieren en werkende filters</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -95,7 +95,11 @@
   </section>
 
   <section id="pois" class="hidden">
-    <div class="card">
+    <div class="card collapsible-card">
+      <button class="section-toggle" type="button" onclick="toggleSection('poiFormWrap',this)">
+        <span>Nieuwe POI toevoegen</span><span class="chevron">⌄</span>
+      </button>
+      <div id="poiFormWrap" class="collapsible-content hidden">
       <h2 id="poiFormTitle">POI toevoegen</h2>
       <input id="poiId" type="hidden">
       <div class="row">
@@ -143,7 +147,11 @@
 
 
   <section id="logbook" class="hidden">
-    <div class="card">
+    <div class="card collapsible-card">
+      <button class="section-toggle" type="button" onclick="toggleSection('tripFormWrap',this)">
+        <span>Nieuwe vaartocht</span><span class="chevron">⌄</span>
+      </button>
+      <div id="tripFormWrap" class="collapsible-content hidden">
       <h2 id="tripFormTitle">Nieuwe vaartocht</h2>
 <input id="tripId" type="hidden">
       <div class="row">
@@ -167,6 +175,30 @@
         <button id="tripCancelButton" class="secondary hidden" onclick="cancelTripEdit()">Annuleren</button>
       </div>
       <div id="tripProgress" class="status small hidden"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Logboek zoeken</h2>
+      <div class="row">
+        <div>
+          <label>Periode</label>
+          <select id="tripDateFilter" onchange="renderTripList()">
+            <option value="">Alles</option>
+            <option value="day">Dag</option>
+            <option value="week">Week</option>
+            <option value="month">Maand</option>
+            <option value="year">Jaar</option>
+          </select>
+        </div>
+        <div>
+          <label>Datum</label>
+          <input id="tripFilterDate" type="date" onchange="renderTripList()">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="secondary" onclick="setTripFilterToday()">Vandaag</button>
+        <button class="secondary" onclick="clearTripFilters()">Wis filter</button>
+      </div>
     </div>
     <div class="card"><h2>Logboek</h2><div id="tripList"></div></div>
   </section>
@@ -176,7 +208,7 @@
     <div class="card"><h2>Gedeelde kosten</h2><div id="costList"></div></div>
   </section>
 
-<section id="finance" class="hidden"><div class="card hero"><h2>Financieel overzicht</h2><div class="grid"><div class="stat"><div class="label">Totale kosten</div><div class="value" id="fTotal">€0</div></div><div class="stat"><div class="label">Dit jaar</div><div class="value" id="fYear">€0</div></div><div class="stat"><div class="label">Brandstof</div><div class="value" id="fFuel">€0</div></div><div class="stat"><div class="label">Per vaaruur</div><div class="value" id="fPerHour">€0</div></div></div></div><div class="card"><h2>Filter</h2><div class="row"><div><label>Jaar</label><select id="financeYear" onchange="renderFinance()"></select></div><div><label>Categorie</label><select id="financeCategory" onchange="renderFinance()"><option value="">Alle categorieën</option><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Overig</option></select></div></div></div><div class="card"><h2>Kosten per categorie</h2><div id="financeBreakdown"></div></div><div class="card"><h2>Kosten per maand</h2><div id="financeMonths"></div></div></section>
+<section id="finance" class="hidden"><div class="card hero"><h2>Financieel overzicht</h2><div class="grid"><div class="stat"><div class="label">Totale kosten</div><div class="value" id="fTotal">€0</div></div><div class="stat"><div class="label">Dit jaar</div><div class="value" id="fYear">€0</div></div><div class="stat"><div class="label">Brandstof</div><div class="value" id="fFuel">€0</div></div><div class="stat"><div class="label">Per vaaruur</div><div class="value" id="fPerHour">€0</div></div></div></div><div class="card"><h2>Filter</h2><div class="row"><div><label>Jaar</label><select id="financeYear"></select></div><div><label>Categorie</label><select id="financeCategory"><option value="">Alle categorieën</option><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Overig</option></select></div></div></div><div class="card"><h2>Kosten per categorie</h2><div id="financeBreakdown"></div></div><div class="card"><h2>Kosten per maand</h2><div id="financeMonths"></div></div></section>
 <section id="settings" class="hidden"><div class="card"><h2>Bootinstellingen</h2>
       <label>Foto van Serenity voor het dashboard</label>
       <input id="settingBoatPhoto" type="file" accept="image/*">

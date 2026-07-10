@@ -10,6 +10,12 @@ let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInsta
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 function setMsg(t){$('authMsg').textContent=t}
+function toggleSection(id,button){
+  const el=$(id);
+  const willOpen=el.classList.contains('hidden');
+  el.classList.toggle('hidden');
+  button?.classList.toggle('open',willOpen);
+}
 function goToTab(id){
   const buttons=[...document.querySelectorAll('.tab')];
   const map={dashboard:0,map:1,pois:2,logbook:3,costs:4,finance:5,settings:6,boat:7};
@@ -57,7 +63,7 @@ async function savePoi(){
 }
 function editPoi(id,name,category,place,address,rating,review,isFavorite,latitude,longitude){
   $('poiId').value=id;$('poiName').value=name;$('poiCategory').value=category||'Haven';$('poiPlace').value=place||'';$('poiAddress').value=address||'';$('poiRating').value=rating||'';$('poiReview').value=review||'';$('poiFavorite').checked=!!isFavorite;$('poiLatitude').value=latitude??'';$('poiLongitude').value=longitude??'';
-  $('poiFormTitle').textContent='POI bewerken';$('poiSaveButton').textContent='Wijzigingen opslaan';$('poiCancelButton').classList.remove('hidden');
+  $('poiFormTitle').textContent='POI bewerken';$('poiFormWrap').classList.remove('hidden');document.querySelector('[onclick*=\"poiFormWrap\"]')?.classList.add('open');$('poiSaveButton').textContent='Wijzigingen opslaan';$('poiCancelButton').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
 }
 async function deletePoi(id){
@@ -127,23 +133,44 @@ async function loadDashboardPhoto(){
   }
   const {data,error}=await sb.storage.from(BOAT_PHOTO_BUCKET).createSignedUrl(settingsCache.dashboard_photo_path,3600);
   if(error){img.classList.add('hidden');placeholder.classList.remove('hidden');return}
-  img.src=data.signedUrl;img.classList.remove('hidden');placeholder.classList.add('hidden');
+  img.src=data.signedUrl+'&v='+Date.now();img.classList.remove('hidden');placeholder.classList.add('hidden');
 }
 async function uploadDashboardPhoto(){
   const file=$('settingBoatPhoto').files[0];
   if(!file)return alert('Kies eerst een foto.');
+  $('dashboardPhotoMsg').textContent='Foto uploaden…';
+  $('dashboardPhotoMsg').classList.remove('hidden');
+
   const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
-  const path=`${currentBoat.id}/dashboard.${ext}`;
-  $('dashboardPhotoMsg').textContent='Foto uploaden…';$('dashboardPhotoMsg').classList.remove('hidden');
-  if(settingsCache?.dashboard_photo_path && settingsCache.dashboard_photo_path!==path){
-    await sb.storage.from(BOAT_PHOTO_BUCKET).remove([settingsCache.dashboard_photo_path]);
-  }
-  const {error:uploadError}=await sb.storage.from(BOAT_PHOTO_BUCKET).upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});
+  const path=`${currentBoat.id}/dashboard-${Date.now()}.${ext}`;
+
+  const {error:uploadError}=await sb.storage.from(BOAT_PHOTO_BUCKET).upload(path,file,{
+    upsert:false,
+    contentType:file.type||'image/jpeg',
+    cacheControl:'3600'
+  });
   if(uploadError)return alert(uploadError.message);
-  const row={...(settingsCache||{}),boat_id:currentBoat.id,dashboard_photo_path:path,updated_at:new Date().toISOString()};
+
+  const oldPath=settingsCache?.dashboard_photo_path||null;
+  const row={
+    boat_id:currentBoat.id,
+    boat_name:settingsCache?.boat_name||currentBoat.name||'Serenity',
+    fuel_price:settingsCache?.fuel_price||null,
+    fuel_per_hour:settingsCache?.fuel_per_hour||null,
+    tank_capacity:settingsCache?.tank_capacity||null,
+    dashboard_photo_path:path,
+    updated_at:new Date().toISOString()
+  };
   const {error}=await sb.from('boat_settings').upsert(row,{onConflict:'boat_id'});
-  if(error)return alert(error.message);
-  settingsCache=row;$('dashboardPhotoMsg').textContent='Dashboardfoto opgeslagen ✅';$('settingBoatPhoto').value='';await loadDashboardPhoto();
+  if(error){
+    await sb.storage.from(BOAT_PHOTO_BUCKET).remove([path]);
+    return alert(error.message);
+  }
+  if(oldPath&&oldPath!==path)await sb.storage.from(BOAT_PHOTO_BUCKET).remove([oldPath]);
+  settingsCache=row;
+  $('dashboardPhotoMsg').textContent='Dashboardfoto opgeslagen ✅';
+  $('settingBoatPhoto').value='';
+  await loadDashboardPhoto();
 }
 async function removeDashboardPhoto(){
   if(!settingsCache?.dashboard_photo_path)return;
@@ -157,31 +184,56 @@ async function removeDashboardPhoto(){
 function loadSettingsForm(){if(!settingsCache)return;$('settingBoatName').value=settingsCache.boat_name||'Serenity';$('settingFuelPrice').value=settingsCache.fuel_price??'';$('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';$('settingTankCapacity').value=settingsCache.tank_capacity??''}
 async function saveSettings(){const row={boat_id:currentBoat.id,boat_name:$('settingBoatName').value.trim()||'Serenity',fuel_price:Number($('settingFuelPrice').value)||null,fuel_per_hour:Number($('settingFuelPerHour').value)||null,tank_capacity:Number($('settingTankCapacity').value)||null,updated_at:new Date().toISOString()};const{error}=await sb.from('boat_settings').upsert(row,{onConflict:'boat_id'});if(error)return alert(error.message);settingsCache=row;$('settingsMsg').textContent='Instellingen opgeslagen ✅';$('settingsMsg').classList.remove('hidden');previewFuelCalculation()}
 function previewFuelCalculation(){if(!$('fuelPreview'))return;const h=Number($('tripHours').value)||0,l=Number($('tripFuelLiters').value)||(h&&settingsCache?.fuel_per_hour?h*Number(settingsCache.fuel_per_hour):0),c=Number($('tripFuelCost').value)||(l&&settingsCache?.fuel_price?l*Number(settingsCache.fuel_price):0);$('fuelPreview').textContent=l?`Geschat: ${l.toFixed(1)} liter · €${c.toFixed(2)}`:'Vul vaartijd in en stel verbruik/prijs in.'}
-function renderFinance(){if(!$('fTotal'))return;const now=String(new Date().getFullYear()),allFuel=tripCache.reduce((s,t)=>s+Number(t.fuel_cost||0),0),allRegular=costCache.reduce((s,c)=>s+Number(c.amount||0),0),hours=tripCache.reduce((s,t)=>s+Number(t.duration_hours||0),0),year=costCache.filter(c=>String(c.expense_date).startsWith(now)).reduce((s,c)=>s+Number(c.amount||0),0)+tripCache.filter(t=>String(t.trip_date).startsWith(now)).reduce((s,t)=>s+Number(t.fuel_cost||0),0);$('fTotal').textContent='€'+(allFuel+allRegular).toFixed(0);$('fYear').textContent='€'+year.toFixed(0);$('fFuel').textContent='€'+allFuel.toFixed(0);$('fPerHour').textContent=hours?'€'+((allFuel+allRegular)/hours).toFixed(2):'€0';const groups={};costCache.forEach(c=>groups[c.category||'Overig']=(groups[c.category||'Overig']||0)+Number(c.amount||0));groups['Brandstof logboek']=allFuel;const max=Math.max(1,...Object.values(groups));$('financeBreakdown').innerHTML=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="finance-row"><div><b>${esc(k)}</b><div class="finance-bar"><span style="width:${Math.round(v/max*100)}%"></span></div></div><div>€${v.toFixed(2)}</div></div>`).join('');const months={};costCache.forEach(c=>{const m=String(c.expense_date).slice(0,7);months[m]=(months[m]||0)+Number(c.amount||0)});tripCache.forEach(t=>{const m=String(t.trip_date).slice(0,7);months[m]=(months[m]||0)+Number(t.fuel_cost||0)});$('financeMonths').innerHTML=Object.entries(months).sort().map(([m,v])=>`<div class="finance-row"><div>${m}</div><div>€${v.toFixed(2)}</div></div>`).join('')}
+function renderFinance(){
+  if(!$('fTotal'))return;
+  const currentYear=String(new Date().getFullYear());
+  const years=[...new Set([
+    ...costCache.map(c=>String(c.expense_date||'').slice(0,4)),
+    ...tripCache.map(t=>String(t.trip_date||'').slice(0,4))
+  ].filter(Boolean))].sort().reverse();
 
+  const yearSelect=$('financeYear');
+  const currentValue=yearSelect?.value||'';
+  if(yearSelect){
+    yearSelect.innerHTML='<option value="">Alle jaren</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    if(years.includes(currentValue))yearSelect.value=currentValue;
+  }
 
-function openPoiMapPicker(){
-  $('poiMapPicker').classList.remove('hidden');
-  document.body.style.overflow='hidden';
-  const lat=Number($('poiLatitude').value);
-  const lon=Number($('poiLongitude').value);
-  const hasExisting=Number.isFinite(lat)&&Number.isFinite(lon)&&lat!==0&&lon!==0;
-  const start=hasExisting?[lat,lon]:[52.35,5.45];
+  const selectedYear=yearSelect?.value||'';
+  const selectedCategory=$('financeCategory')?.value||'';
 
-  setTimeout(()=>{
-    if(!poiPickerMap){
-      poiPickerMap=L.map('poiPickerMap').setView(start,hasExisting?14:8);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-        maxZoom:19,
-        attribution:'&copy; OpenStreetMap'
-      }).addTo(poiPickerMap);
-      poiPickerMap.on('click',e=>setPoiPickerLocation(e.latlng.lat,e.latlng.lng));
-    }else{
-      poiPickerMap.invalidateSize();
-      poiPickerMap.setView(start,hasExisting?14:8);
-    }
-    if(hasExisting)setPoiPickerLocation(lat,lon,false);
-  },120);
+  const regular=costCache.filter(c=>{
+    const yearOk=!selectedYear||String(c.expense_date||'').startsWith(selectedYear);
+    const catOk=!selectedCategory||c.category===selectedCategory;
+    return yearOk&&catOk;
+  });
+
+  const fuelTrips=tripCache.filter(t=>{
+    const yearOk=!selectedYear||String(t.trip_date||'').startsWith(selectedYear);
+    const catOk=!selectedCategory||selectedCategory==='Diesel';
+    return yearOk&&catOk&&Number(t.fuel_cost||0)>0;
+  });
+
+  const filteredTotal=regular.reduce((s,c)=>s+Number(c.amount||0),0)+fuelTrips.reduce((s,t)=>s+Number(t.fuel_cost||0),0);
+  const allFuel=tripCache.reduce((s,t)=>s+Number(t.fuel_cost||0),0);
+  const yearTotal=costCache.filter(c=>String(c.expense_date||'').startsWith(currentYear)).reduce((s,c)=>s+Number(c.amount||0),0)+tripCache.filter(t=>String(t.trip_date||'').startsWith(currentYear)).reduce((s,t)=>s+Number(t.fuel_cost||0),0);
+  const totalHours=tripCache.reduce((s,t)=>s+Number(t.duration_hours||0),0);
+
+  $('fTotal').textContent='€'+filteredTotal.toFixed(0);
+  $('fYear').textContent='€'+yearTotal.toFixed(0);
+  $('fFuel').textContent='€'+allFuel.toFixed(0);
+  $('fPerHour').textContent=totalHours?'€'+((costCache.reduce((s,c)=>s+Number(c.amount||0),0)+allFuel)/totalHours).toFixed(2):'€0';
+
+  const groups={};
+  regular.forEach(c=>groups[c.category||'Overig']=(groups[c.category||'Overig']||0)+Number(c.amount||0));
+  if(fuelTrips.length)groups['Diesel']=(groups['Diesel']||0)+fuelTrips.reduce((s,t)=>s+Number(t.fuel_cost||0),0);
+  const max=Math.max(1,...Object.values(groups));
+  $('financeBreakdown').innerHTML=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="finance-row"><div><b>${esc(k)}</b><div class="finance-bar"><span style="width:${Math.round(v/max*100)}%"></span></div></div><div>€${v.toFixed(2)}</div></div>`).join('')||'<span class="small">Geen kosten in dit filter.</span>';
+
+  const months={};
+  regular.forEach(c=>{const m=String(c.expense_date||'').slice(0,7);if(m)months[m]=(months[m]||0)+Number(c.amount||0)});
+  fuelTrips.forEach(t=>{const m=String(t.trip_date||'').slice(0,7);if(m)months[m]=(months[m]||0)+Number(t.fuel_cost||0)});
+  $('financeMonths').innerHTML=Object.entries(months).sort().map(([m,v])=>`<div class="finance-row"><div>${m}</div><div>€${v.toFixed(2)}</div></div>`).join('')||'<span class="small">Geen maandgegevens.</span>';
 }
 function setPoiPickerLocation(lat,lon,move=true){
   poiPickerSelection={lat:Number(lat),lon:Number(lon)};
@@ -312,7 +364,7 @@ function editTrip(id,tripDate,title,departure,arrival,distance,hours,fuelLiters,
   $('tripHours').value=hours??'';$('tripFuelLiters').value=fuelLiters??'';$('tripFuelCost').value=fuelCost??'';
   $('tripCrew').value=crew||'';
   $('tripNotes').value=notes||'';
-  $('tripFormTitle').textContent='Vaartocht bewerken';
+  $('tripFormTitle').textContent='Vaartocht bewerken';$('tripFormWrap').classList.remove('hidden');document.querySelector('[onclick*=\"tripFormWrap\"]')?.classList.add('open');
   $('tripSaveButton').textContent='Wijzigingen opslaan';
   $('tripCancelButton').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
@@ -370,14 +422,58 @@ async function loadTrips(){
     loadTripPhotos()
   ]);
   if(error){console.error(error);return}
-  tripCache=data;$('dTrips').textContent=data.length;
-  $('tripList').innerHTML=data.length?data.map(t=>{
-    const photoHtml=(photos[t.id]||[]).map(ph=>`<div class="trip-photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(t.title||'vaarttocht')}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="trip-photo-delete" onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
-    return `<div class="item"><h3>${esc(t.title||'Vaartocht')}</h3><div class="small">${esc(t.trip_date)} · ${esc(t.departure||'')} → ${esc(t.arrival||'')}</div><div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span><span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span><span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span></div><p>${esc(t.notes||'')}</p>${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}<button class="delete-mini" onclick="deleteTrip('${t.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.fuel_liters)},${JSON.stringify(t.fuel_cost)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>✏️ Bewerken</button></div></div>`;
-  }).join(''):'<span class="small">Nog geen vaartochten.</span>';
+  tripCache=data;
+  window.tripPhotoCache=photos;
+  $('dTrips').textContent=data.length;
+  renderTripList();
+  renderFinance();
 }
 
 (async()=>{const {data:{session}}=await sb.auth.getSession();await initialise(session)})();
+
+
+function getIsoWeekRange(dateString){
+  const d=new Date(dateString+'T12:00:00');
+  const day=(d.getDay()+6)%7;
+  const start=new Date(d);start.setDate(d.getDate()-day);
+  const end=new Date(start);end.setDate(start.getDate()+6);
+  return [start.toISOString().slice(0,10),end.toISOString().slice(0,10)];
+}
+function renderTripList(){
+  if(!$('tripList'))return;
+  const mode=$('tripDateFilter')?.value||'';
+  const chosen=$('tripFilterDate')?.value||'';
+  let filtered=[...tripCache];
+  if(mode&&chosen){
+    if(mode==='day')filtered=filtered.filter(t=>t.trip_date===chosen);
+    if(mode==='week'){
+      const [start,end]=getIsoWeekRange(chosen);
+      filtered=filtered.filter(t=>t.trip_date>=start&&t.trip_date<=end);
+    }
+    if(mode==='month')filtered=filtered.filter(t=>String(t.trip_date).slice(0,7)===chosen.slice(0,7));
+    if(mode==='year')filtered=filtered.filter(t=>String(t.trip_date).slice(0,4)===chosen.slice(0,4));
+  }
+  const photos=window.tripPhotoCache||{};
+  $('tripList').innerHTML=filtered.length?filtered.map(t=>{
+    const photoHtml=(photos[t.id]||[]).map(ph=>`<div class="trip-photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(t.title||'vaarttocht')}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="trip-photo-delete" onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
+    return `<div class="item"><h3>${esc(t.title||'Vaartocht')}</h3><div class="small">${esc(t.trip_date)} · ${esc(t.departure||'')} → ${esc(t.arrival||'')}</div><div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span><span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span><span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span></div><p>${esc(t.notes||'')}</p>${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}<button class="delete-mini" onclick="deleteTrip('${t.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.fuel_liters)},${JSON.stringify(t.fuel_cost)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>✏️ Bewerken</button></div></div>`;
+  }).join(''):'<span class="small">Geen vaartochten gevonden.</span>';
+}
+function setTripFilterToday(){
+  $('tripDateFilter').value='day';
+  $('tripFilterDate').value=new Date().toISOString().slice(0,10);
+  renderTripList();
+}
+function clearTripFilters(){
+  $('tripDateFilter').value='';
+  $('tripFilterDate').value='';
+  renderTripList();
+}
+function resetFinanceFilters(){
+  $('financeYear').value='';
+  $('financeCategory').value='';
+  renderFinance();
+}
 
 function openLightbox(url){
   $('lightboxImage').src=url;
