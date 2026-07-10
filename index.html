@@ -1,131 +1,58 @@
 <!doctype html>
 <html lang="nl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MijnSerenity Cloud v16</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#061525">
+<title>MijnSerenity Cloud</title>
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{--bg:#061525;--navy:#020b13;--panel:#102a3d;--panel2:#173a54;--text:#f5fbff;--muted:#a9bdca;--accent:#45c8ff;--ok:#4bd38f;--warn:#ffd05a;--danger:#ff6b6b}
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:linear-gradient(180deg,#020b13,#061525);color:var(--text)}
-header{padding:22px 16px;background:rgba(2,11,19,.94);position:sticky;top:0;z-index:5;border-bottom:1px solid rgba(255,255,255,.08)}
-h1{margin:0}.sub,.small,label{color:var(--muted)}main{padding:14px;max-width:1050px;margin:auto}
-.tabs{display:flex;gap:8px;overflow:auto;margin-bottom:12px}button{border:0;border-radius:14px;padding:12px 14px;font-weight:800;background:var(--accent);color:#03101b;font-size:16px}
-button.tab{background:var(--panel2);color:white;white-space:nowrap}.tab.active{background:var(--accent);color:#03101b}.secondary{background:#254a63;color:white}.danger{background:var(--danger);color:white}.ok{background:var(--ok)}
-.card{background:rgba(16,42,61,.96);border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:14px;margin-bottom:12px}
-.hero{background:linear-gradient(135deg,rgba(69,200,255,.20),rgba(75,211,143,.10)),var(--panel)}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}}
-input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.15);background:#071827;color:white;border-radius:12px;padding:12px;font-size:16px}textarea{min-height:90px}
-.stat{background:rgba(255,255,255,.06);border-radius:14px;padding:12px}.label{font-size:12px;color:var(--muted)}.value{font-size:22px;font-weight:900}
-.hidden{display:none}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.item{border-top:1px solid rgba(255,255,255,.10);padding:12px 0}.item:first-child{border-top:0}.item h3{margin:0 0 4px}.item p{margin:3px 0;color:var(--muted)}
-.pill{display:inline-block;background:rgba(255,255,255,.07);border-radius:999px;padding:7px 10px;margin:4px 4px 0 0}.warn{background:#3b2a10;border:1px solid var(--warn)}.good{background:#103b27;border:1px solid var(--ok)}
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">v16 · eerste gedeelde cloudsync voor Michel & Desi</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 1.0 · gedeeld voor Michel en Desi</div></header>
 <main>
-<div class="tabs">
-<button class="tab active" onclick="showTab('dash',this)">Dashboard</button>
-<button class="tab" onclick="showTab('pois',this)">POI’s</button>
-<button class="tab" onclick="showTab('costs',this)">Kosten</button>
-<button class="tab" onclick="showTab('sync',this);renderSync()">Cloud sync</button>
-<button class="tab" onclick="showTab('setup',this)">Setup</button>
-</div>
-
-<section id="dash">
-<div class="card hero"><h2>Gedeelde Serenity-data</h2><div class="grid">
-<div class="stat"><div class="label">POI’s</div><div class="value" id="sPois">0</div></div>
-<div class="stat"><div class="label">Kosten</div><div class="value" id="sCosts">€0</div></div>
-<div class="stat"><div class="label">Cloud</div><div class="value" id="sCloud">Uit</div></div>
-<div class="stat"><div class="label">Laatste sync</div><div class="value" id="sSync">-</div></div>
-</div></div>
-<div class="card"><h2>Wat is nieuw in V16?</h2><p class="small">Deze versie kan data centraal synchroniseren via Supabase. Zonder Supabase-configuratie blijft hij lokaal werken. Zodra we Supabase invullen, zien jij en Desi dezelfde POI’s en kosten.</p></div>
+<section id="authView">
+  <div class="card hero">
+    <h2>Inloggen</h2>
+    <p class="small">Michel en Desi gebruiken ieder een eigen account.</p>
+    <label>E-mailadres</label><input id="email" type="email" autocomplete="email">
+    <label>Wachtwoord</label><input id="password" type="password" minlength="6" autocomplete="current-password">
+    <div class="actions"><button onclick="signIn()">Inloggen</button><button class="secondary" onclick="signUp()">Account maken</button></div>
+    <div id="authMsg" class="status small">Nog niet ingelogd.</div>
+  </div>
 </section>
-
-<section id="pois" class="hidden">
-<div class="card"><h2>POI toevoegen</h2>
-<input id="poiEditId" type="hidden">
-<div class="row"><div><label>Naam</label><input id="poiName"></div><div><label>Categorie</label><select id="poiCat"><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div></div>
-<div class="row"><div><label>Beoordeling 1-5</label><input id="poiRating" type="number" min="1" max="5"></div><div><label>Plaats / route</label><input id="poiPlace"></div></div>
-<label>Review / notitie</label><textarea id="poiReview"></textarea>
-<div class="actions"><button onclick="savePoi()">POI opslaan</button><button class="secondary" onclick="syncNow()">Sync nu</button></div>
-</div>
-<div class="card"><h2>POI’s</h2><div id="poiList"></div></div>
-</section>
-
-<section id="costs" class="hidden">
-<div class="card"><h2>Kosten toevoegen</h2>
-<div class="row"><div><label>Datum</label><input id="costDate" type="date"></div><div><label>Bedrag €</label><input id="costAmount" type="number" step="0.01"></div></div>
-<div class="row"><div><label>Categorie</label><select id="costCategory"><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Overig</option></select></div><div><label>Omschrijving</label><input id="costDesc"></div></div>
-<div class="actions"><button onclick="saveCost()">Kosten opslaan</button><button class="secondary" onclick="syncNow()">Sync nu</button></div>
-</div>
-<div class="card"><h2>Kostenoverzicht</h2><div id="costList"></div></div>
-</section>
-
-<section id="sync" class="hidden">
-<div class="card hero"><h2>Cloud sync</h2><div id="syncStatus" class="small"></div>
-<div class="actions"><button onclick="syncNow()">Synchroniseer nu</button><button class="secondary" onclick="loadFromCloud()">Download cloud-data</button><button class="secondary" onclick="pushToCloud()">Upload lokale data</button></div></div>
-<div class="card warn"><h2>Belangrijk</h2><p>Voor echte gedeelde data moeten we éénmalig Supabase aanmaken en de URL + public key invullen bij Setup. Daarna zien jij en Desi dezelfde data.</p></div>
-</section>
-
-<section id="setup" class="hidden">
-<div class="card"><h2>Supabase setup</h2>
-<p class="small">Maak later in Supabase één project aan. Vul hier de project URL en anon public key in. Dit zijn geen wachtwoorden; de echte beveiliging komt in Supabase-regels.</p>
-<label>Supabase URL</label><input id="supabaseUrl" placeholder="https://xxxx.supabase.co">
-<label>Supabase anon public key</label><textarea id="supabaseKey"></textarea>
-<div class="actions"><button onclick="saveCloudSettings()">Cloud instellingen opslaan</button><button class="secondary" onclick="testCloud()">Test verbinding</button></div>
-</div>
-<div class="card"><h2>SQL voor Supabase</h2>
-<p class="small">Deze tabellen hebben we nodig. Kopieer dit later in Supabase SQL editor.</p>
-<textarea readonly style="min-height:220px">create table serenity_data (
-  id text primary key,
-  kind text not null,
-  data jsonb not null,
-  updated_at timestamptz default now()
-);
-
-alter table serenity_data enable row level security;
-
-create policy "public read serenity data"
-on serenity_data for select
-using (true);
-
-create policy "public insert serenity data"
-on serenity_data for insert
-with check (true);
-
-create policy "public update serenity data"
-on serenity_data for update
-using (true);</textarea>
-</div>
+<section id="appView" class="hidden">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="showTab('pois',this)">POI's</button>
+    <button class="tab" onclick="showTab('costs',this)">Kosten</button>
+    <button class="tab" onclick="showTab('boat',this)">Boot & delen</button>
+  </div>
+  <section id="dashboard">
+    <div class="card hero"><h2 id="welcome">Welkom</h2><div class="grid">
+      <div class="stat"><div class="label">Boot</div><div class="value" id="dBoat">-</div></div>
+      <div class="stat"><div class="label">POI's</div><div class="value" id="dPois">0</div></div>
+      <div class="stat"><div class="label">Kosten</div><div class="value" id="dCosts">€0</div></div>
+      <div class="stat"><div class="label">Sync</div><div class="value" id="dSync">Live</div></div>
+    </div></div>
+    <div class="card"><b>Cloudsync actief.</b><p class="small">Zodra jij en Desi aan dezelfde boot zijn gekoppeld, verschijnen wijzigingen automatisch op beide apparaten.</p></div>
+  </section>
+  <section id="pois" class="hidden">
+    <div class="card"><h2>POI toevoegen</h2><div class="row"><div><label>Naam</label><input id="poiName"></div><div><label>Categorie</label><select id="poiCategory"><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div></div><div class="row"><div><label>Plaats</label><input id="poiPlace"></div><div><label>Beoordeling 1–5</label><input id="poiRating" type="number" min="1" max="5"></div></div><label>Notitie</label><textarea id="poiReview"></textarea><button onclick="addPoi()">Opslaan</button></div>
+    <div class="card"><h2>Gedeelde POI's</h2><div id="poiList"></div></div>
+  </section>
+  <section id="costs" class="hidden">
+    <div class="card"><h2>Kosten toevoegen</h2><div class="row"><div><label>Datum</label><input id="costDate" type="date"></div><div><label>Bedrag €</label><input id="costAmount" type="number" step="0.01"></div></div><div class="row"><div><label>Categorie</label><select id="costCategory"><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Overig</option></select></div><div><label>Omschrijving</label><input id="costDescription"></div></div><button onclick="addCost()">Opslaan</button></div>
+    <div class="card"><h2>Gedeelde kosten</h2><div id="costList"></div></div>
+  </section>
+  <section id="boat" class="hidden">
+    <div id="noBoatCard" class="card"><h2>Serenity koppelen</h2><p class="small">Michel maakt Serenity één keer aan. Desi gebruikt daarna de deelcode.</p><div class="row"><div><label>Bootnaam</label><input id="newBoatName" value="Serenity"><button onclick="createBoat()">Boot aanmaken</button></div><div><label>Deelcode</label><input id="joinCode" autocapitalize="characters" placeholder="Bijvoorbeeld A1B2C3"><button class="secondary" onclick="joinBoat()">Deelnemen</button></div></div></div>
+    <div id="boatCard" class="card hidden"><h2 id="boatName">Serenity</h2><span class="pill" id="rolePill">Lid</span><div id="ownerInvite" class="hidden" style="margin-top:14px"><p class="small">Maak een tijdelijke deelcode voor Desi. De code blijft 7 dagen geldig.</p><button onclick="createInvite()">Deelcode maken</button><div id="inviteCode" style="font-size:34px;font-weight:900;margin-top:12px"></div></div></div>
+    <div class="card"><button class="danger" onclick="signOut()">Uitloggen</button></div>
+  </section>
 </section>
 </main>
-
-<script>
-const KEY='mijnserenity_cloud_v16_data', CLOUD='mijnserenity_cloud_v16_settings';
-const $=id=>document.getElementById(id);
-function today(){return new Date().toISOString().slice(0,10)}
-function showTab(id,el){document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');render()}
-function defaultState(){return {pois:[],costs:[],lastSync:''}}
-function migrate(){if(!localStorage.getItem(KEY)){let oldKeys=['mijnserenity_cloud_v15','mijnserenity_cloud_v14','mijnserenity_cloud_v13','mijnserenity_cloud_v12','mijnserenity_cloud_v11','mijnserenity_cloud_v10','mijnserenity_cloud_v9','mijnserenity_cloud_v8','mijnserenity_cloud_v7','mijnserenity_cloud_v6','mijnserenity_cloud_v5'];for(let k of oldKeys){try{let raw=localStorage.getItem(k);if(raw){let o=JSON.parse(raw);let n={pois:o.pois||[],costs:o.costs||[],lastSync:o.lastSync||''};localStorage.setItem(KEY,JSON.stringify(n));break}}catch(e){}}}}
-function state(){migrate();return JSON.parse(localStorage.getItem(KEY)||JSON.stringify(defaultState()))}
-function saveState(s){localStorage.setItem(KEY,JSON.stringify(s));render()}
-function val(id){return $(id).value.trim()}
-function cloudSettings(){return JSON.parse(localStorage.getItem(CLOUD)||'{"url":"","key":""}')}
-function client(){let c=cloudSettings();if(!c.url||!c.key||!window.supabase)return null;return window.supabase.createClient(c.url,c.key)}
-function saveCloudSettings(){localStorage.setItem(CLOUD,JSON.stringify({url:val('supabaseUrl'),key:val('supabaseKey')}));alert('Cloud instellingen opgeslagen.');render()}
-async function testCloud(){let sb=client();if(!sb)return alert('Vul eerst Supabase URL en key in.');let {error}=await sb.from('serenity_data').select('id').limit(1);alert(error?'Nog niet goed: '+error.message:'Verbinding werkt ✅')}
-function savePoi(){let s=state(), edit=val('poiEditId');let p={id:edit||String(Date.now()),name:val('poiName'),cat:val('poiCat'),rating:+val('poiRating')||0,place:val('poiPlace'),review:val('poiReview'),favorite:false,updated_at:new Date().toISOString()};if(!p.name)return alert('Vul een naam in.');if(edit)s.pois=s.pois.map(x=>x.id===edit?p:x);else s.pois.unshift(p);saveState(s);['poiEditId','poiName','poiRating','poiPlace','poiReview'].forEach(id=>$(id).value='');syncNow(false)}
-function deletePoi(id){let s=state();s.pois=s.pois.filter(p=>p.id!==id);saveState(s);syncNow(false)}
-function editPoi(id){let p=state().pois.find(x=>x.id===id);if(!p)return;$('poiEditId').value=p.id;$('poiName').value=p.name;$('poiCat').value=p.cat;$('poiRating').value=p.rating||'';$('poiPlace').value=p.place||'';$('poiReview').value=p.review||'';showTab('pois',document.querySelectorAll('.tab')[1])}
-function saveCost(){let s=state();let c={id:String(Date.now()),date:val('costDate')||today(),amount:+val('costAmount')||0,category:val('costCategory'),desc:val('costDesc'),updated_at:new Date().toISOString()};s.costs.unshift(c);saveState(s);['costAmount','costDesc'].forEach(id=>$(id).value='');syncNow(false)}
-function deleteCost(id){let s=state();s.costs=s.costs.filter(c=>c.id!==id);saveState(s);syncNow(false)}
-function render(){let s=state(), cs=cloudSettings();$('sPois').textContent=s.pois.length;$('sCosts').textContent='€'+s.costs.reduce((a,c)=>a+(+c.amount||0),0).toFixed(0);$('sCloud').textContent=cs.url?'Aan':'Uit';$('sSync').textContent=s.lastSync?String(s.lastSync).split(' ')[0]:'-';$('poiList').innerHTML=s.pois.length?s.pois.map(p=>`<div class="item"><h3>${p.name}</h3><p>${p.cat} · ${p.place||''} · ${'★★★★★'.slice(0,p.rating||0)}</p><p>${p.review||''}</p><div class="actions"><button class="secondary" onclick="editPoi('${p.id}')">Bewerk</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijder</button></div></div>`).join(''):'<div class="small">Nog geen POI’s.</div>';$('costList').innerHTML=s.costs.length?s.costs.map(c=>`<div class="item"><h3>€${(+c.amount||0).toFixed(2)} · ${c.category}</h3><p>${c.date} · ${c.desc}</p><button class="danger" onclick="deleteCost('${c.id}')">Verwijder</button></div>`).join(''):'<div class="small">Nog geen kosten.</div>';if($('supabaseUrl')){$('supabaseUrl').value=cs.url||'';$('supabaseKey').value=cs.key||''}renderSync()}
-function renderSync(){let cs=cloudSettings();if($('syncStatus'))$('syncStatus').innerHTML=cs.url?'Cloud is ingesteld. Gebruik sync om data tussen apparaten gelijk te trekken.':'Cloud staat nog uit. Ga naar Setup en vul Supabase in.'}
-async function pushToCloud(){let sb=client();if(!sb)return alert('Cloud niet ingesteld.');let s=state();let rows=[...s.pois.map(p=>({id:'poi_'+p.id,kind:'poi',data:p,updated_at:p.updated_at||new Date().toISOString()})),...s.costs.map(c=>({id:'cost_'+c.id,kind:'cost',data:c,updated_at:c.updated_at||new Date().toISOString()}))];if(!rows.length)return alert('Geen data om te uploaden.');let {error}=await sb.from('serenity_data').upsert(rows);if(error)return alert('Upload fout: '+error.message);s.lastSync=new Date().toLocaleString('nl-NL');saveState(s);alert('Upload klaar ✅')}
-async function loadFromCloud(){let sb=client();if(!sb)return alert('Cloud niet ingesteld.');let {data,error}=await sb.from('serenity_data').select('*');if(error)return alert('Download fout: '+error.message);let s=state();let pois=data.filter(r=>r.kind==='poi').map(r=>r.data);let costs=data.filter(r=>r.kind==='cost').map(r=>r.data);s.pois=mergeById(s.pois,pois);s.costs=mergeById(s.costs,costs);s.lastSync=new Date().toLocaleString('nl-NL');saveState(s);alert('Download klaar ✅')}
-function mergeById(local,remote){let m={};[...local,...remote].forEach(x=>{if(!x.id)x.id=String(Date.now()+Math.random());let old=m[x.id];m[x.id]=!old||String(x.updated_at||'')>String(old.updated_at||'')?x:old});return Object.values(m).sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')))}
-async function syncNow(show=true){let sb=client();if(!sb){if(show)alert('Cloud nog niet ingesteld.');return}await pushToCloud();await loadFromCloud()}
-$('costDate').value=today();render();
-</script>
-</body></html>
+<script src="app.js"></script>
+</body>
+</html>

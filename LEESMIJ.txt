@@ -1,0 +1,23 @@
+MIJNSERENITY CLOUD 1.0
+
+Dit is de opgesplitste projectversie:
+- index.html      structuur
+- styles.css      vormgeving
+- app.js          Supabase, accounts, boot delen, POI's en kosten
+- manifest.json   beginscherm/PWA
+- netlify.toml    Netlify-instellingen
+- SUPABASE_V18_FIX.sql databasefundering
+
+PUBLICEREN
+Vervang in GitHub de bestaande bestanden door deze bestanden.
+Netlify publiceert daarna automatisch.
+
+TESTVOLGORDE
+1. Open mijnserenity.nl.
+2. Maak een account voor Michel.
+3. Bevestig de e-mail indien Supabase dat vraagt.
+4. Log in en maak Serenity aan.
+5. Maak bij Boot & delen een deelcode.
+6. Maak op Desi's toestel een apart account.
+7. Voer de deelcode in.
+8. Voeg op één toestel een test-POI toe en controleer het andere toestel.
