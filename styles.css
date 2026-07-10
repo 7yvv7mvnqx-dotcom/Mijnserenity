@@ -112,3 +112,68 @@ body{padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom))}
   .captain-strip{align-items:flex-start;flex-direction:column}
   .captain-strip button{width:100%}
 }
+
+/* Cloud 4.0.2 — GPX Route Edition */
+.trip-route-map,
+.latest-route-map{
+  position:relative;
+  min-height:280px;
+  height:280px;
+  border-radius:14px;
+  overflow:hidden;
+  background:#d9e4e9;
+  isolation:isolate;
+}
+.latest-route-card{overflow:hidden}
+.latest-route-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:10px;
+}
+.latest-route-head h2{margin:3px 0}
+.route-map-loading{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#536a78;
+  background:linear-gradient(135deg,#dce7ec,#c7d7df);
+}
+.route-map-error{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:20px;
+  color:#fff;
+  background:#4a2430;
+}
+.route-marker{
+  width:24px;
+  height:24px;
+  border-radius:999px;
+  border:3px solid white;
+  box-shadow:0 2px 8px rgba(0,0,0,.35);
+}
+.route-marker.start{background:#22b573}
+.route-marker.end{background:#e14b4b}
+.route-marker-label{
+  background:white;
+  color:#102a3d;
+  border:0;
+  border-radius:8px;
+  padding:3px 6px;
+  box-shadow:0 2px 7px rgba(0,0,0,.2);
+}
+.leaflet-container{
+  background:#d9e4e9!important;
+}
+.leaflet-tile-pane{
+  opacity:1!important;
+}
+@media(max-width:700px){
+  .trip-route-map,.latest-route-map{height:240px;min-height:240px}
+  .latest-route-head{flex-direction:column}
+  .latest-route-head button{width:100%}
+}

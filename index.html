@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 4.0.1 · Captain Edition</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 4.0.2 · GPX Route Edition</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -79,6 +79,19 @@
       <button class="dashboard-tile" onclick="goToTab('settings')">
         <span class="tile-icon">⚙️</span><b>Instellingen</b><small>Brandstof en boot</small>
       </button>
+    </div>
+
+    
+    <div id="latestRouteCard" class="card latest-route-card hidden">
+      <div class="latest-route-head">
+        <div>
+          <span class="eyebrow">LAATSTE VAARTOCHT</span>
+          <h2 id="latestRouteTitle">Route</h2>
+          <p id="latestRouteMeta" class="small"></p>
+        </div>
+        <button class="secondary" onclick="captainNavigate('logbook')">Open logboek</button>
+      </div>
+      <div id="latestRouteMap" class="latest-route-map"></div>
     </div>
 
     <div class="card hero compact-status">

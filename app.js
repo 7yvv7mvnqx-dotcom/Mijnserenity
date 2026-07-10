@@ -448,8 +448,34 @@ async function loadTrips(){
   $('dTrips').textContent=data.length;
   renderTripList();
   renderFinance();
+  updateLatestRouteDashboard();
 }
 
+
+
+function updateLatestRouteDashboard(){
+  const card=$('latestRouteCard');
+  if(!card)return;
+
+  const latest=tripCache.find(t=>normaliseRouteGeojson(t.route_geojson));
+  if(!latest){
+    card.classList.add('hidden');
+    destroyRouteMap('latestRouteMap');
+    return;
+  }
+
+  card.classList.remove('hidden');
+  $('latestRouteTitle').textContent=latest.title||'Laatste vaartocht';
+  $('latestRouteMeta').textContent=[
+    latest.trip_date||'',
+    latest.departure&&latest.arrival?`${latest.departure} → ${latest.arrival}`:'',
+    latest.distance_km?`${latest.distance_km} km`:''
+  ].filter(Boolean).join(' · ');
+
+  setTimeout(()=>{
+    renderTripRouteMap('latestRouteMap',latest.route_geojson,{dashboard:true});
+  },120);
+}
 
 function captainNavigate(id, sourceButton=null){
   const desktopButtons=[...document.querySelectorAll('.tab')];
@@ -468,6 +494,7 @@ function captainNavigate(id, sourceButton=null){
   });
 
   if(id==='map' && typeof initMap==='function')setTimeout(()=>initMap(),80);
+  if(id==='dashboard' && typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
   if(id==='finance' && typeof renderFinance==='function')renderFinance();
   if(id==='settings' && typeof loadSettingsForm==='function')loadSettingsForm();
 }
@@ -488,21 +515,153 @@ function parseGpxToGeoJson(text){
     return {type:'LineString',coordinates:coords};
   }catch(e){return null}
 }
-function renderTripRouteMap(containerId,geojson){
-  if(!geojson?.coordinates?.length)return;
-  setTimeout(()=>{
-    const el=$(containerId);
-    if(!el)return;
-    if(tripRouteMaps[containerId])tripRouteMaps[containerId].remove();
-    const map=L.map(containerId,{zoomControl:true});
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      maxZoom:19,attribution:'&copy; OpenStreetMap'
+function normaliseRouteGeojson(value){
+  if(!value)return null;
+  if(typeof value==='string'){
+    try{value=JSON.parse(value)}catch(e){return null}
+  }
+  if(value.type==='Feature')value=value.geometry;
+  if(value.type==='FeatureCollection'){
+    const feature=value.features?.find(f=>f?.geometry?.type==='LineString'||f?.geometry?.type==='MultiLineString');
+    value=feature?.geometry;
+  }
+  if(value?.type==='MultiLineString'){
+    value={type:'LineString',coordinates:value.coordinates.flat()};
+  }
+  if(value?.type!=='LineString'||!Array.isArray(value.coordinates))return null;
+  const coordinates=value.coordinates
+    .map(point=>[Number(point[0]),Number(point[1])])
+    .filter(([lon,lat])=>Number.isFinite(lon)&&Number.isFinite(lat)&&Math.abs(lat)<=90&&Math.abs(lon)<=180);
+  return coordinates.length>=2?{type:'LineString',coordinates}:null;
+}
+
+function destroyRouteMap(containerId){
+  const old=tripRouteMaps[containerId];
+  if(old){
+    try{old.off();old.remove()}catch(e){}
+    delete tripRouteMaps[containerId];
+  }
+  const el=$(containerId);
+  if(el){
+    el.innerHTML='';
+    el.classList.remove('route-map-error');
+  }
+}
+
+function routeMarkerIcon(kind){
+  return L.divIcon({
+    className:'',
+    html:`<div class="route-marker ${kind}"></div>`,
+    iconSize:[24,24],
+    iconAnchor:[12,12]
+  });
+}
+
+function renderTripRouteMap(containerId,geojson,options={}){
+  const route=normaliseRouteGeojson(geojson);
+  const el=$(containerId);
+  if(!el)return;
+
+  destroyRouteMap(containerId);
+
+  if(!route){
+    el.className=(el.className+' route-map-error').trim();
+    el.innerHTML='Geen bruikbare GPX-route gevonden.';
+    return;
+  }
+
+  el.classList.add('route-map-loading');
+  el.textContent='Routekaart laden…';
+
+  const draw=()=>{
+    if(!document.body.contains(el))return;
+    const rect=el.getBoundingClientRect();
+    if(rect.width<40||rect.height<40){
+      setTimeout(draw,120);
+      return;
+    }
+
+    el.classList.remove('route-map-loading');
+    el.textContent='';
+
+    const map=L.map(el,{
+      zoomControl:true,
+      attributionControl:true,
+      preferCanvas:true,
+      tap:false
+    });
+
+    const tiles=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,
+      minZoom:3,
+      attribution:'&copy; OpenStreetMap',
+      updateWhenIdle:false,
+      keepBuffer:4
     }).addTo(map);
-    const latlngs=geojson.coordinates.map(([lon,lat])=>[lat,lon]);
-    const line=L.polyline(latlngs).addTo(map);
-    map.fitBounds(line.getBounds(),{padding:[20,20]});
+
+    const latlngs=route.coordinates.map(([lon,lat])=>[lat,lon]);
+    const routeLine=L.polyline(latlngs,{
+      weight:5,
+      opacity:.95,
+      lineJoin:'round',
+      lineCap:'round'
+    }).addTo(map);
+
+    const start=latlngs[0];
+    const end=latlngs[latlngs.length-1];
+    L.marker(start,{icon:routeMarkerIcon('start')})
+      .addTo(map)
+      .bindTooltip('Start',{permanent:false,direction:'top',className:'route-marker-label'});
+    L.marker(end,{icon:routeMarkerIcon('end')})
+      .addTo(map)
+      .bindTooltip('Einde',{permanent:false,direction:'top',className:'route-marker-label'});
+
+    const bounds=routeLine.getBounds();
+
+    // Toon eigen POI's die in of vlak bij het routegebied liggen.
+    const nearbyBounds=bounds.pad(.18);
+    (poiCache||[]).forEach(p=>{
+      const lat=Number(p.latitude),lon=Number(p.longitude);
+      if(!Number.isFinite(lat)||!Number.isFinite(lon)||!nearbyBounds.contains([lat,lon]))return;
+      L.circleMarker([lat,lon],{
+        radius:6,
+        weight:2,
+        fillOpacity:.9
+      }).addTo(map).bindPopup(
+        `<b>${esc(p.name||'POI')}</b><br>${esc(p.category||'')}${p.place?` · ${esc(p.place)}`:''}`
+      );
+    });
+
+    map.fitBounds(bounds,{padding:[28,28],maxZoom:15});
     tripRouteMaps[containerId]=map;
-  },80);
+
+    // Leaflet werd eerder geopend in een verborgen uitklapvak.
+    // Meerdere invalidate-calls voorkomen het zwarte vlak op iPhone/iPad.
+    [40,180,450,900].forEach(delay=>{
+      setTimeout(()=>{
+        if(tripRouteMaps[containerId]===map){
+          map.invalidateSize({pan:false});
+          map.fitBounds(bounds,{padding:[28,28],maxZoom:15});
+        }
+      },delay);
+    });
+
+    tiles.on('tileerror',()=>{
+      el.style.background='#d9e4e9';
+    });
+
+    if(options.dashboard){
+      map.scrollWheelZoom.disable();
+      map.doubleClickZoom.disable();
+      map.dragging.disable();
+      map.touchZoom.disable();
+      map.boxZoom.disable();
+      map.keyboard.disable();
+      if(map.zoomControl)map.zoomControl.remove();
+    }
+  };
+
+  requestAnimationFrame(()=>requestAnimationFrame(draw));
 }
 
 function populateTripYears(){
@@ -538,30 +697,79 @@ function renderTripList(){
   populateTripYears();
   const mode=$('tripDateFilter')?.value||'';
   let filtered=[...tripCache];
-  if(mode==='day'&&$('tripFilterDay').value)filtered=filtered.filter(t=>t.trip_date===$('tripFilterDay').value);
+
+  if(mode==='day'&&$('tripFilterDay').value){
+    filtered=filtered.filter(t=>t.trip_date===$('tripFilterDay').value);
+  }
   if(mode==='week'&&$('tripFilterWeek').value){
     const [start,end]=getIsoWeekRange($('tripFilterWeek').value);
     filtered=filtered.filter(t=>t.trip_date>=start&&t.trip_date<=end);
   }
-  if(mode==='month'&&$('tripFilterMonth').value)filtered=filtered.filter(t=>String(t.trip_date).slice(0,7)===$('tripFilterMonth').value);
-  if(mode==='year'&&$('tripFilterYear').value)filtered=filtered.filter(t=>String(t.trip_date).slice(0,4)===$('tripFilterYear').value);
+  if(mode==='month'&&$('tripFilterMonth').value){
+    filtered=filtered.filter(t=>String(t.trip_date).slice(0,7)===$('tripFilterMonth').value);
+  }
+  if(mode==='year'&&$('tripFilterYear').value){
+    filtered=filtered.filter(t=>String(t.trip_date).slice(0,4)===$('tripFilterYear').value);
+  }
 
   const photos=window.tripPhotoCache||{};
-  $('tripList').innerHTML=filtered.length?filtered.map((t,i)=>{
-    const photoHtml=(photos[t.id]||[]).map(ph=>`<div class="trip-photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(t.title||'vaarttocht')}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="trip-photo-delete" onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
+  $('tripList').innerHTML=filtered.length?filtered.map(t=>{
+    const photoHtml=(photos[t.id]||[]).map(ph=>`
+      <div class="trip-photo-wrap">
+        <img src="${esc(ph.url)}" alt="Foto van ${esc(t.title||'vaarttocht')}" onclick="openLightbox(${JSON.stringify(ph.url)})">
+        <button class="trip-photo-delete" onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button>
+      </div>`).join('');
+
     const mapId=`tripRouteMap-${t.id}`;
-    const routeHtml=t.route_geojson?`<div id="${mapId}" class="trip-route-map"></div>`:'';
-    return `<details class="trip-row" ontoggle="if(this.open)renderTripRouteMap('${mapId}',${JSON.stringify(t.route_geojson)})">
-      <summary><div class="trip-row-title">${esc(t.title||'Vaartocht')}</div><div class="trip-row-date">${esc(t.trip_date)}</div></summary>
+    const routeHtml=normaliseRouteGeojson(t.route_geojson)
+      ?`<div id="${mapId}" class="trip-route-map"></div>`
+      :'';
+
+    return `<details class="trip-row" data-trip-id="${t.id}" ontoggle="handleTripToggle(this,'${mapId}','${t.id}')">
+      <summary>
+        <div class="trip-row-title">${esc(t.title||'Vaartocht')}</div>
+        <div class="trip-row-date">${esc(t.trip_date)}</div>
+      </summary>
       <div class="trip-row-body">
         <div class="small">${esc(t.departure||'')} → ${esc(t.arrival||'')}</div>
-        <div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span><span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span><span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span></div>
-        <p>${esc(t.notes||'')}</p>${routeHtml}${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}
+        <div class="trip-summary">
+          <span>Afstand: ${t.distance_km??'-'} km</span>
+          <span>Vaartijd: ${t.duration_hours??'-'} uur</span>
+          <span>Bemanning: ${esc(t.crew||'-')}</span>
+          <span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span>
+          <span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span>
+        </div>
+        <p>${esc(t.notes||'')}</p>
+        ${routeHtml}
+        ${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}
         <button class="delete-mini" onclick="deleteTrip('${t.id}')">🗑️</button>
-        <div class="item-actions"><button class="edit-button" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.fuel_liters)},${JSON.stringify(t.fuel_cost)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>✏️ Bewerken</button></div>
+        <div class="item-actions">
+          <button class="edit-button" onclick='editTrip(
+            ${JSON.stringify(t.id)},
+            ${JSON.stringify(t.trip_date)},
+            ${JSON.stringify(t.title)},
+            ${JSON.stringify(t.departure)},
+            ${JSON.stringify(t.arrival)},
+            ${JSON.stringify(t.distance_km)},
+            ${JSON.stringify(t.duration_hours)},
+            ${JSON.stringify(t.fuel_liters)},
+            ${JSON.stringify(t.fuel_cost)},
+            ${JSON.stringify(t.crew)},
+            ${JSON.stringify(t.notes)}
+          )'>✏️ Bewerken</button>
+        </div>
       </div>
     </details>`;
   }).join(''):'<span class="small">Geen vaartochten gevonden.</span>';
+}
+
+function handleTripToggle(details,mapId,tripId){
+  if(details.open){
+    const trip=tripCache.find(item=>String(item.id)===String(tripId));
+    setTimeout(()=>renderTripRouteMap(mapId,trip?.route_geojson),80);
+  }else{
+    destroyRouteMap(mapId);
+  }
 }
 function setTripFilterToday(){
   $('tripDateFilter').value='day';
