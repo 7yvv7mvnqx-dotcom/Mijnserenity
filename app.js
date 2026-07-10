@@ -3,9 +3,11 @@ const SUPABASE_KEY='sb_publishable_LCJ5Oj0yG4guOvBFPS5ALg_WG57gAo9';
 const PHOTO_BUCKET='poi-photos';
 const TRIP_PHOTO_BUCKET='trip-photos';
 const BOAT_PHOTO_BUCKET='boat-photos';
+const TRIP_GPX_BUCKET='trip-gpx';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let tripRouteMaps={};
 let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
@@ -334,7 +336,26 @@ async function saveTrip(){
     if(error){setTripProgress('');return alert(error.message)}
     tripId=data.id;
   }
-  if(!row.fuel_liters&&row.duration_hours&&settingsCache?.fuel_per_hour)row.fuel_liters=Number(row.duration_hours)*Number(settingsCache.fuel_per_hour);if(!row.fuel_cost&&row.fuel_liters&&settingsCache?.fuel_price)row.fuel_cost=Number(row.fuel_liters)*Number(settingsCache.fuel_price);await sb.from('trips').update({fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost}).eq('id',tripId);const files=[...$('tripPhotos').files].slice(0,10);
+  if(!row.fuel_liters&&row.duration_hours&&settingsCache?.fuel_per_hour)row.fuel_liters=Number(row.duration_hours)*Number(settingsCache.fuel_per_hour);if(!row.fuel_cost&&row.fuel_liters&&settingsCache?.fuel_price)row.fuel_cost=Number(row.fuel_liters)*Number(settingsCache.fuel_price);await sb.from('trips').update({fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost}).eq('id',tripId);const gpxFile=$('tripGpx').files[0];
+  if(gpxFile){
+    setTripProgress('GPX-route verwerken…');
+    const gpxText=await gpxFile.text();
+    const routeGeojson=parseGpxToGeoJson(gpxText);
+    if(!routeGeojson) return alert('Dit GPX-bestand bevat geen bruikbare route of track.');
+    const safeName=(gpxFile.name||'route.gpx').replace(/[^a-zA-Z0-9._-]/g,'_');
+    const gpxPath=`${currentBoat.id}/${tripId}/${Date.now()}-${safeName}`;
+    const {error:gpxUploadError}=await sb.storage.from(TRIP_GPX_BUCKET).upload(gpxPath,gpxFile,{
+      upsert:true,contentType:'application/gpx+xml'
+    });
+    if(gpxUploadError)return alert('GPX uploaden mislukt: '+gpxUploadError.message);
+    const {error:gpxDbError}=await sb.from('trips').update({
+      gpx_storage_path:gpxPath,
+      route_geojson:routeGeojson,
+      updated_at:new Date().toISOString()
+    }).eq('id',tripId);
+    if(gpxDbError)return alert('GPX opslaan mislukt: '+gpxDbError.message);
+  }
+  const files=[...$('tripPhotos').files].slice(0,10);
   if(files.length)await uploadTripPhotos(tripId,files);
   clearTripForm();
   await loadTrips();
@@ -346,7 +367,7 @@ function setTripProgress(text){
 }
 function clearTripForm(){
   ['tripId','tripTitle','tripFrom','tripTo','tripDistance','tripHours','tripFuelLiters','tripFuelCost','tripCrew','tripNotes'].forEach(id=>$(id).value='');
-  $('tripPhotos').value='';
+  $('tripPhotos').value='';$('tripGpx').value='';
   $('tripDate').value=new Date().toISOString().slice(0,10);
   $('tripFormTitle').textContent='Nieuwe vaartocht';
   $('tripSaveButton').textContent='Vaartocht opslaan';
@@ -432,42 +453,104 @@ async function loadTrips(){
 (async()=>{const {data:{session}}=await sb.auth.getSession();await initialise(session)})();
 
 
-function getIsoWeekRange(dateString){
-  const d=new Date(dateString+'T12:00:00');
-  const day=(d.getDay()+6)%7;
-  const start=new Date(d);start.setDate(d.getDate()-day);
-  const end=new Date(start);end.setDate(start.getDate()+6);
-  return [start.toISOString().slice(0,10),end.toISOString().slice(0,10)];
+
+function parseGpxToGeoJson(text){
+  try{
+    const doc=new DOMParser().parseFromString(text,'application/xml');
+    if(doc.querySelector('parsererror'))return null;
+    let points=[...doc.querySelectorAll('trkpt')];
+    if(!points.length)points=[...doc.querySelectorAll('rtept')];
+    const coords=points.map(p=>[Number(p.getAttribute('lon')),Number(p.getAttribute('lat'))])
+      .filter(([lon,lat])=>Number.isFinite(lon)&&Number.isFinite(lat));
+    if(coords.length<2)return null;
+    return {type:'LineString',coordinates:coords};
+  }catch(e){return null}
+}
+function renderTripRouteMap(containerId,geojson){
+  if(!geojson?.coordinates?.length)return;
+  setTimeout(()=>{
+    const el=$(containerId);
+    if(!el)return;
+    if(tripRouteMaps[containerId])tripRouteMaps[containerId].remove();
+    const map=L.map(containerId,{zoomControl:true});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,attribution:'&copy; OpenStreetMap'
+    }).addTo(map);
+    const latlngs=geojson.coordinates.map(([lon,lat])=>[lat,lon]);
+    const line=L.polyline(latlngs).addTo(map);
+    map.fitBounds(line.getBounds(),{padding:[20,20]});
+    tripRouteMaps[containerId]=map;
+  },80);
+}
+
+function populateTripYears(){
+  const select=$('tripFilterYear');
+  if(!select)return;
+  const years=[...new Set(tripCache.map(t=>String(t.trip_date||'').slice(0,4)).filter(Boolean))].sort().reverse();
+  const current=select.value;
+  select.innerHTML='<option value="">Kies jaar</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  if(years.includes(current))select.value=current;
+}
+function updateTripFilterInput(){
+  const mode=$('tripDateFilter').value;
+  document.querySelectorAll('.trip-filter-input').forEach(el=>el.classList.add('hidden'));
+  $('tripFilterEmpty').classList.toggle('hidden',!!mode);
+  const map={day:'tripFilterDay',week:'tripFilterWeek',month:'tripFilterMonth',year:'tripFilterYear'};
+  const labels={day:'Kies datum',week:'Kies week',month:'Kies maand',year:'Kies jaar'};
+  $('tripFilterLabel').textContent=labels[mode]||'Kies periode';
+  if(map[mode])$(map[mode]).classList.remove('hidden');
+  if(mode==='year')populateTripYears();
+  renderTripList();
+}
+function getIsoWeekRange(weekValue){
+  const [year,week]=weekValue.split('-W').map(Number);
+  const simple=new Date(Date.UTC(year,0,4));
+  const day=simple.getUTCDay()||7;
+  const monday=new Date(simple);
+  monday.setUTCDate(simple.getUTCDate()-day+1+(week-1)*7);
+  const sunday=new Date(monday);sunday.setUTCDate(monday.getUTCDate()+6);
+  return [monday.toISOString().slice(0,10),sunday.toISOString().slice(0,10)];
 }
 function renderTripList(){
   if(!$('tripList'))return;
+  populateTripYears();
   const mode=$('tripDateFilter')?.value||'';
-  const chosen=$('tripFilterDate')?.value||'';
   let filtered=[...tripCache];
-  if(mode&&chosen){
-    if(mode==='day')filtered=filtered.filter(t=>t.trip_date===chosen);
-    if(mode==='week'){
-      const [start,end]=getIsoWeekRange(chosen);
-      filtered=filtered.filter(t=>t.trip_date>=start&&t.trip_date<=end);
-    }
-    if(mode==='month')filtered=filtered.filter(t=>String(t.trip_date).slice(0,7)===chosen.slice(0,7));
-    if(mode==='year')filtered=filtered.filter(t=>String(t.trip_date).slice(0,4)===chosen.slice(0,4));
+  if(mode==='day'&&$('tripFilterDay').value)filtered=filtered.filter(t=>t.trip_date===$('tripFilterDay').value);
+  if(mode==='week'&&$('tripFilterWeek').value){
+    const [start,end]=getIsoWeekRange($('tripFilterWeek').value);
+    filtered=filtered.filter(t=>t.trip_date>=start&&t.trip_date<=end);
   }
+  if(mode==='month'&&$('tripFilterMonth').value)filtered=filtered.filter(t=>String(t.trip_date).slice(0,7)===$('tripFilterMonth').value);
+  if(mode==='year'&&$('tripFilterYear').value)filtered=filtered.filter(t=>String(t.trip_date).slice(0,4)===$('tripFilterYear').value);
+
   const photos=window.tripPhotoCache||{};
-  $('tripList').innerHTML=filtered.length?filtered.map(t=>{
+  $('tripList').innerHTML=filtered.length?filtered.map((t,i)=>{
     const photoHtml=(photos[t.id]||[]).map(ph=>`<div class="trip-photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(t.title||'vaarttocht')}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="trip-photo-delete" onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
-    return `<div class="item"><h3>${esc(t.title||'Vaartocht')}</h3><div class="small">${esc(t.trip_date)} · ${esc(t.departure||'')} → ${esc(t.arrival||'')}</div><div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span><span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span><span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span></div><p>${esc(t.notes||'')}</p>${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}<button class="delete-mini" onclick="deleteTrip('${t.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.fuel_liters)},${JSON.stringify(t.fuel_cost)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>✏️ Bewerken</button></div></div>`;
+    const mapId=`tripRouteMap-${t.id}`;
+    const routeHtml=t.route_geojson?`<div id="${mapId}" class="trip-route-map"></div>`:'';
+    return `<details class="trip-row" ontoggle="if(this.open)renderTripRouteMap('${mapId}',${JSON.stringify(t.route_geojson)})">
+      <summary><div class="trip-row-title">${esc(t.title||'Vaartocht')}</div><div class="trip-row-date">${esc(t.trip_date)}</div></summary>
+      <div class="trip-row-body">
+        <div class="small">${esc(t.departure||'')} → ${esc(t.arrival||'')}</div>
+        <div class="trip-summary"><span>Afstand: ${t.distance_km??'-'} km</span><span>Vaartijd: ${t.duration_hours??'-'} uur</span><span>Bemanning: ${esc(t.crew||'-')}</span><span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span><span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span></div>
+        <p>${esc(t.notes||'')}</p>${routeHtml}${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}
+        <button class="delete-mini" onclick="deleteTrip('${t.id}')">🗑️</button>
+        <div class="item-actions"><button class="edit-button" onclick='editTrip(${JSON.stringify(t.id)},${JSON.stringify(t.trip_date)},${JSON.stringify(t.title)},${JSON.stringify(t.departure)},${JSON.stringify(t.arrival)},${JSON.stringify(t.distance_km)},${JSON.stringify(t.duration_hours)},${JSON.stringify(t.fuel_liters)},${JSON.stringify(t.fuel_cost)},${JSON.stringify(t.crew)},${JSON.stringify(t.notes)})'>✏️ Bewerken</button></div>
+      </div>
+    </details>`;
   }).join(''):'<span class="small">Geen vaartochten gevonden.</span>';
 }
 function setTripFilterToday(){
   $('tripDateFilter').value='day';
-  $('tripFilterDate').value=new Date().toISOString().slice(0,10);
+  updateTripFilterInput();
+  $('tripFilterDay').value=new Date().toISOString().slice(0,10);
   renderTripList();
 }
 function clearTripFilters(){
   $('tripDateFilter').value='';
-  $('tripFilterDate').value='';
-  renderTripList();
+  ['tripFilterDay','tripFilterWeek','tripFilterMonth','tripFilterYear'].forEach(id=>$(id).value='');
+  updateTripFilterInput();
 }
 function resetFinanceFilters(){
   $('financeYear').value='';

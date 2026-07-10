@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 3.1 · uitklapbare formulieren en werkende filters</div></header>
+<header><h1>⚓ MijnSerenity Cloud</h1><div class="sub">Cloud 3.2 · logboekfilter en GPX-route</div></header>
 <main>
 <section id="authView">
   <div class="card hero">
@@ -167,6 +167,9 @@
 <div id="fuelPreview" class="status small">Brandstof wordt berekend met de instellingen.</div>
       <label>Bemanning</label><input id="tripCrew" placeholder="Michel, Desi">
       <label>Notities</label><textarea id="tripNotes"></textarea>
+      <label>Route uit Waterkaarten toevoegen</label>
+      <input id="tripGpx" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml">
+      <p class="small">Exporteer de route uit Waterkaarten als GPX en kies het bestand hier.</p>
       <label>Foto's toevoegen</label>
       <input id="tripPhotos" type="file" accept="image/*" multiple>
       <p class="small">Kies foto's uit je bibliotheek of maak een nieuwe foto. Maximaal 10 foto's per keer.</p>
@@ -182,7 +185,7 @@
       <div class="row">
         <div>
           <label>Periode</label>
-          <select id="tripDateFilter" onchange="renderTripList()">
+          <select id="tripDateFilter" onchange="updateTripFilterInput()">
             <option value="">Alles</option>
             <option value="day">Dag</option>
             <option value="week">Week</option>
@@ -191,8 +194,12 @@
           </select>
         </div>
         <div>
-          <label>Datum</label>
-          <input id="tripFilterDate" type="date" onchange="renderTripList()">
+          <label id="tripFilterLabel">Kies periode</label>
+          <input id="tripFilterDay" class="trip-filter-input hidden" type="date" onchange="renderTripList()">
+          <input id="tripFilterWeek" class="trip-filter-input hidden" type="week" onchange="renderTripList()">
+          <input id="tripFilterMonth" class="trip-filter-input hidden" type="month" onchange="renderTripList()">
+          <select id="tripFilterYear" class="trip-filter-input hidden" onchange="renderTripList()"></select>
+          <div id="tripFilterEmpty" class="status small">Kies eerst dag, week, maand of jaar.</div>
         </div>
       </div>
       <div class="actions">

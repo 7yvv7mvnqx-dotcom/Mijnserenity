@@ -65,3 +65,14 @@ h1,h2,h3{margin:0 0 10px}main{max-width:980px;margin:auto;padding:14px}.sub,.sma
 .section-toggle .chevron{font-size:24px;transition:transform .2s ease}
 .section-toggle.open .chevron{transform:rotate(180deg)}
 .collapsible-content{padding:0 15px 15px}
+
+.trip-row{border:1px solid rgba(255,255,255,.09);border-radius:14px;margin:10px 0;overflow:hidden;background:rgba(255,255,255,.035)}
+.trip-row summary{list-style:none;cursor:pointer;padding:13px 42px 13px 13px;position:relative}
+.trip-row summary::-webkit-details-marker{display:none}
+.trip-row summary:after{content:'⌄';position:absolute;right:14px;top:12px;font-size:22px;color:var(--muted);transition:transform .2s}
+.trip-row[open] summary:after{transform:rotate(180deg)}
+.trip-row-title{font-weight:850;font-size:17px}
+.trip-row-date{color:var(--muted);font-size:13px;margin-top:3px}
+.trip-row-body{padding:0 13px 13px;border-top:1px solid rgba(255,255,255,.08)}
+.trip-route-map{height:260px;border-radius:12px;overflow:hidden;margin:10px 0;background:#071827}
+.trip-filter-input{min-height:46px}
