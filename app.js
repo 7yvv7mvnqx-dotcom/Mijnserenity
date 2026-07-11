@@ -8555,7 +8555,7 @@ function radarCameraLiveUrl(){
     return '';
   }
 
-  return `${base}/api/camera_proxy_stream/${encodeURIComponent(entity)}?token=${encodeURIComponent(token)}`;
+  return `${base}/api/camera_proxy_stream/${encodeURIComponent(entity)}?interval=1&token=${encodeURIComponent(token)}`;
 }
 
 function radarCameraHasLiveConfig(){
@@ -8782,11 +8782,11 @@ async function startRadarLiveStream(
       placeholder?.classList.remove('hidden');
 
       setRadarCameraStatus(
-        'De live stream kon niet worden geopend. Synchroniseer de camera-token opnieuw vanuit Home Assistant.',
+        'De live stream kon niet worden geopend. Tik opnieuw op Start livebeeld; MijnSerenity gebruikt nu de universele Home Assistant-beeldstream.',
         'error'
       );
       setLiveRadarCameraMessage(
-        'Live stream verbroken. Tik op Start livebeeld of voer de Home Assistant camera-sync opnieuw uit.',
+        'Live stream verbroken. Tik opnieuw op Start livebeeld. Blijft dit gebeuren, voer rest_command.mijnserenity_camera_sync opnieuw uit.',
         'error'
       );
     };
@@ -8846,7 +8846,7 @@ function renderLiveRadarCamera(){
 
   if($('liveRadarCameraSource')){
     $('liveRadarCameraSource').textContent=url
-      ?'Bron: Home Assistant live MJPEG'
+      ?'Bron: Home Assistant MJPEG (1 beeld/sec.)'
       :camera.snapshotUrl
         ?'Bron: reserve-snapshot'
         :'Bron: Home Assistant';
@@ -9116,7 +9116,7 @@ function renderRadarCamera(){
 
   if(source){
     source.textContent=radarCameraLiveActive
-      ?'Bron: Home Assistant live MJPEG'
+      ?'Bron: Home Assistant MJPEG (1 beeld/sec.)'
       :liveUrl
         ?'Bron: Home Assistant live beschikbaar'
         :camera.snapshotUrl
@@ -13813,7 +13813,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.6.0';
+const APP_VERSION='5.6.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -13890,7 +13890,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5600',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5610',{updateViaCache:'none'});
 
     await registration.update();
 

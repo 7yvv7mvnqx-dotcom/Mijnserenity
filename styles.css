@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.6.0";
+  content:" · v5.6.1";
   color:#6fcfee;
   font-weight:800;
 }
@@ -4531,4 +4531,20 @@ main{
   .live-radar-camera-viewport img{
     min-height:190px;
   }
+}
+
+/* MijnSerenity Cloud 5.6.1 — universele HA-camera stream */
+.radar-camera-badge.live::before{
+  content:"";
+  display:inline-block;
+  width:6px;
+  height:6px;
+  margin-right:5px;
+  border-radius:999px;
+  background:currentColor;
+  animation:ms-camera-pulse 1.2s infinite;
+}
+@keyframes ms-camera-pulse{
+  0%,100%{opacity:.35;transform:scale(.85)}
+  50%{opacity:1;transform:scale(1.15)}
 }
