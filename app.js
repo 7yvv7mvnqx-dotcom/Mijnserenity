@@ -3977,7 +3977,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.29';
+const APP_VERSION='5.1.30';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -5473,6 +5473,84 @@ function getTripDateStatusClass(tripDate){
   return 'trip-today';
 }
 
+
+function parseLiveTripNoteMetrics(notes){
+  const result={
+    gpsPoints:'',
+    maxSpeed:'',
+    engineRpm:'',
+    rudder:'',
+    weather:'',
+    customNotes:''
+  };
+
+  const customLines=[];
+
+  String(notes||'').split(/\r?\n/).forEach(rawLine=>{
+    const line=String(rawLine||'').trim();
+    if(!line)return;
+
+    let match=line.match(
+      /^Live opgenomen met MijnSerenity\s*·\s*(\d+)\s*GPS-punten$/i
+    );
+    if(match){
+      result.gpsPoints=match[1];
+      return;
+    }
+
+    match=line.match(/^Max\.\s*snelheid:\s*(.+)$/i);
+    if(match){
+      result.maxSpeed=match[1].trim();
+      return;
+    }
+
+    match=line.match(/^Motortoerental:\s*(.+)$/i);
+    if(match){
+      result.engineRpm=match[1].trim();
+      return;
+    }
+
+    match=line.match(/^Roerstand:\s*(.+)$/i);
+    if(match){
+      result.rudder=match[1].trim();
+      return;
+    }
+
+    match=line.match(/^Weer:\s*(.+)$/i);
+    if(match){
+      result.weather=match[1].trim();
+      return;
+    }
+
+    customLines.push(line);
+  });
+
+  result.customNotes=customLines.join('\n');
+  return result;
+}
+
+function renderLiveTripMetricBalloons(metrics){
+  if(!metrics)return '';
+
+  return [
+    metrics.gpsPoints
+      ?`<span class="trip-summary-live">GPS-punten: ${esc(metrics.gpsPoints)}</span>`
+      :'',
+    metrics.maxSpeed
+      ?`<span class="trip-summary-live">Max. snelheid: ${esc(metrics.maxSpeed)}</span>`
+      :'',
+    metrics.engineRpm
+      ?`<span class="trip-summary-live">Motortoerental: ${esc(metrics.engineRpm)}</span>`
+      :'',
+    metrics.rudder
+      ?`<span class="trip-summary-live">Roerstand: ${esc(metrics.rudder)}</span>`
+      :'',
+    metrics.weather
+      ?`<span class="trip-summary-live trip-summary-weather">Weer: ${esc(metrics.weather)}</span>`
+      :''
+  ].filter(Boolean).join('');
+}
+
 function renderTripList(){
   if(!$('tripList'))return;
   populateTripYears();
@@ -5506,6 +5584,10 @@ function renderTripList(){
       ?`<div id="${mapId}" class="trip-route-map"></div>`
       :'';
 
+    const liveMetrics=parseLiveTripNoteMetrics(t.notes);
+    const liveMetricBalloons=renderLiveTripMetricBalloons(liveMetrics);
+    const visibleNotes=liveMetrics.customNotes;
+
     const dateStatusClass=getTripDateStatusClass(t.trip_date);
     return `<details class="trip-row ${dateStatusClass}" data-trip-id="${t.id}" ontoggle="handleTripToggle(this,'${mapId}','${t.id}')">
       <summary>
@@ -5520,8 +5602,9 @@ function renderTripList(){
           <span>Bemanning: ${esc(t.crew||'-')}</span>
           <span>Brandstof: ${t.fuel_liters?Number(t.fuel_liters).toFixed(1)+' l':'-'}</span>
           <span>Kosten: ${t.fuel_cost?'€'+Number(t.fuel_cost).toFixed(2):'-'}</span>
+          ${liveMetricBalloons}
         </div>
-        <p>${esc(t.notes||'')}</p>
+        ${visibleNotes?`<p>${esc(visibleNotes)}</p>`:''}
         ${routeHtml}
         ${photoHtml?`<div class="trip-photo-grid">${photoHtml}</div>`:''}
         <div class="item-actions trip-actions">

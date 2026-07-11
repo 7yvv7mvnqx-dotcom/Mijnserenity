@@ -1643,3 +1643,23 @@ header{
     grid-template-columns:1fr;
   }
 }
+
+/* Cloud 5.1.30 — live gegevens als logboekballonnen */
+.trip-summary .trip-summary-live{
+  border:1px solid rgba(81,205,240,.18);
+  background:linear-gradient(
+    145deg,
+    rgba(35,103,128,.20),
+    rgba(255,255,255,.05)
+  );
+  color:#e5f9ff;
+}
+.trip-summary .trip-summary-weather{
+  grid-column:1/-1;
+  line-height:1.45;
+}
+@media(max-width:680px){
+  .trip-summary .trip-summary-weather{
+    grid-column:auto;
+  }
+}
