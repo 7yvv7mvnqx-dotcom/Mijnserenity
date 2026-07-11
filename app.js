@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false,homeAssistantStatusCache=null,homeAssistantStatusLoading=false;
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false,homeAssistantStatusCache=null,homeAssistantStatusLoading=false,radarCameraRefreshTimer=null,radarCameraLiveActive=false,radarCameraLiveToken='',radarCameraLiveRefreshTimer=null;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -2224,9 +2224,15 @@ function goToTab(id){
 }
 function showTab(id,b){
   if(id==='boat'&&!isAppAdmin()){
-    showAppToast('Boot & delen is alleen toegankelijk voor Michel.');
+    showAppToast(
+      'Boot & delen is alleen toegankelijk voor Michel.'
+    );
     captainNavigate('settings');
     return;
+  }
+
+  if(id!=='live'&&radarCameraLiveActive){
+    stopRadarLiveStream(false);
   }
 
   document.querySelectorAll('#appView > section')
@@ -7034,6 +7040,19 @@ function defaultTechnicalState(){
     solarPower:null,
     heater:'unknown',
     bilge:'unknown',
+    camera:{
+      name:'Camera radarbeugel',
+      snapshotUrl:'',
+      entityId:'',
+      homeAssistantBaseUrl:'',
+      filename:'',
+      refreshSeconds:30,
+      enabled:false,
+      liveEnabled:false,
+      accessToken:'',
+      tokenUpdatedAt:null,
+      lastRefreshAt:null
+    },
     integrations:{
       victron:'not_configured',
       homeAssistant:'planned',
@@ -7086,6 +7105,10 @@ function normaliseTechnicalState(value){
     integrations:{
       ...base.integrations,
       ...(saved.integrations||{})
+    },
+    camera:{
+      ...base.camera,
+      ...(saved.camera||{})
     },
     countedTripHours:{...countedTripHours},
     maintenance:mergeTechnicalTasks(saved.maintenance)
@@ -7261,6 +7284,9 @@ function initTechnicalDashboard(){
 
   renderTechnicalDashboard();
   fillHomeAssistantMappings();
+  fillRadarCameraSettings();
+  renderRadarCamera();
+  setTimeout(()=>refreshRadarCamera(false),250);
   refreshHomeAssistantConnectionStatus(false);
   loadTechnicalDashboard(false);
 }
@@ -7837,17 +7863,30 @@ function homeAssistantMappedEntities(mappings){
 function buildHomeAssistantYaml(){
   const config=readHomeAssistantLocalConfig();
   const mappings=homeAssistantCurrentMappings();
+  const camera=radarCameraConfig();
+  const cameraEntity=String(camera.entityId||'').trim();
+  const cameraBaseUrl=normaliseRadarCameraUrl(
+    camera.homeAssistantBaseUrl
+  );
   const secret=config.secret||'NOG_GEEN_SLEUTEL';
   const endpoint=
     `${SUPABASE_URL}/rest/v1/rpc/ingest_home_assistant_technical_data`;
   const entities=homeAssistantMappedEntities(mappings);
 
+  if(cameraEntity&&!entities.includes(cameraEntity)){
+    entities.push(cameraEntity);
+  }
+
   const stateTriggers=entities.length
     ?entities.map(entity=>`      - ${entity}`).join('\n')
     :'      # Voeg hierboven eerst één of meer entiteiten in MijnSerenity toe.';
 
+  const cameraTokenTemplate=cameraEntity
+    ?`{{ (state_attr('${cameraEntity.replace(/'/g,"''")}', 'access_token') if state_attr('${cameraEntity.replace(/'/g,"''")}', 'access_token') else none) | to_json }}`
+    :'null';
+
   return `# ============================================================
-# MIJNSERENITY 5.5.0 — HOME ASSISTANT KOPPELING
+# MIJNSERENITY 5.6.0 — HOME ASSISTANT KOPPELING
 # ============================================================
 
 # 1. Voeg dit toe aan secrets.yaml
@@ -7881,20 +7920,23 @@ rest_command:
           "engine_temp": ${homeAssistantNumericTemplate(mappings.engineTemp)},
           "oil_pressure": ${homeAssistantNumericTemplate(mappings.oilPressure)},
           "heater": ${homeAssistantStringTemplate(mappings.heater)},
-          "bilge": ${homeAssistantStringTemplate(mappings.bilge)}
+          "bilge": ${homeAssistantStringTemplate(mappings.bilge)},
+          "camera_entity": ${cameraEntity?JSON.stringify(cameraEntity):'null'},
+          "camera_base_url": ${cameraBaseUrl?JSON.stringify(cameraBaseUrl):'null'},
+          "camera_access_token": ${cameraTokenTemplate}
         }
       }
 
 # 3. Voeg dit toe aan automations.yaml
 - id: mijnserenity_techniek_synchroniseren
   alias: MijnSerenity technisch dashboard synchroniseren
-  description: Stuurt gekozen sensoren naar MijnSerenity.
+  description: Stuurt gekozen sensoren en cameratoegang naar MijnSerenity.
   mode: restart
   triggers:
     - trigger: homeassistant
       event: start
     - trigger: time_pattern
-      minutes: "/5"
+      minutes: "/4"
 ${entities.length?`    - trigger: state
       entity_id:
 ${stateTriggers}
@@ -8494,6 +8536,791 @@ function renderTechnicalIntegrations(){
   renderHomeAssistantConnectionStatus();
 }
 
+
+
+function radarCameraLiveUrl(){
+  const camera=radarCameraConfig();
+  const base=normaliseRadarCameraUrl(
+    camera.homeAssistantBaseUrl
+  );
+  const entity=String(camera.entityId||'').trim();
+  const token=String(camera.accessToken||'').trim();
+
+  if(!base||!entity||!token)return '';
+
+  if(
+    location.protocol==='https:'&&
+    !base.toLowerCase().startsWith('https://')
+  ){
+    return '';
+  }
+
+  return `${base}/api/camera_proxy_stream/${encodeURIComponent(entity)}?token=${encodeURIComponent(token)}`;
+}
+
+function radarCameraHasLiveConfig(){
+  const camera=radarCameraConfig();
+
+  return Boolean(
+    normaliseRadarCameraUrl(camera.homeAssistantBaseUrl)&&
+    String(camera.entityId||'').trim()
+  );
+}
+
+function setLiveRadarCameraMessage(message,state=''){
+  const element=$('liveRadarCameraMessage');
+  if(!element)return;
+
+  element.textContent=message||'';
+  element.classList.toggle('hidden',!message);
+  element.classList.remove('success','warning','error');
+
+  if(state)element.classList.add(state);
+}
+
+function radarCameraTargetImages(){
+  return [
+    $('radarCameraImage'),
+    $('liveRadarCameraImage')
+  ].filter(Boolean);
+}
+
+function updateRadarLiveButtons(){
+  const label=radarCameraLiveActive
+    ?'⏹ Stop livebeeld'
+    :'▶ Start livebeeld';
+
+  if($('radarCameraLiveButton')){
+    $('radarCameraLiveButton').textContent=label;
+  }
+
+  if($('liveRadarCameraToggleButton')){
+    $('liveRadarCameraToggleButton').textContent=label;
+  }
+}
+
+function stopRadarLiveRefreshTimer(){
+  if(radarCameraLiveRefreshTimer){
+    clearInterval(radarCameraLiveRefreshTimer);
+    radarCameraLiveRefreshTimer=null;
+  }
+}
+
+function scheduleRadarLiveTokenRefresh(){
+  stopRadarLiveRefreshTimer();
+
+  if(!radarCameraLiveActive)return;
+
+  radarCameraLiveRefreshTimer=setInterval(async()=>{
+    const previousToken=radarCameraLiveToken;
+
+    await loadTechnicalDashboard(true);
+
+    const nextToken=String(
+      radarCameraConfig().accessToken||''
+    ).trim();
+
+    if(
+      radarCameraLiveActive&&
+      nextToken&&
+      nextToken!==previousToken
+    ){
+      startRadarLiveStream(false,true);
+    }
+  },4*60*1000);
+}
+
+function stopRadarLiveStream(showMessage=false){
+  radarCameraLiveActive=false;
+  radarCameraLiveToken='';
+  stopRadarLiveRefreshTimer();
+
+  radarCameraTargetImages().forEach(image=>{
+    if(
+      image?.dataset?.streaming==='true'
+    ){
+      image.removeAttribute('src');
+      image.dataset.streaming='false';
+      image.classList.add('hidden');
+    }
+  });
+
+  $('radarCameraLoading')?.classList.add('hidden');
+  $('liveRadarCameraLoading')?.classList.add('hidden');
+
+  updateRadarLiveButtons();
+  renderRadarCamera();
+  renderLiveRadarCamera();
+
+  if(showMessage){
+    setRadarCameraStatus(
+      'Livebeeld gestopt.',
+      'warning'
+    );
+    setLiveRadarCameraMessage(
+      'Livebeeld gestopt.',
+      'warning'
+    );
+  }
+}
+
+async function startRadarLiveStream(
+  showMessage=true,
+  forceRestart=false
+){
+  if(!technicalStateCache){
+    technicalStateCache=readTechnicalLocalState();
+  }
+
+  let url=radarCameraLiveUrl();
+
+  if(!url||forceRestart){
+    await loadTechnicalDashboard(true);
+    url=radarCameraLiveUrl();
+  }
+
+  if(!url){
+    const camera=radarCameraConfig();
+    const hasConfig=radarCameraHasLiveConfig();
+
+    radarCameraLiveActive=false;
+    updateRadarLiveButtons();
+    renderRadarCamera();
+    renderLiveRadarCamera();
+
+    const message=!hasConfig
+      ?'Vul bij Techniek de camera-entiteit en het externe Home Assistant HTTPS-adres in.'
+      :location.protocol==='https:'&&
+        !String(camera.homeAssistantBaseUrl||'')
+          .toLowerCase().startsWith('https://')
+        ?'Gebruik een extern HTTPS-adres van Home Assistant; een HTTP-adres wordt door de browser geblokkeerd.'
+        :'Nog geen geldige live-cameratoegang ontvangen. Kopieer de live-configuratie naar Home Assistant en voer rest_command.mijnserenity_camera_sync uit.';
+
+    setRadarCameraStatus(message,'warning');
+    setLiveRadarCameraMessage(message,'warning');
+    return false;
+  }
+
+  radarCameraLiveActive=true;
+  radarCameraLiveToken=String(
+    radarCameraConfig().accessToken||''
+  ).trim();
+
+  const technicalVisible=
+    !$('technical')?.classList.contains('hidden');
+  const liveVisible=
+    !$('live')?.classList.contains('hidden');
+
+  const targets=[];
+
+  if(technicalVisible&&$('radarCameraImage')){
+    targets.push({
+      image:$('radarCameraImage'),
+      placeholder:$('radarCameraPlaceholder'),
+      loading:$('radarCameraLoading')
+    });
+  }
+
+  if(liveVisible&&$('liveRadarCameraImage')){
+    targets.push({
+      image:$('liveRadarCameraImage'),
+      placeholder:$('liveRadarCameraPlaceholder'),
+      loading:$('liveRadarCameraLoading')
+    });
+  }
+
+  if(!targets.length&&$('liveRadarCameraImage')){
+    targets.push({
+      image:$('liveRadarCameraImage'),
+      placeholder:$('liveRadarCameraPlaceholder'),
+      loading:$('liveRadarCameraLoading')
+    });
+  }
+
+  targets.forEach(({image,placeholder,loading})=>{
+    loading?.classList.remove('hidden');
+    placeholder?.classList.add('hidden');
+
+    image.onload=()=>{
+      loading?.classList.add('hidden');
+      image.classList.remove('hidden');
+      image.dataset.streaming='true';
+
+      const now=new Date().toLocaleTimeString(
+        'nl-NL',
+        {
+          hour:'2-digit',
+          minute:'2-digit',
+          second:'2-digit'
+        }
+      );
+
+      if($('radarCameraLastRefresh')){
+        $('radarCameraLastRefresh').textContent=
+          `Live verbonden ${now}`;
+      }
+
+      if($('liveRadarCameraStatusText')){
+        $('liveRadarCameraStatusText').textContent=
+          `Live verbonden ${now}`;
+      }
+
+      setRadarCameraStatus(
+        'Live camerabeeld actief ✅',
+        'success'
+      );
+      setLiveRadarCameraMessage(
+        'Live camerabeeld actief ✅',
+        'success'
+      );
+    };
+
+    image.onerror=()=>{
+      loading?.classList.add('hidden');
+      image.classList.add('hidden');
+      image.dataset.streaming='false';
+      placeholder?.classList.remove('hidden');
+
+      setRadarCameraStatus(
+        'De live stream kon niet worden geopend. Synchroniseer de camera-token opnieuw vanuit Home Assistant.',
+        'error'
+      );
+      setLiveRadarCameraMessage(
+        'Live stream verbroken. Tik op Start livebeeld of voer de Home Assistant camera-sync opnieuw uit.',
+        'error'
+      );
+    };
+
+    image.src=`${url}${url.includes('?')?'&':'?'}_ms=${Date.now()}`;
+  });
+
+  updateRadarLiveButtons();
+  renderRadarCamera();
+  renderLiveRadarCamera();
+  scheduleRadarLiveTokenRefresh();
+
+  if(showMessage){
+    setRadarCameraStatus(
+      'Live camerabeeld verbinden…',
+      'warning'
+    );
+    setLiveRadarCameraMessage(
+      'Live camerabeeld verbinden…',
+      'warning'
+    );
+  }
+
+  return true;
+}
+
+function toggleRadarLiveStream(showMessage=true){
+  if(radarCameraLiveActive){
+    stopRadarLiveStream(showMessage);
+    return;
+  }
+
+  startRadarLiveStream(showMessage);
+}
+
+function renderLiveRadarCamera(){
+  const url=radarCameraLiveUrl();
+  const camera=radarCameraConfig();
+  const badge=$('liveRadarCameraBadge');
+  const placeholder=$('liveRadarCameraPlaceholder');
+  const image=$('liveRadarCameraImage');
+
+  if(badge){
+    badge.className='radar-camera-badge '+
+      (radarCameraLiveActive
+        ?'live'
+        :url
+          ?'ready'
+          :'offline');
+
+    badge.textContent=radarCameraLiveActive
+      ?'● Live'
+      :url
+        ?'Live beschikbaar'
+        :'Niet beschikbaar';
+  }
+
+  if($('liveRadarCameraSource')){
+    $('liveRadarCameraSource').textContent=url
+      ?'Bron: Home Assistant live MJPEG'
+      :camera.snapshotUrl
+        ?'Bron: reserve-snapshot'
+        :'Bron: Home Assistant';
+  }
+
+  if(!radarCameraLiveActive){
+    image?.classList.add('hidden');
+    placeholder?.classList.remove('hidden');
+  }
+
+  updateRadarLiveButtons();
+}
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    stopRadarLiveStream(false);
+    return;
+  }
+
+  const liveVisible=
+    !$('live')?.classList.contains('hidden');
+
+  if(liveVisible&&radarCameraLiveUrl()){
+    startRadarLiveStream(false);
+  }
+});
+
+function radarCameraRandomFilename(){
+  const bytes=new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  const suffix=[...bytes].map(value=>value.toString(16).padStart(2,'0')).join('');
+  return `mijnserenity-radarbeugel-${suffix}.jpg`;
+}
+
+function normaliseRadarCameraUrl(value){
+  const url=String(value||'').trim();
+  if(!url)return '';
+  return url.replace(/\/+$/,'');
+}
+
+function radarCameraConfig(){
+  const state=technicalStateCache||defaultTechnicalState();
+  return {
+    ...defaultTechnicalState().camera,
+    ...(state.camera||{})
+  };
+}
+
+function radarCameraImageUrl(){
+  const camera=radarCameraConfig();
+  const direct=String(camera.snapshotUrl||'').trim();
+  if(direct)return direct;
+  const base=normaliseRadarCameraUrl(camera.homeAssistantBaseUrl);
+  const filename=String(camera.filename||'').trim();
+  if(!base||!filename)return '';
+  return `${base}/local/${encodeURIComponent(filename)}`;
+}
+
+function radarCameraCacheBustedUrl(){
+  const url=radarCameraImageUrl();
+  if(!url)return '';
+  return `${url}${url.includes('?')?'&':'?'}_ms=${Date.now()}`;
+}
+
+function setRadarCameraStatus(message,state=''){
+  const element=$('radarCameraStatus');
+  if(!element)return;
+  element.textContent=message||'';
+  element.classList.toggle('hidden',!message);
+  element.classList.remove('success','warning','error');
+  if(state)element.classList.add(state);
+}
+
+function radarCameraAutomationYaml(){
+  const camera=radarCameraConfig();
+  const entity=String(
+    $('radarCameraEntity')?.value||
+    camera.entityId||
+    ''
+  ).trim();
+  const base=normaliseRadarCameraUrl(
+    $('radarCameraHaBaseUrl')?.value||
+    camera.homeAssistantBaseUrl
+  );
+
+  if(!entity||!base){
+    return '# Vul eerst de Home Assistant camera-entiteit en het externe HTTPS-adres in.';
+  }
+
+  const safeEntity=entity.replace(/'/g,"''");
+  const safeBase=JSON.stringify(base);
+  const boatId=currentBoat?.id||'BOOT_ID_ONTBREEKT';
+
+  return `# ============================================================
+# MIJNSERENITY 5.6.0 — LIVE CAMERA RADARBEUGEL
+# ============================================================
+
+# A. configuration.yaml
+# Plak dit ONDER de bestaande regel rest_command:
+# dus met precies twee spaties vóór mijnserenity_camera_sync.
+
+  mijnserenity_camera_sync:
+    url: !secret mijnserenity_rpc_url
+    method: post
+    content_type: "application/json"
+    headers:
+      apikey: !secret mijnserenity_supabase_key
+      Authorization: !secret mijnserenity_authorization
+      x-mijnserenity-secret: !secret mijnserenity_secret
+    payload: >-
+      {
+        "p_boat_id": "${boatId}",
+        "p_payload": {
+          "camera_entity": ${JSON.stringify(entity)},
+          "camera_base_url": ${safeBase},
+          "camera_access_token": {{ (state_attr('${safeEntity}', 'access_token') if state_attr('${safeEntity}', 'access_token') else none) | to_json }}
+        }
+      }
+
+# B. automations.yaml
+# Plak dit als nieuwe automatisering helemaal onderaan.
+
+- id: mijnserenity_live_camera_synchroniseren
+  alias: MijnSerenity live camera synchroniseren
+  description: Vernieuwt de kort geldige cameratoegang voor MijnSerenity.
+  mode: restart
+  triggers:
+    - trigger: homeassistant
+      event: start
+    - trigger: time_pattern
+      minutes: "/4"
+  conditions: []
+  actions:
+    - action: rest_command.mijnserenity_camera_sync
+`;
+}
+
+function updateRadarCameraAutomationYaml(){
+  const element=$('radarCameraAutomationYaml');
+  if(element)element.value=radarCameraAutomationYaml();
+}
+
+function fillRadarCameraSettings(){
+  const camera=radarCameraConfig();
+  if(!camera.filename){
+    camera.filename=radarCameraRandomFilename();
+    technicalStateCache.camera=camera;
+    saveTechnicalLocalState(technicalStateCache);
+  }
+  const set=(id,value)=>{if($(id))$(id).value=value??'';};
+  set('radarCameraName',camera.name||'Camera radarbeugel');
+  set('radarCameraRefreshSeconds',String(camera.refreshSeconds??30));
+  set('radarCameraSnapshotUrl',camera.snapshotUrl||'');
+  set('radarCameraEntity',camera.entityId||'');
+  set('radarCameraHaBaseUrl',camera.homeAssistantBaseUrl||'');
+  set('radarCameraFilename',camera.filename||radarCameraRandomFilename());
+  updateRadarCameraAutomationYaml();
+}
+
+function toggleRadarCameraSettings(force){
+  const panel=$('radarCameraSettings');
+  if(!panel)return;
+  const show=typeof force==='boolean'?force:panel.classList.contains('hidden');
+  panel.classList.toggle('hidden',!show);
+  if(show){
+    fillRadarCameraSettings();
+    panel.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+}
+
+async function saveRadarCameraSettings(){
+  technicalStateCache=normaliseTechnicalState(
+    technicalStateCache||
+    readTechnicalLocalState()
+  );
+
+  const entityId=String(
+    $('radarCameraEntity')?.value||''
+  ).trim();
+  const homeAssistantBaseUrl=normaliseRadarCameraUrl(
+    $('radarCameraHaBaseUrl')?.value
+  );
+  const snapshotUrl=String(
+    $('radarCameraSnapshotUrl')?.value||''
+  ).trim();
+
+  const camera={
+    ...technicalStateCache.camera,
+    name:String(
+      $('radarCameraName')?.value||
+      'Camera radarbeugel'
+    ).trim()||'Camera radarbeugel',
+    snapshotUrl,
+    entityId,
+    homeAssistantBaseUrl,
+    filename:String(
+      $('radarCameraFilename')?.value||''
+    ).trim()||radarCameraRandomFilename(),
+    refreshSeconds:Number(
+      $('radarCameraRefreshSeconds')?.value||30
+    ),
+    enabled:Boolean(
+      snapshotUrl||
+      (
+        homeAssistantBaseUrl&&
+        entityId
+      )
+    ),
+    liveEnabled:Boolean(
+      homeAssistantBaseUrl&&
+      entityId
+    )
+  };
+
+  technicalStateCache.camera=camera;
+
+  await persistTechnicalState(
+    'Instellingen van de radarbeugelcamera opgeslagen.'
+  );
+
+  toggleRadarCameraSettings(false);
+  renderRadarCamera();
+  renderLiveRadarCamera();
+
+  if(radarCameraLiveUrl()){
+    startRadarLiveStream(true,true);
+  }else if(snapshotUrl){
+    refreshRadarCamera(true);
+  }else{
+    setRadarCameraStatus(
+      'Camera opgeslagen. Voeg nu de live-configuratie toe aan Home Assistant en voer de camera-sync uit.',
+      'warning'
+    );
+  }
+
+  showAppToast('Camera radarbeugel opgeslagen ✅');
+}
+
+function renderRadarCamera(){
+  const camera=radarCameraConfig();
+  const liveUrl=radarCameraLiveUrl();
+  const snapshotUrl=radarCameraImageUrl();
+  const badge=$('radarCameraBadge');
+  const source=$('radarCameraSource');
+  const last=$('radarCameraLastRefresh');
+  const placeholder=$('radarCameraPlaceholder');
+  const image=$('radarCameraImage');
+
+  if(badge){
+    badge.className='radar-camera-badge '+
+      (radarCameraLiveActive
+        ?'live'
+        :liveUrl
+          ?'ready'
+          :snapshotUrl
+            ?'snapshot'
+            :'offline');
+
+    badge.textContent=radarCameraLiveActive
+      ?'● Live'
+      :liveUrl
+        ?'Live beschikbaar'
+        :snapshotUrl
+          ?'Reservebeeld'
+          :'Niet ingesteld';
+  }
+
+  if(source){
+    source.textContent=radarCameraLiveActive
+      ?'Bron: Home Assistant live MJPEG'
+      :liveUrl
+        ?'Bron: Home Assistant live beschikbaar'
+        :camera.snapshotUrl
+          ?'Bron: directe snapshot'
+          :'Bron: Home Assistant snapshot';
+  }
+
+  if(last&&!radarCameraLiveActive){
+    last.textContent=camera.tokenUpdatedAt
+      ?`Cameratoegang bijgewerkt ${new Date(camera.tokenUpdatedAt).toLocaleTimeString('nl-NL',{
+          hour:'2-digit',
+          minute:'2-digit'
+        })}`
+      :camera.lastRefreshAt
+        ?`Momentopname ${new Date(camera.lastRefreshAt).toLocaleTimeString('nl-NL',{
+            hour:'2-digit',
+            minute:'2-digit',
+            second:'2-digit'
+          })}`
+        :'Nog niet verbonden';
+  }
+
+  if(!radarCameraLiveActive){
+    placeholder?.classList.toggle(
+      'hidden',
+      Boolean(snapshotUrl)
+    );
+
+    if(!snapshotUrl){
+      image?.classList.add('hidden');
+    }
+  }
+
+  updateRadarLiveButtons();
+  scheduleRadarCameraRefresh();
+}
+
+function scheduleRadarCameraRefresh(){
+  if(radarCameraRefreshTimer){
+    clearInterval(radarCameraRefreshTimer);
+    radarCameraRefreshTimer=null;
+  }
+
+  const camera=radarCameraConfig();
+  const seconds=Number(camera.refreshSeconds||0);
+  const technicalVisible=
+    !$('technical')?.classList.contains('hidden');
+
+  if(
+    radarCameraLiveActive||
+    !technicalVisible||
+    !radarCameraImageUrl()||
+    seconds<=0
+  )return;
+
+  radarCameraRefreshTimer=setInterval(
+    ()=>refreshRadarCamera(false),
+    Math.max(10,seconds)*1000
+  );
+}
+
+function refreshRadarCamera(showMessage=false){
+  const url=radarCameraCacheBustedUrl();
+  const image=$('radarCameraImage');
+  const loading=$('radarCameraLoading');
+  const placeholder=$('radarCameraPlaceholder');
+
+  if(!url){
+    setRadarCameraStatus(
+      radarCameraHasLiveConfig()
+        ?'Live camera is ingesteld. Voer eerst de Home Assistant camera-sync uit voor een actuele toegang.'
+        :'Stel eerst de camera-entiteit en het externe Home Assistant-adres in.',
+      'warning'
+    );
+    toggleRadarCameraSettings(true);
+    return;
+  }
+
+  if(radarCameraLiveActive){
+    stopRadarLiveStream(false);
+  }
+
+  loading?.classList.remove('hidden');
+
+  if(showMessage){
+    setRadarCameraStatus(
+      'Reserve-momentopname laden…',
+      'warning'
+    );
+  }
+
+  const probe=new Image();
+
+  probe.onload=()=>{
+    if(image){
+      image.src=url;
+      image.classList.remove('hidden');
+      image.dataset.streaming='false';
+    }
+
+    placeholder?.classList.add('hidden');
+    loading?.classList.add('hidden');
+
+    technicalStateCache=normaliseTechnicalState(
+      technicalStateCache||
+      readTechnicalLocalState()
+    );
+
+    technicalStateCache.camera={
+      ...technicalStateCache.camera,
+      lastRefreshAt:new Date().toISOString()
+    };
+
+    saveTechnicalLocalState(technicalStateCache);
+    renderRadarCamera();
+
+    if(showMessage){
+      setRadarCameraStatus(
+        'Reservebeeld geladen ✅',
+        'success'
+      );
+    }
+  };
+
+  probe.onerror=()=>{
+    loading?.classList.add('hidden');
+
+    if(image)image.classList.add('hidden');
+
+    placeholder?.classList.remove('hidden');
+
+    setRadarCameraStatus(
+      'Reservebeeld kon niet worden geladen. Start livebeeld of controleer de snapshotinstellingen.',
+      'error'
+    );
+  };
+
+  probe.src=url;
+}
+
+function openRadarCameraFullscreen(preferLive=false){
+  const liveUrl=radarCameraLiveUrl();
+  const snapshotUrl=radarCameraImageUrl();
+  const url=preferLive&&liveUrl
+    ?liveUrl
+    :liveUrl||snapshotUrl;
+
+  if(!url){
+    captainNavigate('technical');
+    toggleRadarCameraSettings(true);
+    return;
+  }
+
+  const overlay=$('radarCameraFullscreen');
+  const image=$('radarCameraFullscreenImage');
+  const caption=$('radarCameraFullscreenCaption');
+
+  if(image){
+    image.src=`${url}${url.includes('?')?'&':'?'}_ms=${Date.now()}`;
+  }
+
+  if(caption){
+    caption.textContent=liveUrl
+      ?`${radarCameraConfig().name||'Camera radarbeugel'} · LIVE`
+      :radarCameraConfig().name||'Camera radarbeugel';
+  }
+
+  overlay?.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+
+function closeRadarCameraFullscreen(event,force=false){
+  if(
+    !force&&
+    event?.target?.id!=='radarCameraFullscreen'
+  )return;
+
+  const image=$('radarCameraFullscreenImage');
+
+  if(image)image.removeAttribute('src');
+
+  $('radarCameraFullscreen')?.classList.add('hidden');
+  document.body.style.overflow='';
+}
+
+async function copyRadarCameraAutomation(){
+  updateRadarCameraAutomationYaml();
+
+  const yaml=$('radarCameraAutomationYaml')?.value||'';
+  const copied=await copyTextToClipboard(yaml);
+
+  showAppToast(
+    copied
+      ?'Live-camera configuratie gekopieerd ✅'
+      :'Kopiëren is niet gelukt.'
+  );
+}
+
+function regenerateRadarCameraFilename(){
+  if($('radarCameraFilename'))$('radarCameraFilename').value=radarCameraRandomFilename();
+  updateRadarCameraAutomationYaml();
+  setRadarCameraStatus('Nieuwe willekeurige bestandsnaam gemaakt. Kopieer de camera-automatisering opnieuw.','warning');
+}
+
 function renderTechnicalEvents(){
   const container=$('technicalEventList');
   if(!container)return;
@@ -8677,6 +9504,7 @@ function renderTechnicalDashboard(){
     alarm:'Bilge-alarm'
   }[state.bilge]||'Bilge onbekend';
 
+  renderRadarCamera();
   renderTechnicalAlerts();
   renderTechnicalMaintenance();
   renderTechnicalIntegrations();
@@ -11919,24 +12747,42 @@ function updateLiveAutoStopDetection(point){
   },Math.min(remainingMs+500,60000));
 }
 
-function initLiveMode(){
+async function initLiveMode(){
   if(!currentBoat){
     alert('Koppel eerst Serenity.');
-    captainNavigate(isAppAdmin()?'boat':'settings');
+    captainNavigate(
+      isAppAdmin()?'boat':'settings'
+    );
     return;
   }
 
   restoreLiveState();
   fillLiveTripDefaults(false);
   loadLiveAutomationSettings();
+
+  if(!technicalStateCache){
+    technicalStateCache=readTechnicalLocalState();
+  }
+
+  await loadTechnicalDashboard(false);
+
   ensureLiveMap();
   renderLiveState();
   renderLiveAutoSummary();
+  renderLiveRadarCamera();
 
   setTimeout(()=>{
     liveMap?.invalidateSize({pan:false});
     renderLiveRoute();
   },160);
+
+  setTimeout(()=>{
+    if(radarCameraLiveUrl()){
+      startRadarLiveStream(false);
+    }else{
+      renderLiveRadarCamera();
+    }
+  },300);
 }
 
 
@@ -12247,6 +13093,7 @@ function renderLiveState(){
   }
 
   renderLiveAutoSummary();
+  renderLiveRadarCamera();
 }
 
 async function requestLiveWakeLock(){
@@ -12966,7 +13813,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.5.1';
+const APP_VERSION='5.6.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -13043,7 +13890,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5510',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5600',{updateViaCache:'none'});
 
     await registration.update();
 

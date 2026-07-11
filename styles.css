@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.5.1";
+  content:" · v5.6.0";
   color:#6fcfee;
   font-weight:800;
 }
@@ -4438,4 +4438,97 @@ main{
   border:1px solid rgba(232,83,97,.22);
   background:rgba(143,39,49,.16);
   color:#ffd0d5;
+}
+
+/* MijnSerenity Cloud 5.5.2 — camera radarbeugel */
+.radar-camera-card{margin-bottom:14px;padding:17px;border:1px solid rgba(96,203,235,.18);background:radial-gradient(circle at top right,rgba(96,203,235,.13),transparent 44%),rgba(255,255,255,.035)}
+.radar-camera-badge{flex-shrink:0;padding:6px 9px;border-radius:999px;font-size:9px;font-weight:900}.radar-camera-badge.ready{background:rgba(36,144,91,.18);color:#c7f4da;border:1px solid rgba(83,219,148,.25)}.radar-camera-badge.offline{background:rgba(255,255,255,.07);color:#abc0c9}
+.radar-camera-viewport{position:relative;display:flex;min-height:260px;margin-top:13px;align-items:center;justify-content:center;overflow:hidden;border-radius:16px;background:#02090d;border:1px solid rgba(255,255,255,.08)}
+.radar-camera-viewport img{display:block;width:100%;max-height:520px;object-fit:contain;background:#000}.radar-camera-placeholder{display:flex;padding:35px;flex-direction:column;align-items:center;gap:7px;text-align:center;color:#9db7c1}.radar-camera-placeholder>span{font-size:42px}.radar-camera-placeholder b{color:#e7f4f8}.radar-camera-placeholder small{max-width:470px;line-height:1.45}
+.radar-camera-loading{position:absolute;inset:auto 12px 12px auto;padding:6px 9px;border-radius:999px;background:rgba(0,0,0,.75);color:#fff;font-size:10px}.radar-camera-meta{display:flex;justify-content:space-between;gap:9px;margin-top:7px;color:#88a8b4;font-size:9px}.radar-camera-actions{margin-top:10px}.radar-camera-settings{margin-top:13px;padding:13px;border:1px solid rgba(96,203,235,.14);border-radius:14px;background:rgba(96,203,235,.045)}.radar-camera-ha-box{margin:13px 0;padding:12px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}.radar-camera-yaml{min-height:280px}.warning-text{color:#f1d79d!important}
+.radar-camera-fullscreen{position:fixed;z-index:10000;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.94);backdrop-filter:blur(6px)}.radar-camera-fullscreen img{max-width:96vw;max-height:90vh;object-fit:contain}.radar-camera-fullscreen-close{position:absolute;top:max(18px,env(safe-area-inset-top));right:18px;width:44px;height:44px;margin:0;padding:0;border-radius:999px;background:rgba(255,255,255,.13);font-size:28px}.radar-camera-fullscreen-caption{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);padding:7px 11px;border-radius:999px;background:rgba(0,0,0,.65);color:#fff;font-size:11px}
+@media(max-width:620px){.radar-camera-viewport{min-height:210px}.radar-camera-meta{flex-direction:column}.radar-camera-actions button{width:100%}}
+
+/* MijnSerenity Cloud 5.6.0 — live camera radarbeugel */
+.live-radar-camera-card{
+  margin-top:14px;
+  padding:16px;
+  border:1px solid rgba(74,205,255,.20);
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(74,205,255,.15),
+      transparent 44%
+    ),
+    rgba(255,255,255,.035);
+}
+.live-radar-camera-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:13px;
+  margin-bottom:11px;
+}
+.live-radar-camera-head h2{
+  margin:4px 0 5px;
+}
+.live-radar-camera-viewport{
+  position:relative;
+  overflow:hidden;
+  min-height:230px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:15px;
+  background:#020a10;
+}
+.live-radar-camera-viewport img{
+  display:block;
+  width:100%;
+  min-height:230px;
+  max-height:62vh;
+  object-fit:contain;
+  background:#020a10;
+}
+.radar-camera-badge.live{
+  border:1px solid rgba(83,219,148,.34);
+  background:rgba(36,144,91,.22);
+  color:#cbf6de;
+  box-shadow:0 0 0 4px rgba(83,219,148,.08);
+}
+.radar-camera-badge.snapshot{
+  border:1px solid rgba(226,180,79,.25);
+  background:rgba(143,100,21,.16);
+  color:#f3dea7;
+}
+.radar-camera-live-box{
+  border-color:rgba(74,205,255,.17);
+  background:rgba(74,205,255,.045);
+}
+.radar-camera-snapshot-fallback{
+  margin:12px 0;
+  padding:11px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:13px;
+  background:rgba(255,255,255,.025);
+}
+.radar-camera-snapshot-fallback summary{
+  cursor:pointer;
+  color:#b8d6df;
+  font-size:11px;
+  font-weight:850;
+}
+.radar-camera-snapshot-fallback[open] summary{
+  margin-bottom:10px;
+}
+#radarCameraImage[data-streaming="true"],
+#liveRadarCameraImage[data-streaming="true"]{
+  display:block;
+}
+@media(max-width:620px){
+  .live-radar-camera-head{
+    flex-direction:column;
+  }
+  .live-radar-camera-viewport,
+  .live-radar-camera-viewport img{
+    min-height:190px;
+  }
 }

@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="5.5.1">
-<link rel="apple-touch-icon" href="icon-192.png?v=5510">
+<meta name="mijnserenity-build" content="5.6.0">
+<link rel="apple-touch-icon" href="icon-192.png?v=5600">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=5510">
+<link rel="manifest" href="manifest.json?v=5600">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=5510">
+<link rel="stylesheet" href="styles.css?v=5600">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5510" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5600" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5510" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5600" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -238,7 +238,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=5510" alt="">
+          <img src="waterkaarten-dashboard.png?v=5600" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -332,7 +332,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v5.5.1</div>
+          <div class="label">Sync · v5.6.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -366,6 +366,66 @@
         <button id="liveStopButton" class="danger-button hidden" onclick="stopLiveNavigation()">⏹ Stop opname</button>
       </div>
       <div id="liveGpsStatus" class="status small">Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten. Open beide schermen op de iPad in Split View en laat beide schermen open totdat de reis is opgeslagen.</div>
+    </div>
+
+    <div class="card live-radar-camera-card">
+      <div class="live-radar-camera-head">
+        <div>
+          <span class="eyebrow">LIVE CAMERA RADARBEUGEL</span>
+          <h2>Zicht tijdens het varen</h2>
+          <p class="small">
+            Livebeeld via de camera-entiteit in Home Assistant.
+            De camera start automatisch wanneer je Live varen opent.
+          </p>
+        </div>
+        <span id="liveRadarCameraBadge"
+          class="radar-camera-badge offline">Niet beschikbaar</span>
+      </div>
+
+      <div class="live-radar-camera-viewport">
+        <img id="liveRadarCameraImage" class="hidden"
+          alt="Livebeeld van de camera op de radarbeugel">
+        <div id="liveRadarCameraPlaceholder"
+          class="radar-camera-placeholder">
+          <span>📹</span>
+          <b>Livebeeld nog niet actief</b>
+          <small>
+            Stel bij Techniek de camera-entiteit en het externe
+            Home Assistant-adres in.
+          </small>
+        </div>
+        <div id="liveRadarCameraLoading"
+          class="radar-camera-loading hidden">
+          Livebeeld verbinden…
+        </div>
+      </div>
+
+      <div class="radar-camera-meta">
+        <span id="liveRadarCameraStatusText">
+          Wachten op cameraverbinding
+        </span>
+        <span id="liveRadarCameraSource">
+          Bron: Home Assistant
+        </span>
+      </div>
+
+      <div class="actions radar-camera-actions">
+        <button id="liveRadarCameraToggleButton" type="button"
+          onclick="toggleRadarLiveStream(true)">
+          ▶ Start livebeeld
+        </button>
+        <button type="button" class="secondary"
+          onclick="openRadarCameraFullscreen(true)">
+          ⛶ Groot beeld
+        </button>
+        <button type="button" class="secondary"
+          onclick="captainNavigate('technical')">
+          ⚙️ Camera instellen
+        </button>
+      </div>
+
+      <div id="liveRadarCameraMessage"
+        class="status small hidden"></div>
     </div>
 
     <div class="card live-auto-log-card">
@@ -550,7 +610,7 @@
             en zet de planning daarna klaar in het gedeelde logboek.
           </p>
         </div>
-        <span class="planner-version-badge">5.5.1</span>
+        <span class="planner-version-badge">5.6.0</span>
       </div>
       <div class="planner-warning">
         Afstand is een schatting op basis van rechte lijnen en een instelbare
@@ -1339,6 +1399,171 @@
       </div>
     </div>
 
+    <div class="card radar-camera-card">
+      <div class="technical-card-heading">
+        <div>
+          <span class="eyebrow">LIVE CAMERA</span>
+          <h3>Camera radarbeugel</h3>
+          <p class="small">
+            Live zicht achteruit en rondom Serenity, ook in de Live vaarmodus.
+          </p>
+        </div>
+        <span id="radarCameraBadge"
+          class="radar-camera-badge offline">Niet ingesteld</span>
+      </div>
+
+      <div id="radarCameraViewport" class="radar-camera-viewport">
+        <img id="radarCameraImage" class="hidden"
+          alt="Beeld van camera op de radarbeugel">
+        <div id="radarCameraPlaceholder"
+          class="radar-camera-placeholder">
+          <span>📹</span>
+          <b>Nog geen live camerabeeld</b>
+          <small>
+            Vul de Home Assistant camera-entiteit en het externe
+            HTTPS-adres in. Daarna synchroniseert HA een kort geldige
+            cameratoegang.
+          </small>
+        </div>
+        <div id="radarCameraLoading"
+          class="radar-camera-loading hidden">
+          Livebeeld verbinden…
+        </div>
+      </div>
+
+      <div class="radar-camera-meta">
+        <span id="radarCameraLastRefresh">Nog niet verbonden</span>
+        <span id="radarCameraSource">Bron: niet ingesteld</span>
+      </div>
+
+      <div class="actions radar-camera-actions">
+        <button id="radarCameraLiveButton" type="button"
+          onclick="toggleRadarLiveStream(true)">
+          ▶ Start livebeeld
+        </button>
+        <button type="button" class="secondary"
+          onclick="refreshRadarCamera(true)">
+          ↻ Momentopname
+        </button>
+        <button type="button" class="secondary"
+          onclick="openRadarCameraFullscreen(true)">
+          ⛶ Groot beeld
+        </button>
+        <button type="button" class="secondary"
+          onclick="toggleRadarCameraSettings()">
+          ⚙️ Camera instellen
+        </button>
+      </div>
+
+      <div id="radarCameraStatus"
+        class="status small hidden"></div>
+
+      <div id="radarCameraSettings"
+        class="radar-camera-settings hidden">
+        <div class="row">
+          <div>
+            <label for="radarCameraName">Naam</label>
+            <input id="radarCameraName"
+              value="Camera radarbeugel">
+          </div>
+          <div>
+            <label for="radarCameraRefreshSeconds">
+              Snapshot verversen
+            </label>
+            <select id="radarCameraRefreshSeconds">
+              <option value="10">Iedere 10 seconden</option>
+              <option value="30" selected>Iedere 30 seconden</option>
+              <option value="60">Iedere minuut</option>
+              <option value="0">Alleen handmatig</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="radar-camera-ha-box radar-camera-live-box">
+          <b>Live via Home Assistant</b>
+          <p class="small">
+            MijnSerenity gebruikt de live MJPEG-stream van de camera.
+            Alleen een kort geldige camera-token wordt gesynchroniseerd;
+            geen Home Assistant-accounttoken.
+          </p>
+
+          <div class="row">
+            <div>
+              <label for="radarCameraEntity">
+                Camera-entiteit
+              </label>
+              <input id="radarCameraEntity"
+                placeholder="camera.radarbeugel_cam"
+                oninput="updateRadarCameraAutomationYaml()">
+            </div>
+            <div>
+              <label for="radarCameraHaBaseUrl">
+                Extern Home Assistant HTTPS-adres
+              </label>
+              <input id="radarCameraHaBaseUrl"
+                type="url" inputmode="url"
+                placeholder="https://jouw-adres.ui.nabu.casa"
+                oninput="updateRadarCameraAutomationYaml()">
+            </div>
+          </div>
+
+          <label for="radarCameraAutomationYaml">
+            Live-camera configuratie voor Home Assistant
+          </label>
+          <textarea id="radarCameraAutomationYaml"
+            class="home-assistant-yaml radar-camera-yaml"
+            readonly></textarea>
+
+          <div class="actions">
+            <button type="button"
+              onclick="copyRadarCameraAutomation()">
+              Kopieer live-configuratie
+            </button>
+          </div>
+
+          <p class="small warning-text">
+            Plak het eerste blok onder de bestaande
+            <code>rest_command:</code> in
+            <code>configuration.yaml</code>. Het tweede blok komt
+            onderaan in <code>automations.yaml</code>.
+          </p>
+        </div>
+
+        <details class="radar-camera-snapshot-fallback">
+          <summary>Snapshot als reservebeeld</summary>
+
+          <label for="radarCameraSnapshotUrl">
+            Directe snapshot-URL
+          </label>
+          <input id="radarCameraSnapshotUrl"
+            type="url" inputmode="url"
+            placeholder="https://camera.example/snapshot.jpg">
+
+          <label for="radarCameraFilename">
+            Snapshotbestandsnaam
+          </label>
+          <input id="radarCameraFilename"
+            placeholder="mijnserenity-radarbeugel-a1b2c3.jpg">
+
+          <p class="small">
+            Dit reservebeeld wordt alleen gebruikt wanneer livebeeld
+            tijdelijk niet beschikbaar is.
+          </p>
+        </details>
+
+        <div class="actions">
+          <button type="button"
+            onclick="saveRadarCameraSettings()">
+            💾 Camera bewaren
+          </button>
+          <button type="button" class="secondary"
+            onclick="toggleRadarCameraSettings(false)">
+            Sluiten
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="card technical-log-card">
       <div class="technical-card-heading">
         <div>
@@ -1926,6 +2151,12 @@
   </section>
 </section>
 
+  <div id="radarCameraFullscreen" class="radar-camera-fullscreen hidden" onclick="closeRadarCameraFullscreen(event)">
+    <button type="button" class="radar-camera-fullscreen-close" onclick="closeRadarCameraFullscreen(event,true)">×</button>
+    <img id="radarCameraFullscreenImage" alt="Groot beeld van de radarbeugelcamera">
+    <div id="radarCameraFullscreenCaption">Live camera radarbeugel</div>
+  </div>
+
   <nav class="bottom-nav" aria-label="Hoofdnavigatie">
     <button class="bottom-nav-item active" data-target="dashboard" onclick="captainNavigate('dashboard',this)">
       <span>🏠</span><small>Start</small>
@@ -2011,6 +2242,6 @@
   </div>
 </div>
 
-<script src="app.js?v=5510"></script>
+<script src="app.js?v=5600"></script>
 </body>
 </html>
