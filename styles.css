@@ -1185,3 +1185,14 @@ header{
   transform:scale(.97);
   background:transparent;
 }
+
+/* Cloud 5.1.22 — Live varen start ook Waterkaarten */
+#liveStartButton{
+  line-height:1.25;
+}
+@media(max-width:480px){
+  #liveStartButton{
+    font-size:15px;
+    padding-inline:12px;
+  }
+}

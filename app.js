@@ -2813,14 +2813,22 @@ function startLiveNavigation(){
   liveNavState.status='active';
   liveNavState.startedAt=Date.now();
   liveNavState.segmentStartedAt=Date.now();
+
   fillLiveTripDefaults(true);
   $('liveSaveStatus').classList.add('hidden');
-  $('liveGpsStatus').textContent='GPS-signaal zoeken…';
+  $('liveGpsStatus').textContent='GPS-opname gestart. Waterkaarten wordt geopend…';
 
   persistLiveState();
   startLiveGpsWatch();
   requestLiveWakeLock();
   renderLiveState();
+
+  showAppToast('Live varen gestart · Waterkaarten wordt geopend');
+
+  // De opname is al lokaal opgeslagen voordat MijnSerenity naar Waterkaarten schakelt.
+  setTimeout(()=>{
+    openWaterkaarten();
+  },350);
 }
 
 function resumeLiveNavigation(){
@@ -3100,7 +3108,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.21';
+const APP_VERSION='5.1.22';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

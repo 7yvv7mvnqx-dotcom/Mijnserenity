@@ -128,7 +128,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.21</div>
+          <div class="label">Sync · v5.1.22</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -147,12 +147,12 @@
         <span id="liveRecordingBadge" class="live-recording-badge idle">Gereed</span>
       </div>
       <div class="live-controls">
-        <button id="liveStartButton" onclick="startLiveNavigation()">▶ Start varen</button>
+        <button id="liveStartButton" onclick="startLiveNavigation()">▶ Start varen + Waterkaarten</button>
         <button id="livePauseButton" class="secondary hidden" onclick="pauseLiveNavigation()">⏸ Pauze</button>
         <button id="liveResumeButton" class="secondary hidden" onclick="resumeLiveNavigation()">▶ Hervat</button>
         <button id="liveStopButton" class="danger-button hidden" onclick="stopLiveNavigation()">⏹ Stop opname</button>
       </div>
-      <div id="liveGpsStatus" class="status small">Tik op Start varen en geef toestemming voor je locatie.</div>
+      <div id="liveGpsStatus" class="status small">Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten.</div>
     </div>
 
     <div class="live-metrics">
@@ -186,7 +186,7 @@
         <button id="liveDiscardButton" class="secondary hidden" onclick="discardLiveTrip()">Wis opname</button>
       </div>
       <div id="liveSaveStatus" class="status small hidden"></div>
-      <p class="small live-warning">Houd MijnSerenity tijdens het varen geopend. iPhone en iPad kunnen GPS-opname pauzeren wanneer de app volledig wordt afgesloten.</p>
+      <p class="small live-warning">MijnSerenity start de opname vóór Waterkaarten wordt geopend. Gebruik op iPad bij voorkeur Split View, zodat MijnSerenity zichtbaar blijft en de GPS-opname niet wordt gepauzeerd.</p>
     </div>
   </section>
 
