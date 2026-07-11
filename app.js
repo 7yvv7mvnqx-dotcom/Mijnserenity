@@ -9,32 +9,24 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let tripRouteMaps={};
-let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],lastPoiSuggestionRequestAt=0;
+let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[];
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
 function getLoggedInFirstName(){
   const metadata=currentUser?.user_metadata||{};
-  const candidates=[
+  const profileName=[
     metadata.first_name,
     metadata.given_name,
     metadata.full_name,
     metadata.name
-  ];
+  ].find(value=>String(value||'').trim());
 
-  let name=candidates.find(value=>String(value||'').trim());
+  let rawName=profileName
+    ?String(profileName).trim().split(/\s+/)[0]
+    :String(currentUser?.email||'').split('@')[0].split(/[._-]/)[0];
 
-  if(name){
-    name=String(name).trim().split(/\s+/)[0];
-  }else{
-    name=String(currentUser?.email||'')
-      .split('@')[0]
-      .replace(/[._-]+/g,' ')
-      .trim()
-      .split(/\s+/)[0]||'kapitein';
-  }
-
-  const normalized=String(name)
+  const normalized=String(rawName||'')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g,'')
     .toLowerCase()
@@ -43,40 +35,25 @@ function getLoggedInFirstName(){
   if(normalized.startsWith('michel'))return 'Michel';
   if(normalized.startsWith('desiree')||normalized.startsWith('desi'))return 'Desi';
 
-  return name.charAt(0).toUpperCase()+name.slice(1);
+  rawName=rawName||'Kapitein';
+  return rawName.charAt(0).toUpperCase()+rawName.slice(1);
 }
 
-
-function ensureBootNavigation(){
-  const nav=document.querySelector('.bottom-nav');
-  if(!nav)return;
-
-  let button=nav.querySelector('[data-target="settings"]');
-  const oldRefresh=nav.querySelector('.refresh-nav-button');
-
-  if(!button&&oldRefresh){
-    button=oldRefresh;
-    button.className='bottom-nav-item';
-    button.dataset.target='settings';
-    button.setAttribute('onclick',"captainNavigate('settings',this)");
-    button.innerHTML='<span>🚤</span><small>Boot</small>';
-  }
+function resetPoiFilters(render=true){
+  if($('poiSearch'))$('poiSearch').value='';
+  if($('poiFilterCategory'))$('poiFilterCategory').value='';
+  if($('poiFilterRating'))$('poiFilterRating').value='0';
+  if($('poiFilterExtra'))$('poiFilterExtra').value='';
+  if(render)renderPoiList();
 }
 
 async function refreshMijnSerenity(button){
-  if(!currentUser||!currentBoat){
-    window.location.reload();
-    return;
-  }
+  if(!currentBoat)return;
 
   button?.classList.add('is-refreshing');
-  const sync=$('dSync');
-  if(sync)sync.textContent='…';
+  if($('dSync'))$('dSync').textContent='…';
 
   try{
-    await loadMembership();
-    renderBoat();
-
     const results=await Promise.allSettled([
       loadSettings(),
       loadPois(),
@@ -86,27 +63,123 @@ async function refreshMijnSerenity(button){
 
     const failed=results.filter(result=>result.status==='rejected');
     if(failed.length){
-      console.warn('Niet alle onderdelen konden worden ververst:',failed);
-      if(sync)sync.textContent='Deels';
-      showAppToast('Een deel kon niet worden ververst. Bestaande gegevens blijven zichtbaar.');
+      console.warn('Niet alles kon worden ververst:',failed);
+      if($('dSync'))$('dSync').textContent='Deels';
+      showAppToast('Niet alles kon worden ververst. Bestaande gegevens blijven staan.');
     }else{
-      if(sync)sync.textContent='Live';
-      showAppToast('MijnSerenity is bijgewerkt ✅');
+      if($('dSync'))$('dSync').textContent='Live';
+      showAppToast('MijnSerenity bijgewerkt ✅');
     }
 
     loadSettingsForm();
-    renderPoiList();
-    renderTripList();
-    renderFinance();
-    updateLatestRouteDashboard();
-    await loadDashboardPhoto();
   }catch(error){
     console.error('Verversen mislukt:',error);
-    if(sync)sync.textContent='Fout';
-    showAppToast('Verversen mislukt. Je bestaande gegevens zijn niet gewist.');
+    if($('dSync'))$('dSync').textContent='Fout';
+    showAppToast('Verversen mislukt. Je gegevens zijn niet gewist.');
   }finally{
     button?.classList.remove('is-refreshing');
   }
+}
+
+function uniquePoiValues(field){
+  return [...new Set(
+    poiCache.map(poi=>String(poi?.[field]||'').trim()).filter(Boolean)
+  )].sort((a,b)=>a.localeCompare(b,'nl'));
+}
+
+function fillPoiDatalist(id,values){
+  const list=$(id);
+  if(!list)return;
+  list.innerHTML=values.slice(0,100)
+    .map(value=>`<option value="${esc(value)}"></option>`)
+    .join('');
+}
+
+function updatePoiSuggestionLists(){
+  fillPoiDatalist('poiNameSuggestions',uniquePoiValues('name'));
+  fillPoiDatalist('poiPlaceSuggestions',uniquePoiValues('place'));
+  fillPoiDatalist('poiAddressSuggestions',uniquePoiValues('address'));
+}
+
+function getPoiSearchQuery(){
+  return [
+    $('poiName')?.value,
+    $('poiAddress')?.value,
+    $('poiPlace')?.value
+  ].map(value=>String(value||'').trim()).filter(Boolean).join(', ');
+}
+
+function suggestionPlace(result){
+  const address=result?.address||{};
+  return address.city||address.town||address.village||address.municipality||address.hamlet||'';
+}
+
+function suggestionName(result){
+  const named=result?.namedetails||{};
+  const address=result?.address||{};
+  return named.name||result?.name||address.amenity||address.shop||address.tourism||
+    String(result?.display_name||'').split(',')[0]||'Locatie';
+}
+
+async function searchPoiAddressSuggestions(){
+  const query=getPoiSearchQuery();
+  const panel=$('poiOnlineSuggestions');
+
+  if(query.length<3){
+    alert('Vul eerst een naam, adres of plaats in.');
+    return;
+  }
+
+  panel.classList.remove('hidden');
+  panel.innerHTML='<div class="small">Suggesties zoeken…</div>';
+
+  try{
+    const params=new URLSearchParams({
+      q:query,
+      format:'jsonv2',
+      addressdetails:'1',
+      namedetails:'1',
+      limit:'5',
+      countrycodes:'nl',
+      'accept-language':'nl'
+    });
+
+    const response=await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`,{
+      headers:{Accept:'application/json'}
+    });
+
+    if(!response.ok)throw new Error(`Zoekfout ${response.status}`);
+    poiOnlineSuggestionResults=await response.json();
+
+    panel.innerHTML=poiOnlineSuggestionResults.length
+      ?`<div class="poi-suggestion-list">${poiOnlineSuggestionResults.map((result,index)=>`
+          <button type="button" onclick="applyPoiOnlineSuggestion(${index})">
+            <b>${esc(suggestionName(result))}</b>
+            <span>${esc(result.display_name||'')}</span>
+          </button>`).join('')}</div>
+        <div class="poi-suggestion-attribution">Adresgegevens © OpenStreetMap-bijdragers</div>`
+      :'<div class="small">Geen passende suggesties gevonden.</div>';
+  }catch(error){
+    console.error('Adres zoeken mislukt:',error);
+    panel.innerHTML='<div class="small">Adres zoeken is nu niet beschikbaar. Probeer later opnieuw.</div>';
+  }
+}
+
+function applyPoiOnlineSuggestion(index){
+  const result=poiOnlineSuggestionResults[index];
+  if(!result)return;
+
+  const place=suggestionPlace(result);
+  const name=suggestionName(result);
+
+  if(name&&!$('poiName').value.trim())$('poiName').value=name;
+  if(place)$('poiPlace').value=place;
+  $('poiAddress').value=result.display_name||'';
+  $('poiLatitude').value=Number(result.lat).toFixed(7);
+  $('poiLongitude').value=Number(result.lon).toFixed(7);
+
+  $('poiOnlineSuggestions').classList.add('hidden');
+  showAppToast('Adres, plaats en kaartlocatie ingevuld ✅');
 }
 
 function setMsg(t){$('authMsg').textContent=t}
@@ -137,8 +210,10 @@ function clearPoiForm(){
   $('poiFormTitle').textContent='POI toevoegen';
   $('poiSaveButton').textContent='Opslaan';
   $('poiCancelButton').classList.add('hidden');
-  $('poiOnlineSuggestions')?.classList.add('hidden');
-  if($('poiOnlineSuggestions'))$('poiOnlineSuggestions').innerHTML='';
+  if($('poiOnlineSuggestions')){
+    $('poiOnlineSuggestions').classList.add('hidden');
+    $('poiOnlineSuggestions').innerHTML='';
+  }
   poiOnlineSuggestionResults=[];
   setPoiProgress('');
 }
@@ -151,8 +226,6 @@ async function initialise(session){
   $('authView').classList.toggle('hidden',!!currentUser);
   $('appView').classList.toggle('hidden',!currentUser);
 
-  ensureBootNavigation();
-
   if(!currentUser){
     currentBoat=null;
     currentRole=null;
@@ -163,12 +236,11 @@ async function initialise(session){
     return;
   }
 
-  initialisePoiFilters();
   $('welcome').textContent='Welkom '+getLoggedInFirstName();
+  resetPoiFilters(false);
 
   await loadMembership();
   renderBoat();
-  restoreBoatDataCache();
 
   if(currentBoat){
     const results=await Promise.allSettled([
@@ -179,7 +251,7 @@ async function initialise(session){
     ]);
 
     if(results.some(result=>result.status==='rejected')){
-      console.warn('Niet alle bootgegevens zijn geladen:',results);
+      console.warn('Niet alle onderdelen zijn geladen:',results);
       if($('dSync'))$('dSync').textContent='Deels';
     }else{
       if($('dSync'))$('dSync').textContent='Live';
@@ -233,6 +305,8 @@ async function loadPoiPhotos(){
   return grouped;
 }
 async function loadPois(){
+  if(!currentBoat)return;
+
   const [{data,error},photos]=await Promise.all([
     sb.from('pois')
       .select('*')
@@ -241,7 +315,10 @@ async function loadPois(){
     loadPoiPhotos()
   ]);
 
-  if(error)return alert(error.message);
+  if(error){
+    console.error('POI laden mislukt:',error);
+    throw error;
+  }
 
   poiCache=(data||[]).map(poi=>({
     ...poi,
@@ -254,7 +331,6 @@ async function loadPois(){
   $('dPois').textContent=poiCache.length;
   updatePoiSuggestionLists();
   renderPoiList();
-  storeBoatCache('pois',poiCache);
 
   if(mapInstance)renderPoiMarkers();
 }
@@ -550,270 +626,9 @@ async function loadCosts(){
 function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'cost_receipts',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},loadSettings).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
 
 
-
-function boatCacheKey(type){
-  return `mijnserenity-${type}-${currentBoat?.id||'geen-boot'}`;
-}
-
-function storeBoatCache(type,value){
-  if(!currentBoat)return;
-  try{
-    localStorage.setItem(boatCacheKey(type),JSON.stringify({
-      savedAt:Date.now(),
-      value
-    }));
-  }catch(error){
-    console.warn(`Lokale ${type}-cache kon niet worden opgeslagen:`,error);
-  }
-}
-
-function readBoatCache(type){
-  if(!currentBoat)return null;
-  try{
-    const cached=JSON.parse(localStorage.getItem(boatCacheKey(type))||'null');
-    return cached?.value??null;
-  }catch(error){
-    return null;
-  }
-}
-
-function restoreBoatDataCache(){
-  const cachedPois=readBoatCache('pois');
-  if(Array.isArray(cachedPois)&&cachedPois.length){
-    poiCache=cachedPois;
-    $('dPois').textContent=poiCache.length;
-    updatePoiSuggestionLists();
-    renderPoiList();
-  }
-
-  const cachedTrips=readBoatCache('trips');
-  if(Array.isArray(cachedTrips)&&cachedTrips.length){
-    tripCache=cachedTrips;
-    $('dTrips').textContent=tripCache.length;
-    renderTripList();
-    renderFinance();
-    updateLatestRouteDashboard();
-  }
-}
-
-function resetPoiFilters(render=true){
-  if($('poiSearch'))$('poiSearch').value='';
-  if($('poiFilterCategory'))$('poiFilterCategory').value='';
-  if($('poiFilterRating'))$('poiFilterRating').value='0';
-  if($('poiFilterExtra'))$('poiFilterExtra').value='';
-  if(render)renderPoiList();
-}
-
-function initialisePoiFilters(){
-  resetPoiFilters(false);
-}
-
-function uniquePoiValues(field){
-  return [...new Set(
-    poiCache
-      .map(poi=>String(poi?.[field]||'').trim())
-      .filter(Boolean)
-  )].sort((a,b)=>a.localeCompare(b,'nl'));
-}
-
-function fillPoiDatalist(id,values){
-  const list=$(id);
-  if(!list)return;
-  list.innerHTML=values
-    .slice(0,100)
-    .map(value=>`<option value="${esc(value)}"></option>`)
-    .join('');
-}
-
-function updatePoiSuggestionLists(){
-  fillPoiDatalist('poiNameSuggestions',uniquePoiValues('name'));
-  fillPoiDatalist('poiPlaceSuggestions',uniquePoiValues('place'));
-  fillPoiDatalist('poiAddressSuggestions',uniquePoiValues('address'));
-}
-
-function applyLocalPoiSuggestion(field){
-  const inputId={
-    name:'poiName',
-    place:'poiPlace',
-    address:'poiAddress'
-  }[field];
-  const value=String($(inputId)?.value||'').trim().toLowerCase();
-  if(!value)return;
-
-  const match=poiCache.find(poi=>
-    String(poi?.[field]||'').trim().toLowerCase()===value
-  );
-  if(!match)return;
-
-  if(!$('poiName').value&&match.name)$('poiName').value=match.name;
-  if(!$('poiPlace').value&&match.place)$('poiPlace').value=match.place;
-  if(!$('poiAddress').value&&match.address)$('poiAddress').value=match.address;
-  if(!$('poiLatitude').value&&match.latitude!==null)$('poiLatitude').value=match.latitude??'';
-  if(!$('poiLongitude').value&&match.longitude!==null)$('poiLongitude').value=match.longitude??'';
-}
-
-function getPoiSuggestionCache(){
-  try{
-    return JSON.parse(localStorage.getItem('mijnserenity-poi-search-cache-v1')||'{}');
-  }catch(error){
-    return {};
-  }
-}
-
-function setPoiSuggestionCache(query,results){
-  try{
-    const cache=getPoiSuggestionCache();
-    cache[query]={
-      savedAt:Date.now(),
-      results
-    };
-
-    const entries=Object.entries(cache)
-      .sort((a,b)=>Number(b[1]?.savedAt||0)-Number(a[1]?.savedAt||0))
-      .slice(0,25);
-
-    localStorage.setItem(
-      'mijnserenity-poi-search-cache-v1',
-      JSON.stringify(Object.fromEntries(entries))
-    );
-  }catch(error){
-    console.warn('Zoeksuggesties konden niet lokaal worden bewaard:',error);
-  }
-}
-
-function getPoiSuggestionQuery(){
-  return [
-    $('poiName')?.value,
-    $('poiAddress')?.value,
-    $('poiPlace')?.value
-  ]
-    .map(value=>String(value||'').trim())
-    .filter(Boolean)
-    .join(', ');
-}
-
-async function searchPoiAddressSuggestions(){
-  const query=getPoiSuggestionQuery();
-  const panel=$('poiOnlineSuggestions');
-
-  if(query.length<3){
-    alert('Vul eerst minimaal een naam, adres of plaats in.');
-    return;
-  }
-
-  panel.classList.remove('hidden');
-  panel.innerHTML='<div class="small">Suggesties zoeken…</div>';
-
-  const cache=getPoiSuggestionCache();
-  const cached=cache[query.toLowerCase()];
-  if(cached&&Date.now()-Number(cached.savedAt||0)<30*24*60*60*1000){
-    poiOnlineSuggestionResults=cached.results||[];
-    renderPoiOnlineSuggestions();
-    return;
-  }
-
-  const wait=Math.max(0,1100-(Date.now()-lastPoiSuggestionRequestAt));
-  if(wait)await new Promise(resolve=>setTimeout(resolve,wait));
-  lastPoiSuggestionRequestAt=Date.now();
-
-  try{
-    const params=new URLSearchParams({
-      q:query,
-      format:'jsonv2',
-      addressdetails:'1',
-      namedetails:'1',
-      limit:'5',
-      countrycodes:'nl',
-      'accept-language':'nl'
-    });
-
-    const response=await fetch(
-      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
-      {
-        method:'GET',
-        headers:{Accept:'application/json'}
-      }
-    );
-
-    if(!response.ok)throw new Error(`Zoekdienst gaf fout ${response.status}`);
-
-    poiOnlineSuggestionResults=await response.json();
-    setPoiSuggestionCache(query.toLowerCase(),poiOnlineSuggestionResults);
-    renderPoiOnlineSuggestions();
-  }catch(error){
-    console.error('Adres zoeken mislukt:',error);
-    panel.innerHTML='<div class="status small">Online suggesties zijn nu niet beschikbaar. Probeer later opnieuw.</div>';
-  }
-}
-
-function getSuggestionPlace(result){
-  const address=result?.address||{};
-  return address.city||
-    address.town||
-    address.village||
-    address.municipality||
-    address.hamlet||
-    '';
-}
-
-function getSuggestionName(result){
-  const details=result?.namedetails||{};
-  const address=result?.address||{};
-  return details.name||
-    result?.name||
-    address.amenity||
-    address.shop||
-    address.tourism||
-    String(result?.display_name||'').split(',')[0]||
-    '';
-}
-
-function renderPoiOnlineSuggestions(){
-  const panel=$('poiOnlineSuggestions');
-  if(!panel)return;
-
-  if(!poiOnlineSuggestionResults.length){
-    panel.innerHTML='<div class="small">Geen passende adressen of plaatsen gevonden.</div>';
-    return;
-  }
-
-  panel.innerHTML=`
-    <div class="poi-suggestion-list">
-      ${poiOnlineSuggestionResults.map((result,index)=>`
-        <button type="button" onclick="applyPoiOnlineSuggestion(${index})">
-          <b>${esc(getSuggestionName(result)||'Locatie')}</b>
-          <span>${esc(result.display_name||'')}</span>
-        </button>
-      `).join('')}
-    </div>
-    <div class="poi-suggestion-attribution">
-      Adresgegevens © OpenStreetMap-bijdragers
-    </div>
-  `;
-}
-
-function applyPoiOnlineSuggestion(index){
-  const result=poiOnlineSuggestionResults[index];
-  if(!result)return;
-
-  const suggestedName=getSuggestionName(result);
-  const suggestedPlace=getSuggestionPlace(result);
-
-  if(suggestedName&&!$('poiName').value.trim())$('poiName').value=suggestedName;
-  if(suggestedPlace)$('poiPlace').value=suggestedPlace;
-  $('poiAddress').value=result.display_name||$('poiAddress').value;
-  $('poiLatitude').value=Number(result.lat).toFixed(7);
-  $('poiLongitude').value=Number(result.lon).toFixed(7);
-
-  $('poiOnlineSuggestions').classList.add('hidden');
-  $('poiOnlineSuggestions').innerHTML='';
-  showAppToast('Adres en kaartlocatie ingevuld ✅');
-}
-
 function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
 async function loadSettings(){
   if(!currentBoat)return;
-
   const {data,error}=await sb
     .from('boat_settings')
     .select('*')
@@ -822,13 +637,6 @@ async function loadSettings(){
 
   if(error){
     console.error('Instellingen laden mislukt:',error);
-    const cachedPath=localStorage.getItem(`mijnserenity-dashboard-photo-${currentBoat.id}`);
-    settingsCache=settingsCache||{
-      boat_id:currentBoat.id,
-      boat_name:currentBoat.name,
-      dashboard_photo_path:cachedPath||null
-    };
-    await loadDashboardPhoto();
     return;
   }
 
@@ -838,59 +646,7 @@ async function loadSettings(){
     dashboard_photo_path:null
   };
 
-  if(settingsCache.dashboard_photo_path){
-    localStorage.setItem(
-      `mijnserenity-dashboard-photo-${currentBoat.id}`,
-      settingsCache.dashboard_photo_path
-    );
-  }else{
-    const cachedPath=localStorage.getItem(`mijnserenity-dashboard-photo-${currentBoat.id}`);
-    if(cachedPath)settingsCache.dashboard_photo_path=cachedPath;
-    await recoverDashboardPhotoPath();
-  }
-
   await loadDashboardPhoto();
-}
-
-
-async function recoverDashboardPhotoPath(){
-  if(!currentBoat||settingsCache?.dashboard_photo_path)return;
-
-  try{
-    const {data,error}=await sb.storage
-      .from(BOAT_PHOTO_BUCKET)
-      .list(currentBoat.id,{
-        limit:100,
-        sortBy:{column:'created_at',order:'desc'}
-      });
-
-    if(error)throw error;
-
-    const latest=(data||[])
-      .filter(file=>String(file.name||'').startsWith('dashboard-'))
-      .sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')))[0];
-
-    if(!latest)return;
-
-    const recoveredPath=`${currentBoat.id}/${latest.name}`;
-    settingsCache.dashboard_photo_path=recoveredPath;
-    localStorage.setItem(
-      `mijnserenity-dashboard-photo-${currentBoat.id}`,
-      recoveredPath
-    );
-
-    await sb.from('boat_settings').upsert({
-      boat_id:currentBoat.id,
-      boat_name:settingsCache.boat_name||currentBoat.name||'Serenity',
-      fuel_price:settingsCache.fuel_price??null,
-      fuel_per_hour:settingsCache.fuel_per_hour??null,
-      tank_capacity:settingsCache.tank_capacity??null,
-      dashboard_photo_path:recoveredPath,
-      updated_at:new Date().toISOString()
-    },{onConflict:'boat_id'});
-  }catch(error){
-    console.warn('Dashboardfoto automatisch herstellen mislukt:',error);
-  }
 }
 
 async function loadDashboardPhoto(){
@@ -961,7 +717,6 @@ async function uploadDashboardPhoto(){
   }
   if(oldPath&&oldPath!==path)await sb.storage.from(BOAT_PHOTO_BUCKET).remove([oldPath]);
   settingsCache=row;
-  localStorage.setItem(`mijnserenity-dashboard-photo-${currentBoat.id}`,path);
   $('dashboardPhotoMsg').textContent='Dashboardfoto opgeslagen ✅';
   $('settingBoatPhoto').value='';
   await loadDashboardPhoto();
@@ -972,9 +727,7 @@ async function removeDashboardPhoto(){
   await sb.storage.from(BOAT_PHOTO_BUCKET).remove([settingsCache.dashboard_photo_path]);
   const {error}=await sb.from('boat_settings').update({dashboard_photo_path:null,updated_at:new Date().toISOString()}).eq('boat_id',currentBoat.id);
   if(error)return alert(error.message);
-  settingsCache.dashboard_photo_path=null;
-  localStorage.removeItem(`mijnserenity-dashboard-photo-${currentBoat.id}`);
-  await loadDashboardPhoto();
+  settingsCache.dashboard_photo_path=null;await loadDashboardPhoto();
 }
 
 function loadSettingsForm(){if(!settingsCache)return;$('settingBoatName').value=settingsCache.boat_name||'Serenity';$('settingFuelPrice').value=settingsCache.fuel_price??'';$('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';$('settingTankCapacity').value=settingsCache.tank_capacity??''}
@@ -1709,18 +1462,26 @@ De route en alle gekoppelde foto's worden ook verwijderd.`))return;
 }
 async function loadTrips(){
   if(!currentBoat)return;
+
   const [{data,error},photos]=await Promise.all([
-    sb.from('trips').select('*').eq('boat_id',currentBoat.id).order('trip_date',{ascending:false}),
+    sb.from('trips')
+      .select('*')
+      .eq('boat_id',currentBoat.id)
+      .order('trip_date',{ascending:false}),
     loadTripPhotos()
   ]);
-  if(error){console.error(error);return}
-  tripCache=data;
-  window.tripPhotoCache=photos;
+
+  if(error){
+    console.error('Logboek laden mislukt:',error);
+    throw error;
+  }
+
+  tripCache=data||[];
+  window.tripPhotoCache=photos||{};
   $('dTrips').textContent=tripCache.length;
   renderTripList();
   renderFinance();
   updateLatestRouteDashboard();
-  storeBoatCache('trips',tripCache);
 }
 
 
@@ -1854,12 +1615,12 @@ function openWaterkaarten(){
   if(!opened)window.location.href=WATERKAARTEN_URL;
 }
 
-function captainNavigate(id, sourceButton=null){
+function captainNavigate(id,sourceButton=null){
   const desktopButtons=[...document.querySelectorAll('.tab')];
   const map={dashboard:0,live:1,map:2,pois:3,logbook:4,costs:5,finance:6,settings:7,boat:8};
   const desktopButton=desktopButtons[map[id]];
 
-  if(typeof showTab==='function' && desktopButton){
+  if(typeof showTab==='function'&&desktopButton){
     showTab(id,desktopButton);
   }else{
     document.querySelectorAll('#appView > section').forEach(section=>section.classList.add('hidden'));
@@ -1870,13 +1631,16 @@ function captainNavigate(id, sourceButton=null){
     button.classList.toggle('active',button.dataset.target===id);
   });
 
-  if(id==='live' && typeof initLiveMode==='function')setTimeout(()=>initLiveMode(),80);
-  if(id==='pois' && currentBoat && typeof loadPois==='function')loadPois();
-  if(id==='logbook' && currentBoat && typeof loadTrips==='function')loadTrips();
-  if(id==='map' && typeof initMap==='function')setTimeout(()=>initMap(),80);
-  if(id==='dashboard' && typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
-  if(id==='finance' && typeof renderFinance==='function')renderFinance();
-  if(id==='settings' && typeof loadSettingsForm==='function')loadSettingsForm();
+  if(id==='live'&&typeof initLiveMode==='function')setTimeout(()=>initLiveMode(),80);
+  if(id==='map'&&typeof initMap==='function')setTimeout(()=>initMap(),80);
+  if(id==='dashboard'&&typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
+  if(id==='pois'&&currentBoat)loadPois().catch(error=>console.error(error));
+  if(id==='logbook'&&currentBoat)loadTrips().catch(error=>console.error(error));
+  if(id==='finance'&&typeof renderFinance==='function')renderFinance();
+  if(id==='settings'){
+    if(typeof loadSettingsForm==='function')loadSettingsForm();
+    if(typeof loadDashboardPhoto==='function')loadDashboardPhoto();
+  }
 }
 
 (async()=>{const {data:{session}}=await sb.auth.getSession();await initialise(session)})();
@@ -2440,7 +2204,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.8';
+const APP_VERSION='5.1.9';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -3004,6 +2768,3 @@ function closeLightbox(){
   $('lightboxImage').src='';
   document.body.style.overflow='';
 }
-
-
-document.addEventListener('DOMContentLoaded',ensureBootNavigation);

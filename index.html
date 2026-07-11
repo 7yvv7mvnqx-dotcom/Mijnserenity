@@ -124,10 +124,10 @@
           <div class="label">Ververs</div>
           <div class="value">🔄</div>
         </button>
-        <button class="stat dashboard-status-button sync-status-button" type="button" onclick="refreshMijnSerenity(this)">
-          <div class="label">Sync · v5.1.8</div>
+        <div class="stat">
+          <div class="label">Sync · v5.1.9</div>
           <div class="value" id="dSync">Live</div>
-        </button>
+        </div>
       </div>
     </div>
   </section>
@@ -213,7 +213,7 @@
       <div class="row">
         <div>
           <label>Naam</label>
-          <input id="poiName" list="poiNameSuggestions" autocomplete="off" onchange="applyLocalPoiSuggestion('name')">
+          <input id="poiName" list="poiNameSuggestions" autocomplete="off">
           <datalist id="poiNameSuggestions"></datalist>
         </div>
         <div><label>Categorie</label><select id="poiCategory"><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
@@ -221,19 +221,18 @@
       <div class="row">
         <div>
           <label>Plaats</label>
-          <input id="poiPlace" list="poiPlaceSuggestions" autocomplete="off" onchange="applyLocalPoiSuggestion('place')">
+          <input id="poiPlace" list="poiPlaceSuggestions" autocomplete="off">
           <datalist id="poiPlaceSuggestions"></datalist>
         </div>
         <div><label>Beoordeling 1–5</label><input id="poiRating" type="number" min="1" max="5"></div>
       </div>
       <label>Adres</label>
       <input id="poiAddress" list="poiAddressSuggestions" autocomplete="off"
-        placeholder="Straat, huisnummer, postcode en plaats"
-        onchange="applyLocalPoiSuggestion('address')">
+        placeholder="Straat, huisnummer, postcode en plaats">
       <datalist id="poiAddressSuggestions"></datalist>
       <div class="poi-suggestion-tools">
         <button type="button" class="secondary" onclick="searchPoiAddressSuggestions()">🔎 Zoek adres of plaats</button>
-        <span class="small">Tijdens typen verschijnen suggesties uit jullie bestaande POI's.</span>
+        <span class="small">Suggesties uit bestaande POI’s verschijnen tijdens het typen.</span>
       </div>
       <div id="poiOnlineSuggestions" class="poi-online-suggestions hidden"></div>
       <div class="coordinate-card">

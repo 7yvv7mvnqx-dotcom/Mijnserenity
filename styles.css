@@ -895,16 +895,31 @@ header{
   }
 }
 
-/* Cloud 5.1.5 — persoonlijk welkom en verversknop */
-.refresh-nav-button.is-refreshing span{
+/* Cloud 5.1.9 — herstel van data, foto en navigatie */
+.dashboard-status-button{
+  width:100%;
+  min-height:88px;
+  margin:0;
+  padding:13px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:14px;
+  background:rgba(255,255,255,.035);
+  color:inherit;
+  text-align:left;
+}
+.dashboard-status-button:active{
+  transform:scale(.985);
+}
+.dashboard-status-button.is-refreshing .value{
   display:inline-block;
   animation:refreshSpin .75s linear infinite;
 }
 @keyframes refreshSpin{
   to{transform:rotate(360deg)}
 }
-
-/* Cloud 5.1.7 — POI-herstel, persoonlijke naam en suggesties */
+.settings-share-button{
+  margin-top:10px;
+}
 .poi-suggestion-tools{
   display:flex;
   align-items:center;
@@ -928,7 +943,6 @@ header{
 }
 .poi-suggestion-list button{
   width:100%;
-  min-height:0;
   padding:11px;
   text-align:left;
   background:#f1f8fb;
@@ -942,7 +956,6 @@ header{
   margin-top:4px;
   color:#4e6877;
   font-size:12px;
-  line-height:1.35;
 }
 .poi-suggestion-attribution{
   margin-top:9px;
@@ -950,41 +963,9 @@ header{
   font-size:10px;
   text-align:right;
 }
-.refresh-nav-button{
-  -webkit-tap-highlight-color:transparent;
-}
 @media(max-width:600px){
   .poi-suggestion-tools,
   .poi-suggestion-tools button{
     width:100%;
   }
-}
-
-/* Cloud 5.1.8 — veilig verversen, Boot terug en versie in Sync */
-.dashboard-status-button{
-  width:100%;
-  min-height:88px;
-  margin:0;
-  padding:13px;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:14px;
-  background:rgba(255,255,255,.035);
-  color:inherit;
-  text-align:left;
-}
-.dashboard-status-button .value{
-  margin-top:5px;
-}
-.dashboard-status-button:active{
-  transform:scale(.985);
-}
-.dashboard-status-button.is-refreshing .value{
-  display:inline-block;
-  animation:refreshSpin .75s linear infinite;
-}
-.sync-status-button{
-  cursor:pointer;
-}
-.settings-share-button{
-  margin-top:10px;
 }
