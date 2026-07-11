@@ -3365,10 +3365,26 @@ function normalizeCommonsPhoto(page,kind='zoekresultaat'){
       String(page.title||'').replace(/ /g,'_')
     )}`;
 
+  const coordinate=Array.isArray(page.coordinates)
+    ?page.coordinates[0]
+    :null;
+  const latitude=Number(coordinate?.lat);
+  const longitude=Number(coordinate?.lon);
+
+  const metadataText=[
+    title,
+    description,
+    commonsMetadataValue(metadata,'ObjectName'),
+    commonsMetadataValue(metadata,'Categories'),
+    commonsMetadataValue(metadata,'Location'),
+    commonsMetadataValue(metadata,'Credit')
+  ].filter(Boolean).join(' ');
+
   return {
     pageId:String(page.pageid||page.title||sourceUrl),
     title,
     description,
+    metadataText,
     artist,
     license,
     sourceUrl,
@@ -3378,7 +3394,13 @@ function normalizeCommonsPhoto(page,kind='zoekresultaat'){
     mime,
     width,
     height,
-    kind
+    latitude:Number.isFinite(latitude)?latitude:null,
+    longitude:Number.isFinite(longitude)?longitude:null,
+    kind,
+    relevanceScore:0,
+    relevanceLabel:'',
+    relevanceReasons:[],
+    distanceKm:null
   };
 }
 
@@ -3432,8 +3454,8 @@ async function fetchCommonsPhotosByCoordinates(latitude,longitude,signal){
     ggsnamespace:'6',
     ggsprimary:'all',
     ggscoord:`${latitude}|${longitude}`,
-    ggsradius:'10000',
-    ggslimit:'24',
+    ggsradius:'500',
+    ggslimit:'40',
     prop:'imageinfo|coordinates',
     iiprop:'url|mime|size|extmetadata',
     iiurlwidth:'960'
@@ -3448,13 +3470,242 @@ async function fetchCommonsPhotosByCoordinates(latitude,longitude,signal){
   );
 
   if(!response.ok){
-    throw new Error(`Foto’s in de omgeving zoeken gaf fout ${response.status}`);
+    throw new Error(`Foto’s bij de POI zoeken gaf fout ${response.status}`);
   }
 
   const payload=await response.json();
   return commonsApiPages(payload)
-    .map(page=>normalizeCommonsPhoto(page,'in de omgeving'))
+    .map(page=>normalizeCommonsPhoto(page,'direct bij POI'))
     .filter(Boolean);
+}
+
+
+function poiPhotoNormaliseText(value){
+  return String(value||'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function poiPhotoTokens(value,{allowGeneric=false}={}){
+  const stopWords=new Set([
+    'de','het','een','van','der','den','des','te','ten','ter',
+    'aan','op','in','bij','voor','en','of','the','at','of',
+    'nederland','netherlands'
+  ]);
+
+  const generic=new Set([
+    'haven','havens','jachthaven','jachthavens','marina','marinas',
+    'passantenhaven','boothaven','watersport','watersportvereniging',
+    'restaurant','cafe','cafeteria','cafetaria','snackbar',
+    'supermarkt','tankstation','camping','winkel','apotheek',
+    'bakker','parking','parkeren','toilet','drinkwaterpunt',
+    'club','yacht','harbour'
+  ]);
+
+  return [...new Set(
+    poiPhotoNormaliseText(value)
+      .split(' ')
+      .filter(token=>
+        token.length>=3&&
+        !stopWords.has(token)&&
+        (allowGeneric||!generic.has(token))
+      )
+  )];
+}
+
+function poiWebPhotoContext(){
+  const name=String($('poiName')?.value||'').trim();
+  const place=String($('poiPlace')?.value||'').trim();
+  const address=String($('poiAddress')?.value||'').trim();
+  const category=String($('poiCategory')?.value||'').trim();
+  const latitude=Number($('poiLatitude')?.value);
+  const longitude=Number($('poiLongitude')?.value);
+
+  const addressStreet=address
+    .split(',')[0]
+    .replace(/\b\d+[a-zA-Z-]*\b/g,' ')
+    .trim();
+
+  return {
+    name,
+    place,
+    address,
+    category,
+    latitude:Number.isFinite(latitude)?latitude:null,
+    longitude:Number.isFinite(longitude)?longitude:null,
+    nameNormalised:poiPhotoNormaliseText(name),
+    placeNormalised:poiPhotoNormaliseText(place),
+    addressNormalised:poiPhotoNormaliseText(address),
+    nameTokens:poiPhotoTokens(name),
+    placeTokens:poiPhotoTokens(place,{allowGeneric:true}),
+    streetTokens:poiPhotoTokens(addressStreet,{allowGeneric:true}),
+    categoryTokens:poiPhotoTokens(category,{allowGeneric:true})
+  };
+}
+
+function poiPhotoDistanceKm(photo,context){
+  if(
+    !Number.isFinite(photo?.latitude)||
+    !Number.isFinite(photo?.longitude)||
+    !Number.isFinite(context?.latitude)||
+    !Number.isFinite(context?.longitude)
+  )return null;
+
+  return haversineKm(
+    {lat:context.latitude,lon:context.longitude},
+    {lat:photo.latitude,lon:photo.longitude}
+  );
+}
+
+function poiPhotoKeywordEvidence(tokens,text){
+  const matched=(tokens||[]).filter(token=>
+    text.includes(token)
+  );
+
+  return {
+    matched,
+    count:matched.length,
+    all:Boolean(tokens?.length)&&matched.length===tokens.length
+  };
+}
+
+function scorePoiWebPhoto(photo,context){
+  const text=poiPhotoNormaliseText(
+    photo?.metadataText||
+    `${photo?.title||''} ${photo?.description||''}`
+  );
+
+  const nameEvidence=poiPhotoKeywordEvidence(
+    context.nameTokens,
+    text
+  );
+  const placeEvidence=poiPhotoKeywordEvidence(
+    context.placeTokens,
+    text
+  );
+  const streetEvidence=poiPhotoKeywordEvidence(
+    context.streetTokens,
+    text
+  );
+  const categoryEvidence=poiPhotoKeywordEvidence(
+    context.categoryTokens,
+    text
+  );
+
+  const exactName=Boolean(
+    context.nameNormalised.length>=3&&
+    text.includes(context.nameNormalised)
+  );
+
+  const distanceKm=poiPhotoDistanceKm(photo,context);
+  const veryClose=Number.isFinite(distanceKm)&&distanceKm<=.12;
+  const close=Number.isFinite(distanceKm)&&distanceKm<=.30;
+  const nearby=Number.isFinite(distanceKm)&&distanceKm<=.50;
+
+  let score=0;
+  const reasons=[];
+
+  if(exactName){
+    score+=16;
+    reasons.push('exacte POI-naam');
+  }
+
+  if(nameEvidence.all){
+    score+=10;
+    reasons.push('volledige naamsmatch');
+  }else if(nameEvidence.count){
+    score+=nameEvidence.count*4;
+    reasons.push('naam herkenbaar');
+  }
+
+  if(placeEvidence.count){
+    score+=Math.min(3,placeEvidence.count);
+    reasons.push('juiste plaats');
+  }
+
+  if(streetEvidence.count){
+    score+=Math.min(4,streetEvidence.count*2);
+    reasons.push('adres herkenbaar');
+  }
+
+  if(categoryEvidence.count){
+    score+=1;
+  }
+
+  if(veryClose){
+    score+=10;
+    reasons.push('binnen 120 meter');
+  }else if(close){
+    score+=6;
+    reasons.push('binnen 300 meter');
+  }else if(nearby){
+    score+=3;
+    reasons.push('binnen 500 meter');
+  }
+
+  const hasDistinctName=context.nameTokens.length>0;
+  const strongNameMatch=exactName||nameEvidence.all||
+    nameEvidence.count>=Math.min(2,context.nameTokens.length);
+  const locationConfirmed=veryClose&&(
+    nameEvidence.count||
+    categoryEvidence.count||
+    streetEvidence.count
+  );
+  const textConfirmed=strongNameMatch&&(
+    placeEvidence.count||
+    streetEvidence.count||
+    score>=16
+  );
+
+  const related=hasDistinctName
+    ?(textConfirmed||locationConfirmed)
+    :(
+      veryClose&&
+      (streetEvidence.count||categoryEvidence.count)&&
+      placeEvidence.count
+    );
+
+  let label='Mogelijke match';
+  if(exactName&&veryClose)label='Exacte naam + locatie';
+  else if(exactName)label='Exacte POI-naam';
+  else if(nameEvidence.all&&placeEvidence.count)label='Naam + plaats';
+  else if(locationConfirmed)label='Direct bij POI';
+  else if(nameEvidence.count&&streetEvidence.count)label='Naam + adres';
+
+  return {
+    ...photo,
+    relevanceScore:score,
+    relevanceLabel:label,
+    relevanceReasons:[...new Set(reasons)],
+    distanceKm,
+    related
+  };
+}
+
+function filterRelevantPoiWebPhotos(photos,context){
+  return (photos||[])
+    .map(photo=>scorePoiWebPhoto(photo,context))
+    .filter(photo=>photo.related)
+    .sort((a,b)=>{
+      const scoreDifference=
+        Number(b.relevanceScore||0)-
+        Number(a.relevanceScore||0);
+
+      if(scoreDifference)return scoreDifference;
+
+      const aDistance=Number.isFinite(a.distanceKm)
+        ?a.distanceKm
+        :9999;
+      const bDistance=Number.isFinite(b.distanceKm)
+        ?b.distanceKm
+        :9999;
+
+      return aDistance-bDistance;
+    });
 }
 
 function poiWebPhotoSearchQueries(){
@@ -3463,16 +3714,21 @@ function poiWebPhotoSearchQueries(){
   const address=String($('poiAddress')?.value||'').trim();
   const category=String($('poiCategory')?.value||'').trim();
 
+  if(name.length<3)return [];
+
+  const quotedName=`"${name.replace(/"/g,'')}"`;
   const queries=[
-    [name,place].filter(Boolean).join(' '),
-    [name,address].filter(Boolean).join(' '),
-    [place,category,'Nederland'].filter(Boolean).join(' ')
+    [quotedName,place].filter(Boolean).join(' '),
+    [`intitle:${quotedName}`,place].filter(Boolean).join(' '),
+    [quotedName,address].filter(Boolean).join(' '),
+    [quotedName,category,place].filter(Boolean).join(' ')
   ];
 
   const seen=new Set();
+
   return queries.filter(query=>{
-    const key=query.toLowerCase();
-    if(query.length<3||seen.has(key))return false;
+    const key=query.toLowerCase().replace(/\s+/g,' ').trim();
+    if(key.length<3||seen.has(key))return false;
     seen.add(key);
     return true;
   });
@@ -3508,6 +3764,9 @@ function renderPoiWebPhotos(){
 
   container.innerHTML=poiWebPhotoResults.map((photo,index)=>{
     const selected=isPoiWebPhotoSelected(photo);
+    const distanceText=Number.isFinite(photo.distanceKm)
+      ?`${Math.round(photo.distanceKm*1000)} m van POI`
+      :'';
 
     return `
       <article class="poi-web-photo-card ${selected?'selected':''}">
@@ -3518,6 +3777,9 @@ function renderPoiWebPhotos(){
           <img src="${esc(photo.previewUrl)}"
             loading="lazy"
             alt="${esc(photo.description||photo.title)}">
+          <span class="poi-web-photo-relevance">
+            ✓ ${esc(photo.relevanceLabel||'Gerelateerd')}
+          </span>
           <span class="poi-web-photo-check">
             ${selected?'✓ Geselecteerd':'＋ Gebruiken'}
           </span>
@@ -3525,12 +3787,18 @@ function renderPoiWebPhotos(){
 
         <div class="poi-web-photo-meta">
           <strong>${esc(photo.title||'Internetfoto')}</strong>
+          <small>
+            ${esc([
+              distanceText,
+              ...(photo.relevanceReasons||[]).slice(0,2)
+            ].filter(Boolean).join(' · '))}
+          </small>
           <small>${esc(photo.artist||'Onbekende maker')}</small>
           <small>${esc(photo.license||'Zie bronpagina')}</small>
           <a href="${esc(photo.sourceUrl)}"
             target="_blank"
             rel="noopener noreferrer">
-            Bekijk bron
+            Controleer bron
           </a>
         </div>
       </article>
@@ -3542,8 +3810,8 @@ function renderPoiWebPhotos(){
   const selectedCount=selectedPoiWebPhotos.length;
   setPoiWebPhotoStatus(
     selectedCount
-      ?`${selectedCount} internetfoto${selectedCount===1?'':'’s'} geselecteerd. Deze worden bij Opslaan toegevoegd.`
-      :'Tik op Gebruiken om maximaal 3 internetfoto’s te selecteren.',
+      ?`${selectedCount} gerelateerde foto${selectedCount===1?'':'’s'} geselecteerd. Deze worden bij Opslaan toegevoegd.`
+      :'Alleen duidelijk gerelateerde foto’s worden getoond. Controleer de bron en kies maximaal 3 foto’s.',
     selectedCount?'success':''
   );
 }
@@ -3592,17 +3860,24 @@ function resetPoiWebPhotoSearch(){
 }
 
 async function searchPoiWebPhotos({silent=false}={}){
-  const name=String($('poiName')?.value||'').trim();
-  const place=String($('poiPlace')?.value||'').trim();
-  const latitude=Number($('poiLatitude')?.value);
-  const longitude=Number($('poiLongitude')?.value);
+  const context=poiWebPhotoContext();
   const queries=poiWebPhotoSearchQueries();
 
-  if(!name&&!place){
+  if(context.name.length<3){
     if(!silent){
-      alert('Vul eerst de naam of plaats van de POI in.');
+      alert('Vul eerst een duidelijke POI-naam van minimaal drie tekens in.');
       $('poiName')?.focus();
     }
+    return;
+  }
+
+  if(!context.nameTokens.length){
+    setPoiWebPhotoStatus(
+      'De POI-naam is te algemeen om betrouwbare foto’s te vinden. Gebruik de specifieke naam van de haven, winkel of locatie.',
+      'warning'
+    );
+    poiWebPhotoResults=[];
+    renderPoiWebPhotos();
     return;
   }
 
@@ -3612,25 +3887,35 @@ async function searchPoiWebPhotos({silent=false}={}){
 
   if(!silent){
     setPoiWebPhotoStatus(
-      `Foto’s zoeken voor ${[name,place].filter(Boolean).join(' · ')}…`,
+      `Gerelateerde foto’s zoeken voor ${[
+        context.name,
+        context.place
+      ].filter(Boolean).join(' · ')}…`,
       'warning'
     );
   }
 
   try{
     const jobs=queries
-      .slice(0,3)
+      .slice(0,4)
       .map(query=>fetchCommonsPhotosByText(query,signal));
 
-    if(Number.isFinite(latitude)&&Number.isFinite(longitude)){
+    if(
+      Number.isFinite(context.latitude)&&
+      Number.isFinite(context.longitude)
+    ){
       jobs.push(
-        fetchCommonsPhotosByCoordinates(latitude,longitude,signal)
+        fetchCommonsPhotosByCoordinates(
+          context.latitude,
+          context.longitude,
+          signal
+        )
       );
     }
 
     const batches=await Promise.allSettled(jobs);
     const seen=new Set();
-    const photos=[];
+    const collected=[];
 
     batches.forEach(batch=>{
       if(batch.status!=='fulfilled')return;
@@ -3639,11 +3924,15 @@ async function searchPoiWebPhotos({silent=false}={}){
         const key=commonsPhotoKey(photo);
         if(!key||seen.has(key))return;
         seen.add(key);
-        photos.push(photo);
+        collected.push(photo);
       });
     });
 
-    poiWebPhotoResults=photos.slice(0,24);
+    poiWebPhotoResults=filterRelevantPoiWebPhotos(
+      collected,
+      context
+    ).slice(0,18);
+
     selectedPoiWebPhotos=selectedPoiWebPhotos.filter(selected=>
       poiWebPhotoResults.some(photo=>
         commonsPhotoKey(photo)===commonsPhotoKey(selected)
@@ -3654,21 +3943,21 @@ async function searchPoiWebPhotos({silent=false}={}){
 
     if(!poiWebPhotoResults.length){
       setPoiWebPhotoStatus(
-        'Geen bruikbare internetfoto’s gevonden. Probeer een preciezere naam of plaats.',
+        `Geen foto gevonden die aantoonbaar bij “${context.name}” hoort. Algemene foto’s van ${context.place||'de omgeving'} zijn bewust niet getoond.`,
         'warning'
       );
     }else if(!silent){
       setPoiWebPhotoStatus(
-        `${poiWebPhotoResults.length} foto’s gevonden. Kies maximaal 3 foto’s.`,
+        `${poiWebPhotoResults.length} duidelijk gerelateerde foto${poiWebPhotoResults.length===1?'':'’s'} gevonden. Controleer de bron voordat je een foto gebruikt.`,
         'success'
       );
     }
   }catch(error){
     if(error?.name==='AbortError')return;
 
-    console.error('Internetfoto’s zoeken mislukt:',error);
+    console.error('Gerelateerde internetfoto’s zoeken mislukt:',error);
     setPoiWebPhotoStatus(
-      'Internetfoto’s zoeken is niet gelukt. Probeer het later opnieuw.',
+      'Gerelateerde foto’s zoeken is niet gelukt. Probeer het later opnieuw.',
       'error'
     );
   }
@@ -3721,6 +4010,7 @@ async function webPhotoToFile(photo,index=0){
 function webPhotoAttributionLine(photo){
   return [
     `Internetfoto: ${photo.title||'Afbeelding'}`,
+    `relatie ${photo.relevanceLabel||'gerelateerd aan POI'}`,
     `maker ${photo.artist||'onbekend'}`,
     `licentie ${photo.license||'zie bron'}`,
     `bron ${photo.sourceUrl||''}`
@@ -11423,7 +11713,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.4.0';
+const APP_VERSION='5.4.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -11500,7 +11790,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5400',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5410',{updateViaCache:'none'});
 
     await registration.update();
 

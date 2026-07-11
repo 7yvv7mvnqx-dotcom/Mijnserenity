@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.4.0";
+  content:" · v5.4.1";
   color:#6fcfee;
   font-weight:800;
 }
@@ -4137,4 +4137,31 @@ main{
     max-width:120px;
     text-align:center;
   }
+}
+
+/* MijnSerenity Cloud 5.4.1 — alleen POI-gerelateerde internetfoto’s */
+.poi-web-photo-relevance-note{
+  margin:8px 0 0;
+  color:#8faeba;
+  line-height:1.4;
+}
+.poi-web-photo-relevance{
+  position:absolute;
+  top:7px;
+  left:7px;
+  max-width:calc(100% - 14px);
+  overflow:hidden;
+  padding:5px 7px;
+  border:1px solid rgba(83,219,148,.28);
+  border-radius:999px;
+  background:rgba(22,112,70,.90);
+  color:#d6f8e4;
+  font-size:9px;
+  font-weight:900;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  backdrop-filter:blur(6px);
+}
+.poi-web-photo-meta small:first-of-type{
+  color:#8ee5b5;
 }
