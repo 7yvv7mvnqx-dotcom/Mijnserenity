@@ -34,7 +34,7 @@
     <p class="small">Michel en Desi gebruiken ieder een eigen account.</p>
     <label>E-mailadres</label><input id="email" type="email" autocomplete="email">
     <label>Wachtwoord</label><input id="password" type="password" minlength="6" autocomplete="current-password">
-    <div class="actions"><button type="button" onclick="signIn()">Inloggen</button><button type="button" class="secondary" onclick="signUp()">Account maken</button></div>
+    <div class="actions"><button onclick="signIn()">Inloggen</button><button class="secondary" onclick="signUp()">Account maken</button></div>
     <div id="authMsg" class="status small">Nog niet ingelogd.</div>
   </div>
 </section>
@@ -121,11 +121,12 @@
     <div class="card hero compact-status">
       <div class="grid">
         <button id="dashboardRefreshButton" class="stat dashboard-status-button" type="button" onclick="refreshMijnSerenity(this)">
+          <span id="dBoat" class="hidden">-</span>
           <div class="label">Ververs</div>
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.10</div>
+          <div class="label">Sync · v5.1.11</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -211,28 +212,24 @@
       <h2 id="poiFormTitle">POI toevoegen</h2>
       <input id="poiId" type="hidden">
       <div class="row">
-        <div>
-          <label>Naam</label>
+        <div><label>Naam</label>
           <input id="poiName" list="poiNameSuggestions" autocomplete="off">
           <datalist id="poiNameSuggestions"></datalist>
         </div>
         <div><label>Categorie</label><select id="poiCategory"><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
       </div>
       <div class="row">
-        <div>
-          <label>Plaats</label>
+        <div><label>Plaats</label>
           <input id="poiPlace" list="poiPlaceSuggestions" autocomplete="off">
           <datalist id="poiPlaceSuggestions"></datalist>
         </div>
         <div><label>Beoordeling 1–5</label><input id="poiRating" type="number" min="1" max="5"></div>
       </div>
       <label>Adres</label>
-      <input id="poiAddress" list="poiAddressSuggestions" autocomplete="off"
-        placeholder="Straat, huisnummer, postcode en plaats">
+      <input id="poiAddress" list="poiAddressSuggestions" autocomplete="off" placeholder="Straat, huisnummer, postcode en plaats">
       <datalist id="poiAddressSuggestions"></datalist>
       <div class="poi-suggestion-tools">
         <button type="button" class="secondary" onclick="searchPoiAddressSuggestions()">🔎 Zoek adres of plaats</button>
-        <span class="small">Suggesties uit bestaande POI’s verschijnen tijdens het typen.</span>
       </div>
       <div id="poiOnlineSuggestions" class="poi-online-suggestions hidden"></div>
       <div class="coordinate-card">
@@ -398,7 +395,7 @@
         <button class="small-danger" onclick="removeDashboardPhoto()">Foto verwijderen</button>
       </div>
       <div id="dashboardPhotoMsg" class="status small hidden"></div><div class="row"><div><label>Bootnaam</label><input id="settingBoatName" value="Serenity"></div><div><label>Tankinhoud liter</label><input id="settingTankCapacity" type="number" step="1"></div></div><div class="row"><div><label>Brandstofprijs per liter €</label><input id="settingFuelPrice" type="number" step="0.01"></div><div><label>Gemiddeld verbruik per uur</label><input id="settingFuelPerHour" type="number" step="0.1"></div></div><button onclick="saveSettings()">Instellingen opslaan</button>
-      <button class="secondary settings-share-button" onclick="captainNavigate('boat')">Boot delen en leden beheren</button>
+      <button type="button" class="secondary settings-share-button" onclick="captainNavigate('boat')">Boot delen en leden beheren</button>
       <div id="settingsMsg" class="status small hidden"></div></div><div class="card"><p class="small">Geen reserveniveau. Als werkelijke liters of kosten leeg blijven, rekent MijnSerenity automatisch met vaartijd × verbruik per uur × literprijs.</p></div></section>
   <section id="boat" class="hidden">
     <div id="noBoatCard" class="card"><h2>Serenity koppelen</h2><p class="small">Michel maakt Serenity één keer aan. Desi gebruikt daarna de deelcode.</p><div class="row"><div><label>Bootnaam</label><input id="newBoatName" value="Serenity"><button onclick="createBoat()">Boot aanmaken</button></div><div><label>Deelcode</label><input id="joinCode" autocapitalize="characters" placeholder="Bijvoorbeeld A1B2C3"><button class="secondary" onclick="joinBoat()">Deelnemen</button></div></div></div>

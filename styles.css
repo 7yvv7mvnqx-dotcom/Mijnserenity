@@ -895,7 +895,7 @@ header{
   }
 }
 
-/* Cloud 5.1.9 — herstel van data, foto en navigatie */
+/* Cloud 5.1.11 — stabiele herstelversie */
 .dashboard-status-button{
   width:100%;
   min-height:88px;
@@ -921,14 +921,7 @@ header{
   margin-top:10px;
 }
 .poi-suggestion-tools{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
   margin:10px 0 4px;
-}
-.poi-suggestion-tools button{
-  width:auto;
 }
 .poi-online-suggestions{
   margin:10px 0 14px;
@@ -962,10 +955,4 @@ header{
   color:#9bb3bf;
   font-size:10px;
   text-align:right;
-}
-@media(max-width:600px){
-  .poi-suggestion-tools,
-  .poi-suggestion-tools button{
-    width:100%;
-  }
 }
