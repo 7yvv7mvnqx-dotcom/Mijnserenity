@@ -415,3 +415,140 @@ header{
 .trip-row summary{
   gap:10px;
 }
+
+/* Cloud 5.1 — Live Vaarmodus */
+.bottom-nav{
+  grid-template-columns:repeat(7,1fr);
+}
+.bottom-nav-item small{
+  font-size:9px;
+}
+.live-mode-tile{
+  border-color:rgba(75,211,143,.5);
+  background:linear-gradient(145deg,rgba(75,211,143,.2),rgba(69,200,255,.12));
+}
+.live-nav-button.active{
+  background:rgba(75,211,143,.18);
+}
+.live-hero{
+  border:1px solid rgba(75,211,143,.32);
+  background:linear-gradient(145deg,rgba(11,48,63,.98),rgba(8,31,46,.98));
+}
+.live-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+}
+.live-heading h2{
+  margin:4px 0;
+}
+.live-recording-badge{
+  flex:0 0 auto;
+  padding:7px 11px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  border:1px solid rgba(255,255,255,.2);
+}
+.live-recording-badge.idle{
+  background:rgba(255,255,255,.08);
+  color:#d7e6ee;
+}
+.live-recording-badge.active{
+  background:rgba(229,83,97,.18);
+  border-color:rgba(255,100,113,.42);
+  color:#ffadb5;
+  animation:livePulse 1.4s infinite;
+}
+.live-recording-badge.paused{
+  background:rgba(245,180,58,.18);
+  color:#ffd88b;
+}
+.live-recording-badge.stopped{
+  background:rgba(75,211,143,.18);
+  color:#9cf0bf;
+}
+@keyframes livePulse{
+  50%{box-shadow:0 0 0 7px rgba(229,83,97,0)}
+  0%,100%{box-shadow:0 0 0 0 rgba(229,83,97,.28)}
+}
+.live-controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:16px 0 10px;
+}
+.live-controls button{
+  width:auto;
+}
+.live-metrics{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-bottom:12px;
+}
+.live-metric{
+  text-align:center;
+  padding:14px 8px;
+  margin:0;
+}
+.live-metric span{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+}
+.live-metric strong{
+  display:block;
+  margin:5px 0 2px;
+  font-size:25px;
+  line-height:1;
+  color:white;
+  font-variant-numeric:tabular-nums;
+}
+.live-metric small{
+  color:var(--muted);
+  font-size:11px;
+}
+.live-map-card{
+  position:relative;
+  padding:8px;
+}
+#liveMapCanvas{
+  height:46vh;
+  min-height:360px;
+  border-radius:14px;
+  overflow:hidden;
+  background:#d9e4e9;
+}
+.live-follow-button{
+  position:absolute;
+  right:20px;
+  bottom:20px;
+  z-index:500;
+  width:auto;
+  padding:9px 11px;
+  box-shadow:0 5px 16px rgba(0,0,0,.28);
+}
+.live-warning{
+  margin-top:14px;
+  padding:10px;
+  border-radius:10px;
+  background:rgba(245,180,58,.10);
+  border:1px solid rgba(245,180,58,.22);
+}
+@media(max-width:700px){
+  .live-heading{
+    flex-direction:column;
+  }
+  .live-metrics{
+    grid-template-columns:repeat(2,1fr);
+  }
+  .live-controls button{
+    flex:1 1 44%;
+  }
+  #liveMapCanvas{
+    height:42vh;
+    min-height:310px;
+  }
+}
