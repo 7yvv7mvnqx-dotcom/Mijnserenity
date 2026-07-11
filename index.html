@@ -102,9 +102,6 @@
       <button class="dashboard-tile" onclick="goToTab('settings')">
         <span class="tile-icon">⚙️</span><b>Instellingen</b><small>Brandstof en boot</small>
       </button>
-      <button id="installAppTile" class="dashboard-tile install-app-tile" onclick="installMijnSerenity()">
-        <span class="tile-icon">📲</span><b>Installeer app</b><small>Zet MijnSerenity op beginscherm</small>
-      </button>
     </div>
 
     
@@ -128,7 +125,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.22</div>
+          <div class="label">Sync · v5.1.23</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -207,7 +204,7 @@
 
   <section id="pois" class="hidden">
     <div class="card collapsible-card">
-      <button class="section-toggle" type="button" onclick="toggleSection('poiFormWrap',this)">
+      <button id="poiFormToggle" class="section-toggle" type="button" onclick="toggleSection('poiFormWrap',this)">
         <span>Nieuwe POI toevoegen</span><span class="chevron">⌄</span>
       </button>
       <div id="poiFormWrap" class="collapsible-content hidden">
@@ -272,7 +269,7 @@
       <div id="poiProgress" class="status small hidden"></div>
     </div>
     <div class="card collapsible-card">
-      <button class="section-toggle" type="button" onclick="toggleSection('poiSearchWrap',this)">
+      <button id="poiSearchToggle" class="section-toggle" type="button" onclick="toggleSection('poiSearchWrap',this)">
         <span>POI zoeken en filteren</span><span class="chevron">⌄</span>
       </button>
       <div id="poiSearchWrap" class="collapsible-content hidden">
@@ -345,7 +342,7 @@
       </div>
     </div>
     <div class="card collapsible-card">
-      <button class="section-toggle" type="button" onclick="toggleSection('tripSearchWrap',this)">
+      <button id="tripSearchToggle" class="section-toggle" type="button" onclick="toggleSection('tripSearchWrap',this)">
         <span>Logboek zoeken</span><span class="chevron">⌄</span>
       </button>
       <div id="tripSearchWrap" class="collapsible-content hidden">
@@ -379,7 +376,11 @@
   </section>
 
   <section id="costs" class="hidden">
-    <div class="card">
+    <div class="card collapsible-card">
+      <button id="costFormToggle" class="section-toggle" type="button" onclick="toggleSection('costFormWrap',this)">
+        <span>Nieuwe kosten toevoegen</span><span class="chevron">⌄</span>
+      </button>
+      <div id="costFormWrap" class="collapsible-content hidden">
       <h2 id="costFormTitle">Kosten toevoegen</h2><input id="costId" type="hidden">
       <div class="row">
         <div><label>Datum</label><input id="costDate" type="date"></div>
@@ -416,6 +417,7 @@
         <button id="costCancelButton" type="button" class="secondary hidden" onclick="cancelCostEdit()">Annuleren</button>
       </div>
       <div id="costProgress" class="status small hidden"></div>
+      </div>
     </div>
     <div class="card"><h2>Gedeelde kosten</h2><div id="costList"></div></div>
   </section>
@@ -445,7 +447,7 @@
     </div>
 
     <div class="card collapsible-card">
-      <button class="section-toggle" type="button" onclick="toggleSection('financeFilterWrap',this)">
+      <button id="financeFilterToggle" class="section-toggle" type="button" onclick="toggleSection('financeFilterWrap',this)">
         <span>Financieel filter</span><span class="chevron">⌄</span>
       </button>
       <div id="financeFilterWrap" class="collapsible-content hidden">
@@ -508,7 +510,13 @@
       <div id="financeMonths"></div>
     </div>
   </section>
-<section id="settings" class="hidden"><div class="card"><h2>Bootinstellingen</h2>
+<section id="settings" class="hidden">
+    <div class="card collapsible-card">
+      <button id="settingsFormToggle" class="section-toggle" type="button" onclick="toggleSection('settingsFormWrap',this)">
+        <span>Bootinstellingen</span><span class="chevron">⌄</span>
+      </button>
+      <div id="settingsFormWrap" class="collapsible-content hidden">
+      <h2>Bootinstellingen</h2>
       <label>Foto van Serenity voor het dashboard</label>
       <input id="settingBoatPhoto" type="file" accept="image/*">
       <div class="actions">
@@ -517,7 +525,7 @@
       </div>
       <div id="dashboardPhotoMsg" class="status small hidden"></div><div class="row"><div><label>Bootnaam</label><input id="settingBoatName" value="Serenity"></div><div><label>Tankinhoud liter</label><input id="settingTankCapacity" type="number" step="1"></div></div><div class="row"><div><label>Brandstofprijs per liter €</label><input id="settingFuelPrice" type="number" step="0.01"></div><div><label>Gemiddeld verbruik per uur</label><input id="settingFuelPerHour" type="number" step="0.1"></div></div><button onclick="saveSettings()">Instellingen opslaan</button>
       <button type="button" class="secondary settings-share-button" onclick="captainNavigate('boat')">Boot delen en leden beheren</button>
-      <div id="settingsMsg" class="status small hidden"></div></div><div class="card"><p class="small">Geen reserveniveau. Als werkelijke liters of kosten leeg blijven, rekent MijnSerenity automatisch met vaartijd × verbruik per uur × literprijs.</p></div></section>
+      <div id="settingsMsg" class="status small hidden"></div></div></div><div class="card"><p class="small">Geen reserveniveau. Als werkelijke liters of kosten leeg blijven, rekent MijnSerenity automatisch met vaartijd × verbruik per uur × literprijs.</p></div></section>
   <section id="boat" class="hidden">
     <div id="noBoatCard" class="card"><h2>Serenity koppelen</h2><p class="small">Michel maakt Serenity één keer aan. Desi gebruikt daarna de deelcode.</p><div class="row"><div><label>Bootnaam</label><input id="newBoatName" value="Serenity"><button onclick="createBoat()">Boot aanmaken</button></div><div><label>Deelcode</label><input id="joinCode" autocapitalize="characters" placeholder="Bijvoorbeeld A1B2C3"><button class="secondary" onclick="joinBoat()">Deelnemen</button></div></div></div>
     <div id="boatCard" class="card hidden"><h2 id="boatName">Serenity</h2><span class="pill" id="rolePill">Lid</span><div id="ownerInvite" class="hidden" style="margin-top:14px"><p class="small">Maak een tijdelijke deelcode voor Desi. De code blijft 7 dagen geldig.</p><button onclick="createInvite()">Deelcode maken</button><div id="inviteCode" class="invite-code"></div></div></div>

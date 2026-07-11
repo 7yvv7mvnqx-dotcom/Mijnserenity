@@ -502,12 +502,13 @@ function clearPoiForm(){
   poiLiveSuggestionResults={place:[],address:[]};
   poiOnlineSuggestionResults=[];
   setPoiProgress('');
+  closePoiFormPanel();
 }
 function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
 async function signOut(){await sb.auth.signOut()}
-async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();resetPoiFilters(false);await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}$('tripCrew').value=$('tripCrew').value||'Michel, Desi';closeTripForm();setTimeout(()=>captainNavigate('dashboard'),0)}
+async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();resetPoiFilters(false);await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}$('tripCrew').value=$('tripCrew').value||'Michel, Desi';closeTripForm();collapseDefaultPanels();setTimeout(()=>captainNavigate('dashboard'),0)}
 sb.auth.onAuthStateChange((_e,s)=>initialise(s));
 
 async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
@@ -540,7 +541,7 @@ async function savePoi(){
 }
 function editPoi(id,name,category,place,address,rating,review,isFavorite,latitude,longitude){
   $('poiId').value=id;$('poiName').value=name;$('poiCategory').value=category||'Haven';$('poiPlace').value=place||'';$('poiAddress').value=address||'';$('poiRating').value=rating||'';$('poiReview').value=review||'';$('poiFavorite').checked=!!isFavorite;$('poiLatitude').value=latitude??'';$('poiLongitude').value=longitude??'';
-  $('poiFormTitle').textContent='POI bewerken';$('poiFormWrap').classList.remove('hidden');document.querySelector('[onclick*=\"poiFormWrap\"]')?.classList.add('open');$('poiSaveButton').textContent='Wijzigingen opslaan';$('poiCancelButton').classList.remove('hidden');
+  $('poiFormTitle').textContent='POI bewerken';openPoiFormPanel();$('poiSaveButton').textContent='Wijzigingen opslaan';$('poiCancelButton').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
 }
 async function deletePoi(id){
@@ -1076,6 +1077,7 @@ function editCost(id,date,amount,category,description){
   $('costFormTitle').textContent='Kosten bewerken';
   $('costSaveButton').textContent='Wijzigingen opslaan';
   $('costCancelButton').classList.remove('hidden');
+  openCostFormPanel();
 
   captainNavigate('costs');
   window.scrollTo({top:0,behavior:'smooth'});
@@ -1092,6 +1094,7 @@ function cancelCostEdit(){
   $('costCancelButton').classList.add('hidden');
   resetCostReceiptSelection();
   setCostProgress('');
+  closeCostFormPanel();
 }
 
 async function addCost(){
@@ -1313,7 +1316,7 @@ function resetPoiFilters(render=true){
   if($('poiFilterExtra'))$('poiFilterExtra').value='';
   if(render)renderPoiList();
 }
-function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
+function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
 async function loadSettings(){
   if(!currentBoat)return;
   const {data,error}=await sb
@@ -1437,6 +1440,7 @@ async function saveSettings(){
   $('settingsMsg').classList.remove('hidden');
   await loadDashboardPhoto();
   previewFuelCalculation();
+  setPanelCollapsed('settingsFormWrap','settingsFormToggle',true);
 }
 function previewFuelCalculation(){if(!$('fuelPreview'))return;const h=Number($('tripHours').value)||0,l=Number($('tripFuelLiters').value)||(h&&settingsCache?.fuel_per_hour?h*Number(settingsCache.fuel_per_hour):0),c=Number($('tripFuelCost').value)||(l&&settingsCache?.fuel_price?l*Number(settingsCache.fuel_price):0);$('fuelPreview').textContent=l?`Geschat: ${l.toFixed(1)} liter · €${c.toFixed(2)}`:'Vul vaartijd in en stel verbruik/prijs in.'}
 function currentIsoWeekValue(date=new Date()){
@@ -2177,6 +2181,59 @@ function setTripProgress(text){
   $('tripProgress').classList.toggle('hidden',!text);
 }
 
+
+function setPanelCollapsed(wrapId,toggleId,collapsed=true){
+  const wrap=$(wrapId);
+  const toggle=$(toggleId);
+
+  if(!wrap)return;
+
+  wrap.classList.toggle('hidden',collapsed);
+  toggle?.classList.toggle('open',!collapsed);
+}
+
+function collapseDefaultPanels(section=''){
+  if(!section||section==='pois'){
+    if(!$('poiId')?.value)setPanelCollapsed('poiFormWrap','poiFormToggle',true);
+    setPanelCollapsed('poiSearchWrap','poiSearchToggle',true);
+  }
+
+  if(!section||section==='logbook'){
+    if(!$('tripId')?.value&&!pendingTripRouteDetails&&!pendingTripRouteFile){
+      setTripFormCollapsed(true);
+    }
+    setPanelCollapsed('tripSearchWrap','tripSearchToggle',true);
+  }
+
+  if(!section||section==='costs'){
+    if(!$('costId')?.value)setPanelCollapsed('costFormWrap','costFormToggle',true);
+  }
+
+  if(!section||section==='finance'){
+    setPanelCollapsed('financeFilterWrap','financeFilterToggle',true);
+  }
+
+  if(!section||section==='settings'){
+    setPanelCollapsed('settingsFormWrap','settingsFormToggle',true);
+  }
+}
+
+function openPoiFormPanel(){
+  setPanelCollapsed('poiFormWrap','poiFormToggle',false);
+}
+
+function closePoiFormPanel(){
+  setPanelCollapsed('poiFormWrap','poiFormToggle',true);
+}
+
+function openCostFormPanel(){
+  setPanelCollapsed('costFormWrap','costFormToggle',false);
+}
+
+function closeCostFormPanel(){
+  setPanelCollapsed('costFormWrap','costFormToggle',true);
+}
+
 function setTripFormCollapsed(collapsed=true){
   const wrap=$('tripFormWrap');
   const toggle=$('tripFormToggle');
@@ -2507,6 +2564,8 @@ function captainNavigate(id, sourceButton=null){
     document.querySelectorAll('#appView > section').forEach(section=>section.classList.add('hidden'));
     document.getElementById(id)?.classList.remove('hidden');
   }
+
+  collapseDefaultPanels(id);
 
   document.querySelectorAll('.bottom-nav-item').forEach(button=>{
     button.classList.toggle('active',button.dataset.target===id);
@@ -3108,7 +3167,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.22';
+const APP_VERSION='5.1.23';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -4672,7 +4731,7 @@ function renderTripList(){
           ${normaliseRouteGeojson(t.route_geojson)
             ?`<button class="waterkaarten-button" onclick="openTripInWaterkaarten('${t.id}')">🧭 Deel route naar Waterkaarten</button>`
             :''}
-          <button class="danger-button" onclick="deleteTrip('${t.id}')">🗑️ Log verwijderen</button>
+          <button class="record-delete-mini" aria-label="Log verwijderen" title="Log verwijderen" onclick="deleteTrip('${t.id}')">🗑️</button>
         </div>
       </div>
     </details>`;

@@ -1196,3 +1196,23 @@ header{
     padding-inline:12px;
   }
 }
+
+/* Cloud 5.1.23 — standaard ingeklapt en compacte verwijderknoppen */
+#costFormWrap,
+#settingsFormWrap{
+  padding-top:12px;
+}
+.record-delete-mini{
+  width:38px;
+  min-width:38px;
+  min-height:38px;
+  padding:0;
+  border:1px solid rgba(255,107,107,.38);
+  border-radius:10px;
+  background:rgba(255,107,107,.16);
+  color:#ffaaaa;
+  font-size:16px;
+}
+.record-delete-mini:active{
+  transform:scale(.96);
+}
