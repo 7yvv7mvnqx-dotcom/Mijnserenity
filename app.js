@@ -9,6 +9,7 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let tripRouteMaps={};
+let pendingTripRouteDetails=null;
 let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiLocationSuggestionController=null,poiLiveSuggestionResults={place:[],address:[]};
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
@@ -2115,9 +2116,11 @@ async function saveTrip(){
   if(routeFile){
     setTripProgress('Route uit Waterkaarten verwerken…');
 
-    let routeGeojson;
+    let routeGeojson=pendingTripRouteDetails?.geojson||null;
     try{
-      routeGeojson=await parseRouteFile(routeFile);
+      if(!routeGeojson){
+        routeGeojson=await parseRouteFile(routeFile);
+      }
     }catch(error){
       setTripProgress('');
       return alert('Routebestand kon niet worden gelezen: '+(error?.message||'onbekende fout'));
@@ -2166,16 +2169,27 @@ function setTripProgress(text){
   $('tripProgress').classList.toggle('hidden',!text);
 }
 function clearTripForm(){
-  ['tripId','tripTitle','tripFrom','tripTo','tripDistance','tripHours','tripFuelLiters','tripFuelCost','tripCrew','tripNotes'].forEach(id=>$(id).value='');
-  $('tripPhotos').value='';$('tripGpx').value='';
+  ['tripId','tripTitle','tripFrom','tripTo','tripDistance','tripHours','tripFuelLiters','tripFuelCost','tripCrew','tripNotes']
+    .forEach(id=>$(id).value='');
+
+  $('tripPhotos').value='';
+  $('tripGpx').value='';
   $('tripDate').value=new Date().toISOString().slice(0,10);
   $('tripFormTitle').textContent='Nieuwe vaartocht';
   $('tripSaveButton').textContent='Vaartocht opslaan';
   $('tripCancelButton').classList.add('hidden');
+
+  pendingTripRouteDetails=null;
+  const importStatus=$('tripRouteImportStatus');
+  importStatus?.classList.add('hidden');
+  if(importStatus)importStatus.innerHTML='';
+
   setTripProgress('');
 }
 function cancelTripEdit(){clearTripForm()}
 function editTrip(id,tripDate,title,departure,arrival,distance,hours,fuelLiters,fuelCost,crew,notes){
+  pendingTripRouteDetails=null;
+  $('tripRouteImportStatus')?.classList.add('hidden');
   $('tripId').value=id;
   $('tripDate').value=tripDate||'';
   $('tripTitle').value=title||'';
@@ -3045,7 +3059,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.16';
+const APP_VERSION='5.1.17';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -3167,6 +3181,499 @@ window.addEventListener('load',()=>{
   registerMijnSerenityServiceWorker();
 });
 
+
+
+function routeFileBaseName(file){
+  return String(file?.name||'Vaarroute')
+    .replace(/\.(gpx|kml|kmz)$/i,'')
+    .replace(/[_]+/g,' ')
+    .replace(/\s+/g,' ')
+    .trim()||'Vaarroute';
+}
+
+function xmlFirstText(parent,localName){
+  if(!parent)return '';
+  const node=[...parent.getElementsByTagNameNS('*',localName)][0];
+  return String(node?.textContent||'').trim();
+}
+
+function parseRouteTimestamp(value){
+  if(!value)return null;
+  const time=Date.parse(String(value).trim());
+  return Number.isFinite(time)?time:null;
+}
+
+function routeDistanceKm(coordinates){
+  const points=(coordinates||[]).filter(isValidRouteCoordinate);
+  let total=0;
+
+  for(let index=1;index<points.length;index++){
+    const [lon1,lat1]=points[index-1];
+    const [lon2,lat2]=points[index];
+
+    const toRad=value=>value*Math.PI/180;
+    const earthRadiusKm=6371.0088;
+    const dLat=toRad(lat2-lat1);
+    const dLon=toRad(lon2-lon1);
+
+    const a=
+      Math.sin(dLat/2)**2+
+      Math.cos(toRad(lat1))*
+      Math.cos(toRad(lat2))*
+      Math.sin(dLon/2)**2;
+
+    total+=earthRadiusKm*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  }
+
+  return total;
+}
+
+function localDateFromTimestamp(timestamp){
+  if(!Number.isFinite(timestamp))return '';
+  const date=new Date(timestamp);
+  const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);
+  return local.toISOString().slice(0,10);
+}
+
+function splitRouteTitle(title){
+  const value=String(title||'').trim();
+  if(!value)return {departure:'',arrival:''};
+
+  const patterns=[
+    /\s+→\s+/,
+    /\s+naar\s+/i,
+    /\s+to\s+/i,
+    /\s+[–—-]\s+/
+  ];
+
+  for(const pattern of patterns){
+    const parts=value.split(pattern).map(part=>part.trim()).filter(Boolean);
+    if(parts.length>=2){
+      return {
+        departure:parts[0],
+        arrival:parts.slice(1).join(' - ')
+      };
+    }
+  }
+
+  return {departure:'',arrival:''};
+}
+
+function distanceBetweenRoutePointsKm(a,b){
+  if(!a||!b)return Infinity;
+  return routeDistanceKm([[a.lon,a.lat],[b.lon,b.lat]]);
+}
+
+function nearestNamedRoutePoint(namedPoints,target,maxDistanceKm=5){
+  let best=null;
+
+  for(const point of namedPoints||[]){
+    if(!point.name)continue;
+    const distance=distanceBetweenRoutePointsKm(point,target);
+    if(distance<=maxDistanceKm&&(!best||distance<best.distance)){
+      best={name:point.name,distance};
+    }
+  }
+
+  return best?.name||'';
+}
+
+function parseGpxRouteDetails(text,file){
+  const doc=new DOMParser().parseFromString(text,'application/xml');
+  if(doc.querySelector('parsererror')){
+    throw new Error('Het GPX-bestand bevat ongeldige XML.');
+  }
+
+  const tracks=[...doc.getElementsByTagNameNS('*','trk')];
+  const routes=[...doc.getElementsByTagNameNS('*','rte')];
+  const metadata=[...doc.getElementsByTagNameNS('*','metadata')][0];
+
+  const candidates=[];
+
+  tracks.forEach(track=>{
+    [...track.getElementsByTagNameNS('*','trkseg')].forEach(segment=>{
+      const points=[...segment.getElementsByTagNameNS('*','trkpt')]
+        .map(point=>({
+          lon:Number(point.getAttribute('lon')),
+          lat:Number(point.getAttribute('lat')),
+          time:parseRouteTimestamp(xmlFirstText(point,'time')),
+          name:xmlFirstText(point,'name')
+        }))
+        .filter(point=>isValidRouteCoordinate([point.lon,point.lat]));
+
+      if(points.length>=2){
+        candidates.push({
+          points,
+          name:xmlFirstText(track,'name'),
+          description:xmlFirstText(track,'desc')
+        });
+      }
+    });
+  });
+
+  routes.forEach(route=>{
+    const points=[...route.getElementsByTagNameNS('*','rtept')]
+      .map(point=>({
+        lon:Number(point.getAttribute('lon')),
+        lat:Number(point.getAttribute('lat')),
+        time:parseRouteTimestamp(xmlFirstText(point,'time')),
+        name:xmlFirstText(point,'name')
+      }))
+      .filter(point=>isValidRouteCoordinate([point.lon,point.lat]));
+
+    if(points.length>=2){
+      candidates.push({
+        points,
+        name:xmlFirstText(route,'name'),
+        description:xmlFirstText(route,'desc')
+      });
+    }
+  });
+
+  if(!candidates.length){
+    throw new Error('Geen bruikbare routepunten gevonden.');
+  }
+
+  candidates.sort((a,b)=>b.points.length-a.points.length);
+  const selected=candidates[0];
+  const points=selected.points;
+  const coordinates=points.map(point=>[point.lon,point.lat]);
+  const validTimes=points.map(point=>point.time).filter(Number.isFinite);
+
+  const waypoints=[...doc.getElementsByTagNameNS('*','wpt')]
+    .map(point=>({
+      lon:Number(point.getAttribute('lon')),
+      lat:Number(point.getAttribute('lat')),
+      name:xmlFirstText(point,'name')
+    }))
+    .filter(point=>
+      point.name&&
+      isValidRouteCoordinate([point.lon,point.lat])
+    );
+
+  const title=
+    selected.name||
+    xmlFirstText(metadata,'name')||
+    routeFileBaseName(file);
+
+  const split=splitRouteTitle(title);
+  const first=points[0];
+  const last=points[points.length-1];
+
+  const departure=
+    nearestNamedRoutePoint(waypoints,first)||
+    first.name||
+    split.departure;
+
+  const arrival=
+    nearestNamedRoutePoint(waypoints,last)||
+    last.name||
+    split.arrival;
+
+  const startTime=validTimes.length?validTimes[0]:null;
+  const endTime=validTimes.length?validTimes[validTimes.length-1]:null;
+  const durationHours=
+    Number.isFinite(startTime)&&
+    Number.isFinite(endTime)&&
+    endTime>startTime
+      ?(endTime-startTime)/3600000
+      :null;
+
+  return {
+    geojson:{type:'LineString',coordinates},
+    title,
+    departure,
+    arrival,
+    distanceKm:routeDistanceKm(coordinates),
+    durationHours,
+    tripDate:localDateFromTimestamp(startTime),
+    notes:selected.description||xmlFirstText(metadata,'desc'),
+    pointCount:coordinates.length,
+    startTime,
+    endTime
+  };
+}
+
+function parseKmlRouteDetails(text,file){
+  const doc=new DOMParser().parseFromString(text,'application/xml');
+  if(doc.querySelector('parsererror')){
+    throw new Error('Het KML-bestand bevat ongeldige XML.');
+  }
+
+  const candidates=[];
+  const placemarks=[...doc.getElementsByTagNameNS('*','Placemark')];
+
+  placemarks.forEach(placemark=>{
+    [...placemark.getElementsByTagNameNS('*','LineString')].forEach(line=>{
+      [...line.getElementsByTagNameNS('*','coordinates')].forEach(node=>{
+        const coordinates=parseKmlCoordinateText(node.textContent||'');
+        if(coordinates.length>=2){
+          candidates.push({
+            coordinates,
+            times:[],
+            name:xmlFirstText(placemark,'name'),
+            description:xmlFirstText(placemark,'description')
+          });
+        }
+      });
+    });
+
+    [...placemark.getElementsByTagNameNS('*','Track')].forEach(track=>{
+      const coordinates=[...track.getElementsByTagNameNS('*','coord')]
+        .map(node=>{
+          const values=String(node.textContent||'')
+            .trim()
+            .split(/\s+/)
+            .map(Number);
+          return [values[0],values[1]];
+        })
+        .filter(isValidRouteCoordinate);
+
+      const times=[...track.getElementsByTagNameNS('*','when')]
+        .map(node=>parseRouteTimestamp(node.textContent))
+        .filter(Number.isFinite);
+
+      if(coordinates.length>=2){
+        candidates.push({
+          coordinates,
+          times,
+          name:xmlFirstText(placemark,'name'),
+          description:xmlFirstText(placemark,'description')
+        });
+      }
+    });
+  });
+
+  if(!candidates.length){
+    const coordinatesNodes=[...doc.getElementsByTagNameNS('*','coordinates')];
+    coordinatesNodes.forEach(node=>{
+      const coordinates=parseKmlCoordinateText(node.textContent||'');
+      if(coordinates.length>=2){
+        candidates.push({
+          coordinates,
+          times:[],
+          name:'',
+          description:''
+        });
+      }
+    });
+  }
+
+  if(!candidates.length){
+    throw new Error('Geen bruikbare routepunten gevonden.');
+  }
+
+  candidates.sort((a,b)=>b.coordinates.length-a.coordinates.length);
+  const selected=candidates[0];
+
+  const documentNode=[...doc.getElementsByTagNameNS('*','Document')][0];
+  const title=
+    selected.name||
+    xmlFirstText(documentNode,'name')||
+    routeFileBaseName(file);
+
+  const split=splitRouteTitle(title);
+
+  const namedPoints=placemarks
+    .map(placemark=>{
+      const pointNode=[...placemark.getElementsByTagNameNS('*','Point')][0];
+      const coordinateText=pointNode
+        ?xmlFirstText(pointNode,'coordinates')
+        :'';
+      const coordinate=parseKmlCoordinateText(coordinateText)[0];
+
+      return coordinate
+        ?{
+            lon:coordinate[0],
+            lat:coordinate[1],
+            name:xmlFirstText(placemark,'name')
+          }
+        :null;
+    })
+    .filter(Boolean);
+
+  const firstCoordinate=selected.coordinates[0];
+  const lastCoordinate=selected.coordinates[selected.coordinates.length-1];
+  const first={lon:firstCoordinate[0],lat:firstCoordinate[1]};
+  const last={lon:lastCoordinate[0],lat:lastCoordinate[1]};
+
+  const departure=
+    nearestNamedRoutePoint(namedPoints,first)||
+    split.departure;
+
+  const arrival=
+    nearestNamedRoutePoint(namedPoints,last)||
+    split.arrival;
+
+  const startTime=selected.times.length?selected.times[0]:null;
+  const endTime=selected.times.length
+    ?selected.times[selected.times.length-1]
+    :null;
+
+  const durationHours=
+    Number.isFinite(startTime)&&
+    Number.isFinite(endTime)&&
+    endTime>startTime
+      ?(endTime-startTime)/3600000
+      :null;
+
+  return {
+    geojson:{type:'LineString',coordinates:selected.coordinates},
+    title,
+    departure,
+    arrival,
+    distanceKm:routeDistanceKm(selected.coordinates),
+    durationHours,
+    tripDate:localDateFromTimestamp(startTime),
+    notes:selected.description||xmlFirstText(documentNode,'description'),
+    pointCount:selected.coordinates.length,
+    startTime,
+    endTime
+  };
+}
+
+async function parseTripRouteImport(file){
+  const name=String(file?.name||'').toLowerCase();
+
+  if(name.endsWith('.kmz')){
+    if(typeof JSZip==='undefined'){
+      throw new Error('KMZ-module is niet geladen.');
+    }
+
+    if(file.size>50*1024*1024){
+      throw new Error('Het KMZ-bestand is groter dan 50 MB.');
+    }
+
+    const zip=await JSZip.loadAsync(await file.arrayBuffer());
+    const kmlFiles=Object.values(zip.files)
+      .filter(entry=>
+        !entry.dir&&
+        entry.name.toLowerCase().endsWith('.kml')
+      );
+
+    if(!kmlFiles.length){
+      throw new Error('In dit KMZ-bestand staat geen KML-route.');
+    }
+
+    const preferred=
+      kmlFiles.find(entry=>/(^|\/)doc\.kml$/i.test(entry.name))||
+      kmlFiles[0];
+
+    return parseKmlRouteDetails(await preferred.async('text'),file);
+  }
+
+  const text=await file.text();
+
+  if(name.endsWith('.kml')){
+    return parseKmlRouteDetails(text,file);
+  }
+
+  return parseGpxRouteDetails(text,file);
+}
+
+function setTripRouteImportStatus(details,file){
+  const status=$('tripRouteImportStatus');
+  if(!status)return;
+
+  const values=[
+    file?.name?`Bestand: ${file.name}`:'',
+    details?.pointCount?`${details.pointCount} routepunten`:'',
+    Number.isFinite(details?.distanceKm)
+      ?`Afstand: ${details.distanceKm.toFixed(1)} km`
+      :'',
+    Number.isFinite(details?.durationHours)
+      ?`Tijd: ${formatRouteDuration(details.durationHours)}`
+      :'',
+    details?.tripDate
+      ?`Datum: ${details.tripDate.split('-').reverse().join('-')}`
+      :''
+  ].filter(Boolean);
+
+  status.innerHTML=`
+    <b>Route ingelezen ✅</b>
+    <span>${esc(values.join(' · '))}</span>
+    <small>Controleer de ingevulde gegevens en sla daarna de vaartocht op.</small>
+  `;
+  status.classList.remove('hidden');
+}
+
+function formatRouteDuration(hours){
+  const totalMinutes=Math.max(0,Math.round(Number(hours||0)*60));
+  const wholeHours=Math.floor(totalMinutes/60);
+  const minutes=totalMinutes%60;
+
+  if(wholeHours&&minutes){
+    return `${wholeHours} uur ${minutes} min`;
+  }
+  if(wholeHours){
+    return `${wholeHours} uur`;
+  }
+  return `${minutes} min`;
+}
+
+function applyTripRouteDetails(details,file){
+  if(!details)return;
+
+  pendingTripRouteDetails=details;
+
+  if(details.tripDate){
+    $('tripDate').value=details.tripDate;
+  }else if(!$('tripDate').value&&file?.lastModified){
+    $('tripDate').value=localDateFromTimestamp(file.lastModified);
+  }
+
+  if(details.title){
+    $('tripTitle').value=details.title;
+  }
+
+  if(details.departure){
+    $('tripFrom').value=details.departure;
+  }
+
+  if(details.arrival){
+    $('tripTo').value=details.arrival;
+  }
+
+  if(Number.isFinite(details.distanceKm)&&details.distanceKm>0){
+    $('tripDistance').value=details.distanceKm.toFixed(1);
+  }
+
+  if(Number.isFinite(details.durationHours)&&details.durationHours>0){
+    $('tripHours').value=details.durationHours.toFixed(2);
+  }
+
+  if(details.notes){
+    const existing=String($('tripNotes').value||'').trim();
+    if(!existing){
+      $('tripNotes').value=details.notes;
+    }else if(!existing.includes(details.notes)){
+      $('tripNotes').value=`${existing}\n\n${details.notes}`;
+    }
+  }
+
+  previewFuelCalculation();
+  setTripRouteImportStatus(details,file);
+}
+
+async function handleTripRouteImport(file){
+  if(!file)return;
+
+  setTripProgress('Vaarroute inlezen…');
+  const status=$('tripRouteImportStatus');
+  status?.classList.add('hidden');
+
+  try{
+    const details=await parseTripRouteImport(file);
+    applyTripRouteDetails(details,file);
+    setTripProgress('');
+    showAppToast('Routegegevens zijn automatisch ingevuld ✅');
+  }catch(error){
+    console.error('Vaarroute importeren mislukt:',error);
+    pendingTripRouteDetails=null;
+    setTripProgress('');
+    alert('Vaarroute kon niet worden ingelezen: '+(error?.message||'onbekende fout'));
+  }
+}
 
 function getRouteContentType(file){
   const name=(file?.name||'').toLowerCase();
