@@ -504,7 +504,7 @@ function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
 async function signOut(){await sb.auth.signOut()}
-async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();resetPoiFilters(false);await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}setTimeout(()=>captainNavigate('dashboard'),0)}
+async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();resetPoiFilters(false);await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}$('tripCrew').value=$('tripCrew').value||'Michel, Desi';setTimeout(()=>captainNavigate('dashboard'),0)}
 sb.auth.onAuthStateChange((_e,s)=>initialise(s));
 
 async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
@@ -2175,6 +2175,7 @@ function clearTripForm(){
   $('tripPhotos').value='';
   $('tripGpx').value='';
   $('tripDate').value=new Date().toISOString().slice(0,10);
+  $('tripCrew').value='Michel, Desi';
   $('tripFormTitle').textContent='Nieuwe vaartocht';
   $('tripSaveButton').textContent='Vaartocht opslaan';
   $('tripCancelButton').classList.add('hidden');
@@ -3059,7 +3060,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.17';
+const APP_VERSION='5.1.18';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -3582,7 +3583,13 @@ function setTripRouteImportStatus(details,file){
       ?`Afstand: ${details.distanceKm.toFixed(1)} km`
       :'',
     Number.isFinite(details?.durationHours)
-      ?`Tijd: ${formatRouteDuration(details.durationHours)}`
+      ?`${details.durationEstimated?'Geschatte vaartijd':'Vaartijd'}: ${formatRouteDuration(details.durationHours)}`
+      :'',
+    Number.isFinite(details?.fuelLiters)
+      ?`Brandstof: ${details.fuelLiters.toFixed(1)} l`
+      :'',
+    Number.isFinite(details?.fuelCost)
+      ?`Kosten: €${details.fuelCost.toFixed(2)}`
       :'',
     details?.tripDate
       ?`Datum: ${details.tripDate.split('-').reverse().join('-')}`
@@ -3590,9 +3597,9 @@ function setTripRouteImportStatus(details,file){
   ].filter(Boolean);
 
   status.innerHTML=`
-    <b>Route ingelezen ✅</b>
+    <b>Route en gegevens ingelezen ✅</b>
     <span>${esc(values.join(' · '))}</span>
-    <small>Controleer de ingevulde gegevens en sla daarna de vaartocht op.</small>
+    <small>Geschatte waarden staan ook in de notities. Controleer ze vóór opslaan.</small>
   `;
   status.classList.remove('hidden');
 }
@@ -3611,6 +3618,259 @@ function formatRouteDuration(hours){
   return `${minutes} min`;
 }
 
+
+function reliableNumber(value){
+  const number=Number(value);
+  return Number.isFinite(number)&&number>0?number:null;
+}
+
+function estimateCruiseSpeedKmh(){
+  const usable=tripCache.filter(trip=>{
+    const distance=reliableNumber(trip.distance_km);
+    const hours=reliableNumber(trip.duration_hours);
+    if(!distance||!hours)return false;
+    const speed=distance/hours;
+    return speed>=3&&speed<=20;
+  });
+
+  if(usable.length){
+    const totalDistance=usable.reduce(
+      (sum,trip)=>sum+Number(trip.distance_km||0),
+      0
+    );
+    const totalHours=usable.reduce(
+      (sum,trip)=>sum+Number(trip.duration_hours||0),
+      0
+    );
+    const weighted=totalHours?totalDistance/totalHours:null;
+    if(weighted&&weighted>=3&&weighted<=20)return weighted;
+  }
+
+  return 9;
+}
+
+function estimateFuelPerHour(){
+  const fromSettings=reliableNumber(settingsCache?.fuel_per_hour);
+  if(fromSettings)return fromSettings;
+
+  const usable=tripCache.filter(trip=>
+    reliableNumber(trip.fuel_liters)&&
+    reliableNumber(trip.duration_hours)
+  );
+
+  const totalLiters=usable.reduce(
+    (sum,trip)=>sum+Number(trip.fuel_liters||0),
+    0
+  );
+  const totalHours=usable.reduce(
+    (sum,trip)=>sum+Number(trip.duration_hours||0),
+    0
+  );
+
+  return totalHours?totalLiters/totalHours:null;
+}
+
+function estimateFuelPrice(){
+  const fromSettings=reliableNumber(settingsCache?.fuel_price);
+  if(fromSettings)return fromSettings;
+
+  const usable=tripCache.filter(trip=>
+    reliableNumber(trip.fuel_cost)&&
+    reliableNumber(trip.fuel_liters)
+  );
+
+  const totalCost=usable.reduce(
+    (sum,trip)=>sum+Number(trip.fuel_cost||0),
+    0
+  );
+  const totalLiters=usable.reduce(
+    (sum,trip)=>sum+Number(trip.fuel_liters||0),
+    0
+  );
+
+  return totalLiters?totalCost/totalLiters:null;
+}
+
+function reverseLocationLabel(doc){
+  if(!doc)return '';
+  return String(
+    doc.woonplaatsnaam||
+    doc.gemeentenaam||
+    doc.weergavenaam||
+    doc.straatnaam||
+    ''
+  ).trim();
+}
+
+async function reverseRouteLocation(coordinate){
+  if(!Array.isArray(coordinate)||coordinate.length<2)return '';
+
+  const longitude=Number(coordinate[0]);
+  const latitude=Number(coordinate[1]);
+
+  if(!Number.isFinite(latitude)||!Number.isFinite(longitude))return '';
+
+  const attempts=[
+    new URLSearchParams({
+      lat:String(latitude),
+      lon:String(longitude),
+      rows:'1',
+      type:'woonplaats'
+    }),
+    new URLSearchParams({
+      lat:String(latitude),
+      lon:String(longitude),
+      rows:'1'
+    })
+  ];
+
+  for(const params of attempts){
+    try{
+      const response=await fetch(
+        `https://api.pdok.nl/bzk/locatieserver/search/v3_1/reverse?${params.toString()}`,
+        {headers:{Accept:'application/json'}}
+      );
+
+      if(!response.ok)continue;
+
+      const payload=await response.json();
+      const doc=payload?.response?.docs?.[0];
+      const label=reverseLocationLabel(doc);
+
+      if(label)return label;
+    }catch(error){
+      console.warn('Routeplaats bepalen mislukt:',error);
+    }
+  }
+
+  return '';
+}
+
+function isGenericImportedTitle(title,file){
+  const value=String(title||'').trim().toLowerCase();
+  const base=routeFileBaseName(file).toLowerCase();
+
+  return !value||
+    value===base||
+    value==='vaarroute'||
+    value==='route'||
+    value==='track'||
+    value==='waterkaarten route';
+}
+
+function appendUniqueTripNote(existing,note){
+  const cleanExisting=String(existing||'').trim();
+  const cleanNote=String(note||'').trim();
+
+  if(!cleanNote)return cleanExisting;
+  if(!cleanExisting)return cleanNote;
+  if(cleanExisting.toLowerCase().includes(cleanNote.toLowerCase())){
+    return cleanExisting;
+  }
+
+  return `${cleanExisting}\n\n${cleanNote}`;
+}
+
+async function enrichTripRouteDetails(details,file){
+  if(!details)return details;
+
+  const enriched={...details};
+  const coordinates=enriched.geojson?.coordinates||[];
+  const first=coordinates[0];
+  const last=coordinates[coordinates.length-1];
+
+  if(!enriched.departure||!enriched.arrival){
+    const [departure,arrival]=await Promise.all([
+      enriched.departure
+        ?Promise.resolve(enriched.departure)
+        :reverseRouteLocation(first),
+      enriched.arrival
+        ?Promise.resolve(enriched.arrival)
+        :reverseRouteLocation(last)
+    ]);
+
+    enriched.departure=enriched.departure||departure;
+    enriched.arrival=enriched.arrival||arrival;
+  }
+
+  if(
+    enriched.departure&&
+    enriched.arrival&&
+    isGenericImportedTitle(enriched.title,file)
+  ){
+    enriched.title=`${enriched.departure} - ${enriched.arrival}`;
+  }
+
+  if(!enriched.tripDate){
+    enriched.tripDate=localDateFromTimestamp(file?.lastModified)||localDateISO(new Date());
+    enriched.tripDateEstimated=true;
+  }
+
+  if(
+    !reliableNumber(enriched.durationHours)&&
+    reliableNumber(enriched.distanceKm)
+  ){
+    const speed=estimateCruiseSpeedKmh();
+    enriched.durationHours=enriched.distanceKm/speed;
+    enriched.durationEstimated=true;
+    enriched.estimatedSpeedKmh=speed;
+  }
+
+  enriched.crew=String($('tripCrew')?.value||'').trim()||'Michel, Desi';
+
+  const fuelPerHour=estimateFuelPerHour();
+  const fuelPrice=estimateFuelPrice();
+
+  if(
+    reliableNumber(enriched.durationHours)&&
+    reliableNumber(fuelPerHour)
+  ){
+    enriched.fuelLiters=enriched.durationHours*fuelPerHour;
+    enriched.fuelEstimated=true;
+    enriched.fuelPerHourUsed=fuelPerHour;
+  }
+
+  if(
+    reliableNumber(enriched.fuelLiters)&&
+    reliableNumber(fuelPrice)
+  ){
+    enriched.fuelCost=enriched.fuelLiters*fuelPrice;
+    enriched.fuelPriceUsed=fuelPrice;
+  }
+
+  const generatedNotes=[];
+
+  generatedNotes.push(`Geïmporteerd uit ${file?.name||'routebestand'}.`);
+
+  if(enriched.durationEstimated){
+    generatedNotes.push(
+      `Vaartijd geschat op basis van ${enriched.estimatedSpeedKmh.toFixed(1)} km/u.`
+    );
+  }
+
+  if(enriched.fuelEstimated){
+    generatedNotes.push(
+      `Brandstof geschat met ${enriched.fuelPerHourUsed.toFixed(1)} liter per uur.`
+    );
+  }
+
+  if(
+    reliableNumber(enriched.fuelCost)&&
+    reliableNumber(enriched.fuelPriceUsed)
+  ){
+    generatedNotes.push(
+      `Brandstofkosten berekend met €${enriched.fuelPriceUsed.toFixed(2)} per liter.`
+    );
+  }
+
+  enriched.notes=appendUniqueTripNote(
+    enriched.notes,
+    generatedNotes.join(' ')
+  );
+
+  return enriched;
+}
+
 function applyTripRouteDetails(details,file){
   if(!details)return;
 
@@ -3618,8 +3878,6 @@ function applyTripRouteDetails(details,file){
 
   if(details.tripDate){
     $('tripDate').value=details.tripDate;
-  }else if(!$('tripDate').value&&file?.lastModified){
-    $('tripDate').value=localDateFromTimestamp(file.lastModified);
   }
 
   if(details.title){
@@ -3642,13 +3900,23 @@ function applyTripRouteDetails(details,file){
     $('tripHours').value=details.durationHours.toFixed(2);
   }
 
+  if(details.crew){
+    $('tripCrew').value=details.crew;
+  }
+
+  if(Number.isFinite(details.fuelLiters)&&details.fuelLiters>0){
+    $('tripFuelLiters').value=details.fuelLiters.toFixed(1);
+  }
+
+  if(Number.isFinite(details.fuelCost)&&details.fuelCost>0){
+    $('tripFuelCost').value=details.fuelCost.toFixed(2);
+  }
+
   if(details.notes){
-    const existing=String($('tripNotes').value||'').trim();
-    if(!existing){
-      $('tripNotes').value=details.notes;
-    }else if(!existing.includes(details.notes)){
-      $('tripNotes').value=`${existing}\n\n${details.notes}`;
-    }
+    $('tripNotes').value=appendUniqueTripNote(
+      $('tripNotes').value,
+      details.notes
+    );
   }
 
   previewFuelCalculation();
@@ -3658,15 +3926,17 @@ function applyTripRouteDetails(details,file){
 async function handleTripRouteImport(file){
   if(!file)return;
 
-  setTripProgress('Vaarroute inlezen…');
+  setTripProgress('Vaarroute inlezen en ontbrekende gegevens aanvullen…');
   const status=$('tripRouteImportStatus');
   status?.classList.add('hidden');
 
   try{
-    const details=await parseTripRouteImport(file);
+    const parsed=await parseTripRouteImport(file);
+    const details=await enrichTripRouteDetails(parsed,file);
+
     applyTripRouteDetails(details,file);
     setTripProgress('');
-    showAppToast('Routegegevens zijn automatisch ingevuld ✅');
+    showAppToast('Route en ontbrekende gegevens zijn ingevuld ✅');
   }catch(error){
     console.error('Vaarroute importeren mislukt:',error);
     pendingTripRouteDetails=null;

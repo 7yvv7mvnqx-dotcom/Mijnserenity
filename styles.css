@@ -1130,3 +1130,8 @@ header{
 .route-import-status small{
   color:#9fb9c5;
 }
+
+/* Cloud 5.1.18 — ontbrekende routegegevens automatisch aanvullen */
+.route-import-status small{
+  line-height:1.45;
+}
