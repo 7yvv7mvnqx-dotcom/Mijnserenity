@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="5.3.0">
-<link rel="apple-touch-icon" href="icon-192.png?v=5300">
+<meta name="mijnserenity-build" content="5.3.1">
+<link rel="apple-touch-icon" href="icon-192.png?v=5310">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=5300">
+<link rel="manifest" href="manifest.json?v=5310">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=5300">
+<link rel="stylesheet" href="styles.css?v=5310">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5300" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5310" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5300" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5310" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -237,7 +237,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=5300" alt="">
+          <img src="waterkaarten-dashboard.png?v=5310" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -325,7 +325,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v5.3.0</div>
+          <div class="label">Sync · v5.3.1</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -359,6 +359,70 @@
         <button id="liveStopButton" class="danger-button hidden" onclick="stopLiveNavigation()">⏹ Stop opname</button>
       </div>
       <div id="liveGpsStatus" class="status small">Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten. Open beide schermen op de iPad in Split View en laat beide schermen open totdat de reis is opgeslagen.</div>
+    </div>
+
+    <div class="card live-auto-log-card">
+      <div class="live-auto-log-head">
+        <div>
+          <span class="eyebrow">AUTOMATISCH VAARLOGBOEK</span>
+          <h2>Van GPS-opname naar compleet logboek</h2>
+          <p class="small">
+            MijnSerenity vult vertrek, aankomst, route, tijd, snelheid,
+            brandstof, weer en POI’s onderweg automatisch in.
+          </p>
+        </div>
+        <span id="liveAutoLogBadge" class="live-auto-log-badge active">
+          Automatisch actief
+        </span>
+      </div>
+
+      <div class="live-auto-log-settings">
+        <label class="live-auto-setting">
+          <input id="liveAutoSave" type="checkbox" checked
+            onchange="saveLiveAutomationSettings()">
+          <span>
+            <b>Automatisch opslaan na Stop</b>
+            <small>Geen extra druk op Opslaan nodig.</small>
+          </span>
+        </label>
+
+        <label class="live-auto-setting">
+          <input id="liveAutoStop" type="checkbox"
+            onchange="saveLiveAutomationSettings()">
+          <span>
+            <b>Automatisch stoppen bij afmeren</b>
+            <small>Optioneel; handig wanneer je vergeet te stoppen.</small>
+          </span>
+        </label>
+
+        <div class="live-auto-setting-fields">
+          <div>
+            <label for="liveAutoStopMinutes">Stilstand voordat opname stopt</label>
+            <select id="liveAutoStopMinutes"
+              onchange="saveLiveAutomationSettings()">
+              <option value="5">5 minuten</option>
+              <option value="10">10 minuten</option>
+              <option value="15" selected>15 minuten</option>
+              <option value="20">20 minuten</option>
+              <option value="30">30 minuten</option>
+            </select>
+          </div>
+          <div>
+            <label for="liveAutoMinDistance">Minimale afstand</label>
+            <select id="liveAutoMinDistance"
+              onchange="saveLiveAutomationSettings()">
+              <option value="0.1">0,1 km</option>
+              <option value="0.2" selected>0,2 km</option>
+              <option value="0.5">0,5 km</option>
+              <option value="1">1,0 km</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="liveAutoLogStatus" class="live-auto-log-status">
+        Klaar om de volgende vaartocht automatisch vast te leggen.
+      </div>
     </div>
 
     <div class="live-metrics">
@@ -448,6 +512,16 @@
       </div>
       <label>Notities</label>
       <textarea id="liveNotes" placeholder="Bijzonderheden onderweg"></textarea>
+
+      <label>Foto’s van deze vaartocht</label>
+      <input id="livePhotos" type="file" accept="image/*" multiple>
+      <p class="small">
+        Optioneel: kies maximaal 10 foto’s. Bij automatisch opslaan worden
+        deze direct aan het logboek toegevoegd.
+      </p>
+
+      <div id="liveAutoSummary" class="live-auto-summary hidden"></div>
+
       <div class="actions">
         <button id="liveSaveButton" class="hidden" onclick="saveLiveTrip()">💾 Opslaan in logboek</button>
         <button id="liveDiscardButton" class="secondary hidden" onclick="discardLiveTrip()">Wis opname</button>
@@ -469,7 +543,7 @@
             en zet de planning daarna klaar in het gedeelde logboek.
           </p>
         </div>
-        <span class="planner-version-badge">5.3.0</span>
+        <span class="planner-version-badge">5.3.1</span>
       </div>
       <div class="planner-warning">
         Afstand is een schatting op basis van rechte lijnen en een instelbare
@@ -1294,6 +1368,6 @@
   </div>
 </div>
 
-<script src="app.js?v=5300"></script>
+<script src="app.js?v=5310"></script>
 </body>
 </html>

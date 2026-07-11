@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.3.0";
+  content:" · v5.3.1";
   color:#6fcfee;
   font-weight:800;
 }
@@ -3531,5 +3531,165 @@ main{
   }
   .harbour-library-heading>button{
     width:100%;
+  }
+}
+
+/* MijnSerenity Cloud 5.3.1 — automatisch vaarlogboek */
+.live-auto-log-card{
+  margin-top:14px;
+  padding:17px;
+  border:1px solid rgba(83,219,148,.16);
+  background:
+    radial-gradient(circle at top right,rgba(61,183,125,.14),transparent 45%),
+    rgba(255,255,255,.035);
+}
+.live-auto-log-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+}
+.live-auto-log-head h2{
+  margin:4px 0 5px;
+}
+.live-auto-log-badge{
+  flex-shrink:0;
+  padding:7px 10px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:900;
+}
+.live-auto-log-badge.active{
+  border:1px solid rgba(83,219,148,.28);
+  background:rgba(36,144,91,.18);
+  color:#c7f4da;
+}
+.live-auto-log-badge.manual{
+  border:1px solid rgba(226,180,79,.25);
+  background:rgba(143,100,21,.17);
+  color:#f3dea7;
+}
+.live-auto-log-settings{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:13px;
+}
+.live-auto-setting{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin:0;
+  padding:11px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:13px;
+  background:rgba(255,255,255,.04);
+}
+.live-auto-setting input{
+  width:20px;
+  height:20px;
+  margin:1px 0 0;
+  flex-shrink:0;
+}
+.live-auto-setting span{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:3px;
+}
+.live-auto-setting b{
+  color:#edf9fc;
+  font-size:13px;
+}
+.live-auto-setting small{
+  color:#8caab6;
+  font-size:10px;
+  line-height:1.35;
+}
+.live-auto-setting-fields{
+  display:grid;
+  grid-column:1/-1;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+.live-auto-setting-fields label{
+  font-size:10px;
+}
+.live-auto-setting-fields select{
+  margin:0;
+}
+.live-auto-log-status{
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.045);
+  color:#a8c4cf;
+  font-size:12px;
+  line-height:1.4;
+}
+.live-auto-log-status.success{
+  border:1px solid rgba(83,219,148,.22);
+  background:rgba(36,144,91,.14);
+  color:#c7f4da;
+}
+.live-auto-log-status.warning{
+  border:1px solid rgba(226,180,79,.22);
+  background:rgba(143,100,21,.14);
+  color:#f3dea7;
+}
+.live-auto-log-status.error{
+  border:1px solid rgba(227,89,101,.23);
+  background:rgba(137,38,48,.15);
+  color:#ffd1d6;
+}
+.live-auto-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin:12px 0;
+  padding:11px;
+  border:1px solid rgba(111,207,238,.14);
+  border-radius:14px;
+  background:rgba(111,207,238,.055);
+}
+.live-auto-summary>div{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:3px;
+}
+.live-auto-summary span{
+  color:#89a9b6;
+  font-size:9px;
+}
+.live-auto-summary strong{
+  overflow:hidden;
+  color:#eef9fc;
+  font-size:12px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.live-auto-summary>p{
+  grid-column:1/-1;
+  margin:2px 0 0;
+  color:#b5d1da;
+  font-size:10px;
+  line-height:1.4;
+}
+@media(max-width:650px){
+  .live-auto-log-settings{
+    grid-template-columns:1fr;
+  }
+  .live-auto-setting-fields{
+    grid-column:auto;
+    grid-template-columns:1fr;
+  }
+  .live-auto-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:520px){
+  .live-auto-log-head{
+    flex-direction:column;
   }
 }
