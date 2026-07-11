@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.4.1";
+  content:" · v5.4.2";
   color:#6fcfee;
   font-weight:800;
 }
@@ -4164,4 +4164,65 @@ main{
 }
 .poi-web-photo-meta small:first-of-type{
   color:#8ee5b5;
+}
+
+/* MijnSerenity Cloud 5.4.2 — motoruren automatisch uit vaartijd */
+.technical-auto-hours-note{
+  margin-top:1px;
+  color:#8ee5b5!important;
+  font-size:9px!important;
+}
+.technical-engine-automation-card{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) auto;
+  align-items:center;
+  gap:11px;
+  margin:0 0 14px;
+  padding:13px 15px;
+  border:1px solid rgba(83,219,148,.17);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(36,144,91,.13),
+      rgba(111,207,238,.045)
+    );
+}
+.technical-engine-automation-icon{
+  display:flex;
+  width:40px;
+  height:40px;
+  align-items:center;
+  justify-content:center;
+  border-radius:13px;
+  background:rgba(83,219,148,.13);
+  font-size:21px;
+}
+.technical-engine-automation-card>div{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:3px;
+}
+.technical-engine-automation-card b{
+  color:#e8f9ef;
+}
+.technical-engine-automation-card small{
+  color:#9fc1ca;
+  line-height:1.4;
+}
+.technical-engine-automation-card>strong{
+  max-width:230px;
+  color:#8ee5b5;
+  font-size:10px;
+  text-align:right;
+}
+@media(max-width:620px){
+  .technical-engine-automation-card{
+    grid-template-columns:42px minmax(0,1fr);
+  }
+  .technical-engine-automation-card>strong{
+    grid-column:2;
+    max-width:none;
+    text-align:left;
+  }
 }

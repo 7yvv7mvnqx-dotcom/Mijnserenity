@@ -7018,6 +7018,8 @@ function defaultTechnicalState(){
       hull:'Staal'
     },
     engineHours:0,
+    countedTripHours:{},
+    lastEngineHoursUpdate:null,
     engineTemp:null,
     oilPressure:null,
     coolantLevel:'unknown',
@@ -7066,6 +7068,13 @@ function mergeTechnicalTasks(savedTasks=[]){
 function normaliseTechnicalState(value){
   const base=defaultTechnicalState();
   const saved=value&&typeof value==='object'?value:{};
+  const countedTripHours=(
+    saved.countedTripHours&&
+    typeof saved.countedTripHours==='object'&&
+    !Array.isArray(saved.countedTripHours)
+  )
+    ?saved.countedTripHours
+    :{};
 
   return {
     ...base,
@@ -7078,6 +7087,7 @@ function normaliseTechnicalState(value){
       ...base.integrations,
       ...(saved.integrations||{})
     },
+    countedTripHours:{...countedTripHours},
     maintenance:mergeTechnicalTasks(saved.maintenance)
   };
 }
@@ -7774,6 +7784,27 @@ function renderTechnicalDashboard(){
     ?`${engineTasks[0].task.title}: ${engineTasks[0].status.label}`
     :'Nog geen motoronderhoud';
 
+  const lastEngineUpdate=state.lastEngineHoursUpdate;
+  const autoText=lastEngineUpdate?.updatedAt
+    ?(
+      lastEngineUpdate.type==='baseline'
+        ?'Bestaande vaart als uitgangspunt geregistreerd'
+        :lastEngineUpdate.type==='deleted-trip'
+          ?`${technicalEngineHoursText(Math.abs(lastEngineUpdate.deltaHours||0))} afgetrokken`
+          :`${Number(lastEngineUpdate.deltaHours||0)>=0?'+':'−'}${technicalEngineHoursText(Math.abs(lastEngineUpdate.deltaHours||0))} via logboek`
+    )
+    :'Vaartijd wordt automatisch bijgeteld';
+
+  if($('techEngineAutoUpdate')){
+    $('techEngineAutoUpdate').textContent=autoText;
+  }
+
+  if($('technicalLastEngineUpdate')){
+    $('technicalLastEngineUpdate').textContent=lastEngineUpdate?.updatedAt
+      ?`${lastEngineUpdate.title||'Vaartocht'} · ${formatAccountDate(lastEngineUpdate.updatedAt)}`
+      :'Nog geen vaart verwerkt';
+  }
+
   const houseStatus=technicalBatteryStatus(
     state.houseVoltage,
     state.batteryType
@@ -7908,6 +7939,298 @@ function technicalInputNumber(id){
 
   const number=Number(value);
   return Number.isFinite(number)?number:null;
+}
+
+
+function technicalRoundHours(value){
+  const number=Number(value);
+  if(!Number.isFinite(number)||number<=0)return 0;
+  return Math.round(number*100)/100;
+}
+
+function technicalEngineHoursText(value){
+  return `${technicalNumber(value,2)||'0'} uur`;
+}
+
+async function refreshTechnicalStateBeforeEngineUpdate(){
+  if(!currentBoat)return;
+
+  if(!technicalStateCache){
+    technicalStateCache=readTechnicalLocalState();
+  }
+
+  if(!technicalCloudReady)return;
+
+  try{
+    const {data,error}=await sb.from('technical_state')
+      .select('data,updated_at')
+      .eq('boat_id',currentBoat.id)
+      .maybeSingle();
+
+    if(error)throw error;
+
+    if(data?.data){
+      technicalStateCache=normaliseTechnicalState({
+        ...data.data,
+        updatedAt:data.updated_at||
+          data.data.updatedAt||
+          null
+      });
+      saveTechnicalLocalState(technicalStateCache);
+    }
+  }catch(error){
+    console.warn(
+      'Laatste technische status voor motoruren kon niet worden opgehaald:',
+      error
+    );
+  }
+}
+
+async function applyTripDurationToEngineHours({
+  tripId,
+  durationHours,
+  title='Vaartocht',
+  tripDate='',
+  isNewTrip=false
+}={}){
+  const id=String(tripId||'').trim();
+  const hours=technicalRoundHours(durationHours);
+
+  if(!id||!hours){
+    return {
+      applied:false,
+      delta:0,
+      reason:'Geen geldige vaartijd'
+    };
+  }
+
+  try{
+    await refreshTechnicalStateBeforeEngineUpdate();
+
+    technicalStateCache=normaliseTechnicalState(
+      technicalStateCache||readTechnicalLocalState()
+    );
+
+    const tracked={
+      ...(technicalStateCache.countedTripHours||{})
+    };
+    const alreadyTracked=Object.prototype.hasOwnProperty.call(
+      tracked,
+      id
+    );
+
+    // Bestaande logboeken van vóór 5.4.2 worden als uitgangspunt vastgelegd.
+    // Zo worden oude motoruren bij een latere bewerking niet dubbel opgeteld.
+    if(!alreadyTracked&&!isNewTrip){
+      tracked[id]=hours;
+      technicalStateCache.countedTripHours=tracked;
+      technicalStateCache.lastEngineHoursUpdate={
+        tripId:id,
+        title,
+        tripDate:tripDate||technicalToday(),
+        durationHours:hours,
+        deltaHours:0,
+        engineHours:Number(technicalStateCache.engineHours||0),
+        type:'baseline',
+        updatedAt:new Date().toISOString()
+      };
+
+      await persistTechnicalState(
+        'Bestaande vaartocht als motoruren-uitgangspunt geregistreerd.'
+      );
+
+      renderTechnicalDashboard();
+
+      return {
+        applied:false,
+        baseline:true,
+        delta:0,
+        engineHours:Number(technicalStateCache.engineHours||0)
+      };
+    }
+
+    const previousTripHours=alreadyTracked
+      ?technicalRoundHours(tracked[id])
+      :0;
+    const delta=Math.round((hours-previousTripHours)*100)/100;
+
+    if(Math.abs(delta)<.005){
+      return {
+        applied:false,
+        delta:0,
+        engineHours:Number(technicalStateCache.engineHours||0),
+        reason:'Vaartijd was al verwerkt'
+      };
+    }
+
+    const previousEngineHours=Number(
+      technicalStateCache.engineHours||0
+    );
+    const newEngineHours=Math.max(
+      0,
+      Math.round((previousEngineHours+delta)*100)/100
+    );
+
+    tracked[id]=hours;
+
+    technicalStateCache={
+      ...technicalStateCache,
+      engineHours:newEngineHours,
+      countedTripHours:tracked,
+      lastEngineHoursUpdate:{
+        tripId:id,
+        title,
+        tripDate:tripDate||technicalToday(),
+        durationHours:hours,
+        previousTripHours,
+        deltaHours:delta,
+        previousEngineHours,
+        engineHours:newEngineHours,
+        type:alreadyTracked?'correction':'new-trip',
+        updatedAt:new Date().toISOString()
+      }
+    };
+
+    await persistTechnicalState(
+      delta>0
+        ?`Motoruren automatisch met ${technicalEngineHoursText(delta)} verhoogd.`
+        :`Motoruren automatisch met ${technicalEngineHoursText(Math.abs(delta))} gecorrigeerd.`
+    );
+
+    await createTechnicalEvent({
+      category:'Vaartijd',
+      title:alreadyTracked
+        ?'Motoruren gecorrigeerd na wijziging vaartocht'
+        :'Motoruren automatisch bijgewerkt',
+      event_date:tripDate||technicalToday(),
+      engine_hours:newEngineHours,
+      value:delta,
+      unit:'uur',
+      notes:[
+        title,
+        `Geregistreerde vaartijd: ${technicalEngineHoursText(hours)}.`,
+        alreadyTracked
+          ?`Eerder verwerkt: ${technicalEngineHoursText(previousTripHours)}.`
+          :'Nieuwe vaartocht automatisch verwerkt.',
+        `Motoruren: ${technicalEngineHoursText(previousEngineHours)} → ${technicalEngineHoursText(newEngineHours)}.`
+      ].join('\n')
+    },{
+      silent:true
+    });
+
+    renderTechnicalDashboard();
+
+    return {
+      applied:true,
+      delta,
+      engineHours:newEngineHours,
+      previousEngineHours
+    };
+  }catch(error){
+    console.error(
+      'Vaartijd automatisch bij motoruren optellen mislukt:',
+      error
+    );
+
+    return {
+      applied:false,
+      delta:0,
+      error
+    };
+  }
+}
+
+async function removeTripDurationFromEngineHours({
+  tripId,
+  title='Vaartocht'
+}={}){
+  const id=String(tripId||'').trim();
+  if(!id)return {applied:false,delta:0};
+
+  try{
+    await refreshTechnicalStateBeforeEngineUpdate();
+
+    technicalStateCache=normaliseTechnicalState(
+      technicalStateCache||readTechnicalLocalState()
+    );
+
+    const tracked={
+      ...(technicalStateCache.countedTripHours||{})
+    };
+
+    if(!Object.prototype.hasOwnProperty.call(tracked,id)){
+      return {applied:false,delta:0};
+    }
+
+    const hours=technicalRoundHours(tracked[id]);
+    delete tracked[id];
+
+    if(!hours){
+      technicalStateCache.countedTripHours=tracked;
+      await persistTechnicalState(
+        'Verwijderde vaartocht uit motorurenregistratie gehaald.'
+      );
+      return {applied:false,delta:0};
+    }
+
+    const previousEngineHours=Number(
+      technicalStateCache.engineHours||0
+    );
+    const newEngineHours=Math.max(
+      0,
+      Math.round((previousEngineHours-hours)*100)/100
+    );
+
+    technicalStateCache={
+      ...technicalStateCache,
+      engineHours:newEngineHours,
+      countedTripHours:tracked,
+      lastEngineHoursUpdate:{
+        tripId:id,
+        title,
+        durationHours:hours,
+        deltaHours:-hours,
+        previousEngineHours,
+        engineHours:newEngineHours,
+        type:'deleted-trip',
+        updatedAt:new Date().toISOString()
+      }
+    };
+
+    await persistTechnicalState(
+      `Motoruren na verwijderen van de vaartocht met ${technicalEngineHoursText(hours)} gecorrigeerd.`
+    );
+
+    await createTechnicalEvent({
+      category:'Vaartijd',
+      title:'Motoruren gecorrigeerd na verwijderen vaartocht',
+      event_date:technicalToday(),
+      engine_hours:newEngineHours,
+      value:-hours,
+      unit:'uur',
+      notes:[
+        title,
+        `Verwerkte vaartijd verwijderd: ${technicalEngineHoursText(hours)}.`,
+        `Motoruren: ${technicalEngineHoursText(previousEngineHours)} → ${technicalEngineHoursText(newEngineHours)}.`
+      ].join('\n')
+    },{
+      silent:true
+    });
+
+    renderTechnicalDashboard();
+
+    return {
+      applied:true,
+      delta:-hours,
+      engineHours:newEngineHours
+    };
+  }catch(error){
+    console.error(
+      'Motoruren na verwijderen vaartocht corrigeren mislukt:',
+      error
+    );
+    return {applied:false,delta:0,error};
+  }
 }
 
 async function persistTechnicalState(message='Technische gegevens opgeslagen.'){
@@ -9619,55 +9942,121 @@ function useCurrentLocationForPoi(){
 
 async function saveTrip(){
   if(!currentBoat)return alert('Koppel eerst Serenity.');
+
   const id=$('tripId').value.trim();
+  const isNewTrip=!id;
+
   const row={
     boat_id:currentBoat.id,
     created_by:currentUser.id,
     trip_date:$('tripDate').value,
-    title:$('tripTitle').value.trim()||`${$('tripFrom').value.trim()} naar ${$('tripTo').value.trim()}`,
+    title:$('tripTitle').value.trim()||
+      `${$('tripFrom').value.trim()} naar ${$('tripTo').value.trim()}`,
     departure:$('tripFrom').value.trim(),
     arrival:$('tripTo').value.trim(),
     distance_km:Number($('tripDistance').value)||null,
     duration_hours:Number($('tripHours').value)||null,
     crew:$('tripCrew').value.trim(),
-    notes:$('tripNotes').value.trim(),fuel_liters:Number($('tripFuelLiters').value)||null,fuel_cost:Number($('tripFuelCost').value)||null,
+    notes:$('tripNotes').value.trim(),
+    fuel_liters:Number($('tripFuelLiters').value)||null,
+    fuel_cost:Number($('tripFuelCost').value)||null,
     updated_at:new Date().toISOString()
   };
+
   setTripProgress(id?'Vaartocht bijwerken…':'Vaartocht opslaan…');
+
   let tripId=id;
+
   if(id){
     const {error}=await sb.from('trips').update({
-      trip_date:row.trip_date,title:row.title,departure:row.departure,arrival:row.arrival,
-      distance_km:row.distance_km,duration_hours:row.duration_hours,crew:row.crew,
-      notes:row.notes,fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost,updated_at:row.updated_at
+      trip_date:row.trip_date,
+      title:row.title,
+      departure:row.departure,
+      arrival:row.arrival,
+      distance_km:row.distance_km,
+      duration_hours:row.duration_hours,
+      crew:row.crew,
+      notes:row.notes,
+      fuel_liters:row.fuel_liters,
+      fuel_cost:row.fuel_cost,
+      updated_at:row.updated_at
     }).eq('id',id);
-    if(error){setTripProgress('');return alert(error.message)}
+
+    if(error){
+      setTripProgress('');
+      return alert(error.message);
+    }
   }else{
-    const {data,error}=await sb.from('trips').insert(row).select('id').single();
-    if(error){setTripProgress('');return alert(error.message)}
+    const {data,error}=await sb.from('trips')
+      .insert(row)
+      .select('id')
+      .single();
+
+    if(error){
+      setTripProgress('');
+      return alert(error.message);
+    }
+
     tripId=data.id;
   }
-  if(!row.fuel_liters&&row.duration_hours&&settingsCache?.fuel_per_hour)row.fuel_liters=Number(row.duration_hours)*Number(settingsCache.fuel_per_hour);if(!row.fuel_cost&&row.fuel_liters&&settingsCache?.fuel_price)row.fuel_cost=Number(row.fuel_liters)*Number(settingsCache.fuel_price);await sb.from('trips').update({fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost}).eq('id',tripId);const routeFile=pendingTripRouteFile||$('tripGpx').files[0];
+
+  if(
+    !row.fuel_liters&&
+    row.duration_hours&&
+    settingsCache?.fuel_per_hour
+  ){
+    row.fuel_liters=
+      Number(row.duration_hours)*
+      Number(settingsCache.fuel_per_hour);
+  }
+
+  if(
+    !row.fuel_cost&&
+    row.fuel_liters&&
+    settingsCache?.fuel_price
+  ){
+    row.fuel_cost=
+      Number(row.fuel_liters)*
+      Number(settingsCache.fuel_price);
+  }
+
+  await sb.from('trips').update({
+    fuel_liters:row.fuel_liters,
+    fuel_cost:row.fuel_cost
+  }).eq('id',tripId);
+
+  const routeFile=
+    pendingTripRouteFile||
+    $('tripGpx').files[0];
+
   if(routeFile){
     setTripProgress('Route uit Waterkaarten verwerken…');
 
     let routeGeojson=pendingTripRouteDetails?.geojson||null;
+
     try{
       if(!routeGeojson){
         routeGeojson=await parseRouteFile(routeFile);
       }
     }catch(error){
       setTripProgress('');
-      return alert('Routebestand kon niet worden gelezen: '+(error?.message||'onbekende fout'));
+      return alert(
+        'Routebestand kon niet worden gelezen: '+
+        (error?.message||'onbekende fout')
+      );
     }
 
     if(!routeGeojson){
       setTripProgress('');
-      return alert('Dit bestand bevat geen bruikbare GPX-, KML- of KMZ-route.');
+      return alert(
+        'Dit bestand bevat geen bruikbare GPX-, KML- of KMZ-route.'
+      );
     }
 
-    const safeName=(routeFile.name||'waterkaarten-route').replace(/[^a-zA-Z0-9._-]/g,'_');
-    const routePath=`${currentBoat.id}/${tripId}/${Date.now()}-${safeName}`;
+    const safeName=(routeFile.name||'waterkaarten-route')
+      .replace(/[^a-zA-Z0-9._-]/g,'_');
+    const routePath=
+      `${currentBoat.id}/${tripId}/${Date.now()}-${safeName}`;
     const contentType=getRouteContentType(routeFile);
 
     const {error:routeUploadError}=await sb.storage
@@ -9679,7 +10068,9 @@ async function saveTrip(){
 
     if(routeUploadError){
       setTripProgress('');
-      return alert('Route uploaden mislukt: '+routeUploadError.message);
+      return alert(
+        'Route uploaden mislukt: '+routeUploadError.message
+      );
     }
 
     const {error:routeDbError}=await sb.from('trips').update({
@@ -9690,18 +10081,48 @@ async function saveTrip(){
 
     if(routeDbError){
       setTripProgress('');
-      return alert('Route opslaan mislukt: '+routeDbError.message);
+      return alert(
+        'Route opslaan mislukt: '+routeDbError.message
+      );
     }
   }
+
   const files=[...$('tripPhotos').files].slice(0,10);
-  if(files.length)await uploadTripPhotos(tripId,files);
+
+  if(files.length){
+    await uploadTripPhotos(tripId,files);
+  }
 
   if(pendingTripRouteFingerprint){
     markRouteFingerprintImported(pendingTripRouteFingerprint);
   }
 
+  setTripProgress('Vaartijd bij motoruren verwerken…');
+
+  const engineUpdate=await applyTripDurationToEngineHours({
+    tripId,
+    durationHours:row.duration_hours,
+    title:row.title,
+    tripDate:row.trip_date,
+    isNewTrip
+  });
+
   clearTripForm();
   await loadTrips();
+
+  if(engineUpdate.applied){
+    showAppToast(
+      `${row.title} opgeslagen · motoruren ${
+        engineUpdate.delta>=0?'+':'−'
+      }${technicalNumber(Math.abs(engineUpdate.delta),2)} uur ✅`
+    );
+  }else if(engineUpdate.baseline){
+    showAppToast(
+      `${row.title} bijgewerkt · bestaande motoruren niet dubbel geteld ✅`
+    );
+  }else{
+    showAppToast(`${row.title} opgeslagen ✅`);
+  }
 }
 
 function setTripProgress(text){
@@ -9917,6 +10338,11 @@ De route en alle gekoppelde foto's worden ook verwijderd.`))return;
 
     if(tripDeleteError)throw tripDeleteError;
 
+    const engineUpdate=await removeTripDurationFromEngineHours({
+      tripId:id,
+      title
+    });
+
     destroyRouteMap(`tripRouteMap-${id}`);
     tripCache=tripCache.filter(item=>String(item.id)!==String(id));
     if(window.tripPhotoCache)delete window.tripPhotoCache[id];
@@ -9926,7 +10352,11 @@ De route en alle gekoppelde foto's worden ook verwijderd.`))return;
     updateLatestRouteDashboard();
     if($('dTrips'))$('dTrips').textContent=tripCache.length;
 
-    alert('Log verwijderd.');
+    alert(
+      engineUpdate.applied
+        ?`Log verwijderd. Motoruren zijn met ${technicalNumber(Math.abs(engineUpdate.delta),2)} uur gecorrigeerd.`
+        :'Log verwijderd.'
+    );
   }catch(error){
     console.error('Log verwijderen mislukt:',error);
     alert('Log verwijderen mislukt: '+(error?.message||'onbekende fout'));
@@ -11617,7 +12047,19 @@ async function saveLiveTrip(options={}){
       await uploadTripPhotos(tripId,photoFiles);
     }
 
-    saveStatus.textContent=`${title} automatisch opgeslagen ✅`;
+    saveStatus.textContent='Vaartijd bij motoruren optellen…';
+
+    const engineUpdate=await applyTripDurationToEngineHours({
+      tripId,
+      durationHours:row.duration_hours,
+      title,
+      tripDate:row.trip_date,
+      isNewTrip:true
+    });
+
+    saveStatus.textContent=engineUpdate.applied
+      ?`${title} opgeslagen · motoruren +${technicalNumber(engineUpdate.delta,2)} uur ✅`
+      :`${title} automatisch opgeslagen ✅`;
     setLiveAutoLogStatus(
       `Vaartocht automatisch opgeslagen: ${Number(liveNavState.distanceKm||0).toFixed(2)} km · ${formatLiveDuration(getLiveElapsedMs())}.`,
       'success'
@@ -11629,9 +12071,11 @@ async function saveLiveTrip(options={}){
     clearLiveTrip({keepStatus:true});
 
     showAppToast(
-      automatic
-        ?`${savedTitle} automatisch in het logboek opgeslagen ✅`
-        :`${savedTitle} opgeslagen ✅`
+      engineUpdate.applied
+        ?`${savedTitle} opgeslagen · motoruren +${technicalNumber(engineUpdate.delta,2)} uur ✅`
+        :automatic
+          ?`${savedTitle} automatisch in het logboek opgeslagen ✅`
+          :`${savedTitle} opgeslagen ✅`
     );
 
     setTimeout(()=>captainNavigate('logbook'),650);
@@ -11713,7 +12157,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.4.1';
+const APP_VERSION='5.4.2';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -11790,7 +12234,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5410',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5420',{updateViaCache:'none'});
 
     await registration.update();
 
