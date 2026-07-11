@@ -41,19 +41,53 @@ function getLoggedInFirstName(){
 
 async function refreshMijnSerenity(button){
   const sync=$('dSync');
-  const originalLabel=sync?.textContent||'Live';
-
   button?.classList.add('is-refreshing');
   if(button)button.disabled=true;
-  if(sync)sync.textContent='Verversen…';
+  if(sync)sync.textContent='Controleren…';
 
   try{
+    if('serviceWorker' in navigator){
+      const registration=await navigator.serviceWorker.getRegistration();
+
+      if(registration){
+        await registration.update();
+
+        if(registration.waiting){
+          if(sync)sync.textContent='Nieuwe versie';
+          showAppToast('Nieuwe versie wordt geopend…');
+          registration.waiting.postMessage({type:'SKIP_WAITING'});
+          return;
+        }
+
+        if(registration.installing){
+          await new Promise(resolve=>{
+            const worker=registration.installing;
+            const timeout=setTimeout(resolve,2500);
+
+            worker?.addEventListener('statechange',()=>{
+              if(worker.state==='installed'||worker.state==='activated'){
+                clearTimeout(timeout);
+                resolve();
+              }
+            });
+          });
+
+          if(registration.waiting){
+            if(sync)sync.textContent='Nieuwe versie';
+            showAppToast('Nieuwe versie wordt geopend…');
+            registration.waiting.postMessage({type:'SKIP_WAITING'});
+            return;
+          }
+        }
+      }
+    }
+
     if(!currentUser){
       const {data:{session}}=await sb.auth.getSession();
       currentUser=session?.user||null;
     }
 
-    if(!currentBoat){
+    if(!currentBoat&&currentUser){
       await loadMembership();
       renderBoat();
     }
@@ -62,32 +96,48 @@ async function refreshMijnSerenity(button){
       throw new Error('Serenity is niet gekoppeld aan dit account.');
     }
 
+    if(sync)sync.textContent='Verversen…';
     resetPoiFilters(false);
 
-    const results=await Promise.allSettled([
-      loadSettings(),
-      loadPois(),
-      loadCosts(),
-      loadTrips()
-    ]);
+    const jobs=[
+      ['instellingen',loadSettings],
+      ['POI’s',loadPois],
+      ['kosten',loadCosts],
+      ['logboek',loadTrips]
+    ];
 
-    const failed=results.filter(result=>result.status==='rejected');
-    if(failed.length){
-      console.warn('Niet alles kon worden ververst:',failed);
-      if(sync)sync.textContent='Deels';
-      showAppToast('Een deel kon niet worden ververst. Bestaande gegevens blijven zichtbaar.');
-    }else{
-      loadSettingsForm();
-      renderPoiList();
-      renderFinance();
+    let succeeded=0;
+    const failed=[];
 
-      const time=new Date().toLocaleTimeString('nl-NL',{
-        hour:'2-digit',
-        minute:'2-digit'
-      });
+    for(const [label,job] of jobs){
+      try{
+        await job();
+        succeeded++;
+      }catch(error){
+        console.error(`${label} verversen mislukt:`,error);
+        failed.push(label);
+      }
+    }
 
+    loadSettingsForm();
+    renderPoiList();
+    renderFinance();
+
+    const time=new Date().toLocaleTimeString('nl-NL',{
+      hour:'2-digit',
+      minute:'2-digit'
+    });
+
+    if(succeeded){
       if(sync)sync.textContent=`Live ${time}`;
-      showAppToast('MijnSerenity is ververst ✅');
+      showAppToast(
+        failed.length
+          ?`Verversing klaar. ${succeeded} van ${jobs.length} onderdelen bijgewerkt.`
+          :'MijnSerenity is volledig ververst ✅'
+      );
+    }else{
+      if(sync)sync.textContent='Fout';
+      showAppToast('Verversen is niet gelukt. Bestaande gegevens blijven zichtbaar.');
     }
   }catch(error){
     console.error('Verversen mislukt:',error);
@@ -96,10 +146,6 @@ async function refreshMijnSerenity(button){
   }finally{
     button?.classList.remove('is-refreshing');
     if(button)button.disabled=false;
-
-    if(sync&&sync.textContent==='Verversen…'){
-      sync.textContent=originalLabel;
-    }
   }
 }
 
@@ -781,11 +827,44 @@ async function uploadCostReceipts(costId,files){
   return failed;
 }
 
+
+function editCost(id,date,amount,category,description){
+  $('costId').value=id;
+  $('costDate').value=date||localDateISO(new Date());
+  $('costAmount').value=Number(amount||0).toFixed(2);
+  $('costCategory').value=category||'Overig';
+  $('costDescription').value=description||'';
+
+  $('costFormTitle').textContent='Kosten bewerken';
+  $('costSaveButton').textContent='Wijzigingen opslaan';
+  $('costCancelButton').classList.remove('hidden');
+
+  captainNavigate('costs');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function cancelCostEdit(){
+  $('costId').value='';
+  $('costDate').value=localDateISO(new Date());
+  $('costAmount').value='';
+  $('costDescription').value='';
+  $('costCategory').value='Havengeld';
+  $('costFormTitle').textContent='Kosten toevoegen';
+  $('costSaveButton').textContent='Kosten opslaan';
+  $('costCancelButton').classList.add('hidden');
+  resetCostReceiptSelection();
+  setCostProgress('');
+}
+
 async function addCost(){
   if(!currentBoat)return alert('Koppel eerst Serenity.');
 
+  const id=$('costId').value.trim();
   const amount=Number(String($('costAmount').value||'').replace(',','.'));
-  if(!Number.isFinite(amount)||amount<=0)return alert('Vul een geldig bedrag in.');
+
+  if(!Number.isFinite(amount)||amount<=0){
+    return alert('Vul een geldig bedrag in.');
+  }
 
   const row={
     boat_id:currentBoat.id,
@@ -797,26 +876,56 @@ async function addCost(){
   };
 
   $('costSaveButton').disabled=true;
-  setCostProgress('Kosten opslaan…');
+  setCostProgress(id?'Kosten bijwerken…':'Kosten opslaan…');
 
   try{
-    const {data,error}=await sb.from('costs').insert(row).select('id').single();
-    if(error)throw error;
+    let costId=id;
+
+    if(id){
+      const {error}=await sb.from('costs')
+        .update({
+          expense_date:row.expense_date,
+          amount:row.amount,
+          category:row.category,
+          description:row.description
+        })
+        .eq('id',id)
+        .eq('boat_id',currentBoat.id);
+
+      if(error)throw error;
+    }else{
+      const {data,error}=await sb.from('costs')
+        .insert(row)
+        .select('id')
+        .single();
+
+      if(error)throw error;
+      costId=data.id;
+    }
 
     const files=[...pendingCostReceiptFiles];
-    const failed=files.length?await uploadCostReceipts(data.id,files):0;
+    const existingCount=(costReceiptCache[costId]||[]).length;
 
-    $('costAmount').value='';
-    $('costDescription').value='';
-    resetCostReceiptSelection();
+    if(existingCount+files.length>3){
+      throw new Error('Deze kostenpost kan maximaal 3 bonnetjes bevatten.');
+    }
+
+    const failed=files.length
+      ?await uploadCostReceipts(costId,files)
+      :0;
+
+    cancelCostEdit();
 
     setCostProgress(
       failed
         ?`Kosten opgeslagen, maar ${failed} bonnetje${failed===1?'':'s'} kon niet worden toegevoegd.`
-        :'Kosten en bonnetjes opgeslagen ✅'
+        :id
+          ?'Kosten bijgewerkt ✅'
+          :'Kosten en bonnetjes opgeslagen ✅'
     );
 
     await loadCosts();
+    renderFinance();
     setTimeout(()=>setCostProgress(''),2800);
   }catch(error){
     console.error('Kosten opslaan mislukt:',error);
@@ -912,27 +1021,48 @@ async function deleteCost(id){
   if(error)return alert(error.message);
 
   await loadCosts();
+  renderFinance();
 }
 
 async function loadCosts(){
   const [{data,error},receipts]=await Promise.all([
-    sb.from('costs').select('*').eq('boat_id',currentBoat.id).order('expense_date',{ascending:false}),
+    sb.from('costs')
+      .select('*')
+      .eq('boat_id',currentBoat.id)
+      .order('expense_date',{ascending:false}),
     loadCostReceipts()
   ]);
 
-  if(error)return alert(error.message);
+  if(error){
+    console.error('Kosten laden mislukt:',error);
+    throw error;
+  }
 
   costCache=data||[];
   costReceiptCache=receipts||{};
-  $('dCosts').textContent='€'+costCache.reduce((sum,cost)=>sum+Number(cost.amount||0),0).toFixed(0);
+
+  $('dCosts').textContent='€'+costCache
+    .reduce((sum,cost)=>sum+Number(cost.amount||0),0)
+    .toFixed(0);
 
   $('costList').innerHTML=costCache.length
-    ?costCache.map(cost=>`<div class="item cost-item">
-      <h3>€${Number(cost.amount).toFixed(2)} · ${esc(cost.category)}</h3>
-      <div class="small">${esc(cost.expense_date)} · ${esc(cost.description||'')}</div>
-      ${renderCostReceipts(cost.id)}
-      <button class="danger" onclick="deleteCost('${cost.id}')">Verwijder kostenpost</button>
-    </div>`).join('')
+    ?costCache.map(cost=>`
+      <div class="item cost-item">
+        <h3>€${Number(cost.amount).toFixed(2)} · ${esc(cost.category)}</h3>
+        <div class="small">${esc(cost.expense_date)} · ${esc(cost.description||'')}</div>
+        ${renderCostReceipts(cost.id)}
+        <div class="cost-item-actions">
+          <button class="cost-edit-button" onclick='editCost(
+            ${JSON.stringify(cost.id)},
+            ${JSON.stringify(cost.expense_date)},
+            ${JSON.stringify(cost.amount)},
+            ${JSON.stringify(cost.category)},
+            ${JSON.stringify(cost.description||'')}
+          )'>✏️ Bewerken</button>
+          <button class="cost-delete-button" aria-label="Kosten verwijderen" onclick="deleteCost('${cost.id}')">🗑️</button>
+        </div>
+      </div>
+    `).join('')
     :'<span class="small">Nog geen kosten.</span>';
 }
 
@@ -2681,7 +2811,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.14';
+const APP_VERSION='5.1.15';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

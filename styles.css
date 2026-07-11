@@ -1008,3 +1008,35 @@ header{
   display:inline-block;
   animation:refreshSpin .75s linear infinite;
 }
+
+/* Cloud 5.1.15 — kosten bewerken en compacte verwijderknop */
+.cost-form-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.cost-form-actions button{
+  flex:1 1 180px;
+}
+.cost-item-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:12px;
+}
+.cost-edit-button{
+  width:auto;
+  min-height:38px;
+  padding:8px 12px;
+  font-size:13px;
+}
+.cost-delete-button{
+  width:38px;
+  min-width:38px;
+  min-height:38px;
+  padding:0;
+  border-radius:10px;
+  background:#9d3040;
+  color:#fff;
+  font-size:16px;
+}
