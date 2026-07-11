@@ -22,7 +22,7 @@
   <div class="header-title-row">
     <div>
       <h1>⚓ MijnSerenity Cloud</h1>
-      <div class="sub">Cloud 5.1.3 · Kaartlocaties</div>
+      <div class="sub">Cloud 5.1.4 · Bonnetjes</div>
     </div>
     <span id="connectionStatus" class="connection-status online">Online</span>
   </div>
@@ -244,7 +244,22 @@
       </div>
       <div id="poiProgress" class="status small hidden"></div>
     </div>
-    <div class="card"><h2>POI zoeken en filteren</h2><div class="row"><div><label>Zoeken</label><input id="poiSearch" placeholder="Naam, plaats of notitie" oninput="renderPoiList()"></div><div><label>Categorie</label><select id="poiFilterCategory" onchange="renderPoiList()"><option value="">Alle categorieën</option><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div></div><div class="row"><div><label>Beoordeling minimaal</label><select id="poiFilterRating" onchange="renderPoiList()"><option value="0">Alle beoordelingen</option><option value="3">3 sterren</option><option value="4">4 sterren</option><option value="5">5 sterren</option></select></div><div><label>Extra filter</label><select id="poiFilterExtra" onchange="renderPoiList()"><option value="">Alles</option><option value="favorite">Alleen favorieten</option><option value="photos">Met foto's</option><option value="notes">Met notities</option></select></div></div><button class="secondary" onclick="resetPoiFilters()">Filters wissen</button></div><div class="card"><h2>Gedeelde POI's</h2><div id="poiList"></div></div>
+    <div class="card collapsible-card">
+      <button class="section-toggle" type="button" onclick="toggleSection('poiSearchWrap',this)">
+        <span>POI zoeken en filteren</span><span class="chevron">⌄</span>
+      </button>
+      <div id="poiSearchWrap" class="collapsible-content hidden">
+        <div class="row">
+          <div><label>Zoeken</label><input id="poiSearch" placeholder="Naam, plaats of notitie" oninput="renderPoiList()"></div>
+          <div><label>Categorie</label><select id="poiFilterCategory" onchange="renderPoiList()"><option value="">Alle categorieën</option><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
+        </div>
+        <div class="row">
+          <div><label>Beoordeling minimaal</label><select id="poiFilterRating" onchange="renderPoiList()"><option value="0">Alle beoordelingen</option><option value="3">3 sterren</option><option value="4">4 sterren</option><option value="5">5 sterren</option></select></div>
+          <div><label>Extra filter</label><select id="poiFilterExtra" onchange="renderPoiList()"><option value="">Alles</option><option value="favorite">Alleen favorieten</option><option value="photos">Met foto's</option><option value="notes">Met notities</option></select></div>
+        </div>
+        <button class="secondary" onclick="resetPoiFilters()">Filters wissen</button>
+      </div>
+    </div><div class="card"><h2>Gedeelde POI's</h2><div id="poiList"></div></div>
   </section>
 
 
@@ -320,7 +335,36 @@
   </section>
 
   <section id="costs" class="hidden">
-    <div class="card"><h2>Kosten toevoegen</h2><div class="row"><div><label>Datum</label><input id="costDate" type="date"></div><div><label>Bedrag €</label><input id="costAmount" type="number" step="0.01"></div></div><div class="row"><div><label>Categorie</label><select id="costCategory"><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Overig</option></select></div><div><label>Omschrijving</label><input id="costDescription"></div></div><button onclick="addCost()">Opslaan</button></div>
+    <div class="card">
+      <h2>Kosten toevoegen</h2>
+      <div class="row">
+        <div><label>Datum</label><input id="costDate" type="date"></div>
+        <div><label>Bedrag €</label><input id="costAmount" type="number" inputmode="decimal" step="0.01"></div>
+      </div>
+      <div class="row">
+        <div><label>Categorie</label><select id="costCategory"><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Overig</option></select></div>
+        <div><label>Omschrijving</label><input id="costDescription"></div>
+      </div>
+
+      <div class="receipt-scan-card">
+        <div class="receipt-scan-title">🧾 Bonnetje toevoegen</div>
+        <p class="small">Scan met de camera of kies een bestaande foto/PDF. Maximaal 3 bonnetjes per kostenpost.</p>
+        <div class="receipt-scan-actions">
+          <label class="receipt-picker-button">
+            📷 Scan bonnetje
+            <input id="costReceiptCamera" type="file" accept="image/*" capture="environment" onchange="addCostReceiptFiles(this.files)">
+          </label>
+          <label class="receipt-picker-button secondary-receipt">
+            🗂️ Kies foto of PDF
+            <input id="costReceiptFiles" type="file" accept="image/*,application/pdf" multiple onchange="addCostReceiptFiles(this.files)">
+          </label>
+        </div>
+        <div id="costReceiptPreview" class="receipt-preview hidden"></div>
+      </div>
+
+      <button id="costSaveButton" onclick="addCost()">Kosten opslaan</button>
+      <div id="costProgress" class="status small hidden"></div>
+    </div>
     <div class="card"><h2>Gedeelde kosten</h2><div id="costList"></div></div>
   </section>
 

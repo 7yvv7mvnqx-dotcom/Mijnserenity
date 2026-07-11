@@ -747,3 +747,150 @@ header{
     min-height:52vh;
   }
 }
+
+/* Cloud 5.1.4 — inklapbaar POI zoeken en bonnetjes bij kosten */
+#poiSearchWrap{
+  padding-top:12px;
+}
+.receipt-scan-card{
+  margin:16px 0;
+  padding:14px;
+  border:1px dashed rgba(126,190,218,.48);
+  border-radius:14px;
+  background:rgba(21,68,89,.34);
+}
+.receipt-scan-title{
+  margin-bottom:5px;
+  font-weight:900;
+  font-size:17px;
+}
+.receipt-scan-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:12px;
+}
+.receipt-picker-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:46px;
+  padding:11px 14px;
+  border-radius:12px;
+  background:#46c7f2;
+  color:#071a27;
+  font-weight:900;
+  cursor:pointer;
+}
+.receipt-picker-button.secondary-receipt{
+  background:#244d65;
+  color:#fff;
+  border:1px solid rgba(255,255,255,.14);
+}
+.receipt-picker-button input{
+  position:absolute;
+  width:1px;
+  height:1px;
+  opacity:0;
+  pointer-events:none;
+}
+.receipt-preview{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+.receipt-preview-item{
+  position:relative;
+  min-width:0;
+  padding:7px;
+  border-radius:12px;
+  background:rgba(255,255,255,.08);
+}
+.receipt-preview-item img{
+  width:100%;
+  aspect-ratio:1;
+  object-fit:cover;
+  border-radius:9px;
+}
+.receipt-preview-item button,
+.cost-receipt-item button{
+  position:absolute;
+  top:3px;
+  right:3px;
+  z-index:2;
+  width:30px;
+  min-height:30px;
+  padding:0;
+  border-radius:999px;
+  background:#b52f41;
+  color:#fff;
+}
+.receipt-preview-item span{
+  display:block;
+  overflow:hidden;
+  margin-top:5px;
+  font-size:10px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.receipt-pdf-preview{
+  min-height:120px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.receipt-pdf-icon{
+  align-self:center;
+  padding:12px;
+  border-radius:9px;
+  background:#e45e62;
+  color:#fff;
+  font-weight:900;
+}
+.cost-receipts{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+  margin:13px 0;
+}
+.cost-receipt-item{
+  position:relative;
+  min-width:0;
+  padding:6px;
+  border-radius:12px;
+  background:rgba(255,255,255,.07);
+}
+.cost-receipt-item img{
+  width:100%;
+  aspect-ratio:1;
+  object-fit:cover;
+  border-radius:9px;
+  cursor:pointer;
+}
+.cost-receipt-item small{
+  display:block;
+  margin-top:5px;
+  text-align:center;
+}
+.cost-receipt-pdf{
+  min-height:100px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.cost-receipt-pdf a{
+  color:#8ee1ff;
+  font-weight:800;
+}
+@media(max-width:600px){
+  .receipt-scan-actions,
+  .receipt-picker-button{
+    width:100%;
+  }
+  .receipt-preview,
+  .cost-receipts{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}

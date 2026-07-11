@@ -4,11 +4,12 @@ const PHOTO_BUCKET='poi-photos';
 const TRIP_PHOTO_BUCKET='trip-photos';
 const BOAT_PHOTO_BUCKET='boat-photos';
 const TRIP_GPX_BUCKET='trip-gpx';
+const COST_RECEIPT_BUCKET='cost-receipts';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let tripRouteMaps={};
-let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null;
+let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 function setMsg(t){$('authMsg').textContent=t}
@@ -129,10 +130,295 @@ async function loadPois(){
   }).join(''):'<span class="small">Nog geen POI’s.</span>';if(mapInstance)renderPoiMarkers();
 }
 
-async function addCost(){if(!currentBoat)return alert('Koppel eerst Serenity.');const row={boat_id:currentBoat.id,created_by:currentUser.id,expense_date:$('costDate').value,amount:Number($('costAmount').value)||0,category:$('costCategory').value,description:$('costDescription').value.trim()};const {error}=await sb.from('costs').insert(row);if(error)return alert(error.message);$('costAmount').value='';$('costDescription').value=''}
-async function deleteCost(id){const {error}=await sb.from('costs').delete().eq('id',id);if(error)alert(error.message)}
-async function loadCosts(){const {data,error}=await sb.from('costs').select('*').eq('boat_id',currentBoat.id).order('expense_date',{ascending:false});if(error)return alert(error.message);costCache=data;$('dCosts').textContent='€'+data.reduce((s,c)=>s+Number(c.amount||0),0).toFixed(0);$('costList').innerHTML=data.length?data.map(c=>`<div class="item"><h3>€${Number(c.amount).toFixed(2)} · ${esc(c.category)}</h3><div class="small">${esc(c.expense_date)} · ${esc(c.description)}</div><button class="danger" onclick="deleteCost('${c.id}')">Verwijder</button></div>`).join(''):'<span class="small">Nog geen kosten.</span>'}
-function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},loadSettings).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
+let pendingCostReceiptFiles=[];
+let costReceiptPreviewUrls=[];
+
+function setCostProgress(message){
+  const element=$('costProgress');
+  if(!element)return;
+  element.textContent=message||'';
+  element.classList.toggle('hidden',!message);
+}
+
+function addCostReceiptFiles(fileList){
+  const incoming=[...(fileList||[])];
+
+  for(const file of incoming){
+    if(pendingCostReceiptFiles.length>=3){
+      alert('Je kunt maximaal 3 bonnetjes per kostenpost toevoegen.');
+      break;
+    }
+
+    const isAllowed=file.type.startsWith('image/')||file.type==='application/pdf';
+    if(!isAllowed){
+      alert(`${file.name} is geen afbeelding of PDF.`);
+      continue;
+    }
+
+    if(file.size>10*1024*1024){
+      alert(`${file.name} is groter dan 10 MB.`);
+      continue;
+    }
+
+    const duplicate=pendingCostReceiptFiles.some(existing=>
+      existing.name===file.name&&existing.size===file.size&&existing.lastModified===file.lastModified
+    );
+    if(!duplicate)pendingCostReceiptFiles.push(file);
+  }
+
+  $('costReceiptCamera').value='';
+  $('costReceiptFiles').value='';
+  renderCostReceiptPreview();
+}
+
+function renderCostReceiptPreview(){
+  costReceiptPreviewUrls.forEach(url=>URL.revokeObjectURL(url));
+  costReceiptPreviewUrls=[];
+
+  const preview=$('costReceiptPreview');
+  if(!preview)return;
+
+  if(!pendingCostReceiptFiles.length){
+    preview.innerHTML='';
+    preview.classList.add('hidden');
+    return;
+  }
+
+  preview.innerHTML=pendingCostReceiptFiles.map((file,index)=>{
+    if(file.type.startsWith('image/')){
+      const url=URL.createObjectURL(file);
+      costReceiptPreviewUrls.push(url);
+      return `<div class="receipt-preview-item">
+        <img src="${url}" alt="Voorbeeld van bonnetje">
+        <button type="button" onclick="removePendingCostReceipt(${index})">×</button>
+        <span>${esc(file.name)}</span>
+      </div>`;
+    }
+
+    return `<div class="receipt-preview-item receipt-pdf-preview">
+      <div class="receipt-pdf-icon">PDF</div>
+      <button type="button" onclick="removePendingCostReceipt(${index})">×</button>
+      <span>${esc(file.name)}</span>
+    </div>`;
+  }).join('');
+
+  preview.classList.remove('hidden');
+}
+
+function removePendingCostReceipt(index){
+  pendingCostReceiptFiles.splice(index,1);
+  renderCostReceiptPreview();
+}
+
+function resetCostReceiptSelection(){
+  pendingCostReceiptFiles=[];
+  costReceiptPreviewUrls.forEach(url=>URL.revokeObjectURL(url));
+  costReceiptPreviewUrls=[];
+  if($('costReceiptCamera'))$('costReceiptCamera').value='';
+  if($('costReceiptFiles'))$('costReceiptFiles').value='';
+  renderCostReceiptPreview();
+}
+
+async function uploadCostReceipts(costId,files){
+  let failed=0;
+
+  for(let index=0;index<files.length;index++){
+    const file=files[index];
+    setCostProgress(`Bonnetje ${index+1} van ${files.length} uploaden…`);
+
+    const rawExtension=(file.name.split('.').pop()||'jpg').toLowerCase();
+    const safeExtension=rawExtension.replace(/[^a-z0-9]/g,'')||'jpg';
+    const path=`${currentBoat.id}/${costId}/${crypto.randomUUID()}.${safeExtension}`;
+
+    const {error:uploadError}=await sb.storage
+      .from(COST_RECEIPT_BUCKET)
+      .upload(path,file,{
+        cacheControl:'3600',
+        upsert:false,
+        contentType:file.type||'image/jpeg'
+      });
+
+    if(uploadError){
+      console.error('Bon uploaden mislukt:',uploadError);
+      failed++;
+      continue;
+    }
+
+    const {error:metadataError}=await sb.from('cost_receipts').insert({
+      cost_id:costId,
+      boat_id:currentBoat.id,
+      created_by:currentUser.id,
+      storage_path:path,
+      original_name:file.name,
+      mime_type:file.type||'application/octet-stream'
+    });
+
+    if(metadataError){
+      await sb.storage.from(COST_RECEIPT_BUCKET).remove([path]);
+      console.error('Bon registreren mislukt:',metadataError);
+      failed++;
+    }
+  }
+
+  return failed;
+}
+
+async function addCost(){
+  if(!currentBoat)return alert('Koppel eerst Serenity.');
+
+  const amount=Number(String($('costAmount').value||'').replace(',','.'));
+  if(!Number.isFinite(amount)||amount<=0)return alert('Vul een geldig bedrag in.');
+
+  const row={
+    boat_id:currentBoat.id,
+    created_by:currentUser.id,
+    expense_date:$('costDate').value,
+    amount,
+    category:$('costCategory').value,
+    description:$('costDescription').value.trim()
+  };
+
+  $('costSaveButton').disabled=true;
+  setCostProgress('Kosten opslaan…');
+
+  try{
+    const {data,error}=await sb.from('costs').insert(row).select('id').single();
+    if(error)throw error;
+
+    const files=[...pendingCostReceiptFiles];
+    const failed=files.length?await uploadCostReceipts(data.id,files):0;
+
+    $('costAmount').value='';
+    $('costDescription').value='';
+    resetCostReceiptSelection();
+
+    setCostProgress(
+      failed
+        ?`Kosten opgeslagen, maar ${failed} bonnetje${failed===1?'':'s'} kon niet worden toegevoegd.`
+        :'Kosten en bonnetjes opgeslagen ✅'
+    );
+
+    await loadCosts();
+    setTimeout(()=>setCostProgress(''),2800);
+  }catch(error){
+    console.error('Kosten opslaan mislukt:',error);
+    alert('Kosten opslaan mislukt: '+(error?.message||'onbekende fout'));
+    setCostProgress('');
+  }finally{
+    $('costSaveButton').disabled=false;
+  }
+}
+
+async function loadCostReceipts(){
+  const {data,error}=await sb
+    .from('cost_receipts')
+    .select('*')
+    .eq('boat_id',currentBoat.id)
+    .order('created_at',{ascending:true});
+
+  if(error){
+    console.warn('Bonnetjes laden mislukt. Is de Cloud 5.1.4 SQL uitgevoerd?',error);
+    return {};
+  }
+
+  const grouped={};
+
+  for(const receipt of data||[]){
+    const {data:signed,error:signedError}=await sb.storage
+      .from(COST_RECEIPT_BUCKET)
+      .createSignedUrl(receipt.storage_path,3600);
+
+    if(signedError)continue;
+    (grouped[receipt.cost_id]??=[]).push({
+      ...receipt,
+      url:signed.signedUrl
+    });
+  }
+
+  return grouped;
+}
+
+function renderCostReceipts(costId){
+  const receipts=costReceiptCache[costId]||[];
+  if(!receipts.length)return '';
+
+  return `<div class="cost-receipts">${receipts.map(receipt=>{
+    const isImage=String(receipt.mime_type||'').startsWith('image/');
+    if(isImage){
+      return `<div class="cost-receipt-item">
+        <img src="${esc(receipt.url)}" alt="Bonnetje" onclick="openLightbox(${JSON.stringify(receipt.url)})">
+        <button onclick="deleteCostReceipt('${receipt.id}','${esc(receipt.storage_path)}')">×</button>
+        <small>🧾 Bekijk bon</small>
+      </div>`;
+    }
+
+    return `<div class="cost-receipt-item cost-receipt-pdf">
+      <a href="${esc(receipt.url)}" target="_blank" rel="noopener">🧾 PDF-bon openen</a>
+      <button onclick="deleteCostReceipt('${receipt.id}','${esc(receipt.storage_path)}')">×</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+async function deleteCostReceipt(id,path){
+  if(!confirm('Dit bonnetje verwijderen?'))return;
+
+  const {error:storageError}=await sb.storage
+    .from(COST_RECEIPT_BUCKET)
+    .remove([path]);
+
+  if(storageError)return alert('Bestand verwijderen mislukt: '+storageError.message);
+
+  const {error}=await sb.from('cost_receipts').delete().eq('id',id);
+  if(error)return alert('Bonnetje verwijderen mislukt: '+error.message);
+
+  await loadCosts();
+}
+
+async function deleteCost(id){
+  if(!confirm('Deze kostenpost en alle bijbehorende bonnetjes verwijderen?'))return;
+
+  const receipts=costReceiptCache[id]||[];
+  const paths=receipts.map(receipt=>receipt.storage_path).filter(Boolean);
+
+  if(paths.length){
+    const {error:storageError}=await sb.storage
+      .from(COST_RECEIPT_BUCKET)
+      .remove(paths);
+    if(storageError)console.warn('Niet alle bonnetjes konden uit opslag worden verwijderd:',storageError);
+  }
+
+  const {error:receiptError}=await sb.from('cost_receipts').delete().eq('cost_id',id);
+  if(receiptError)return alert('Bonnetjes verwijderen mislukt: '+receiptError.message);
+
+  const {error}=await sb.from('costs').delete().eq('id',id);
+  if(error)return alert(error.message);
+
+  await loadCosts();
+}
+
+async function loadCosts(){
+  const [{data,error},receipts]=await Promise.all([
+    sb.from('costs').select('*').eq('boat_id',currentBoat.id).order('expense_date',{ascending:false}),
+    loadCostReceipts()
+  ]);
+
+  if(error)return alert(error.message);
+
+  costCache=data||[];
+  costReceiptCache=receipts||{};
+  $('dCosts').textContent='€'+costCache.reduce((sum,cost)=>sum+Number(cost.amount||0),0).toFixed(0);
+
+  $('costList').innerHTML=costCache.length
+    ?costCache.map(cost=>`<div class="item cost-item">
+      <h3>€${Number(cost.amount).toFixed(2)} · ${esc(cost.category)}</h3>
+      <div class="small">${esc(cost.expense_date)} · ${esc(cost.description||'')}</div>
+      ${renderCostReceipts(cost.id)}
+      <button class="danger" onclick="deleteCost('${cost.id}')">Verwijder kostenpost</button>
+    </div>`).join('')
+    :'<span class="small">Nog geen kosten.</span>';
+}
+
+function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'cost_receipts',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},loadSettings).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
 
 function resetPoiFilters(){$('poiSearch').value='';$('poiFilterCategory').value='';$('poiFilterRating').value='0';$('poiFilterExtra').value='';renderPoiList()}
 function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
@@ -574,7 +860,7 @@ function renderPoiMarkers(){
         ${poi.review?`<p>${esc(poi.review)}</p>`:''}
         ${favorite?'<p><b>Favoriet</b></p>':''}
         <div class="map-popup-actions">
-          <button onclick="openPoiRouteInWaterkaarten('${poi.id}')">🧭 Route in Waterkaarten</button>
+          <button onclick="openPoiRouteInWaterkaarten('${poi.id}')">🧭 Kopieer bestemming en open Waterkaarten</button>
           <button class="secondary" onclick="showPoiDetails('${poi.id}')">Meer info</button>
           <button class="secondary location-correction-button" onclick="openPoiLocationCorrection('${poi.id}')">📍 Locatie corrigeren</button>
         </div>
@@ -663,7 +949,7 @@ function showPoiDetails(id){
     ${poi.review?`<div class="poi-detail-review">${esc(poi.review)}</div>`:''}
     ${photoHtml}
     <div class="poi-detail-actions">
-      <button onclick="openPoiRouteInWaterkaarten('${poi.id}')">🧭 Route in Waterkaarten</button>
+      <button onclick="openPoiRouteInWaterkaarten('${poi.id}')">🧭 Kopieer bestemming en open Waterkaarten</button>
       <button class="secondary" onclick="openPoiLocationCorrection('${poi.id}')">📍 Locatie corrigeren</button>
       <button class="secondary" onclick='closePoiDetails();editPoi(
         ${JSON.stringify(poi.id)},
@@ -1699,7 +1985,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.3';
+const APP_VERSION='5.1.4';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
