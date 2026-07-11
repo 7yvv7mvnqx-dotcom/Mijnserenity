@@ -219,7 +219,39 @@ function clearPoiForm(){
 }
 function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
-async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
+async function signIn(){
+  const email=$('email').value.trim();
+  const password=$('password').value;
+
+  if(!email||!password){
+    setMsg('Vul e-mailadres en wachtwoord in.');
+    return;
+  }
+
+  setMsg('Bezig met inloggen…');
+
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({email,password});
+
+    if(error){
+      setMsg(error.message==='Invalid login credentials'
+        ?'E-mailadres of wachtwoord is niet juist.'
+        :error.message
+      );
+      return;
+    }
+
+    if(data?.session){
+      await initialise(data.session);
+      setMsg('');
+    }else{
+      setMsg('Inloggen is niet voltooid. Probeer opnieuw.');
+    }
+  }catch(error){
+    console.error('Inloggen mislukt:',error);
+    setMsg('Inloggen mislukt. Controleer de internetverbinding.');
+  }
+}
 async function signOut(){await sb.auth.signOut()}
 async function initialise(session){
   currentUser=session?.user||null;
@@ -262,6 +294,10 @@ async function initialise(session){
 
   setTimeout(()=>captainNavigate('dashboard'),0);
 }
+sb.auth.onAuthStateChange(async (_event,session)=>{
+  await initialise(session);
+});
+
 function editPoi(id,name,category,place,address,rating,review,isFavorite,latitude,longitude){
   $('poiId').value=id;$('poiName').value=name;$('poiCategory').value=category||'Haven';$('poiPlace').value=place||'';$('poiAddress').value=address||'';$('poiRating').value=rating||'';$('poiReview').value=review||'';$('poiFavorite').checked=!!isFavorite;$('poiLatitude').value=latitude??'';$('poiLongitude').value=longitude??'';
   $('poiFormTitle').textContent='POI bewerken';$('poiFormWrap').classList.remove('hidden');document.querySelector('[onclick*=\"poiFormWrap\"]')?.classList.add('open');$('poiSaveButton').textContent='Wijzigingen opslaan';$('poiCancelButton').classList.remove('hidden');
@@ -2204,7 +2240,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.9';
+const APP_VERSION='5.1.10';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
