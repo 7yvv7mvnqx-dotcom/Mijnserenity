@@ -975,3 +975,20 @@ header{
   color:#ffe4e4;
 }
 .receipt-ocr-note{margin:10px 0 0}
+
+/* Cloud 5.1.13 — financieel filter per dag, week, maand en jaar */
+.finance-filter-summary{
+  margin:-4px 0 16px;
+  color:#b9ced8;
+  font-size:13px;
+  line-height:1.4;
+}
+.finance-period-input{
+  margin:12px 0;
+}
+#financeFilterWrap{
+  padding-top:12px;
+}
+#financeFilterWrap > .secondary{
+  margin-top:8px;
+}

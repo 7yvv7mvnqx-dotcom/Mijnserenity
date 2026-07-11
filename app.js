@@ -1019,56 +1019,218 @@ async function saveSettings(){
   previewFuelCalculation();
 }
 function previewFuelCalculation(){if(!$('fuelPreview'))return;const h=Number($('tripHours').value)||0,l=Number($('tripFuelLiters').value)||(h&&settingsCache?.fuel_per_hour?h*Number(settingsCache.fuel_per_hour):0),c=Number($('tripFuelCost').value)||(l&&settingsCache?.fuel_price?l*Number(settingsCache.fuel_price):0);$('fuelPreview').textContent=l?`Geschat: ${l.toFixed(1)} liter · €${c.toFixed(2)}`:'Vul vaartijd in en stel verbruik/prijs in.'}
-function renderFinance(){
-  if(!$('fTotal'))return;
-  const currentYear=String(new Date().getFullYear());
-  const years=[...new Set([
-    ...costCache.map(c=>String(c.expense_date||'').slice(0,4)),
-    ...tripCache.map(t=>String(t.trip_date||'').slice(0,4))
-  ].filter(Boolean))].sort().reverse();
+function currentIsoWeekValue(date=new Date()){
+  const utc=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+  const day=utc.getUTCDay()||7;
+  utc.setUTCDate(utc.getUTCDate()+4-day);
+  const yearStart=new Date(Date.UTC(utc.getUTCFullYear(),0,1));
+  const week=Math.ceil((((utc-yearStart)/86400000)+1)/7);
+  return `${utc.getUTCFullYear()}-W${String(week).padStart(2,'0')}`;
+}
 
-  const yearSelect=$('financeYear');
-  const currentValue=yearSelect?.value||'';
-  if(yearSelect){
-    yearSelect.innerHTML='<option value="">Alle jaren</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
-    if(years.includes(currentValue))yearSelect.value=currentValue;
+function updateFinanceFilterInputs(){
+  const type=$('financePeriodType')?.value||'all';
+  const today=localDateISO(new Date());
+
+  ['day','week','month','year'].forEach(mode=>{
+    $(`finance${mode.charAt(0).toUpperCase()+mode.slice(1)}Wrap`)
+      ?.classList.toggle('hidden',type!==mode);
+  });
+
+  if(type==='day'&&!$('financeDay').value){
+    $('financeDay').value=today;
+  }
+  if(type==='week'&&!$('financeWeek').value){
+    $('financeWeek').value=currentIsoWeekValue();
+  }
+  if(type==='month'&&!$('financeMonth').value){
+    $('financeMonth').value=today.slice(0,7);
+  }
+  if(type==='year'&&!$('financeYear').value){
+    $('financeYear').value=String(new Date().getFullYear());
+  }
+}
+
+function financeDateMatches(dateValue,type){
+  const date=String(dateValue||'');
+  if(!date)return false;
+
+  if(type==='day'){
+    const selected=$('financeDay')?.value||'';
+    return !selected||date===selected;
   }
 
-  const selectedYear=yearSelect?.value||'';
+  if(type==='week'){
+    const selected=$('financeWeek')?.value||'';
+    if(!selected)return true;
+    const [start,end]=getIsoWeekRange(selected);
+    return date>=start&&date<=end;
+  }
+
+  if(type==='month'){
+    const selected=$('financeMonth')?.value||'';
+    return !selected||date.startsWith(selected);
+  }
+
+  if(type==='year'){
+    const selected=$('financeYear')?.value||'';
+    return !selected||date.startsWith(selected);
+  }
+
+  return true;
+}
+
+function financePeriodLabel(type){
+  if(type==='day'){
+    const value=$('financeDay')?.value||'';
+    return value
+      ?new Date(`${value}T12:00:00`).toLocaleDateString('nl-NL',{
+          weekday:'long',
+          day:'numeric',
+          month:'long',
+          year:'numeric'
+        })
+      :'Alle dagen';
+  }
+
+  if(type==='week'){
+    const value=$('financeWeek')?.value||'';
+    return value?`Week ${value.split('-W')[1]} van ${value.split('-W')[0]}`:'Alle weken';
+  }
+
+  if(type==='month'){
+    const value=$('financeMonth')?.value||'';
+    if(!value)return 'Alle maanden';
+    const [year,month]=value.split('-').map(Number);
+    return new Date(year,month-1,1).toLocaleDateString('nl-NL',{
+      month:'long',
+      year:'numeric'
+    });
+  }
+
+  if(type==='year'){
+    return $('financeYear')?.value||'Alle jaren';
+  }
+
+  return 'Alle perioden';
+}
+
+function populateFinanceYears(){
+  const years=[...new Set([
+    ...costCache.map(cost=>String(cost.expense_date||'').slice(0,4)),
+    ...tripCache.map(trip=>String(trip.trip_date||'').slice(0,4)),
+    String(new Date().getFullYear())
+  ].filter(year=>/^\d{4}$/.test(year)))].sort().reverse();
+
+  const select=$('financeYear');
+  if(!select)return;
+
+  const previous=select.value;
+  select.innerHTML=years
+    .map(year=>`<option value="${year}">${year}</option>`)
+    .join('');
+
+  if(years.includes(previous)){
+    select.value=previous;
+  }else{
+    select.value=String(new Date().getFullYear());
+  }
+}
+
+function renderFinance(){
+  if(!$('fTotal'))return;
+
+  populateFinanceYears();
+  updateFinanceFilterInputs();
+
+  const periodType=$('financePeriodType')?.value||'all';
   const selectedCategory=$('financeCategory')?.value||'';
 
-  const regular=costCache.filter(c=>{
-    const yearOk=!selectedYear||String(c.expense_date||'').startsWith(selectedYear);
-    const catOk=!selectedCategory||c.category===selectedCategory;
-    return yearOk&&catOk;
+  const regular=costCache.filter(cost=>{
+    const periodOk=financeDateMatches(cost.expense_date,periodType);
+    const categoryOk=!selectedCategory||cost.category===selectedCategory;
+    return periodOk&&categoryOk;
   });
 
-  const fuelTrips=tripCache.filter(t=>{
-    const yearOk=!selectedYear||String(t.trip_date||'').startsWith(selectedYear);
-    const catOk=!selectedCategory||selectedCategory==='Diesel';
-    return yearOk&&catOk&&Number(t.fuel_cost||0)>0;
-  });
+  const matchingTrips=tripCache.filter(trip=>
+    financeDateMatches(trip.trip_date,periodType)
+  );
 
-  const filteredTotal=regular.reduce((s,c)=>s+Number(c.amount||0),0)+fuelTrips.reduce((s,t)=>s+Number(t.fuel_cost||0),0);
-  const allFuel=tripCache.reduce((s,t)=>s+Number(t.fuel_cost||0),0);
-  const yearTotal=costCache.filter(c=>String(c.expense_date||'').startsWith(currentYear)).reduce((s,c)=>s+Number(c.amount||0),0)+tripCache.filter(t=>String(t.trip_date||'').startsWith(currentYear)).reduce((s,t)=>s+Number(t.fuel_cost||0),0);
-  const totalHours=tripCache.reduce((s,t)=>s+Number(t.duration_hours||0),0);
+  const fuelTrips=matchingTrips.filter(trip=>
+    (!selectedCategory||selectedCategory==='Diesel')&&
+    Number(trip.fuel_cost||0)>0
+  );
 
-  $('fTotal').textContent='€'+filteredTotal.toFixed(0);
-  $('fYear').textContent='€'+yearTotal.toFixed(0);
-  $('fFuel').textContent='€'+allFuel.toFixed(0);
-  $('fPerHour').textContent=totalHours?'€'+((costCache.reduce((s,c)=>s+Number(c.amount||0),0)+allFuel)/totalHours).toFixed(2):'€0';
+  const regularTotal=regular.reduce(
+    (sum,cost)=>sum+Number(cost.amount||0),
+    0
+  );
+  const filteredFuel=fuelTrips.reduce(
+    (sum,trip)=>sum+Number(trip.fuel_cost||0),
+    0
+  );
+  const filteredTotal=regularTotal+filteredFuel;
+  const filteredHours=matchingTrips.reduce(
+    (sum,trip)=>sum+Number(trip.duration_hours||0),
+    0
+  );
+  const itemCount=regular.length+fuelTrips.length;
+
+  $('fTotal').textContent='€'+filteredTotal.toFixed(2);
+  $('fCount').textContent=String(itemCount);
+  $('fFuel').textContent='€'+filteredFuel.toFixed(2);
+  $('fPerHour').textContent=filteredHours
+    ?'€'+(filteredTotal/filteredHours).toFixed(2)
+    :'€0';
+
+  const categoryLabel=selectedCategory||'Alle categorieën';
+  $('financeFilterSummary').textContent=
+    `${financePeriodLabel(periodType)} · ${categoryLabel} · ${itemCount} ${itemCount===1?'post':'posten'}`;
 
   const groups={};
-  regular.forEach(c=>groups[c.category||'Overig']=(groups[c.category||'Overig']||0)+Number(c.amount||0));
-  if(fuelTrips.length)groups['Diesel']=(groups['Diesel']||0)+fuelTrips.reduce((s,t)=>s+Number(t.fuel_cost||0),0);
+  regular.forEach(cost=>{
+    const category=cost.category||'Overig';
+    groups[category]=(groups[category]||0)+Number(cost.amount||0);
+  });
+  if(fuelTrips.length){
+    groups.Diesel=(groups.Diesel||0)+filteredFuel;
+  }
+
   const max=Math.max(1,...Object.values(groups));
-  $('financeBreakdown').innerHTML=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="finance-row"><div><b>${esc(k)}</b><div class="finance-bar"><span style="width:${Math.round(v/max*100)}%"></span></div></div><div>€${v.toFixed(2)}</div></div>`).join('')||'<span class="small">Geen kosten in dit filter.</span>';
+  $('financeBreakdown').innerHTML=Object.entries(groups)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([category,value])=>`
+      <div class="finance-row">
+        <div>
+          <b>${esc(category)}</b>
+          <div class="finance-bar">
+            <span style="width:${Math.round(value/max*100)}%"></span>
+          </div>
+        </div>
+        <div>€${value.toFixed(2)}</div>
+      </div>
+    `).join('')||'<span class="small">Geen kosten binnen dit filter.</span>';
 
   const months={};
-  regular.forEach(c=>{const m=String(c.expense_date||'').slice(0,7);if(m)months[m]=(months[m]||0)+Number(c.amount||0)});
-  fuelTrips.forEach(t=>{const m=String(t.trip_date||'').slice(0,7);if(m)months[m]=(months[m]||0)+Number(t.fuel_cost||0)});
-  $('financeMonths').innerHTML=Object.entries(months).sort().map(([m,v])=>`<div class="finance-row"><div>${m}</div><div>€${v.toFixed(2)}</div></div>`).join('')||'<span class="small">Geen maandgegevens.</span>';
+  regular.forEach(cost=>{
+    const month=String(cost.expense_date||'').slice(0,7);
+    if(month)months[month]=(months[month]||0)+Number(cost.amount||0);
+  });
+  fuelTrips.forEach(trip=>{
+    const month=String(trip.trip_date||'').slice(0,7);
+    if(month)months[month]=(months[month]||0)+Number(trip.fuel_cost||0);
+  });
+
+  $('financeMonths').innerHTML=Object.entries(months)
+    .sort((a,b)=>b[0].localeCompare(a[0]))
+    .map(([month,value])=>{
+      const [year,monthNumber]=month.split('-').map(Number);
+      const label=new Date(year,monthNumber-1,1).toLocaleDateString('nl-NL',{
+        month:'long',
+        year:'numeric'
+      });
+      return `<div class="finance-row"><div>${esc(label)}</div><div>€${value.toFixed(2)}</div></div>`;
+    }).join('')||'<span class="small">Geen maandgegevens binnen dit filter.</span>';
 }
 function parsePoiCoordinateInput(value,maximum){
   if(value===null||value===undefined||value==='')return null;
@@ -2460,7 +2622,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.12';
+const APP_VERSION='5.1.13';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -3009,8 +3171,13 @@ function clearTripFilters(){
   updateTripFilterInput();
 }
 function resetFinanceFilters(){
-  $('financeYear').value='';
+  $('financePeriodType').value='all';
   $('financeCategory').value='';
+  $('financeDay').value='';
+  $('financeWeek').value='';
+  $('financeMonth').value='';
+  populateFinanceYears();
+  updateFinanceFilterInputs();
   renderFinance();
 }
 

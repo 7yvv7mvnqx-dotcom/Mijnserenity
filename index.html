@@ -126,7 +126,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.12</div>
+          <div class="label">Sync · v5.1.13</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -391,7 +391,94 @@
     <div class="card"><h2>Gedeelde kosten</h2><div id="costList"></div></div>
   </section>
 
-<section id="finance" class="hidden"><div class="card hero"><h2>Financieel overzicht</h2><div class="grid"><div class="stat"><div class="label">Totale kosten</div><div class="value" id="fTotal">€0</div></div><div class="stat"><div class="label">Dit jaar</div><div class="value" id="fYear">€0</div></div><div class="stat"><div class="label">Brandstof</div><div class="value" id="fFuel">€0</div></div><div class="stat"><div class="label">Per vaaruur</div><div class="value" id="fPerHour">€0</div></div></div></div><div class="card"><h2>Filter</h2><div class="row"><div><label>Jaar</label><select id="financeYear"></select></div><div><label>Categorie</label><select id="financeCategory"><option value="">Alle categorieën</option><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Overig</option></select></div></div></div><div class="card"><h2>Kosten per categorie</h2><div id="financeBreakdown"></div></div><div class="card"><h2>Kosten per maand</h2><div id="financeMonths"></div></div></section>
+<section id="finance" class="hidden">
+    <div class="card hero">
+      <h2>Financieel overzicht</h2>
+      <div id="financeFilterSummary" class="finance-filter-summary">Alle perioden · Alle categorieën</div>
+      <div class="grid">
+        <div class="stat">
+          <div class="label">Totaal filter</div>
+          <div class="value" id="fTotal">€0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Aantal posten</div>
+          <div class="value" id="fCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Brandstof filter</div>
+          <div class="value" id="fFuel">€0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Per vaaruur filter</div>
+          <div class="value" id="fPerHour">€0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card collapsible-card">
+      <button class="section-toggle" type="button" onclick="toggleSection('financeFilterWrap',this)">
+        <span>Financieel filter</span><span class="chevron">⌄</span>
+      </button>
+      <div id="financeFilterWrap" class="collapsible-content hidden">
+        <div class="row">
+          <div>
+            <label>Periode</label>
+            <select id="financePeriodType" onchange="updateFinanceFilterInputs();renderFinance()">
+              <option value="all">Alle perioden</option>
+              <option value="day">Per dag</option>
+              <option value="week">Per week</option>
+              <option value="month">Per maand</option>
+              <option value="year">Per jaar</option>
+            </select>
+          </div>
+          <div>
+            <label>Categorie</label>
+            <select id="financeCategory" onchange="renderFinance()">
+              <option value="">Alle categorieën</option>
+              <option>Havengeld</option>
+              <option>Diesel</option>
+              <option>Onderhoud</option>
+              <option>Onderdelen</option>
+              <option>Winterstalling</option>
+              <option>Overig</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="financeDayWrap" class="finance-period-input hidden">
+          <label>Dag</label>
+          <input id="financeDay" type="date" onchange="renderFinance()">
+        </div>
+
+        <div id="financeWeekWrap" class="finance-period-input hidden">
+          <label>Week</label>
+          <input id="financeWeek" type="week" onchange="renderFinance()">
+        </div>
+
+        <div id="financeMonthWrap" class="finance-period-input hidden">
+          <label>Maand</label>
+          <input id="financeMonth" type="month" onchange="renderFinance()">
+        </div>
+
+        <div id="financeYearWrap" class="finance-period-input hidden">
+          <label>Jaar</label>
+          <select id="financeYear" onchange="renderFinance()"></select>
+        </div>
+
+        <button type="button" class="secondary" onclick="resetFinanceFilters()">Filter wissen</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Kosten per categorie</h2>
+      <div id="financeBreakdown"></div>
+    </div>
+
+    <div class="card">
+      <h2>Kosten per maand binnen filter</h2>
+      <div id="financeMonths"></div>
+    </div>
+  </section>
 <section id="settings" class="hidden"><div class="card"><h2>Bootinstellingen</h2>
       <label>Foto van Serenity voor het dashboard</label>
       <input id="settingBoatPhoto" type="file" accept="image/*">
