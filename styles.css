@@ -1925,3 +1925,195 @@ header{
 .account-session-actions button{width:100%;min-height:48px}
 #accountMsg.account-error{border-color:rgba(226,83,96,.38);background:rgba(226,83,96,.14);color:#ffe2e5}
 @media(max-width:520px){.account-info-grid,.account-session-actions{grid-template-columns:1fr}}
+
+/* Cloud 5.1.37 — beheerderstoestemming voor nieuwe gebruikers */
+.approval-card{
+  max-width:620px;
+  margin-inline:auto;
+  text-align:center;
+}
+.approval-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:72px;
+  height:72px;
+  margin:0 auto 14px;
+  border:1px solid rgba(105,211,242,.25);
+  border-radius:22px;
+  background:rgba(54,170,206,.12);
+  font-size:34px;
+}
+.approval-card h2{
+  margin:5px 0 8px;
+}
+.approval-card>p{
+  color:#aec6d0;
+  line-height:1.55;
+}
+.approval-email{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin:16px 0 12px;
+  padding:12px;
+  border:1px solid rgba(105,211,242,.16);
+  border-radius:13px;
+  background:rgba(255,255,255,.04);
+}
+.approval-email span{
+  color:#8eabb7;
+  font-size:11px;
+}
+.approval-email strong{
+  overflow:hidden;
+  color:#effbff;
+  text-overflow:ellipsis;
+}
+.approval-actions{
+  justify-content:center;
+  margin-top:14px;
+}
+.admin-access-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.admin-access-head h3{
+  margin-bottom:3px;
+}
+.admin-access-head button{
+  width:auto;
+  white-space:nowrap;
+}
+.admin-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:12px 0 9px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(238,171,59,.10);
+  color:#ffd890;
+}
+.admin-summary strong{
+  font-size:22px;
+}
+.admin-account-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.admin-account-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-width:0;
+  padding:11px;
+  gap:10px;
+  border:1px solid rgba(115,205,234,.14);
+  border-radius:12px;
+  background:rgba(255,255,255,.035);
+}
+.admin-account-row.pending{
+  border-color:rgba(235,173,62,.24);
+  background:rgba(235,173,62,.07);
+}
+.admin-account-copy{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:4px;
+}
+.admin-account-copy b{
+  overflow:hidden;
+  color:#eefbff;
+  text-overflow:ellipsis;
+}
+.admin-account-copy small{
+  color:#91acb7;
+}
+.admin-account-actions{
+  display:flex;
+  flex-shrink:0;
+  gap:7px;
+}
+.admin-account-actions button{
+  width:auto;
+  min-height:36px;
+  padding:7px 10px;
+  font-size:11px;
+}
+.admin-status-pill{
+  display:inline-flex;
+  padding:3px 7px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:800;
+}
+.admin-status-pill.approved{
+  background:rgba(68,199,133,.15);
+  color:#bdf0d2;
+}
+.admin-status-pill.rejected{
+  background:rgba(223,84,96,.15);
+  color:#ffc7cd;
+}
+.admin-status-pill.pending{
+  background:rgba(235,173,62,.15);
+  color:#ffdd9e;
+}
+.admin-approved-details{
+  margin-top:12px;
+}
+.admin-approved-details>summary{
+  padding:9px 0;
+  color:#aad0de;
+  font-size:12px;
+  font-weight:800;
+}
+.admin-approval-dashboard{
+  display:grid;
+  grid-template-columns:46px minmax(0,1fr) 18px;
+  align-items:center;
+  width:100%;
+  margin-bottom:14px;
+  padding:13px;
+  gap:11px;
+  border:1px solid rgba(240,175,55,.28);
+  background:linear-gradient(135deg,rgba(98,71,21,.76),rgba(45,40,25,.92));
+  color:#fff;
+  text-align:left;
+}
+.admin-approval-dashboard-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:46px;
+  height:46px;
+  border-radius:14px;
+  background:rgba(255,201,87,.13);
+  font-size:22px;
+}
+.admin-approval-dashboard>span:nth-child(2){
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:4px;
+}
+.admin-approval-dashboard small{
+  color:#e6ca92;
+}
+@media(max-width:600px){
+  .admin-account-row{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .admin-account-actions{
+    width:100%;
+  }
+  .admin-account-actions button{
+    flex:1;
+  }
+}

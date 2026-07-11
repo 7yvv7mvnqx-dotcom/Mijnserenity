@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]};
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]};
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -904,7 +904,35 @@ function resetPoiEntryForm(){
 function cancelPoiEdit(){
   clearPoiForm(true);
 }
-async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
+async function signUp(){
+  const email=String($('email')?.value||'').trim();
+  const password=$('password')?.value||'';
+
+  if(!email||password.length<10){
+    return setMsg('Vul een geldig e-mailadres en minimaal 10 tekens als wachtwoord in.');
+  }
+
+  if(passwordStrengthScore(password)<2){
+    return setMsg('Gebruik een sterker wachtwoord met cijfers en verschillende tekens.');
+  }
+
+  try{
+    setMsg('Account aanvragen…');
+
+    const {data,error}=await sb.auth.signUp({email,password});
+    if(error)throw error;
+
+    setMsg(
+      data.session
+        ?'Account aangevraagd. Michel moet eerst toestemming geven.'
+        :'Account aangevraagd. Bevestig je e-mailadres; daarna moet Michel toestemming geven.'
+    );
+  }catch(error){
+    console.error('Account aanvragen mislukt:',error);
+    setMsg(friendlyAuthError(error));
+  }
+}
+
 
 function setAccountMsg(message,isError=false){
   const element=$('accountMsg');
@@ -1000,6 +1028,236 @@ function formatAccountDate(value){
   });
 }
 
+
+function setApprovalView(status='pending'){
+  const pending=status==='pending';
+  const rejected=status==='rejected';
+
+  $('approvalIcon').textContent=pending?'⏳':rejected?'⛔':'🔐';
+  $('approvalTitle').textContent=pending
+    ?'Wachten op toestemming'
+    :rejected
+      ?'Toegang niet goedgekeurd'
+      :'Account geblokkeerd';
+
+  $('approvalText').textContent=pending
+    ?'Je account is aangemaakt. Michel moet eerst toestemming geven voordat MijnSerenity opent.'
+    :rejected
+      ?'De beheerder heeft dit account niet goedgekeurd. Neem contact op met Michel.'
+      :'Dit account heeft momenteel geen toegang tot MijnSerenity.';
+
+  $('approvalEmail').textContent=currentUser?.email||'–';
+  $('approvalStatusMsg').textContent=pending
+    ?'Tik later op Status vernieuwen nadat Michel het account heeft goedgekeurd.'
+    :'Je kunt MijnSerenity niet openen met dit account.';
+}
+
+async function loadMyAccountAccess(){
+  if(!currentUser)return null;
+
+  const {data,error}=await sb
+    .from('account_access')
+    .select('user_id,email,status,is_admin,requested_at,reviewed_at')
+    .eq('user_id',currentUser.id)
+    .maybeSingle();
+
+  if(error){
+    if(
+      error.code==='42P01'||
+      error.code==='PGRST205'||
+      String(error.message||'').includes('account_access')
+    ){
+      console.warn('Accountgoedkeuring is nog niet via SQL geactiveerd.');
+      return {
+        user_id:currentUser.id,
+        email:currentUser.email||'',
+        status:'approved',
+        is_admin:String(currentUser.email||'').toLowerCase()==='michelvissia@gmail.com',
+        setup_missing:true
+      };
+    }
+    throw error;
+  }
+
+  if(data)return data;
+
+  const {data:created,error:createError}=await sb.rpc('ensure_my_account_access');
+  if(createError)throw createError;
+
+  return created||{
+    user_id:currentUser.id,
+    email:currentUser.email||'',
+    status:'pending',
+    is_admin:false
+  };
+}
+
+async function refreshAccountApproval(){
+  const button=event?.currentTarget;
+  if(button)button.disabled=true;
+
+  try{
+    accountAccess=await loadMyAccountAccess();
+
+    if(accountAccess?.status==='approved'){
+      $('approvalStatusMsg').textContent='Toegang goedgekeurd ✅ MijnSerenity wordt geopend…';
+      await initialise({user:currentUser});
+      return;
+    }
+
+    setApprovalView(accountAccess?.status||'pending');
+  }catch(error){
+    console.error('Goedkeuringsstatus laden mislukt:',error);
+    $('approvalStatusMsg').textContent='Status kon niet worden geladen. Probeer het opnieuw.';
+  }finally{
+    if(button)button.disabled=false;
+  }
+}
+
+function isAppAdmin(){
+  return accountAccess?.status==='approved'&&accountAccess?.is_admin===true;
+}
+
+function adminStatusLabel(status){
+  if(status==='approved')return 'Goedgekeurd';
+  if(status==='rejected')return 'Geweigerd';
+  return 'Wacht op toestemming';
+}
+
+function adminStatusClass(status){
+  if(status==='approved')return 'approved';
+  if(status==='rejected')return 'rejected';
+  return 'pending';
+}
+
+function renderAdminAccounts(accounts=[]){
+  const pending=accounts.filter(account=>account.status==='pending');
+  const others=accounts.filter(account=>account.status!=='pending');
+
+  $('pendingAccountCount').textContent=String(pending.length);
+  $('dashboardPendingAccountCount').textContent=String(pending.length);
+  $('adminApprovalDashboardCard')?.classList.toggle('hidden',!isAppAdmin()||pending.length===0);
+
+  $('pendingAccountsList').innerHTML=pending.length
+    ?pending.map(account=>`
+      <div class="admin-account-row pending">
+        <div class="admin-account-copy">
+          <b>${esc(account.email||'Onbekend account')}</b>
+          <small>Aangevraagd ${formatAccountDate(account.requested_at)}</small>
+        </div>
+        <div class="admin-account-actions">
+          <button type="button"
+            onclick='setAccountApproval(${JSON.stringify(account.user_id)},"approved")'>
+            Goedkeuren
+          </button>
+          <button type="button" class="small-danger"
+            onclick='setAccountApproval(${JSON.stringify(account.user_id)},"rejected")'>
+            Weigeren
+          </button>
+        </div>
+      </div>
+    `).join('')
+    :'<span class="small">Geen wachtende accounts.</span>';
+
+  $('allAccountsList').innerHTML=others.length
+    ?others.map(account=>{
+      const own=account.user_id===currentUser?.id;
+      const admin=account.is_admin===true;
+
+      return `
+        <div class="admin-account-row ${adminStatusClass(account.status)}">
+          <div class="admin-account-copy">
+            <b>${esc(account.email||'Onbekend account')}</b>
+            <small>
+              <span class="admin-status-pill ${adminStatusClass(account.status)}">
+                ${adminStatusLabel(account.status)}
+              </span>
+              ${admin?' · Beheerder':''}
+            </small>
+          </div>
+          ${own||admin
+            ?'<span class="small">Beschermd account</span>'
+            :`<div class="admin-account-actions">
+                ${account.status==='approved'
+                  ?`<button type="button" class="small-danger"
+                      onclick='setAccountApproval(${JSON.stringify(account.user_id)},"rejected")'>
+                      Toegang intrekken
+                    </button>`
+                  :`<button type="button"
+                      onclick='setAccountApproval(${JSON.stringify(account.user_id)},"approved")'>
+                      Alsnog goedkeuren
+                    </button>`}
+              </div>`
+          }
+        </div>
+      `;
+    }).join('')
+    :'<span class="small">Nog geen andere accounts.</span>';
+}
+
+async function loadAdminAccounts(){
+  const section=$('adminAccessSection');
+
+  if(!isAppAdmin()){
+    section?.classList.add('hidden');
+    $('adminApprovalDashboardCard')?.classList.add('hidden');
+    return;
+  }
+
+  section?.classList.remove('hidden');
+
+  try{
+    const {data,error}=await sb
+      .from('account_access')
+      .select('user_id,email,status,is_admin,requested_at,reviewed_at')
+      .order('requested_at',{ascending:false});
+
+    if(error)throw error;
+    renderAdminAccounts(data||[]);
+  }catch(error){
+    console.error('Gebruikersbeheer laden mislukt:',error);
+    $('pendingAccountsList').innerHTML=
+      `<span class="small">Gebruikers konden niet worden geladen: ${esc(error?.message||'onbekende fout')}</span>`;
+  }
+}
+
+async function setAccountApproval(userId,status){
+  const action=status==='approved'?'goedkeuren':'weigeren';
+
+  if(!confirm(`Dit account ${action}?`))return;
+
+  try{
+    setAccountMsg(`Account ${action}…`);
+
+    const {error}=await sb.rpc('admin_set_account_status',{
+      target_user:userId,
+      new_status:status
+    });
+
+    if(error)throw error;
+
+    setAccountMsg(
+      status==='approved'
+        ?'Account goedgekeurd ✅'
+        :'Toegang ingetrokken of geweigerd.'
+    );
+    await loadAdminAccounts();
+  }catch(error){
+    console.error('Accountstatus wijzigen mislukt:',error);
+    setAccountMsg(error?.message||'Accountstatus wijzigen mislukt.',true);
+  }
+}
+
+function openAdminAccountManagement(){
+  captainNavigate('settings');
+  setPanelCollapsed('accountPanelWrap','accountPanelToggle',false);
+  setTimeout(()=>{
+    loadAccountManagement();
+    loadAdminAccounts();
+    $('adminAccessSection')?.scrollIntoView({behavior:'smooth',block:'start'});
+  },100);
+}
+
 async function signIn(){
   const email=String($('email')?.value||'').trim();
   const password=$('password')?.value||'';
@@ -1025,34 +1283,7 @@ async function signIn(){
   }
 }
 
-async function signUp(){
-  const email=String($('email')?.value||'').trim();
-  const password=$('password')?.value||'';
 
-  if(!email||password.length<10){
-    return setMsg('Vul een geldig e-mailadres en minimaal 10 tekens als wachtwoord in.');
-  }
-
-  if(passwordStrengthScore(password)<2){
-    return setMsg('Gebruik een sterker wachtwoord met cijfers en verschillende tekens.');
-  }
-
-  try{
-    setMsg('Account aanmaken…');
-
-    const {data,error}=await sb.auth.signUp({email,password});
-    if(error)throw error;
-
-    setMsg(
-      data.session
-        ?'Account gemaakt en ingelogd.'
-        :'Account gemaakt. Open de bevestigingsmail en log daarna in.'
-    );
-  }catch(error){
-    console.error('Account maken mislukt:',error);
-    setMsg(friendlyAuthError(error));
-  }
-}
 
 async function signOut(){
   await signOutCurrentDevice();
@@ -1093,6 +1324,12 @@ async function loadAccountManagement(){
       'warning',
       !currentUser.email_confirmed_at
     );
+
+    $('adminAccessSection')?.classList.toggle('hidden',!isAppAdmin());
+
+    if(isAppAdmin()){
+      await loadAdminAccounts();
+    }
 
     setAccountMsg('');
   }catch(error){
@@ -1241,7 +1478,82 @@ async function handleAuthStateChange(event,session){
   }
 }
 
-async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();resetPoiFilters(false);await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}$('tripCrew').value=$('tripCrew').value||'Michel, Desi';closeTripForm();collapseDefaultPanels();setTimeout(()=>captainNavigate('dashboard'),0)}
+async function initialise(session){
+  currentUser=session?.user||null;
+
+  $('authView').classList.add('hidden');
+  $('approvalView').classList.add('hidden');
+  $('appView').classList.add('hidden');
+
+  if(!currentUser){
+    accountAccess=null;
+    currentBoat=null;
+    currentRole=null;
+    $('authView').classList.remove('hidden');
+
+    if(liveChannel){
+      await sb.removeChannel(liveChannel);
+      liveChannel=null;
+    }
+    return;
+  }
+
+  try{
+    accountAccess=await loadMyAccountAccess();
+  }catch(error){
+    console.error('Accounttoegang laden mislukt:',error);
+    accountAccess={
+      status:'pending',
+      is_admin:false
+    };
+  }
+
+  if(accountAccess?.status!=='approved'){
+    currentBoat=null;
+    currentRole=null;
+    $('approvalView').classList.remove('hidden');
+    setApprovalView(accountAccess?.status||'pending');
+
+    if(liveChannel){
+      await sb.removeChannel(liveChannel);
+      liveChannel=null;
+    }
+    return;
+  }
+
+  $('appView').classList.remove('hidden');
+  $('welcome').textContent='Welkom '+getLoggedInFirstName();
+  resetPoiFilters(false);
+
+  await loadMembership();
+  renderBoat();
+
+  if(currentBoat){
+    await Promise.all([
+      loadSettings(),
+      loadPois(),
+      loadCosts(),
+      loadTrips()
+    ]);
+    subscribeRealtime();
+  }
+
+  $('tripCrew').value=$('tripCrew').value||'Michel, Desi';
+  closeTripForm();
+  collapseDefaultPanels();
+
+  if(accountAccess?.setup_missing&&isAppAdmin()){
+    console.warn('Voer SUPABASE_ACCOUNT_GOEDKEURING_5_1_37.sql uit om accountgoedkeuring te activeren.');
+  }
+
+  if(isAppAdmin()){
+    loadAdminAccounts().catch(error=>
+      console.error('Wachtende accounts laden mislukt:',error)
+    );
+  }
+
+  setTimeout(()=>captainNavigate('dashboard'),0);
+}
 sb.auth.onAuthStateChange((event,session)=>{
   setTimeout(()=>handleAuthStateChange(event,session),0);
 });
@@ -4187,6 +4499,7 @@ function captainNavigate(id, sourceButton=null){
   if(id==='dashboard'){
     if(typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
     if(typeof updateDashboardFinanceSummary==='function')updateDashboardFinanceSummary();
+    if(isAppAdmin())loadAdminAccounts();
   }
   if(id==='pois'){
     resetPoiFilters(false);
@@ -5204,7 +5517,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.36';
+const APP_VERSION='5.1.37';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

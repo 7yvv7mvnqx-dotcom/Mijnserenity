@@ -65,6 +65,29 @@
   </div>
 </section>
 
+
+<section id="approvalView" class="hidden">
+  <div class="card hero approval-card">
+    <div class="approval-icon" id="approvalIcon">⏳</div>
+    <span class="eyebrow">ACCOUNTTOEGANG</span>
+    <h2 id="approvalTitle">Wachten op toestemming</h2>
+    <p id="approvalText">
+      Je account is aangemaakt, maar Michel moet eerst toestemming geven.
+    </p>
+    <div class="approval-email">
+      <span>Aangemeld als</span>
+      <strong id="approvalEmail">–</strong>
+    </div>
+    <div id="approvalStatusMsg" class="status small">
+      Je kunt MijnSerenity nog niet openen.
+    </div>
+    <div class="actions approval-actions">
+      <button type="button" onclick="refreshAccountApproval()">Status vernieuwen</button>
+      <button type="button" class="secondary" onclick="signOutCurrentDevice()">Uitloggen</button>
+    </div>
+  </div>
+</section>
+
 <section id="appView" class="hidden">
   <div class="tabs">
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
@@ -155,6 +178,18 @@
       </button>
     </div>
 
+
+    <button id="adminApprovalDashboardCard" type="button"
+      class="card admin-approval-dashboard hidden"
+      onclick="openAdminAccountManagement()">
+      <span class="admin-approval-dashboard-icon">👤</span>
+      <span>
+        <b>Nieuwe gebruikers wachten</b>
+        <small><span id="dashboardPendingAccountCount">0</span> account(s) vragen toestemming</small>
+      </span>
+      <span class="tile-arrow">›</span>
+    </button>
+
     <div id="dashboardFinanceCard" class="card dashboard-finance-card">
       <button type="button" class="dashboard-finance-total" onclick="openFinanceFromDashboard()">
         <span>
@@ -188,7 +223,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.36</div>
+          <div class="label">Sync · v5.1.37</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -750,6 +785,31 @@
               Alle apparaten uitloggen
             </button>
           </div>
+        </div>
+
+
+        <div id="adminAccessSection" class="account-section admin-access-section hidden">
+          <div class="admin-access-head">
+            <div>
+              <h3>Nieuwe gebruikers goedkeuren</h3>
+              <p class="small">Alle nieuwe accounts blijven geblokkeerd totdat jij toestemming geeft.</p>
+            </div>
+            <button type="button" class="secondary" onclick="loadAdminAccounts()">↻ Vernieuwen</button>
+          </div>
+
+          <div class="admin-summary">
+            <span>Wachtend</span>
+            <strong id="pendingAccountCount">0</strong>
+          </div>
+
+          <div id="pendingAccountsList" class="admin-account-list">
+            <span class="small">Geen wachtende accounts.</span>
+          </div>
+
+          <details class="admin-approved-details">
+            <summary>Goedgekeurde en geweigerde accounts</summary>
+            <div id="allAccountsList" class="admin-account-list"></div>
+          </details>
         </div>
 
         <div id="accountMsg" class="status small hidden"></div>
