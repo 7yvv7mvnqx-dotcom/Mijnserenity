@@ -34,6 +34,19 @@ function getLoggedInFirstName(){
       .split(/\s+/)[0]||'kapitein';
   }
 
+  const normalized=String(name)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase();
+
+  const preferredNames={
+    michel:'Michel',
+    desiree:'Desi',
+    desi:'Desi'
+  };
+
+  if(preferredNames[normalized])return preferredNames[normalized];
+
   return name.charAt(0).toUpperCase()+name.slice(1);
 }
 
@@ -2027,7 +2040,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.5';
+const APP_VERSION='5.1.6';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
