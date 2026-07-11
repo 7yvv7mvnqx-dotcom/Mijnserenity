@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.1.42";
+  content:" · v5.1.43";
   color:#6fcfee;
   font-weight:800;
 }
@@ -2330,4 +2330,109 @@ body > header{
 }
 main{
   padding-top:max(10px,env(safe-area-inset-top));
+}
+
+/* Cloud 5.1.43 — POI-titel opent alle informatie */
+.poi-title-button{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  min-height:58px;
+  margin:0;
+  padding:2px 0 10px;
+  gap:12px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#fff;
+  text-align:left;
+}
+.poi-title-copy{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:5px;
+}
+.poi-title-copy strong{
+  overflow:hidden;
+  font-size:19px;
+  line-height:1.2;
+  text-overflow:ellipsis;
+}
+.poi-title-copy small{
+  color:#a9c6d1;
+  font-size:12px;
+}
+.poi-title-arrow{
+  flex-shrink:0;
+  color:#69d5f6;
+  font-size:28px;
+  line-height:1;
+}
+.poi-title-button:active{
+  opacity:.72;
+}
+.poi-list-address{
+  margin-top:1px;
+}
+.poi-list-review{
+  margin-bottom:10px;
+}
+.poi-detail-overview{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:18px;
+}
+.poi-detail-overview>div{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:4px;
+  padding:11px;
+  border-radius:12px;
+  background:#e8f3f8;
+}
+.poi-detail-overview span{
+  color:#607986;
+  font-size:11px;
+}
+.poi-detail-overview strong{
+  overflow:hidden;
+  color:#0d2b3c;
+  font-size:13px;
+  text-overflow:ellipsis;
+}
+.poi-detail-section{
+  margin-top:17px;
+}
+.poi-detail-section-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px;
+  color:#153448;
+  font-size:14px;
+  font-weight:800;
+}
+.poi-detail-section-title span{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:26px;
+  height:26px;
+  padding:0 7px;
+  border-radius:999px;
+  background:#dcebf2;
+  font-size:11px;
+}
+.poi-detail-empty{
+  color:#708895;
+  font-style:italic;
+}
+@media(max-width:520px){
+  .poi-detail-overview{
+    grid-template-columns:1fr;
+  }
 }

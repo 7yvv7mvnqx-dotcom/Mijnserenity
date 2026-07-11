@@ -3127,7 +3127,101 @@ function resetPoiFilters(render=true){
   if($('poiFilterExtra'))$('poiFilterExtra').value='';
   if(render)renderPoiList();
 }
-function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
+function renderPoiList(){
+  if(!$('poiList'))return;
+
+  const query=($('poiSearch')?.value||'').toLowerCase();
+  const category=$('poiFilterCategory')?.value||'';
+  const rating=Number($('poiFilterRating')?.value||0);
+  const extra=$('poiFilterExtra')?.value||'';
+
+  const filtered=poiCache.filter(poi=>{
+    const haystack=[
+      poi.name,
+      poi.place,
+      poi.address,
+      poi.review,
+      poi.category
+    ].join(' ').toLowerCase();
+
+    return (!query||haystack.includes(query))&&
+      (!category||poi.category===category)&&
+      (!rating||Number(poi.rating||0)>=rating)&&
+      (extra!=='favorite'||poi.is_favorite)&&
+      (extra!=='photos'||(poiPhotoCache[poi.id]||[]).length)&&
+      (extra!=='notes'||String(poi.review||'').trim());
+  });
+
+  $('poiList').innerHTML=filtered.length
+    ?filtered.map(poi=>{
+      const photos=(poiPhotoCache[poi.id]||[]).map(photo=>`
+        <div class="photo-wrap">
+          <img src="${esc(photo.url)}"
+            alt="Foto van ${esc(poi.name||'POI')}"
+            onclick="openLightbox(${JSON.stringify(photo.url)})">
+          <button class="photo-delete"
+            aria-label="Foto verwijderen"
+            onclick="deletePhoto('${photo.id}','${esc(photo.storage_path)}')">×</button>
+        </div>
+      `).join('');
+
+      const stars='★★★★★'.slice(
+        0,
+        Math.max(0,Math.min(5,Number(poi.rating)||0))
+      );
+
+      return `
+        <div class="item poi-list-item">
+          <button type="button"
+            class="poi-title-button"
+            onclick='showPoiDetails(${JSON.stringify(poi.id)})'
+            aria-label="Alle informatie van ${esc(poi.name||'POI')} bekijken">
+            <span class="poi-title-copy">
+              <strong>${esc(poi.name||'POI')}${poi.is_favorite?' ⭐':''}</strong>
+              <small>
+                ${esc(poi.category||'POI')}
+                ${poi.place?` · ${esc(poi.place)}`:''}
+                ${stars?` · ${stars}`:''}
+              </small>
+            </span>
+            <span class="poi-title-arrow">›</span>
+          </button>
+
+          ${poi.address
+            ?`<div class="small poi-list-address">📍 ${esc(poi.address)}</div>`
+            :''}
+
+          ${poi.review
+            ?`<p class="poi-list-review">${esc(poi.review)}</p>`
+            :''}
+
+          ${photos
+            ?`<div class="photo-grid">${photos}</div>`
+            :''}
+
+          <button class="delete-mini"
+            aria-label="POI verwijderen"
+            onclick="deletePoi('${poi.id}')">🗑️</button>
+
+          <div class="item-actions">
+            <button class="edit-button" onclick='editPoi(
+              ${JSON.stringify(poi.id)},
+              ${JSON.stringify(poi.name)},
+              ${JSON.stringify(poi.category)},
+              ${JSON.stringify(poi.place)},
+              ${JSON.stringify(poi.address)},
+              ${JSON.stringify(poi.rating)},
+              ${JSON.stringify(poi.review)},
+              ${JSON.stringify(!!poi.is_favorite)},
+              ${JSON.stringify(poi.latitude)},
+              ${JSON.stringify(poi.longitude)}
+            )'>Bewerken</button>
+          </div>
+        </div>
+      `;
+    }).join('')
+    :'<span class="small">Geen POI’s gevonden.</span>';
+}
 async function loadSettings(){
   if(!currentBoat)return;
   const {data,error}=await sb
@@ -4104,28 +4198,119 @@ function showPoiDetails(id){
 
   const favorite=isFavoritePoi(poi);
   const photos=(poiPhotoCache?.[poi.id]||[]);
-  const stars='★★★★★'.slice(0,Math.max(0,Math.min(5,Number(poi.rating)||0)));
+  const ratingNumber=Math.max(
+    0,
+    Math.min(5,Number(poi.rating)||0)
+  );
+  const stars='★★★★★'.slice(0,ratingNumber);
+  const position=getPoiMapPosition(poi);
+  const hasLocation=position.valid;
+  const latitude=hasLocation?position.lat:null;
+  const longitude=hasLocation?position.lon:null;
+
   const photoHtml=photos.length
-    ?`<div class="poi-detail-photos">${photos.map(photo=>
-      `<img src="${esc(photo.url)}" alt="Foto van ${esc(poi.name||'POI')}" onclick="openLightbox(${JSON.stringify(photo.url)})">`
-    ).join('')}</div>`
-    :'';
+    ?`<div class="poi-detail-section">
+        <div class="poi-detail-section-title">
+          Foto’s <span>${photos.length}</span>
+        </div>
+        <div class="poi-detail-photos">
+          ${photos.map(photo=>`
+            <img src="${esc(photo.url)}"
+              alt="Foto van ${esc(poi.name||'POI')}"
+              onclick="openLightbox(${JSON.stringify(photo.url)})">
+          `).join('')}
+        </div>
+      </div>`
+    :`<div class="poi-detail-line">
+        <b>Foto’s</b>
+        <span>Geen foto’s toegevoegd</span>
+      </div>`;
+
+  const createdAt=poi.created_at
+    ?formatAccountDate(poi.created_at)
+    :'Niet beschikbaar';
+  const updatedAt=poi.updated_at
+    ?formatAccountDate(poi.updated_at)
+    :'Niet beschikbaar';
 
   $('poiDetailContent').innerHTML=`
     <div class="poi-detail-heading">
       <span class="poi-detail-icon">${favorite?'⭐':'📍'}</span>
       <div>
         <h2>${esc(poi.name||'POI')}</h2>
-        <p>${esc(poi.category||'')}${poi.place?` · ${esc(poi.place)}`:''}</p>
+        <p>${esc(poi.category||'POI')}${poi.place?` · ${esc(poi.place)}`:''}</p>
       </div>
     </div>
-    ${poi.address?`<div class="poi-detail-line"><b>Adres</b><span>${esc(poi.address)}</span></div>`:''}
-    ${stars?`<div class="poi-detail-line"><b>Beoordeling</b><span>${stars}</span></div>`:''}
-    ${poi.review?`<div class="poi-detail-review">${esc(poi.review)}</div>`:''}
+
+    <div class="poi-detail-overview">
+      <div>
+        <span>Categorie</span>
+        <strong>${esc(poi.category||'Niet ingevuld')}</strong>
+      </div>
+      <div>
+        <span>Plaats</span>
+        <strong>${esc(poi.place||'Niet ingevuld')}</strong>
+      </div>
+      <div>
+        <span>Beoordeling</span>
+        <strong>${stars?`${stars} (${ratingNumber}/5)`:'Niet beoordeeld'}</strong>
+      </div>
+      <div>
+        <span>Favoriet</span>
+        <strong>${favorite?'Ja ⭐':'Nee'}</strong>
+      </div>
+    </div>
+
+    <div class="poi-detail-line">
+      <b>Adres</b>
+      <span>${esc(poi.address||'Niet ingevuld')}</span>
+    </div>
+
+    <div class="poi-detail-line">
+      <b>GPS</b>
+      <span>
+        ${hasLocation
+          ?`${latitude.toFixed(7)}, ${longitude.toFixed(7)}`
+          :'Geen kaartlocatie opgeslagen'}
+      </span>
+    </div>
+
+    <div class="poi-detail-line">
+      <b>Aangemaakt</b>
+      <span>${esc(createdAt)}</span>
+    </div>
+
+    <div class="poi-detail-line">
+      <b>Laatst gewijzigd</b>
+      <span>${esc(updatedAt)}</span>
+    </div>
+
+    <div class="poi-detail-section">
+      <div class="poi-detail-section-title">Notities of beoordeling</div>
+      <div class="poi-detail-review">
+        ${poi.review
+          ?esc(poi.review).replace(/\n/g,'<br>')
+          :'<span class="poi-detail-empty">Geen notities toegevoegd.</span>'}
+      </div>
+    </div>
+
     ${photoHtml}
+
     <div class="poi-detail-actions">
-      <button onclick="openPoiRouteInWaterkaarten('${poi.id}')">🧭 Kopieer bestemming en open Waterkaarten</button>
-      <button class="secondary" onclick="openPoiLocationCorrection('${poi.id}')">📍 Locatie corrigeren</button>
+      ${hasLocation
+        ?`<button onclick="openPoiRouteInWaterkaarten('${poi.id}')">
+            🧭 Kopieer bestemming en open Waterkaarten
+          </button>`
+        :`<button class="secondary" onclick="openPoiLocationCorrection('${poi.id}')">
+            📍 Kaartlocatie toevoegen
+          </button>`}
+
+      ${hasLocation
+        ?`<button class="secondary" onclick="openPoiLocationCorrection('${poi.id}')">
+            📍 Locatie corrigeren
+          </button>`
+        :''}
+
       <button class="secondary" onclick='closePoiDetails();editPoi(
         ${JSON.stringify(poi.id)},
         ${JSON.stringify(poi.name)},
@@ -5718,7 +5903,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.42';
+const APP_VERSION='5.1.43';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -5795,7 +5980,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5142',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5143',{updateViaCache:'none'});
 
     await registration.update();
 
