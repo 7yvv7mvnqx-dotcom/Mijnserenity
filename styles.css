@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.1.43";
+  content:" · v5.2.0";
   color:#6fcfee;
   font-weight:800;
 }
@@ -2434,5 +2434,308 @@ main{
 @media(max-width:520px){
   .poi-detail-overview{
     grid-template-columns:1fr;
+  }
+}
+
+/* MijnSerenity Cloud 5.2.0 — Captain Command Center */
+.captain-command-center{
+  display:grid;
+  gap:14px;
+  margin:14px 0 18px;
+}
+.captain-intelligence-card{
+  position:relative;
+  overflow:visible;
+  padding:18px;
+  border:1px solid rgba(103,213,246,.18);
+  background:
+    radial-gradient(circle at top right,rgba(47,154,191,.20),transparent 42%),
+    linear-gradient(145deg,rgba(14,43,62,.98),rgba(5,24,38,.98));
+}
+.captain-intelligence-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+}
+.captain-intelligence-head h2{
+  margin:4px 0 0;
+  font-size:24px;
+}
+.captain-season-badge{
+  flex-shrink:0;
+  padding:7px 10px;
+  border:1px solid rgba(212,172,85,.32);
+  border-radius:999px;
+  background:rgba(212,172,85,.10);
+  color:#efd68e;
+  font-size:11px;
+  font-weight:900;
+}
+.captain-insight{
+  margin:12px 0 15px;
+  color:#c3dce6;
+  line-height:1.5;
+}
+.captain-search-wrap{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+.captain-search-wrap input{
+  width:100%;
+  height:48px;
+  margin:0;
+  padding:0 44px 0 42px;
+  border:1px solid rgba(120,211,239,.20);
+  border-radius:16px;
+  background:rgba(255,255,255,.075);
+  color:#fff;
+  box-shadow:none;
+}
+.captain-search-wrap input::placeholder{
+  color:#86a9b7;
+}
+.captain-search-icon{
+  position:absolute;
+  left:14px;
+  z-index:1;
+  color:#76d7f4;
+  font-size:22px;
+}
+.captain-search-clear{
+  position:absolute;
+  right:7px;
+  width:34px;
+  min-height:34px;
+  padding:0;
+  border-radius:999px;
+  background:rgba(255,255,255,.10);
+  color:#d8eef6;
+}
+.captain-search-results{
+  position:absolute;
+  z-index:60;
+  top:calc(100% - 74px);
+  left:18px;
+  right:18px;
+  max-height:390px;
+  overflow:auto;
+  padding:7px;
+  border:1px solid rgba(121,210,238,.22);
+  border-radius:17px;
+  background:#0b2637;
+  box-shadow:0 22px 55px rgba(0,0,0,.45);
+}
+.captain-search-result{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr) 18px;
+  align-items:center;
+  width:100%;
+  margin:0;
+  padding:11px 9px;
+  gap:9px;
+  border:0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  border-radius:10px;
+  background:transparent;
+  color:#fff;
+  text-align:left;
+}
+.captain-search-result:last-child{
+  border-bottom:0;
+}
+.captain-search-result>span:first-child{
+  font-size:22px;
+}
+.captain-search-result>span:nth-child(2){
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:3px;
+}
+.captain-search-result strong,
+.captain-search-result small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.captain-search-result small{
+  color:#94b6c3;
+}
+.captain-search-result>b{
+  color:#71d7f5;
+  font-size:22px;
+}
+.captain-search-empty{
+  padding:18px;
+  color:#a9c8d3;
+  text-align:center;
+}
+.captain-quick-actions{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-top:12px;
+}
+.captain-quick-actions button{
+  display:flex;
+  min-width:0;
+  min-height:68px;
+  margin:0;
+  padding:9px 5px;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;
+  background:rgba(255,255,255,.055);
+  color:#e9f7fb;
+}
+.captain-quick-actions span{
+  font-size:22px;
+}
+.captain-quick-actions small{
+  overflow:hidden;
+  width:100%;
+  color:#a9c7d2;
+  font-size:10px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.captain-season-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.captain-metric{
+  display:flex;
+  min-width:0;
+  min-height:112px;
+  margin:0;
+  padding:14px;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:5px;
+  border:1px solid rgba(255,255,255,.07);
+  background:linear-gradient(150deg,rgba(255,255,255,.065),rgba(255,255,255,.025));
+  color:#fff;
+  text-align:left;
+}
+.captain-metric span{
+  color:#8fb0bd;
+  font-size:11px;
+}
+.captain-metric strong{
+  overflow:hidden;
+  width:100%;
+  color:#f2fbff;
+  font-size:22px;
+  text-overflow:ellipsis;
+}
+.captain-metric small{
+  color:#6fcfee;
+  font-size:10px;
+}
+.captain-activity-card{
+  padding:16px;
+}
+.captain-activity-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.captain-activity-head h3{
+  margin:3px 0 0;
+}
+.captain-activity-head button{
+  width:38px;
+  min-height:38px;
+  padding:0;
+  border-radius:999px;
+}
+.captain-activity-list{
+  display:grid;
+}
+.captain-activity-item{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) 18px;
+  align-items:center;
+  width:100%;
+  margin:0;
+  padding:11px 3px;
+  gap:10px;
+  border:0;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  border-radius:0;
+  background:transparent;
+  color:#fff;
+  text-align:left;
+}
+.captain-activity-item:last-child{
+  border-bottom:0;
+}
+.captain-activity-icon{
+  display:flex;
+  width:38px;
+  height:38px;
+  align-items:center;
+  justify-content:center;
+  border-radius:12px;
+  background:rgba(111,207,238,.10);
+  font-size:20px;
+}
+.captain-activity-copy{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:3px;
+}
+.captain-activity-copy strong,
+.captain-activity-copy small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.captain-activity-copy small{
+  color:#91afbb;
+}
+.captain-activity-arrow{
+  color:#6fcfee;
+  font-size:23px;
+}
+.captain-highlight{
+  animation:captainHighlight 1.8s ease;
+}
+@keyframes captainHighlight{
+  0%,100%{box-shadow:none}
+  25%,70%{box-shadow:0 0 0 3px rgba(111,207,238,.45)}
+}
+@media(max-width:760px){
+  .captain-season-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:520px){
+  .captain-intelligence-card{
+    padding:15px;
+  }
+  .captain-intelligence-head h2{
+    font-size:21px;
+  }
+  .captain-season-badge{
+    padding:6px 8px;
+    font-size:10px;
+  }
+  .captain-quick-actions{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .captain-search-results{
+    left:12px;
+    right:12px;
   }
 }

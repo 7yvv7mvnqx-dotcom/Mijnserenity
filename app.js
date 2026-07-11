@@ -1940,6 +1940,7 @@ async function loadPois(){
   $('dPois').textContent=poiCache.length;
   updatePoiSuggestionLists();
   renderPoiList();
+  renderCaptainCommandCenter();
 
   if(mapInstance)renderPoiMarkers();
 }
@@ -3068,12 +3069,13 @@ async function loadCosts(){
     .toFixed(0);
 
   updateDashboardFinanceSummary();
+  renderCaptainCommandCenter();
 
   $('costList').innerHTML=costCache.length
     ?costCache.map(cost=>{
       const parsed=splitCostDescription(cost.description);
 
-      return `<div class="item cost-item expandable-cost-card">
+      return `<div class="item cost-item expandable-cost-card" data-cost-id="${cost.id}">
         <button type="button" class="cost-title-button" onclick="toggleInlineDetails(this)">
           <span class="cost-title-main">
             <strong>${formatEuro(cost.amount)}</strong>
@@ -3500,6 +3502,409 @@ function getAllFinanceEntries(){
   return [...regular,...fuel]
     .filter(entry=>Number.isFinite(entry.amount)&&entry.amount>0)
     .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+}
+
+
+function captainCurrentYear(){
+  return new Date().getFullYear();
+}
+
+function captainDateValue(value){
+  const timestamp=new Date(value||0).getTime();
+  return Number.isFinite(timestamp)?timestamp:0;
+}
+
+function captainFormatDate(value){
+  if(!value)return 'Onbekende datum';
+
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return String(value);
+
+  return date.toLocaleDateString('nl-NL',{
+    day:'numeric',
+    month:'short',
+    year:date.getFullYear()===captainCurrentYear()?undefined:'numeric'
+  });
+}
+
+function captainGreetingText(){
+  const hour=new Date().getHours();
+  const part=hour<12?'Goedemorgen':hour<18?'Goedemiddag':'Goedenavond';
+  return `${part}, ${getLoggedInFirstName()}`;
+}
+
+function captainSeasonTrips(){
+  const year=String(captainCurrentYear());
+  return tripCache.filter(trip=>
+    String(trip.trip_date||'').slice(0,4)===year
+  );
+}
+
+function captainSeasonCosts(){
+  const year=String(captainCurrentYear());
+  return getAllFinanceEntries().filter(entry=>
+    String(entry.date||'').slice(0,4)===year
+  );
+}
+
+function captainInsightText(){
+  if(!currentBoat){
+    return 'Koppel Serenity om je persoonlijke command center te activeren.';
+  }
+
+  const seasonTrips=captainSeasonTrips();
+  const favoriteCount=poiCache.filter(isFavoritePoi).length;
+  const latestTrip=tripCache[0];
+
+  if(!settingsCache?.dashboard_photo_path&&!settingsCache?.dashboard_photo_url){
+    return 'Maak je dashboard persoonlijk met een mooie foto van Serenity.';
+  }
+
+  if(!seasonTrips.length){
+    return 'Je seizoen staat klaar. Start Live varen om je eerste route automatisch vast te leggen.';
+  }
+
+  if(!poiCache.length){
+    return 'Je logboek groeit. Voeg nu je favoriete havens en ligplaatsen toe als POI.';
+  }
+
+  if(!favoriteCount){
+    return 'Markeer je beste havens met een ster, zodat je ze later direct terugvindt.';
+  }
+
+  if(latestTrip){
+    const distance=Number(latestTrip.distance_km||0);
+    const route=latestTrip.departure&&latestTrip.arrival
+      ?`${latestTrip.departure} → ${latestTrip.arrival}`
+      :(latestTrip.title||'je laatste vaartocht');
+
+    return distance>0
+      ?`Laatste vaart: ${route}, ${distance.toLocaleString('nl-NL',{maximumFractionDigits:1})} km.`
+      :`Laatste activiteit: ${route}. Alles staat veilig in je logboek.`;
+  }
+
+  return 'Serenity is bijgewerkt. Routes, POI’s en kosten staan op één plek.';
+}
+
+function captainActivityItems(){
+  const items=[];
+
+  tripCache.forEach(trip=>{
+    items.push({
+      type:'trip',
+      id:trip.id,
+      date:trip.trip_date,
+      sortDate:captainDateValue(trip.trip_date),
+      icon:'⛵',
+      title:trip.title||`${trip.departure||''} → ${trip.arrival||''}`||'Vaartocht',
+      subtitle:[
+        captainFormatDate(trip.trip_date),
+        trip.distance_km?`${Number(trip.distance_km).toLocaleString('nl-NL',{maximumFractionDigits:1})} km`:'',
+        trip.departure&&trip.arrival?`${trip.departure} → ${trip.arrival}`:''
+      ].filter(Boolean).join(' · ')
+    });
+  });
+
+  poiCache.forEach(poi=>{
+    items.push({
+      type:'poi',
+      id:poi.id,
+      date:poi.created_at,
+      sortDate:captainDateValue(poi.created_at),
+      icon:isFavoritePoi(poi)?'⭐':'📍',
+      title:poi.name||'POI',
+      subtitle:[
+        poi.category||'POI',
+        poi.place||poi.address||'',
+        captainFormatDate(poi.created_at)
+      ].filter(Boolean).join(' · ')
+    });
+  });
+
+  costCache.forEach(cost=>{
+    const description=splitCostDescription(cost.description).summary;
+    items.push({
+      type:'cost',
+      id:cost.id,
+      date:cost.expense_date,
+      sortDate:captainDateValue(cost.expense_date),
+      icon:'🧾',
+      title:`${formatEuro(cost.amount)} · ${cost.category||'Kosten'}`,
+      subtitle:[
+        captainFormatDate(cost.expense_date),
+        description||''
+      ].filter(Boolean).join(' · ')
+    });
+  });
+
+  return items
+    .sort((a,b)=>b.sortDate-a.sortDate)
+    .slice(0,5);
+}
+
+function renderCaptainActivity(){
+  const container=$('captainActivityList');
+  if(!container)return;
+
+  const items=captainActivityItems();
+
+  container.innerHTML=items.length
+    ?items.map(item=>`
+      <button type="button"
+        class="captain-activity-item"
+        onclick='openCaptainItem(${JSON.stringify(item.type)},${JSON.stringify(item.id)})'>
+        <span class="captain-activity-icon">${item.icon}</span>
+        <span class="captain-activity-copy">
+          <strong>${esc(item.title)}</strong>
+          <small>${esc(item.subtitle)}</small>
+        </span>
+        <span class="captain-activity-arrow">›</span>
+      </button>
+    `).join('')
+    :'<span class="small">Nog geen activiteit beschikbaar.</span>';
+}
+
+function renderCaptainCommandCenter(){
+  if(!$('captainGreeting'))return;
+
+  const year=captainCurrentYear();
+  const trips=captainSeasonTrips();
+  const entries=captainSeasonCosts();
+
+  const distance=trips.reduce(
+    (sum,trip)=>sum+Number(trip.distance_km||0),
+    0
+  );
+  const hours=trips.reduce(
+    (sum,trip)=>sum+Number(trip.duration_hours||0),
+    0
+  );
+  const fuel=trips.reduce(
+    (sum,trip)=>sum+Number(trip.fuel_liters||0),
+    0
+  );
+  const spend=entries.reduce(
+    (sum,entry)=>sum+Number(entry.amount||0),
+    0
+  );
+  const favoriteCount=poiCache.filter(isFavoritePoi).length;
+
+  $('captainGreeting').textContent=captainGreetingText();
+  $('captainSeasonBadge').textContent=`Seizoen ${year}`;
+  $('captainInsight').textContent=captainInsightText();
+
+  $('captainTripCount').textContent=String(trips.length);
+  $('captainTripLabel').textContent=trips.length===1
+    ?'vaarttocht dit seizoen'
+    :'vaartochten dit seizoen';
+
+  $('captainDistance').textContent=
+    `${distance.toLocaleString('nl-NL',{maximumFractionDigits:1})} km`;
+  $('captainHours').textContent=
+    `${hours.toLocaleString('nl-NL',{maximumFractionDigits:1})} vaaruren`;
+
+  $('captainFavoriteCount').textContent=String(favoriteCount);
+  $('captainPoiLabel').textContent=
+    `van ${poiCache.length} ${poiCache.length===1?'locatie':'locaties'}`;
+
+  $('captainTotalSpend').textContent=formatEuro(spend);
+  $('captainFuelLabel').textContent=
+    `${fuel.toLocaleString('nl-NL',{maximumFractionDigits:1})} liter brandstof`;
+
+  renderCaptainActivity();
+}
+
+function captainSearchItems(){
+  const items=[];
+
+  poiCache.forEach(poi=>{
+    items.push({
+      type:'poi',
+      id:poi.id,
+      icon:isFavoritePoi(poi)?'⭐':'📍',
+      title:poi.name||'POI',
+      subtitle:[
+        poi.category,
+        poi.place,
+        poi.address
+      ].filter(Boolean).join(' · '),
+      search:[
+        poi.name,
+        poi.category,
+        poi.place,
+        poi.address,
+        poi.review
+      ].join(' ').toLowerCase()
+    });
+  });
+
+  tripCache.forEach(trip=>{
+    items.push({
+      type:'trip',
+      id:trip.id,
+      icon:'⛵',
+      title:trip.title||'Vaartocht',
+      subtitle:[
+        captainFormatDate(trip.trip_date),
+        trip.departure&&trip.arrival?`${trip.departure} → ${trip.arrival}`:'',
+        trip.distance_km?`${trip.distance_km} km`:''
+      ].filter(Boolean).join(' · '),
+      search:[
+        trip.title,
+        trip.departure,
+        trip.arrival,
+        trip.crew,
+        trip.notes,
+        trip.trip_date
+      ].join(' ').toLowerCase()
+    });
+  });
+
+  costCache.forEach(cost=>{
+    const parsed=splitCostDescription(cost.description);
+    items.push({
+      type:'cost',
+      id:cost.id,
+      icon:'🧾',
+      title:`${formatEuro(cost.amount)} · ${cost.category||'Kosten'}`,
+      subtitle:[
+        captainFormatDate(cost.expense_date),
+        parsed.summary||''
+      ].filter(Boolean).join(' · '),
+      search:[
+        cost.category,
+        cost.description,
+        cost.expense_date,
+        cost.amount
+      ].join(' ').toLowerCase()
+    });
+  });
+
+  return items;
+}
+
+function searchCaptainData(value=''){
+  const input=$('captainSearch');
+  const container=$('captainSearchResults');
+  const clearButton=$('captainSearchClear');
+  if(!container)return;
+
+  const query=String(value||'').trim().toLowerCase();
+  clearButton?.classList.toggle('hidden',!query);
+
+  if(query.length<2){
+    container.classList.add('hidden');
+    container.innerHTML='';
+    return;
+  }
+
+  const terms=query.split(/\s+/).filter(Boolean);
+  const matches=captainSearchItems()
+    .filter(item=>terms.every(term=>item.search.includes(term)))
+    .slice(0,12);
+
+  container.innerHTML=matches.length
+    ?matches.map(item=>`
+      <button type="button"
+        class="captain-search-result"
+        onclick='openCaptainItem(${JSON.stringify(item.type)},${JSON.stringify(item.id)})'>
+        <span>${item.icon}</span>
+        <span>
+          <strong>${esc(item.title)}</strong>
+          <small>${esc(item.subtitle)}</small>
+        </span>
+        <b>›</b>
+      </button>
+    `).join('')
+    :`<div class="captain-search-empty">
+        Geen resultaat voor “${esc(value)}”.
+      </div>`;
+
+  container.classList.remove('hidden');
+}
+
+function clearCaptainSearch(){
+  if($('captainSearch'))$('captainSearch').value='';
+  $('captainSearchResults')?.classList.add('hidden');
+  if($('captainSearchResults'))$('captainSearchResults').innerHTML='';
+  $('captainSearchClear')?.classList.add('hidden');
+}
+
+function handleCaptainSearchKey(event){
+  if(event.key==='Escape'){
+    clearCaptainSearch();
+    event.currentTarget?.blur();
+  }
+
+  if(event.key==='Enter'){
+    const first=$('captainSearchResults')
+      ?.querySelector('.captain-search-result');
+    first?.click();
+  }
+}
+
+function openCaptainItem(type,id){
+  clearCaptainSearch();
+
+  if(type==='poi'){
+    showPoiDetails(id);
+    return;
+  }
+
+  if(type==='trip'){
+    captainNavigate('logbook');
+    setTimeout(()=>{
+      const details=document.querySelector(
+        `[data-trip-id="${CSS.escape(String(id))}"]`
+      );
+      if(details){
+        details.open=true;
+        details.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+    },150);
+    return;
+  }
+
+  if(type==='cost'){
+    captainNavigate('costs');
+    setTimeout(()=>{
+      const card=document.querySelector(
+        `[data-cost-id="${CSS.escape(String(id))}"]`
+      );
+      card?.scrollIntoView({behavior:'smooth',block:'center'});
+      card?.classList.add('captain-highlight');
+      setTimeout(()=>card?.classList.remove('captain-highlight'),1800);
+    },150);
+  }
+}
+
+function captainQuickAction(action){
+  clearCaptainSearch();
+
+  if(action==='live'){
+    captainNavigate('live');
+    return;
+  }
+
+  if(action==='poi'){
+    captainNavigate('pois');
+    clearPoiForm(false);
+    return;
+  }
+
+  if(action==='cost'){
+    captainNavigate('costs');
+    openCostFormPanel();
+    setTimeout(()=>$('costAmount')?.focus(),100);
+    return;
+  }
+
+  if(action==='trip'){
+    captainNavigate('logbook');
+    clearTripForm();
+    openTripForm();
+    setTimeout(()=>$('tripTitle')?.focus(),100);
+  }
 }
 
 function updateDashboardFinanceSummary(){
@@ -4724,6 +5129,7 @@ async function loadTrips(){
   renderFinance();
   updateLatestRouteDashboard();
   updateDashboardFinanceSummary();
+  renderCaptainCommandCenter();
 }
 
 
@@ -4885,6 +5291,7 @@ function captainNavigate(id, sourceButton=null){
   if(id==='dashboard'){
     if(typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
     if(typeof updateDashboardFinanceSummary==='function')updateDashboardFinanceSummary();
+    if(typeof renderCaptainCommandCenter==='function')renderCaptainCommandCenter();
     if(isAppAdmin())loadAdminAccounts();
   }
   if(id==='pois'){
@@ -5903,7 +6310,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.43';
+const APP_VERSION='5.2.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -5980,7 +6387,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5143',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5200',{updateViaCache:'none'});
 
     await registration.update();
 
