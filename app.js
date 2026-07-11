@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map();
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -2198,11 +2198,24 @@ function toggleSection(id,button){
 }
 function goToTab(id){
   const buttons=[...document.querySelectorAll('.tab')];
-  const map={dashboard:0,live:1,map:2,pois:3,logbook:4,costs:5,finance:6,settings:7,boat:8};
+  const map={
+    dashboard:0,
+    live:1,
+    map:2,
+    planner:3,
+    pois:4,
+    logbook:5,
+    costs:6,
+    finance:7,
+    settings:8,
+    boat:9
+  };
   const button=buttons[map[id]];
+
   if(button)showTab(id,button);
   if(id==='live')initLiveMode();
   if(id==='map')initMap();
+  if(id==='planner')initPlanner();
   if(id==='finance')renderFinance();
   if(id==='settings')loadSettingsForm();
 }
@@ -3807,6 +3820,8 @@ async function loadPois(){
   updatePoiSuggestionLists();
   renderPoiList();
   renderCaptainCommandCenter();
+  populatePlannerSelectors();
+  renderHarbourLibrary();
 
   if(mapInstance)renderPoiMarkers();
 }
@@ -5110,6 +5125,7 @@ async function loadSettings(){
   };
 
   await loadDashboardPhoto();
+  plannerSetDefaults();
 }
 
 async function loadDashboardPhoto(){
@@ -5334,6 +5350,1169 @@ function populateFinanceYears(){
   }
 }
 
+
+
+const PLANNER_STORAGE_VERSION='v1';
+
+function plannerStorageKey(){
+  return `mijnserenity-planner-${PLANNER_STORAGE_VERSION}-${currentBoat?.id||'geen-boot'}`;
+}
+
+function readPlannerDrafts(){
+  try{
+    const value=JSON.parse(
+      localStorage.getItem(plannerStorageKey())||'[]'
+    );
+    return Array.isArray(value)?value:[];
+  }catch(error){
+    console.warn('Conceptplanningen lezen mislukt:',error);
+    return [];
+  }
+}
+
+function writePlannerDrafts(plans){
+  try{
+    localStorage.setItem(
+      plannerStorageKey(),
+      JSON.stringify((plans||[]).slice(0,40))
+    );
+    return true;
+  }catch(error){
+    console.error('Conceptplanning bewaren mislukt:',error);
+    return false;
+  }
+}
+
+function plannerPoiHasLocation(poi){
+  const position=getPoiMapPosition(poi);
+  return Boolean(position?.valid);
+}
+
+function plannerPoiReference(poi){
+  return `poi:${poi.id}`;
+}
+
+function plannerPointFromPoi(poi){
+  if(!poi)return null;
+  const position=getPoiMapPosition(poi);
+  if(!position.valid)return null;
+
+  return {
+    ref:plannerPoiReference(poi),
+    poiId:poi.id,
+    label:poi.name||poi.place||'POI',
+    place:poi.place||'',
+    address:poi.address||'',
+    category:poi.category||'POI',
+    lat:Number(position.lat),
+    lon:Number(position.lon)
+  };
+}
+
+function plannerSortedPois(){
+  return poiCache
+    .filter(plannerPoiHasLocation)
+    .sort((a,b)=>{
+      const favoriteDifference=
+        Number(isFavoritePoi(b))-Number(isFavoritePoi(a));
+      if(favoriteDifference)return favoriteDifference;
+
+      const harbourDifference=
+        Number(String(b.category)==='Haven')-
+        Number(String(a.category)==='Haven');
+      if(harbourDifference)return harbourDifference;
+
+      return String(a.name||'').localeCompare(
+        String(b.name||''),
+        'nl'
+      );
+    });
+}
+
+function plannerOptionLabel(poi){
+  const prefix=isFavoritePoi(poi)
+    ?'⭐ '
+    :String(poi.category)==='Haven'
+      ?'⚓ '
+      :'📍 ';
+
+  return `${prefix}${poi.name||'POI'}${poi.place?' · '+poi.place:''}`;
+}
+
+function plannerSelectOptions({includeCurrent=false}={}){
+  const currentOption=includeCurrent
+    ?'<option value="current">📍 Huidige positie</option>'
+    :'';
+
+  const groups=new Map();
+
+  plannerSortedPois().forEach(poi=>{
+    const group=String(poi.category||'Overig');
+    if(!groups.has(group))groups.set(group,[]);
+    groups.get(group).push(poi);
+  });
+
+  const preferred=[
+    'Haven',
+    'Ankerplek',
+    'Tankplaats',
+    'Supermarkt',
+    'Restaurant',
+    'Café',
+    'Overig'
+  ];
+
+  const ordered=[
+    ...preferred.filter(category=>groups.has(category)),
+    ...[...groups.keys()]
+      .filter(category=>!preferred.includes(category))
+      .sort((a,b)=>a.localeCompare(b,'nl'))
+  ];
+
+  return currentOption+ordered.map(category=>`
+    <optgroup label="${esc(category)}">
+      ${groups.get(category).map(poi=>`
+        <option value="${esc(plannerPoiReference(poi))}">
+          ${esc(plannerOptionLabel(poi))}
+        </option>
+      `).join('')}
+    </optgroup>
+  `).join('');
+}
+
+function populatePlannerSelectors(){
+  const from=$('plannerFrom');
+  const to=$('plannerTo');
+  const stop=$('plannerStopSelect');
+  if(!from||!to||!stop)return;
+
+  const previousFrom=from.value||'current';
+  const previousTo=to.value||'';
+  const previousStop=stop.value||'';
+
+  const options=plannerSelectOptions();
+  from.innerHTML=`
+    <option value="">Kies vertrekpunt</option>
+    ${plannerSelectOptions({includeCurrent:true})}
+  `;
+  to.innerHTML=`
+    <option value="">Kies bestemming</option>
+    ${options}
+  `;
+  stop.innerHTML=`
+    <option value="">Kies een tussenstop</option>
+    ${options}
+  `;
+
+  const setIfAvailable=(element,value,fallback='')=>{
+    const exists=[...element.options]
+      .some(option=>option.value===value);
+    element.value=exists?value:fallback;
+  };
+
+  setIfAvailable(from,previousFrom,'current');
+  setIfAvailable(to,previousTo,'');
+  setIfAvailable(stop,previousStop,'');
+}
+
+function plannerDefaultDate(){
+  return localDateISO(new Date());
+}
+
+function plannerSetDefaults(){
+  if($('plannerDate')&&!$('plannerDate').value){
+    $('plannerDate').value=plannerDefaultDate();
+  }
+
+  if($('plannerFuelPerHour')&&!$('plannerFuelPerHour').value){
+    const consumption=Number(settingsCache?.fuel_per_hour||0);
+    if(consumption>0)$('plannerFuelPerHour').value=consumption;
+  }
+
+  if($('plannerFuelPrice')&&!$('plannerFuelPrice').value){
+    const price=Number(settingsCache?.fuel_price||0);
+    if(price>0)$('plannerFuelPrice').value=price;
+  }
+}
+
+function initPlanner(){
+  if(!currentBoat){
+    showAppToast('Koppel eerst Serenity.');
+    captainNavigate(isAppAdmin()?'boat':'settings');
+    return;
+  }
+
+  populatePlannerSelectors();
+  plannerSetDefaults();
+  renderPlannerStops();
+  renderPlannerDrafts();
+  renderHarbourLibrary();
+  ensurePlannerMap();
+
+  if(plannerCurrentPlan){
+    renderPlannerSummary(plannerCurrentPlan);
+  }else{
+    setTimeout(()=>plannerMap?.invalidateSize({pan:false}),120);
+  }
+}
+
+function ensurePlannerMap(){
+  const container=$('plannerMap');
+  if(!container||plannerMap)return;
+
+  plannerMap=L.map(container,{
+    zoomControl:true,
+    attributionControl:true
+  }).setView([52.25,5.45],7);
+
+  L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      maxZoom:19,
+      attribution:'© OpenStreetMap'
+    }
+  ).addTo(plannerMap);
+
+  plannerMapLayer=L.layerGroup().addTo(plannerMap);
+}
+
+function renderPlannerMap(plan){
+  ensurePlannerMap();
+  if(!plannerMap||!plannerMapLayer)return;
+
+  plannerMapLayer.clearLayers();
+  const points=Array.isArray(plan?.points)?plan.points:[];
+
+  if(!points.length){
+    plannerMap.setView([52.25,5.45],7);
+    return;
+  }
+
+  const coordinates=points.map(point=>[point.lat,point.lon]);
+
+  L.polyline(coordinates,{
+    weight:4,
+    opacity:.88,
+    dashArray:'9 7'
+  }).addTo(plannerMapLayer);
+
+  points.forEach((point,index)=>{
+    const role=index===0
+      ?'Vertrek'
+      :index===points.length-1
+        ?'Bestemming'
+        :`Stop ${index}`;
+
+    L.marker([point.lat,point.lon])
+      .addTo(plannerMapLayer)
+      .bindPopup(`
+        <b>${esc(role)}</b><br>
+        ${esc(point.label)}
+        ${point.place?`<br>${esc(point.place)}`:''}
+      `);
+  });
+
+  if(coordinates.length===1){
+    plannerMap.setView(coordinates[0],14);
+  }else{
+    plannerMap.fitBounds(
+      L.latLngBounds(coordinates),
+      {padding:[30,30],maxZoom:13}
+    );
+  }
+
+  setTimeout(()=>plannerMap.invalidateSize({pan:false}),120);
+}
+
+function plannerFormChanged(){
+  plannerCurrentPlan=null;
+  $('plannerSummary')?.classList.add('hidden');
+  $('plannerEmptyState')?.classList.remove('hidden');
+  if($('plannerSummaryTitle')){
+    $('plannerSummaryTitle').textContent='Route opnieuw berekenen';
+  }
+  if($('plannerSummaryBadge')){
+    $('plannerSummaryBadge').textContent='Gewijzigd';
+  }
+}
+
+function addPlannerStop(){
+  const select=$('plannerStopSelect');
+  const ref=String(select?.value||'');
+  if(!ref)return;
+
+  if(plannerStops.includes(ref)){
+    showAppToast('Deze tussenstop staat al in de route.');
+    return;
+  }
+
+  const fromRef=$('plannerFrom')?.value||'';
+  const toRef=$('plannerTo')?.value||'';
+
+  if(ref===fromRef||ref===toRef){
+    showAppToast('Vertrekpunt of bestemming hoeft niet als tussenstop.');
+    return;
+  }
+
+  plannerStops.push(ref);
+  select.value='';
+  renderPlannerStops();
+  plannerFormChanged();
+}
+
+function removePlannerStop(index){
+  plannerStops.splice(index,1);
+  renderPlannerStops();
+  plannerFormChanged();
+}
+
+function movePlannerStop(index,direction){
+  const target=index+direction;
+
+  if(
+    target<0||
+    target>=plannerStops.length
+  )return;
+
+  const [item]=plannerStops.splice(index,1);
+  plannerStops.splice(target,0,item);
+  renderPlannerStops();
+  plannerFormChanged();
+}
+
+function plannerPoiByRef(ref){
+  const id=String(ref||'').replace(/^poi:/,'');
+  return poiCache.find(poi=>String(poi.id)===id)||null;
+}
+
+function plannerRefLabel(ref){
+  if(ref==='current'){
+    return plannerCurrentPosition?.label||'Huidige positie';
+  }
+
+  const poi=plannerPoiByRef(ref);
+  return poi?.name||'Onbekende POI';
+}
+
+function renderPlannerStops(){
+  const container=$('plannerStops');
+  if(!container)return;
+
+  if(!plannerStops.length){
+    container.innerHTML='<span class="small">Nog geen tussenstops.</span>';
+    return;
+  }
+
+  container.innerHTML=plannerStops.map((ref,index)=>`
+    <div class="planner-stop-chip">
+      <span>
+        <b>${index+1}</b>
+        ${esc(plannerRefLabel(ref))}
+      </span>
+      <span class="planner-stop-controls">
+        <button type="button" onclick="movePlannerStop(${index},-1)"
+          aria-label="Tussenstop omhoog">↑</button>
+        <button type="button" onclick="movePlannerStop(${index},1)"
+          aria-label="Tussenstop omlaag">↓</button>
+        <button type="button" onclick="removePlannerStop(${index})"
+          aria-label="Tussenstop verwijderen">×</button>
+      </span>
+    </div>
+  `).join('');
+}
+
+function plannerGeolocation(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation){
+      reject(new Error('Locatie wordt op dit apparaat niet ondersteund.'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      position=>resolve({
+        ref:'current',
+        label:'Huidige positie',
+        place:'',
+        address:'',
+        category:'Positie',
+        lat:Number(position.coords.latitude),
+        lon:Number(position.coords.longitude)
+      }),
+      error=>reject(new Error(
+        error?.message||
+        'Huidige positie kon niet worden opgehaald.'
+      )),
+      {
+        enableHighAccuracy:true,
+        timeout:12000,
+        maximumAge:120000
+      }
+    );
+  });
+}
+
+async function useCurrentPositionForPlanner(){
+  setPlannerStatus('Huidige positie ophalen…');
+
+  try{
+    plannerCurrentPosition=await plannerGeolocation();
+    $('plannerFrom').value='current';
+    setPlannerStatus(
+      `Huidige positie ingesteld: ${plannerCurrentPosition.lat.toFixed(5)}, ${plannerCurrentPosition.lon.toFixed(5)}`,
+      'success'
+    );
+    plannerFormChanged();
+  }catch(error){
+    setPlannerStatus(error.message,'error');
+  }
+}
+
+async function resolvePlannerPoint(ref){
+  if(ref==='current'){
+    if(!plannerCurrentPosition){
+      plannerCurrentPosition=await plannerGeolocation();
+    }
+    return {...plannerCurrentPosition};
+  }
+
+  const poi=plannerPoiByRef(ref);
+  const point=plannerPointFromPoi(poi);
+
+  if(!point){
+    throw new Error(
+      `${poi?.name||'Een gekozen POI'} heeft geen geldige GPS-locatie.`
+    );
+  }
+
+  return point;
+}
+
+function setPlannerStatus(message,state=''){
+  const status=$('plannerStatus');
+  if(!status)return;
+
+  status.textContent=message||'';
+  status.classList.toggle('hidden',!message);
+  status.classList.remove('success','warning','error');
+
+  if(state)status.classList.add(state);
+}
+
+function plannerDurationText(hours){
+  const totalMinutes=Math.max(0,Math.round(Number(hours||0)*60));
+  const wholeHours=Math.floor(totalMinutes/60);
+  const minutes=totalMinutes%60;
+
+  if(!wholeHours)return `${minutes} min`;
+  return minutes
+    ?`${wholeHours} uur ${minutes} min`
+    :`${wholeHours} uur`;
+}
+
+function plannerNumber(value,digits=1){
+  return Number(value||0).toLocaleString('nl-NL',{
+    minimumFractionDigits:0,
+    maximumFractionDigits:digits
+  });
+}
+
+function plannerCreateSegments(points,factor){
+  const segments=[];
+
+  for(let index=1;index<points.length;index++){
+    const from=points[index-1];
+    const to=points[index];
+    const directKm=haversineKm(from,to);
+    const estimatedKm=directKm*factor;
+
+    segments.push({
+      index:index-1,
+      from,
+      to,
+      directKm,
+      estimatedKm
+    });
+  }
+
+  return segments;
+}
+
+function plannerBuildTitle(points){
+  const custom=String($('plannerTitle')?.value||'').trim();
+  if(custom)return custom;
+
+  const from=points[0]?.label||'Vertrek';
+  const to=points.at(-1)?.label||'Bestemming';
+  return `${from} naar ${to}`;
+}
+
+async function calculatePlannerRoute({silent=false}={}){
+  const fromRef=String($('plannerFrom')?.value||'');
+  const toRef=String($('plannerTo')?.value||'');
+
+  if(!fromRef||!toRef){
+    setPlannerStatus(
+      'Kies eerst een vertrekpunt en bestemming.',
+      'warning'
+    );
+    return null;
+  }
+
+  if(fromRef===toRef&&!plannerStops.length){
+    setPlannerStatus(
+      'Vertrekpunt en bestemming mogen niet hetzelfde zijn.',
+      'warning'
+    );
+    return null;
+  }
+
+  const speed=Number($('plannerSpeed')?.value||0);
+  const factor=Number($('plannerRouteFactor')?.value||1.3);
+  const fuelPerHour=Number($('plannerFuelPerHour')?.value||0);
+  const fuelPrice=Number($('plannerFuelPrice')?.value||0);
+
+  if(!Number.isFinite(speed)||speed<=0){
+    setPlannerStatus('Vul een geldige gemiddelde snelheid in.','warning');
+    return null;
+  }
+
+  if(!silent)setPlannerStatus('Route en verbruik berekenen…');
+
+  try{
+    const refs=[
+      fromRef,
+      ...plannerStops.filter(ref=>ref!==fromRef&&ref!==toRef),
+      toRef
+    ];
+
+    const points=[];
+    for(const ref of refs){
+      points.push(await resolvePlannerPoint(ref));
+    }
+
+    const segments=plannerCreateSegments(points,factor);
+    const distanceKm=segments.reduce(
+      (sum,segment)=>sum+segment.estimatedKm,
+      0
+    );
+    const durationHours=distanceKm/speed;
+    const fuelLiters=durationHours*fuelPerHour;
+    const fuelCost=fuelLiters*fuelPrice;
+
+    plannerCurrentPlan={
+      id:plannerCurrentPlan?.id||crypto.randomUUID(),
+      createdAt:plannerCurrentPlan?.createdAt||new Date().toISOString(),
+      updatedAt:new Date().toISOString(),
+      date:$('plannerDate')?.value||plannerDefaultDate(),
+      title:plannerBuildTitle(points),
+      fromRef,
+      toRef,
+      stopRefs:[...plannerStops],
+      speed,
+      factor,
+      fuelPerHour,
+      fuelPrice,
+      notes:String($('plannerNotes')?.value||'').trim(),
+      points,
+      segments,
+      distanceKm,
+      durationHours,
+      fuelLiters,
+      fuelCost
+    };
+
+    renderPlannerSummary(plannerCurrentPlan);
+    setPlannerStatus(
+      `Route berekend: ${plannerNumber(distanceKm)} km en ${plannerDurationText(durationHours)}.`,
+      'success'
+    );
+
+    return plannerCurrentPlan;
+  }catch(error){
+    console.error('Reisplanning berekenen mislukt:',error);
+    setPlannerStatus(error.message||'Route berekenen is mislukt.','error');
+    return null;
+  }
+}
+
+function renderPlannerSummary(plan){
+  if(!plan)return;
+
+  $('plannerEmptyState')?.classList.add('hidden');
+  $('plannerSummary')?.classList.remove('hidden');
+
+  $('plannerSummaryTitle').textContent=plan.title||'Geplande vaartocht';
+  $('plannerSummaryBadge').textContent='Berekend';
+  $('plannerDistance').textContent=`${plannerNumber(plan.distanceKm)} km`;
+  $('plannerDuration').textContent=plannerDurationText(plan.durationHours);
+  $('plannerFuel').textContent=`${plannerNumber(plan.fuelLiters)} liter`;
+  $('plannerCost').textContent=formatEuro(plan.fuelCost);
+
+  const segments=Array.isArray(plan.segments)
+    ?plan.segments
+    :plannerCreateSegments(plan.points||[],Number(plan.factor||1.3));
+
+  $('plannerSegments').innerHTML=segments.length
+    ?segments.map((segment,index)=>`
+      <div class="planner-segment">
+        <div class="planner-segment-number">${index+1}</div>
+        <div class="planner-segment-copy">
+          <strong>${esc(segment.from.label)} → ${esc(segment.to.label)}</strong>
+          <small>
+            ${plannerNumber(segment.estimatedKm)} km geschat
+            · ${plannerNumber(segment.directKm)} km rechte lijn
+          </small>
+        </div>
+        <button type="button" class="secondary"
+          onclick="openPlannerSegmentInWaterkaarten(${index})">
+          🧭
+        </button>
+      </div>
+    `).join('')
+    :'<span class="small">Geen etappes beschikbaar.</span>';
+
+  renderPlannerMap(plan);
+}
+
+function plannerDestinationText(point){
+  return [
+    point?.label||'Bestemming',
+    point?.address||point?.place||'',
+    Number.isFinite(point?.lat)&&Number.isFinite(point?.lon)
+      ?`${point.lat.toFixed(6)}, ${point.lon.toFixed(6)}`
+      :''
+  ].filter(Boolean).join(' · ');
+}
+
+async function copyPlannerText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  }catch(error){
+    console.warn('Planning kopiëren mislukt:',error);
+    return false;
+  }
+}
+
+async function openPlannerSegmentInWaterkaarten(index){
+  const segment=plannerCurrentPlan?.segments?.[index];
+  if(!segment)return;
+
+  const copied=await copyPlannerText(
+    plannerDestinationText(segment.to)
+  );
+
+  showAppToast(
+    copied
+      ?`${segment.to.label} gekopieerd. Waterkaarten wordt geopend.`
+      :'Waterkaarten wordt geopend.'
+  );
+
+  setTimeout(()=>openWaterkaarten(),220);
+}
+
+async function openFullPlannerRouteInWaterkaarten(){
+  if(!plannerCurrentPlan){
+    const plan=await calculatePlannerRoute({silent:true});
+    if(!plan)return;
+  }
+
+  const routeText=[
+    `Route: ${plannerCurrentPlan.title}`,
+    ...plannerCurrentPlan.points.map(
+      (point,index)=>`${index+1}. ${plannerDestinationText(point)}`
+    )
+  ].join('\n');
+
+  const copied=await copyPlannerText(routeText);
+
+  showAppToast(
+    copied
+      ?'Volledige route gekopieerd. Waterkaarten wordt geopend.'
+      :'Waterkaarten wordt geopend.'
+  );
+
+  setTimeout(()=>openWaterkaarten(),220);
+}
+
+function plannerDraftDisplayDate(value){
+  if(!value)return 'Datum onbekend';
+
+  const date=new Date(`${value}T12:00:00`);
+  if(Number.isNaN(date.getTime()))return value;
+
+  return date.toLocaleDateString('nl-NL',{
+    weekday:'short',
+    day:'numeric',
+    month:'short',
+    year:'numeric'
+  });
+}
+
+async function savePlannerDraft(){
+  const plan=plannerCurrentPlan||
+    await calculatePlannerRoute({silent:true});
+  if(!plan)return;
+
+  plan.updatedAt=new Date().toISOString();
+
+  const drafts=readPlannerDrafts();
+  const updated=[
+    plan,
+    ...drafts.filter(item=>String(item.id)!==String(plan.id))
+  ].slice(0,40);
+
+  if(!writePlannerDrafts(updated)){
+    setPlannerStatus('Conceptplanning kon niet lokaal worden bewaard.','error');
+    return;
+  }
+
+  renderPlannerDrafts();
+  setPlannerStatus('Conceptplanning op dit apparaat bewaard ✅','success');
+  showAppToast('Reisplanning bewaard ✅');
+}
+
+function renderPlannerDrafts(){
+  const container=$('plannerSavedList');
+  const count=$('plannerSavedCount');
+  if(!container||!count)return;
+
+  const drafts=readPlannerDrafts();
+  count.textContent=String(drafts.length);
+
+  container.innerHTML=drafts.length
+    ?drafts.map(plan=>`
+      <article class="planner-saved-item">
+        <button type="button" class="planner-saved-main"
+          onclick="loadPlannerDraft('${plan.id}')">
+          <span class="planner-saved-icon">🧭</span>
+          <span>
+            <strong>${esc(plan.title||'Geplande vaartocht')}</strong>
+            <small>
+              ${esc(plannerDraftDisplayDate(plan.date))}
+              · ${plannerNumber(plan.distanceKm)} km
+              · ${esc(plannerDurationText(plan.durationHours))}
+            </small>
+          </span>
+          <b>›</b>
+        </button>
+        <div class="planner-saved-actions">
+          <button type="button" class="secondary"
+            onclick="plannerDraftToLogbook('${plan.id}')">
+            Naar logboek
+          </button>
+          <button type="button" class="record-delete-mini"
+            onclick="deletePlannerDraft('${plan.id}')"
+            aria-label="Conceptplanning verwijderen">🗑️</button>
+        </div>
+      </article>
+    `).join('')
+    :'<span class="small">Nog geen conceptplanning bewaard.</span>';
+}
+
+function loadPlannerDraft(id){
+  const plan=readPlannerDrafts()
+    .find(item=>String(item.id)===String(id));
+  if(!plan)return;
+
+  plannerCurrentPlan=plan;
+  plannerStops=Array.isArray(plan.stopRefs)?[...plan.stopRefs]:[];
+
+  populatePlannerSelectors();
+
+  const setSelect=(id,value)=>{
+    const element=$(id);
+    if(!element)return;
+    const exists=[...element.options]
+      .some(option=>option.value===value);
+    if(exists)element.value=value;
+  };
+
+  setSelect('plannerFrom',plan.fromRef);
+  setSelect('plannerTo',plan.toRef);
+
+  $('plannerDate').value=plan.date||plannerDefaultDate();
+  $('plannerSpeed').value=plan.speed??9;
+  $('plannerRouteFactor').value=String(plan.factor??1.3);
+  $('plannerFuelPerHour').value=plan.fuelPerHour??'';
+  $('plannerFuelPrice').value=plan.fuelPrice??'';
+  $('plannerTitle').value=plan.title||'';
+  $('plannerNotes').value=plan.notes||'';
+
+  renderPlannerStops();
+
+  if(
+    !Array.isArray(plan.segments)||
+    !plan.segments.length
+  ){
+    plan.segments=plannerCreateSegments(
+      plan.points||[],
+      Number(plan.factor||1.3)
+    );
+  }
+
+  renderPlannerSummary(plan);
+  setPlannerStatus('Bewaarde planning geopend.','success');
+
+  $('planner')?.scrollIntoView({
+    behavior:'smooth',
+    block:'start'
+  });
+}
+
+function deletePlannerDraft(id){
+  if(!confirm('Deze conceptplanning verwijderen?'))return;
+
+  const drafts=readPlannerDrafts()
+    .filter(item=>String(item.id)!==String(id));
+
+  writePlannerDrafts(drafts);
+
+  if(String(plannerCurrentPlan?.id)===String(id)){
+    plannerCurrentPlan=null;
+  }
+
+  renderPlannerDrafts();
+  showAppToast('Conceptplanning verwijderd.');
+}
+
+async function plannerDraftToLogbook(id){
+  const plan=readPlannerDrafts()
+    .find(item=>String(item.id)===String(id));
+  if(!plan)return;
+
+  plannerCurrentPlan=plan;
+  await plannerToLogbook();
+}
+
+function plannerNotesForLogbook(plan){
+  const stops=(plan.points||[])
+    .slice(1,-1)
+    .map(point=>point.label)
+    .filter(Boolean);
+
+  return [
+    'Gepland met MijnSerenity Reisplanner.',
+    `Geschatte afstand: ${plannerNumber(plan.distanceKm)} km.`,
+    `Waterwegfactor: ${Number(plan.factor||1.3).toLocaleString('nl-NL',{maximumFractionDigits:2})}.`,
+    stops.length?`Tussenstops: ${stops.join(' → ')}.`:'',
+    'Controleer de definitieve vaarroute, bruggen en sluizen in Waterkaarten.',
+    plan.notes||''
+  ].filter(Boolean).join('\n');
+}
+
+async function plannerToLogbook(){
+  const plan=plannerCurrentPlan||
+    await calculatePlannerRoute({silent:true});
+  if(!plan)return;
+
+  captainNavigate('logbook');
+
+  setTimeout(()=>{
+    clearTripForm();
+
+    $('tripDate').value=plan.date||plannerDefaultDate();
+    $('tripTitle').value=plan.title||'Geplande vaartocht';
+    $('tripFrom').value=plan.points?.[0]?.label||'';
+    $('tripTo').value=plan.points?.at(-1)?.label||'';
+    $('tripDistance').value=Number(plan.distanceKm||0).toFixed(1);
+    $('tripHours').value=Number(plan.durationHours||0).toFixed(1);
+    $('tripFuelLiters').value=Number(plan.fuelLiters||0)
+      ?Number(plan.fuelLiters).toFixed(1)
+      :'';
+    $('tripFuelCost').value=Number(plan.fuelCost||0)
+      ?Number(plan.fuelCost).toFixed(2)
+      :'';
+    $('tripCrew').value='Michel, Desi';
+    $('tripNotes').value=plannerNotesForLogbook(plan);
+
+    $('tripFormTitle').textContent='Geplande vaartocht opslaan';
+    openTripForm();
+    previewFuelCalculation();
+
+    window.scrollTo({top:0,behavior:'smooth'});
+    showAppToast('Planning staat klaar in het logboek.');
+  },140);
+}
+
+function plannerShareText(plan){
+  const segments=(plan.segments||[]).map(
+    (segment,index)=>
+      `${index+1}. ${segment.from.label} → ${segment.to.label}: ${plannerNumber(segment.estimatedKm)} km`
+  );
+
+  return [
+    `MijnSerenity reisplanning: ${plan.title}`,
+    `Datum: ${plannerDraftDisplayDate(plan.date)}`,
+    `Afstand: ${plannerNumber(plan.distanceKm)} km`,
+    `Vaartijd: ${plannerDurationText(plan.durationHours)}`,
+    `Brandstof: ${plannerNumber(plan.fuelLiters)} liter`,
+    `Kosten: ${formatEuro(plan.fuelCost)}`,
+    '',
+    ...segments,
+    '',
+    'Let op: dit is een schatting. Controleer de route in Waterkaarten.'
+  ].join('\n');
+}
+
+async function sharePlannerRoute(){
+  const plan=plannerCurrentPlan||
+    await calculatePlannerRoute({silent:true});
+  if(!plan)return;
+
+  const text=plannerShareText(plan);
+
+  if(navigator.share){
+    try{
+      await navigator.share({
+        title:plan.title,
+        text
+      });
+      return;
+    }catch(error){
+      if(error?.name==='AbortError')return;
+    }
+  }
+
+  const copied=await copyPlannerText(text);
+  showAppToast(
+    copied
+      ?'Reisplanning gekopieerd.'
+      :'Reisplanning kon niet worden gedeeld.'
+  );
+}
+
+function resetPlannerForm(){
+  plannerStops=[];
+  plannerCurrentPlan=null;
+  plannerCurrentPosition=null;
+
+  populatePlannerSelectors();
+  plannerSetDefaults();
+
+  if($('plannerFrom'))$('plannerFrom').value='current';
+  if($('plannerTo'))$('plannerTo').value='';
+  if($('plannerDate'))$('plannerDate').value=plannerDefaultDate();
+  if($('plannerSpeed'))$('plannerSpeed').value='9';
+  if($('plannerRouteFactor'))$('plannerRouteFactor').value='1.30';
+  if($('plannerTitle'))$('plannerTitle').value='';
+  if($('plannerNotes'))$('plannerNotes').value='';
+
+  renderPlannerStops();
+
+  $('plannerSummary')?.classList.add('hidden');
+  $('plannerEmptyState')?.classList.remove('hidden');
+  $('plannerSummaryTitle').textContent='Nog geen route berekend';
+  $('plannerSummaryBadge').textContent='Concept';
+  setPlannerStatus('');
+
+  if(plannerMapLayer)plannerMapLayer.clearLayers();
+  if(plannerMap)plannerMap.setView([52.25,5.45],7);
+}
+
+function harbourLibraryPois(){
+  return poiCache
+    .filter(poi=>String(poi.category||'')==='Haven')
+    .sort((a,b)=>{
+      const favoriteDifference=
+        Number(isFavoritePoi(b))-Number(isFavoritePoi(a));
+      if(favoriteDifference)return favoriteDifference;
+
+      return String(a.name||'').localeCompare(
+        String(b.name||''),
+        'nl'
+      );
+    });
+}
+
+function harbourCompleteness(poi){
+  const photos=poiPhotoCache?.[poi.id]||[];
+  const checks=[
+    Boolean(String(poi.name||'').trim()),
+    Boolean(String(poi.place||'').trim()),
+    Boolean(String(poi.address||'').trim()),
+    plannerPoiHasLocation(poi),
+    Boolean(String(poi.review||'').trim()),
+    Number(poi.rating||0)>0,
+    photos.length>0
+  ];
+
+  const completeCount=checks.filter(Boolean).length;
+  const percentage=Math.round(
+    completeCount/checks.length*100
+  );
+
+  const missing=[];
+  if(!checks[1])missing.push('plaats');
+  if(!checks[2])missing.push('adres');
+  if(!checks[3])missing.push('GPS');
+  if(!checks[4])missing.push('informatie');
+  if(!checks[5])missing.push('beoordeling');
+  if(!checks[6])missing.push('foto');
+
+  return {
+    percentage,
+    complete:percentage>=85,
+    missing
+  };
+}
+
+function renderHarbourLibrary(){
+  const container=$('harbourLibraryList');
+  if(!container)return;
+
+  const all=harbourLibraryPois();
+  const query=String($('harbourLibrarySearch')?.value||'')
+    .toLowerCase()
+    .trim();
+  const filter=$('harbourLibraryFilter')?.value||'';
+
+  const enriched=all.map(poi=>({
+    poi,
+    completeness:harbourCompleteness(poi),
+    photoCount:(poiPhotoCache?.[poi.id]||[]).length
+  }));
+
+  const filtered=enriched.filter(item=>{
+    const {poi,completeness,photoCount}=item;
+    const haystack=[
+      poi.name,
+      poi.place,
+      poi.address,
+      poi.review
+    ].join(' ').toLowerCase();
+
+    if(query&&!haystack.includes(query))return false;
+    if(filter==='favorite'&&!isFavoritePoi(poi))return false;
+    if(filter==='complete'&&!completeness.complete)return false;
+    if(filter==='incomplete'&&completeness.complete)return false;
+    if(filter==='photos'&&!photoCount)return false;
+    return true;
+  });
+
+  const completeCount=enriched.filter(
+    item=>item.completeness.complete
+  ).length;
+  const favoriteCount=all.filter(isFavoritePoi).length;
+
+  $('harbourLibraryTotal').textContent=String(all.length);
+  $('harbourLibraryFavorites').textContent=String(favoriteCount);
+  $('harbourLibraryComplete').textContent=String(completeCount);
+  $('harbourLibraryIncomplete').textContent=String(all.length-completeCount);
+
+  container.innerHTML=filtered.length
+    ?filtered.map(item=>{
+      const {poi,completeness,photoCount}=item;
+      const updated=poi.updated_at
+        ?captainFormatDate(poi.updated_at)
+        :'Onbekend';
+
+      return `
+        <article class="harbour-library-item">
+          <button type="button" class="harbour-library-main"
+            onclick="showPoiDetails('${poi.id}')">
+            <span class="harbour-library-icon">
+              ${isFavoritePoi(poi)?'⭐':'⚓'}
+            </span>
+            <span class="harbour-library-copy">
+              <strong>${esc(poi.name||'Haven')}</strong>
+              <small>
+                ${esc(poi.place||poi.address||'Plaats onbekend')}
+                · bijgewerkt ${esc(updated)}
+              </small>
+              <span class="harbour-completeness-bar">
+                <i style="width:${completeness.percentage}%"></i>
+              </span>
+              <em>
+                ${completeness.percentage}% compleet
+                ${completeness.missing.length
+                  ?` · mist ${esc(completeness.missing.slice(0,3).join(', '))}`
+                  :' · klaar voor gebruik'}
+              </em>
+            </span>
+            <b>›</b>
+          </button>
+
+          <div class="harbour-library-meta">
+            <span>📷 ${photoCount}</span>
+            <span>⭐ ${Number(poi.rating||0)||'–'}</span>
+            <span>${plannerPoiHasLocation(poi)?'📍 GPS':'⚠️ geen GPS'}</span>
+          </div>
+
+          <div class="harbour-library-item-actions">
+            <button type="button" class="secondary"
+              onclick="planToHarbour('${poi.id}')">
+              🧭 Plan hierheen
+            </button>
+            <button type="button" class="secondary"
+              onclick='editPoi(
+                ${JSON.stringify(poi.id)},
+                ${JSON.stringify(poi.name)},
+                ${JSON.stringify(poi.category)},
+                ${JSON.stringify(poi.place)},
+                ${JSON.stringify(poi.address)},
+                ${JSON.stringify(poi.rating)},
+                ${JSON.stringify(poi.review)},
+                ${JSON.stringify(isFavoritePoi(poi))},
+                ${JSON.stringify(poi.latitude)},
+                ${JSON.stringify(poi.longitude)}
+              );captainNavigate("pois")'>
+              ✏️ Aanvullen
+            </button>
+          </div>
+        </article>
+      `;
+    }).join('')
+    :'<span class="small">Geen havens gevonden met deze selectie.</span>';
+}
+
+function planToHarbour(id){
+  const poi=getPoiById(id);
+  if(!poi)return;
+
+  if(!plannerPoiHasLocation(poi)){
+    showAppToast('Deze haven heeft nog geen GPS-locatie.');
+    return;
+  }
+
+  captainNavigate('planner');
+
+  setTimeout(()=>{
+    populatePlannerSelectors();
+    $('plannerFrom').value='current';
+    $('plannerTo').value=plannerPoiReference(poi);
+    $('plannerTitle').value=`Naar ${poi.name||'haven'}`;
+    plannerStops=[];
+    renderPlannerStops();
+    plannerFormChanged();
+    $('plannerTo')?.scrollIntoView({
+      behavior:'smooth',
+      block:'center'
+    });
+    showAppToast(`${poi.name} ingesteld als bestemming.`);
+  },100);
+}
+
+function openNewHarbourFromLibrary(){
+  captainNavigate('pois');
+
+  setTimeout(()=>{
+    clearPoiForm(false);
+    $('poiCategory').value='Haven';
+    $('poiFormTitle').textContent='Nieuwe haven toevoegen';
+    $('poiName')?.focus();
+  },100);
+}
+
+function openNearbyHarbourSearchFromLibrary(){
+  captainNavigate('pois');
+
+  setTimeout(()=>{
+    clearPoiForm(false);
+    $('poiCategory').value='Haven';
+    searchNearbyPois('Haven');
+  },120);
+}
 
 function formatEuro(value){
   return Number(value||0).toLocaleString('nl-NL',{
@@ -7140,14 +8319,27 @@ function captainNavigate(id, sourceButton=null){
     id='settings';
     sourceButton=null;
   }
+
   const desktopButtons=[...document.querySelectorAll('.tab')];
-  const map={dashboard:0,live:1,map:2,pois:3,logbook:4,costs:5,finance:6,settings:7,boat:8};
+  const map={
+    dashboard:0,
+    live:1,
+    map:2,
+    planner:3,
+    pois:4,
+    logbook:5,
+    costs:6,
+    finance:7,
+    settings:8,
+    boat:9
+  };
   const desktopButton=desktopButtons[map[id]];
 
-  if(typeof showTab==='function' && desktopButton){
+  if(typeof showTab==='function'&&desktopButton){
     showTab(id,desktopButton);
   }else{
-    document.querySelectorAll('#appView > section').forEach(section=>section.classList.add('hidden'));
+    document.querySelectorAll('#appView > section')
+      .forEach(section=>section.classList.add('hidden'));
     document.getElementById(id)?.classList.remove('hidden');
   }
 
@@ -7157,24 +8349,48 @@ function captainNavigate(id, sourceButton=null){
     button.classList.toggle('active',button.dataset.target===id);
   });
 
-  if(id==='live' && typeof initLiveMode==='function')setTimeout(()=>initLiveMode(),80);
-  if(id==='map' && typeof initMap==='function')setTimeout(()=>initMap(),80);
+  if(id==='live'&&typeof initLiveMode==='function'){
+    setTimeout(()=>initLiveMode(),80);
+  }
+
+  if(id==='map'&&typeof initMap==='function'){
+    setTimeout(()=>initMap(),80);
+  }
+
+  if(id==='planner'&&typeof initPlanner==='function'){
+    setTimeout(()=>initPlanner(),60);
+  }
+
   if(id==='dashboard'){
-    if(typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
-    if(typeof updateDashboardFinanceSummary==='function')updateDashboardFinanceSummary();
-    if(typeof renderCaptainCommandCenter==='function')renderCaptainCommandCenter();
+    if(typeof updateLatestRouteDashboard==='function'){
+      setTimeout(()=>updateLatestRouteDashboard(),80);
+    }
+    if(typeof updateDashboardFinanceSummary==='function'){
+      updateDashboardFinanceSummary();
+    }
+    if(typeof renderCaptainCommandCenter==='function'){
+      renderCaptainCommandCenter();
+    }
     if(isAppAdmin())loadAdminAccounts();
   }
+
   if(id==='pois'){
     resetPoiFilters(false);
     renderPoiList();
+
     if(currentBoat){
-      loadPois().catch(error=>console.error('POI opnieuw laden mislukt:',error));
+      loadPois().catch(error=>
+        console.error('POI opnieuw laden mislukt:',error)
+      );
     }
   }
+
   if(id==='logbook'){
     const editing=Boolean($('tripId')?.value);
-    const imported=Boolean(pendingTripRouteDetails||pendingTripRouteFile);
+    const imported=Boolean(
+      pendingTripRouteDetails||
+      pendingTripRouteFile
+    );
 
     if(!editing&&!imported){
       closeTripForm();
@@ -7182,10 +8398,15 @@ function captainNavigate(id, sourceButton=null){
 
     setTimeout(()=>autoCheckSavedICloudRouteFolder(),150);
   }
-  if(id==='finance' && typeof renderFinance==='function')renderFinance();
+
+  if(id==='finance'&&typeof renderFinance==='function'){
+    renderFinance();
+  }
+
   if(id==='settings'){
     if(typeof loadSettingsForm==='function')loadSettingsForm();
     if(typeof loadDashboardPhoto==='function')loadDashboardPhoto();
+
     if(!$('accountPanelWrap')?.classList.contains('hidden')){
       loadAccountManagement();
     }
@@ -8181,7 +9402,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.2.4';
+const APP_VERSION='5.3.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -8258,7 +9479,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5240',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5300',{updateViaCache:'none'});
 
     await registration.update();
 

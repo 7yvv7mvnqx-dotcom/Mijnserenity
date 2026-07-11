@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="5.2.4">
-<link rel="apple-touch-icon" href="icon-192.png?v=5240">
+<meta name="mijnserenity-build" content="5.3.0">
+<link rel="apple-touch-icon" href="icon-192.png?v=5300">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=5240">
+<link rel="manifest" href="manifest.json?v=5300">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=5240">
+<link rel="stylesheet" href="styles.css?v=5300">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5240" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5300" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5240" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5300" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -87,6 +87,7 @@
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
     <button class="tab" onclick="showTab('live',this);initLiveMode()">Live varen</button>
     <button class="tab" onclick="showTab('map',this);initMap()">Kaart</button>
+    <button class="tab" onclick="showTab('planner',this);initPlanner()">Reisplanner</button>
 <button class="tab" onclick="showTab('pois',this)">POI's</button>
     <button class="tab" onclick="showTab('logbook',this)">Logboek</button>
 <button class="tab" onclick="showTab('costs',this)">Kosten</button>
@@ -236,9 +237,15 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=5240" alt="">
+          <img src="waterkaarten-dashboard.png?v=5300" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="dashboard-tile tile-planner" onclick="captainNavigate('planner')">
+        <span class="tile-icon-shell"><span class="tile-icon">🧭</span></span>
+        <span class="tile-copy"><b>Reisplanner</b><small>Route, tijd en brandstof</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
@@ -318,7 +325,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v5.2.4</div>
+          <div class="label">Sync · v5.3.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -447,6 +454,239 @@
       </div>
       <div id="liveSaveStatus" class="status small hidden"></div>
       <p class="small live-warning">Open MijnSerenity en Waterkaarten naast elkaar in Split View en laat beide schermen zichtbaar totdat de reis in het logboek is opgeslagen. Zo blijft de GPS-opname actief.</p>
+    </div>
+  </section>
+
+
+  <section id="planner" class="hidden">
+    <div class="card hero planner-hero">
+      <div class="planner-hero-head">
+        <div>
+          <span class="eyebrow">MIJNSERENITY 5.3</span>
+          <h2>Reisplanner & Havenbibliotheek</h2>
+          <p class="small">
+            Plan een vaartocht met opgeslagen POI’s, bereken tijd en brandstof
+            en zet de planning daarna klaar in het gedeelde logboek.
+          </p>
+        </div>
+        <span class="planner-version-badge">5.3.0</span>
+      </div>
+      <div class="planner-warning">
+        Afstand is een schatting op basis van rechte lijnen en een instelbare
+        waterwegfactor. Controleer de definitieve route altijd in Waterkaarten.
+      </div>
+    </div>
+
+    <div class="planner-layout">
+      <div class="card planner-form-card">
+        <div class="planner-card-heading">
+          <div>
+            <span class="eyebrow">NIEUWE PLANNING</span>
+            <h3>Stel je route samen</h3>
+          </div>
+          <button type="button" class="secondary planner-reset-button"
+            onclick="resetPlannerForm()">Leegmaken</button>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="plannerDate">Geplande datum</label>
+            <input id="plannerDate" type="date">
+          </div>
+          <div>
+            <label for="plannerSpeed">Gemiddelde snelheid km/u</label>
+            <input id="plannerSpeed" type="number" min="1" max="30"
+              step="0.1" value="9">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="plannerFrom">Vertrekpunt</label>
+            <select id="plannerFrom" onchange="plannerFormChanged()"></select>
+          </div>
+          <div>
+            <label for="plannerTo">Bestemming</label>
+            <select id="plannerTo" onchange="plannerFormChanged()"></select>
+          </div>
+        </div>
+
+        <div class="planner-stop-builder">
+          <label for="plannerStopSelect">Tussenstop toevoegen</label>
+          <div class="planner-stop-add-row">
+            <select id="plannerStopSelect"></select>
+            <button type="button" class="secondary"
+              onclick="addPlannerStop()">＋ Toevoegen</button>
+          </div>
+          <div id="plannerStops" class="planner-stop-chips">
+            <span class="small">Nog geen tussenstops.</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="plannerRouteFactor">Waterwegfactor</label>
+            <select id="plannerRouteFactor">
+              <option value="1.10">1,10 · vrij directe route</option>
+              <option value="1.20">1,20 · licht omvaren</option>
+              <option value="1.30" selected>1,30 · normale vaarroute</option>
+              <option value="1.45">1,45 · veel bochten/omvaren</option>
+              <option value="1.60">1,60 · complexe route</option>
+            </select>
+          </div>
+          <div>
+            <label for="plannerFuelPerHour">Verbruik liter/uur</label>
+            <input id="plannerFuelPerHour" type="number" min="0"
+              step="0.1" placeholder="Uit instellingen">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="plannerFuelPrice">Dieselprijs €/liter</label>
+            <input id="plannerFuelPrice" type="number" min="0"
+              step="0.01" placeholder="Uit instellingen">
+          </div>
+          <div>
+            <label for="plannerTitle">Naam van de planning</label>
+            <input id="plannerTitle"
+              placeholder="Bijv. Meppel naar Gramsbergen">
+          </div>
+        </div>
+
+        <label for="plannerNotes">Notities</label>
+        <textarea id="plannerNotes"
+          placeholder="Overnachting, bruggen, boodschappen of aandachtspunten"></textarea>
+
+        <div class="actions planner-main-actions">
+          <button type="button" onclick="calculatePlannerRoute()">
+            🧮 Bereken vaartocht
+          </button>
+          <button type="button" class="secondary"
+            onclick="useCurrentPositionForPlanner()">
+            📍 Gebruik huidige positie
+          </button>
+        </div>
+
+        <div id="plannerStatus" class="status small hidden"></div>
+      </div>
+
+      <div class="card planner-summary-card">
+        <div class="planner-card-heading">
+          <div>
+            <span class="eyebrow">ROUTEOVERZICHT</span>
+            <h3 id="plannerSummaryTitle">Nog geen route berekend</h3>
+          </div>
+          <span id="plannerSummaryBadge"
+            class="planner-summary-badge">Concept</span>
+        </div>
+
+        <div id="plannerEmptyState" class="planner-empty-state">
+          <span>🧭</span>
+          <b>Kies vertrek en bestemming</b>
+          <small>MijnSerenity berekent daarna afstand, tijd, verbruik en kosten.</small>
+        </div>
+
+        <div id="plannerSummary" class="hidden">
+          <div class="planner-metrics">
+            <div><span>Geschatte afstand</span><strong id="plannerDistance">0 km</strong></div>
+            <div><span>Geschatte vaartijd</span><strong id="plannerDuration">0 uur</strong></div>
+            <div><span>Brandstof</span><strong id="plannerFuel">0 liter</strong></div>
+            <div><span>Brandstofkosten</span><strong id="plannerCost">€0,00</strong></div>
+          </div>
+
+          <div id="plannerMap" class="planner-map"></div>
+
+          <div class="planner-segment-heading">
+            <b>Etappes</b>
+            <button type="button" class="secondary"
+              onclick="openFullPlannerRouteInWaterkaarten()">
+              🧭 Route naar Waterkaarten
+            </button>
+          </div>
+          <div id="plannerSegments" class="planner-segments"></div>
+
+          <div class="actions planner-result-actions">
+            <button type="button" onclick="savePlannerDraft()">
+              💾 Bewaar planning
+            </button>
+            <button type="button" class="secondary"
+              onclick="plannerToLogbook()">
+              📖 Zet klaar in logboek
+            </button>
+            <button type="button" class="secondary"
+              onclick="sharePlannerRoute()">
+              ↗ Deel overzicht
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card planner-saved-card">
+      <div class="planner-card-heading">
+        <div>
+          <span class="eyebrow">CONCEPTPLANNINGEN</span>
+          <h3>Bewaarde routes op dit apparaat</h3>
+        </div>
+        <span id="plannerSavedCount" class="planner-count-badge">0</span>
+      </div>
+      <p class="small">
+        Concepten worden lokaal bewaard. Via “Zet klaar in logboek” wordt
+        de vaartocht gedeeld met Desi.
+      </p>
+      <div id="plannerSavedList" class="planner-saved-list">
+        <span class="small">Nog geen conceptplanning bewaard.</span>
+      </div>
+    </div>
+
+    <div class="card harbour-library-card">
+      <div class="planner-card-heading harbour-library-heading">
+        <div>
+          <span class="eyebrow">HAVENBIBLIOTHEEK</span>
+          <h3>Jullie eigen havendatabase</h3>
+        </div>
+        <button type="button" onclick="openNewHarbourFromLibrary()">
+          ＋ Haven toevoegen
+        </button>
+      </div>
+
+      <div class="harbour-library-stats">
+        <div><span>Havens</span><strong id="harbourLibraryTotal">0</strong></div>
+        <div><span>Favorieten</span><strong id="harbourLibraryFavorites">0</strong></div>
+        <div><span>Compleet</span><strong id="harbourLibraryComplete">0</strong></div>
+        <div><span>Aandacht nodig</span><strong id="harbourLibraryIncomplete">0</strong></div>
+      </div>
+
+      <div class="harbour-library-toolbar">
+        <input id="harbourLibrarySearch" type="search"
+          autocomplete="off"
+          placeholder="Zoek haven, plaats, adres of notitie"
+          oninput="renderHarbourLibrary()">
+        <select id="harbourLibraryFilter"
+          onchange="renderHarbourLibrary()">
+          <option value="">Alle havens</option>
+          <option value="favorite">Alleen favorieten</option>
+          <option value="complete">Compleet ingevuld</option>
+          <option value="incomplete">Aandacht nodig</option>
+          <option value="photos">Met foto’s</option>
+        </select>
+      </div>
+
+      <div class="actions harbour-library-actions">
+        <button type="button" class="secondary"
+          onclick="openNearbyHarbourSearchFromLibrary()">
+          📡 Zoek havens in omgeving
+        </button>
+        <button type="button" class="secondary"
+          onclick="captainNavigate('map')">
+          🗺️ Toon op kaart
+        </button>
+      </div>
+
+      <div id="harbourLibraryList" class="harbour-library-list">
+        <span class="small">Nog geen havens in de bibliotheek.</span>
+      </div>
     </div>
   </section>
 
@@ -982,6 +1222,9 @@
     <button class="bottom-nav-item" data-target="map" onclick="captainNavigate('map',this)">
       <span>🗺️</span><small>Kaart</small>
     </button>
+    <button class="bottom-nav-item" data-target="planner" onclick="captainNavigate('planner',this)">
+      <span>🧭</span><small>Plan</small>
+    </button>
     <button class="bottom-nav-item" data-target="logbook" onclick="captainNavigate('logbook',this)">
       <span>📖</span><small>Logboek</small>
     </button>
@@ -1051,6 +1294,6 @@
   </div>
 </div>
 
-<script src="app.js?v=5240"></script>
+<script src="app.js?v=5300"></script>
 </body>
 </html>
