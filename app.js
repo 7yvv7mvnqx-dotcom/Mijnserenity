@@ -10,6 +10,9 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let tripRouteMaps={};
 let pendingTripRouteDetails=null;
+let pendingTripRouteFile=null;
+let pendingTripRouteFingerprint=null;
+let savedICloudRouteHandle=null;
 let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiLocationSuggestionController=null,poiLiveSuggestionResults={place:[],address:[]};
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
@@ -2112,7 +2115,7 @@ async function saveTrip(){
     if(error){setTripProgress('');return alert(error.message)}
     tripId=data.id;
   }
-  if(!row.fuel_liters&&row.duration_hours&&settingsCache?.fuel_per_hour)row.fuel_liters=Number(row.duration_hours)*Number(settingsCache.fuel_per_hour);if(!row.fuel_cost&&row.fuel_liters&&settingsCache?.fuel_price)row.fuel_cost=Number(row.fuel_liters)*Number(settingsCache.fuel_price);await sb.from('trips').update({fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost}).eq('id',tripId);const routeFile=$('tripGpx').files[0];
+  if(!row.fuel_liters&&row.duration_hours&&settingsCache?.fuel_per_hour)row.fuel_liters=Number(row.duration_hours)*Number(settingsCache.fuel_per_hour);if(!row.fuel_cost&&row.fuel_liters&&settingsCache?.fuel_price)row.fuel_cost=Number(row.fuel_liters)*Number(settingsCache.fuel_price);await sb.from('trips').update({fuel_liters:row.fuel_liters,fuel_cost:row.fuel_cost}).eq('id',tripId);const routeFile=pendingTripRouteFile||$('tripGpx').files[0];
   if(routeFile){
     setTripProgress('Route uit Waterkaarten verwerken…');
 
@@ -2160,6 +2163,11 @@ async function saveTrip(){
   }
   const files=[...$('tripPhotos').files].slice(0,10);
   if(files.length)await uploadTripPhotos(tripId,files);
+
+  if(pendingTripRouteFingerprint){
+    markRouteFingerprintImported(pendingTripRouteFingerprint);
+  }
+
   clearTripForm();
   await loadTrips();
 }
@@ -2181,6 +2189,8 @@ function clearTripForm(){
   $('tripCancelButton').classList.add('hidden');
 
   pendingTripRouteDetails=null;
+  pendingTripRouteFile=null;
+  pendingTripRouteFingerprint=null;
   const importStatus=$('tripRouteImportStatus');
   importStatus?.classList.add('hidden');
   if(importStatus)importStatus.innerHTML='';
@@ -2491,6 +2501,9 @@ function captainNavigate(id, sourceButton=null){
     if(currentBoat){
       loadPois().catch(error=>console.error('POI opnieuw laden mislukt:',error));
     }
+  }
+  if(id==='logbook'){
+    setTimeout(()=>autoCheckSavedICloudRouteFolder(),150);
   }
   if(id==='finance' && typeof renderFinance==='function')renderFinance();
   if(id==='settings'){
@@ -3060,7 +3073,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.18';
+const APP_VERSION='5.1.19';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -3183,6 +3196,269 @@ window.addEventListener('load',()=>{
 });
 
 
+
+
+function isSupportedRouteFile(file){
+  const name=String(file?.name||'').toLowerCase();
+  return name.endsWith('.kmz')||name.endsWith('.kml')||name.endsWith('.gpx');
+}
+
+function routeFileFingerprint(file){
+  return [
+    String(file?.name||''),
+    Number(file?.size||0),
+    Number(file?.lastModified||0)
+  ].join('|');
+}
+
+function importedRouteStorageKey(){
+  return `mijnserenity-imported-routes-${currentBoat?.id||'geen-boot'}`;
+}
+
+function readImportedRouteFingerprints(){
+  try{
+    const value=JSON.parse(localStorage.getItem(importedRouteStorageKey())||'[]');
+    return Array.isArray(value)?value:[];
+  }catch(error){
+    return [];
+  }
+}
+
+function isRouteAlreadyImported(file){
+  return readImportedRouteFingerprints().includes(routeFileFingerprint(file));
+}
+
+function markRouteFingerprintImported(fingerprint){
+  if(!fingerprint)return;
+
+  try{
+    const current=readImportedRouteFingerprints();
+    const updated=[fingerprint,...current.filter(value=>value!==fingerprint)].slice(0,250);
+    localStorage.setItem(importedRouteStorageKey(),JSON.stringify(updated));
+  }catch(error){
+    console.warn('Route-import kon niet lokaal worden bijgehouden:',error);
+  }
+}
+
+function setICloudRouteStatus(message,state=''){
+  const status=$('icloudRouteFolderStatus');
+  if(!status)return;
+
+  status.textContent=message||'';
+  status.classList.toggle('success',state==='success');
+  status.classList.toggle('warning',state==='warning');
+  status.classList.toggle('error',state==='error');
+}
+
+function openRouteHandleDatabase(){
+  return new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){
+      reject(new Error('Lokale mapopslag wordt niet ondersteund.'));
+      return;
+    }
+
+    const request=indexedDB.open('mijnserenity-route-handles',1);
+
+    request.onupgradeneeded=()=>{
+      const database=request.result;
+      if(!database.objectStoreNames.contains('handles')){
+        database.createObjectStore('handles');
+      }
+    };
+
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||new Error('Mapopslag openen mislukt.'));
+  });
+}
+
+async function storeRouteDirectoryHandle(handle){
+  try{
+    const database=await openRouteHandleDatabase();
+
+    await new Promise((resolve,reject)=>{
+      const transaction=database.transaction('handles','readwrite');
+      transaction.objectStore('handles').put(handle,'vaarroutes');
+      transaction.oncomplete=resolve;
+      transaction.onerror=()=>reject(transaction.error);
+    });
+
+    database.close();
+  }catch(error){
+    console.warn('De Vaarroutes-map kon niet worden onthouden:',error);
+  }
+}
+
+async function getStoredRouteDirectoryHandle(){
+  try{
+    const database=await openRouteHandleDatabase();
+
+    const handle=await new Promise((resolve,reject)=>{
+      const transaction=database.transaction('handles','readonly');
+      const request=transaction.objectStore('handles').get('vaarroutes');
+      request.onsuccess=()=>resolve(request.result||null);
+      request.onerror=()=>reject(request.error);
+    });
+
+    database.close();
+    return handle;
+  }catch(error){
+    return null;
+  }
+}
+
+async function ensureRouteDirectoryPermission(handle,requestPermission=false){
+  if(!handle)return false;
+
+  try{
+    let permission=await handle.queryPermission({mode:'read'});
+
+    if(permission==='prompt'&&requestPermission){
+      permission=await handle.requestPermission({mode:'read'});
+    }
+
+    return permission==='granted';
+  }catch(error){
+    return false;
+  }
+}
+
+function newestUnimportedRouteFile(files){
+  return [...(files||[])]
+    .filter(isSupportedRouteFile)
+    .filter(file=>!isRouteAlreadyImported(file))
+    .sort((a,b)=>Number(b.lastModified||0)-Number(a.lastModified||0))[0]||null;
+}
+
+async function collectRouteFilesFromDirectory(handle){
+  const files=[];
+
+  for await(const entry of handle.values()){
+    if(entry.kind!=='file')continue;
+
+    const name=String(entry.name||'').toLowerCase();
+    if(!name.endsWith('.kmz')&&!name.endsWith('.kml')&&!name.endsWith('.gpx')){
+      continue;
+    }
+
+    try{
+      files.push(await entry.getFile());
+    }catch(error){
+      console.warn('Routebestand kon niet worden geopend:',entry.name,error);
+    }
+  }
+
+  return files;
+}
+
+async function importNewestRouteFile(files,sourceLabel='iCloud Drive / Vaarroutes'){
+  const routeFile=newestUnimportedRouteFile(files);
+
+  if(!routeFile){
+    setICloudRouteStatus(
+      'Geen nieuw GPX-, KML- of KMZ-bestand gevonden.',
+      'warning'
+    );
+    return false;
+  }
+
+  setICloudRouteStatus(
+    `Nieuwste route gevonden: ${routeFile.name}. Bezig met importeren…`
+  );
+
+  await handleTripRouteImport(routeFile,sourceLabel);
+
+  setICloudRouteStatus(
+    `${routeFile.name} is ingelezen. Sla de vaartocht op om de import af te ronden.`,
+    'success'
+  );
+
+  return true;
+}
+
+async function scanICloudRouteDirectory(handle,userInitiated=false){
+  if(!handle)return false;
+
+  const allowed=await ensureRouteDirectoryPermission(handle,userInitiated);
+
+  if(!allowed){
+    if(userInitiated){
+      setICloudRouteStatus(
+        'Geen toegang tot de gekozen map. Kies de map Vaarroutes opnieuw.',
+        'error'
+      );
+    }
+    return false;
+  }
+
+  savedICloudRouteHandle=handle;
+  setICloudRouteStatus('Map Vaarroutes controleren…');
+
+  try{
+    const files=await collectRouteFilesFromDirectory(handle);
+    return await importNewestRouteFile(files);
+  }catch(error){
+    console.error('Vaarroutes-map controleren mislukt:',error);
+    setICloudRouteStatus(
+      'De map kon niet worden gecontroleerd. Kies het nieuwste bestand handmatig.',
+      'error'
+    );
+    return false;
+  }
+}
+
+async function chooseICloudRouteFolder(){
+  $('tripFormWrap')?.classList.remove('hidden');
+
+  if('showDirectoryPicker' in window){
+    try{
+      const handle=await window.showDirectoryPicker({
+        id:'mijnserenity-vaarroutes',
+        mode:'read',
+        startIn:'documents'
+      });
+
+      savedICloudRouteHandle=handle;
+      await storeRouteDirectoryHandle(handle);
+      await scanICloudRouteDirectory(handle,true);
+      return;
+    }catch(error){
+      if(error?.name==='AbortError')return;
+      console.warn('Mapkiezer niet beschikbaar, bestandenkiezer wordt geopend:',error);
+    }
+  }
+
+  setICloudRouteStatus(
+    'Open iCloud Drive, ga naar Vaarroutes en kies het nieuwste routebestand.'
+  );
+  $('icloudRouteFiles')?.click();
+}
+
+async function handleICloudRouteFileSelection(fileList){
+  const files=[...(fileList||[])];
+
+  if(!files.length)return;
+
+  try{
+    await importNewestRouteFile(files);
+  }finally{
+    $('icloudRouteFiles').value='';
+  }
+}
+
+async function autoCheckSavedICloudRouteFolder(){
+  if(!currentBoat)return;
+
+  if(!savedICloudRouteHandle){
+    savedICloudRouteHandle=await getStoredRouteDirectoryHandle();
+  }
+
+  if(!savedICloudRouteHandle)return;
+
+  const allowed=await ensureRouteDirectoryPermission(savedICloudRouteHandle,false);
+  if(!allowed)return;
+
+  await scanICloudRouteDirectory(savedICloudRouteHandle,false);
+}
 
 function routeFileBaseName(file){
   return String(file?.name||'Vaarroute')
@@ -3923,8 +4199,22 @@ function applyTripRouteDetails(details,file){
   setTripRouteImportStatus(details,file);
 }
 
-async function handleTripRouteImport(file){
+
+async function handleManualTripRouteImport(file){
   if(!file)return;
+
+  try{
+    await handleTripRouteImport(file,'handmatig bestand');
+  }catch(error){
+    alert('Vaarroute kon niet worden ingelezen: '+(error?.message||'onbekende fout'));
+  }
+}
+
+async function handleTripRouteImport(file,sourceLabel='bestand'){
+  if(!file)return;
+
+  pendingTripRouteFile=file;
+  pendingTripRouteFingerprint=routeFileFingerprint(file);
 
   setTripProgress('Vaarroute inlezen en ontbrekende gegevens aanvullen…');
   const status=$('tripRouteImportStatus');
@@ -3933,6 +4223,7 @@ async function handleTripRouteImport(file){
   try{
     const parsed=await parseTripRouteImport(file);
     const details=await enrichTripRouteDetails(parsed,file);
+    details.importSource=sourceLabel;
 
     applyTripRouteDetails(details,file);
     setTripProgress('');
@@ -3940,8 +4231,10 @@ async function handleTripRouteImport(file){
   }catch(error){
     console.error('Vaarroute importeren mislukt:',error);
     pendingTripRouteDetails=null;
+    pendingTripRouteFile=null;
+    pendingTripRouteFingerprint=null;
     setTripProgress('');
-    alert('Vaarroute kon niet worden ingelezen: '+(error?.message||'onbekende fout'));
+    throw error;
   }
 }
 

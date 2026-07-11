@@ -1135,3 +1135,29 @@ header{
 .route-import-status small{
   line-height:1.45;
 }
+
+/* Cloud 5.1.19 — iCloud Drive map Vaarroutes controleren */
+.icloud-route-button{
+  width:100%;
+  margin-top:10px;
+}
+.icloud-route-status{
+  margin:8px 0 12px;
+  padding:10px 12px;
+  border-radius:11px;
+  background:rgba(255,255,255,.06);
+  color:#b8ced8;
+  line-height:1.4;
+}
+.icloud-route-status.success{
+  background:rgba(65,198,142,.15);
+  color:#dcffed;
+}
+.icloud-route-status.warning{
+  background:rgba(245,181,47,.14);
+  color:#fff0c5;
+}
+.icloud-route-status.error{
+  background:rgba(220,75,91,.15);
+  color:#ffe1e5;
+}
