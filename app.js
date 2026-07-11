@@ -3666,7 +3666,7 @@ function clearLiveTrip(){
     if($(id))$(id).value='';
   });
   $('liveSaveStatus').classList.add('hidden');
-  $('liveGpsStatus').textContent='Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten.';
+  $('liveGpsStatus').textContent='Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten. Open beide schermen op de iPad in Split View en laat beide schermen open totdat de reis is opgeslagen.';
   fillLiveTripDefaults(true);
   updateLiveRouteTitle();
   renderLiveState();
@@ -3683,7 +3683,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.26';
+const APP_VERSION='5.1.27';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
