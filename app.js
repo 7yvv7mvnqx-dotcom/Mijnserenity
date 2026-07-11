@@ -7710,9 +7710,9 @@ function homeAssistantSetupMissing(error){
 
   return (
     ['42883','PGRST202','PGRST203'].includes(code)||
-    message.includes('configure_home_assistant_integration')||
-    message.includes('get_home_assistant_integration_status')||
-    message.includes('home_assistant_integrations')
+    message.includes('could not find the function')||
+    message.includes('schema cache')||
+    message.includes('does not exist')
   );
 }
 
@@ -7915,8 +7915,130 @@ function updateHomeAssistantYaml(){
   textarea.value=buildHomeAssistantYaml();
 }
 
+
+function homeAssistantStatusFromTechnicalState(){
+  const state=technicalStateCache||{};
+  const integration=state.integrations?.homeAssistant;
+  const lastSeen=
+    state.homeAssistantLastSync||
+    state.updatedAt||
+    null;
+  const fieldCount=Number(
+    state.homeAssistantFieldCount||0
+  );
+
+  const connected=integration==='connected';
+  const planned=integration==='planned';
+
+  return {
+    enabled:connected||planned,
+    last_seen_at:connected?lastSeen:null,
+    last_status:connected
+      ?'connected'
+      :planned
+        ?'configured'
+        :'not_configured',
+    field_count:Number.isFinite(fieldCount)?fieldCount:0,
+    source:'technical_state'
+  };
+}
+
+function mergeHomeAssistantStatus(primary,fallback){
+  const a=primary&&typeof primary==='object'?primary:{};
+  const b=fallback&&typeof fallback==='object'?fallback:{};
+
+  const aHasConnection=Boolean(
+    a.enabled||
+    a.last_seen_at||
+    a.last_status==='connected'
+  );
+  const bHasConnection=Boolean(
+    b.enabled||
+    b.last_seen_at||
+    b.last_status==='connected'
+  );
+
+  if(aHasConnection){
+    return {
+      ...b,
+      ...a,
+      field_count:Number(
+        a.field_count??b.field_count??0
+      ),
+      source:a.source||'rpc'
+    };
+  }
+
+  if(bHasConnection){
+    return {
+      ...a,
+      ...b,
+      source:b.source||'technical_state'
+    };
+  }
+
+  return {
+    enabled:false,
+    last_seen_at:null,
+    last_status:'not_configured',
+    field_count:0,
+    ...b,
+    ...a
+  };
+}
+
+async function fetchHomeAssistantTechnicalFallback(){
+  if(!currentBoat)return null;
+
+  try{
+    const {data,error}=await sb.from('technical_state')
+      .select('data,updated_at')
+      .eq('boat_id',currentBoat.id)
+      .maybeSingle();
+
+    if(error)throw error;
+
+    if(data?.data){
+      technicalStateCache=normaliseTechnicalState({
+        ...data.data,
+        updatedAt:data.updated_at||
+          data.data.updatedAt||
+          null
+      });
+      saveTechnicalLocalState(technicalStateCache);
+      renderTechnicalDashboard();
+    }
+
+    return homeAssistantStatusFromTechnicalState();
+  }catch(error){
+    console.warn(
+      'Home Assistant-fallback uit technisch dashboard ophalen mislukt:',
+      error
+    );
+    return homeAssistantStatusFromTechnicalState();
+  }
+}
+
+function homeAssistantErrorText(error){
+  const code=String(error?.code||'').trim();
+  const message=String(
+    error?.message||
+    error?.details||
+    'Onbekende fout'
+  ).trim();
+
+  return [code,message].filter(Boolean).join(' · ');
+}
+
 function renderHomeAssistantConnectionStatus(){
-  const status=homeAssistantStatusCache||{};
+  const fallback=homeAssistantStatusFromTechnicalState();
+  const status=mergeHomeAssistantStatus(
+    homeAssistantStatusCache,
+    fallback
+  );
+
+  homeAssistantStatusCache=status;
+
   const badge=$('homeAssistantConnectionBadge');
   const lastSeen=$('homeAssistantLastSeen');
   const fieldCount=$('homeAssistantFieldCount');
@@ -7925,8 +8047,11 @@ function renderHomeAssistantConnectionStatus(){
   const panel=$('homeAssistantSetupPanel');
 
   const enabled=Boolean(status.enabled);
-  const online=enabled&&homeAssistantIsRecentlyOnline(status.last_seen_at);
-  const configured=enabled&&!status.last_seen_at;
+  const online=enabled&&(
+    status.last_status==='connected'||
+    homeAssistantIsRecentlyOnline(status.last_seen_at)
+  );
+  const configured=enabled&&!online;
 
   if(badge){
     badge.className='home-assistant-connection-badge '+
@@ -7935,10 +8060,8 @@ function renderHomeAssistantConnectionStatus(){
     badge.textContent=online
       ?'Verbonden'
       :configured
-        ?'Wacht op eerste sync'
-        :enabled
-          ?'Niet recent online'
-          :'Niet gekoppeld';
+        ?'Koppeling ingesteld'
+        :'Niet gekoppeld';
   }
 
   if(lastSeen){
@@ -7964,83 +8087,131 @@ function renderHomeAssistantConnectionStatus(){
   }
 
   const localConfig=readHomeAssistantLocalConfig();
+
   if(panel&&!panel.classList.contains('hidden')){
     fillHomeAssistantMappings();
 
     if(enabled&&!localConfig.secret){
       setHomeAssistantConnectionStatus(
-        'De koppeling bestaat, maar de geheime sleutel staat niet meer op dit apparaat. Maak een nieuwe sleutel om de configuratie opnieuw te tonen.',
+        'De koppeling werkt, maar de geheime sleutel staat niet meer op dit apparaat. Alleen voor een nieuwe configuratie is een nieuwe sleutel nodig.',
         'warning'
       );
     }
   }
-
-  if(technicalStateCache){
-    technicalStateCache.integrations={
-      ...technicalStateCache.integrations,
-      homeAssistant:online
-        ?'connected'
-        :enabled
-          ?'planned'
-          :'not_configured'
-    };
-  }
 }
 
 async function refreshHomeAssistantConnectionStatus(showMessage=false){
-  if(!currentBoat||homeAssistantStatusLoading)return;
+  if(!currentBoat)return;
+
+  if(homeAssistantStatusLoading){
+    if(showMessage){
+      setHomeAssistantConnectionStatus(
+        'Verbinding wordt al gecontroleerd…',
+        'warning'
+      );
+    }
+    return;
+  }
 
   homeAssistantStatusLoading=true;
 
+  const button=$('homeAssistantCheckButton');
+  const originalText=button?.textContent||'↻ Controleer verbinding';
+
+  if(button){
+    button.disabled=true;
+    button.textContent='⏳ Controleren…';
+  }
+
+  if(showMessage){
+    setHomeAssistantConnectionStatus(
+      'Home Assistant-verbinding controleren…',
+      'warning'
+    );
+  }
+
+  let rpcError=null;
+
   try{
+    const fallback=await fetchHomeAssistantTechnicalFallback();
+
     const {data,error}=await sb.rpc(
       'get_home_assistant_integration_status',
       {p_boat_id:currentBoat.id}
     );
 
-    if(error)throw error;
+    if(error){
+      rpcError=error;
+    }
 
-    homeAssistantStatusCache=data||{
-      enabled:false,
-      last_seen_at:null,
-      field_count:0
-    };
+    homeAssistantStatusCache=mergeHomeAssistantStatus(
+      error?null:data,
+      fallback
+    );
 
     renderHomeAssistantConnectionStatus();
     renderTechnicalIntegrations();
 
+    const connected=Boolean(
+      homeAssistantStatusCache.enabled&&
+      (
+        homeAssistantStatusCache.last_status==='connected'||
+        homeAssistantStatusCache.last_seen_at
+      )
+    );
+
     if(showMessage){
-      setHomeAssistantConnectionStatus(
-        homeAssistantStatusCache.enabled
-          ?(
-            homeAssistantIsRecentlyOnline(
-              homeAssistantStatusCache.last_seen_at
-            )
-              ?'Home Assistant is verbonden en heeft recent gegevens gestuurd ✅'
-              :'Koppeling is ingesteld. Voer rest_command.mijnserenity_sync in Home Assistant uit.'
-          )
-          :'Home Assistant is nog niet gekoppeld.',
-        homeAssistantStatusCache.enabled?'success':'warning'
-      );
+      if(connected){
+        setHomeAssistantConnectionStatus(
+          `Home Assistant is verbonden ✅ Laatste synchronisatie: ${homeAssistantDate(homeAssistantStatusCache.last_seen_at)}. Ontvangen waarden: ${Number(homeAssistantStatusCache.field_count||0)}.`,
+          'success'
+        );
+      }else if(homeAssistantStatusCache.enabled){
+        setHomeAssistantConnectionStatus(
+          'De koppeling is ingesteld, maar er is nog geen synchronisatie ontvangen. Voer rest_command.mijnserenity_sync in Home Assistant uit.',
+          'warning'
+        );
+      }else if(rpcError){
+        setHomeAssistantConnectionStatus(
+          `Statusfunctie gaf een fout (${homeAssistantErrorText(rpcError)}). Het technische dashboard toont nog geen ontvangen Home Assistant-data.`,
+          'error'
+        );
+      }else{
+        setHomeAssistantConnectionStatus(
+          'Home Assistant is nog niet gekoppeld.',
+          'warning'
+        );
+      }
     }
   }catch(error){
-    console.error('Home Assistant-status ophalen mislukt:',error);
+    console.error('Home Assistant-status controleren mislukt:',error);
 
-    homeAssistantStatusCache={
-      enabled:false,
-      setup_missing:homeAssistantSetupMissing(error)
-    };
-
+    const fallback=homeAssistantStatusFromTechnicalState();
+    homeAssistantStatusCache=mergeHomeAssistantStatus(null,fallback);
     renderHomeAssistantConnectionStatus();
+    renderTechnicalIntegrations();
+
+    const connected=Boolean(
+      homeAssistantStatusCache.enabled&&
+      (
+        homeAssistantStatusCache.last_status==='connected'||
+        homeAssistantStatusCache.last_seen_at
+      )
+    );
 
     setHomeAssistantConnectionStatus(
-      homeAssistantSetupMissing(error)
-        ?'Voer eerst SUPABASE_HOME_ASSISTANT_5_5_0.sql uit.'
-        :'Home Assistant-status kon niet worden opgehaald.',
-      'warning'
+      connected
+        ?`Home Assistant-data is ontvangen via het technische dashboard ✅ Laatste synchronisatie: ${homeAssistantDate(homeAssistantStatusCache.last_seen_at)}.`
+        :`Controle mislukt: ${homeAssistantErrorText(error)}`,
+      connected?'success':'error'
     );
   }finally{
     homeAssistantStatusLoading=false;
+
+    if(button){
+      button.disabled=false;
+      button.textContent=originalText;
+    }
   }
 }
 
@@ -8267,10 +8438,17 @@ function renderTechnicalIntegrations(){
   const integrations=technicalStateCache?.integrations||
     defaultTechnicalState().integrations;
 
-  const haEnabled=Boolean(homeAssistantStatusCache?.enabled);
-  const haOnline=haEnabled&&homeAssistantIsRecentlyOnline(
-    homeAssistantStatusCache?.last_seen_at
+  const status=mergeHomeAssistantStatus(
+    homeAssistantStatusCache,
+    homeAssistantStatusFromTechnicalState()
   );
+
+  const haEnabled=Boolean(status.enabled);
+  const haOnline=haEnabled&&(
+    status.last_status==='connected'||
+    homeAssistantIsRecentlyOnline(status.last_seen_at)
+  );
+
   const haValue=haOnline
     ?'connected'
     :haEnabled
@@ -8288,7 +8466,7 @@ function renderTechnicalIntegrations(){
       icon:'🏠',
       title:'Home Assistant',
       text:haOnline
-        ?`Laatste sync ${homeAssistantDate(homeAssistantStatusCache.last_seen_at)}`
+        ?`Laatste sync ${homeAssistantDate(status.last_seen_at)}`
         :'Automatisering, meldingen en sensordata',
       value:haValue
     },
@@ -12788,7 +12966,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.5.0';
+const APP_VERSION='5.5.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -12865,7 +13043,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5500',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5510',{updateViaCache:'none'});
 
     await registration.update();
 

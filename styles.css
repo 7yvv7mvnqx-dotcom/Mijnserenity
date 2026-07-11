@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.5.0";
+  content:" · v5.5.1";
   color:#6fcfee;
   font-weight:800;
 }
@@ -4422,4 +4422,20 @@ main{
   .home-assistant-yaml{
     min-height:360px;
   }
+}
+
+/* MijnSerenity Cloud 5.5.1 — robuuste Home Assistant-status */
+#homeAssistantCheckButton:disabled{
+  cursor:wait;
+  opacity:.72;
+}
+#homeAssistantConnectionStatus.success{
+  border:1px solid rgba(83,219,148,.22);
+  background:rgba(36,144,91,.14);
+  color:#c7f4da;
+}
+#homeAssistantConnectionStatus.error{
+  border:1px solid rgba(232,83,97,.22);
+  background:rgba(143,39,49,.16);
+  color:#ffd0d5;
 }
