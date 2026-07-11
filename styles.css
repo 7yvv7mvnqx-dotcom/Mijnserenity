@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.4.2";
+  content:" · v5.5.0";
   color:#6fcfee;
   font-weight:800;
 }
@@ -4224,5 +4224,202 @@ main{
     grid-column:2;
     max-width:none;
     text-align:left;
+  }
+}
+
+/* MijnSerenity Cloud 5.5.0 — Home Assistant-koppeling */
+.home-assistant-connect-card{
+  margin-top:14px;
+  padding:13px;
+  border:1px solid rgba(65,184,255,.20);
+  border-radius:15px;
+  background:
+    radial-gradient(circle at top right,rgba(65,184,255,.13),transparent 44%),
+    rgba(255,255,255,.035);
+}
+.home-assistant-connect-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.home-assistant-connect-head>div:first-child{
+  display:flex;
+  min-width:0;
+  align-items:center;
+  gap:10px;
+}
+.home-assistant-logo{
+  display:flex;
+  width:42px;
+  height:42px;
+  flex-shrink:0;
+  align-items:center;
+  justify-content:center;
+  border-radius:13px;
+  background:#18a4e0;
+  color:#fff;
+  font-size:13px;
+  font-weight:950;
+  letter-spacing:-.5px;
+}
+.home-assistant-connect-head>div:first-child>div{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:3px;
+}
+.home-assistant-connect-head small{
+  color:#92b3bf;
+  line-height:1.35;
+}
+.home-assistant-connection-badge{
+  flex-shrink:0;
+  padding:6px 8px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:900;
+}
+.home-assistant-connection-badge.online{
+  border:1px solid rgba(83,219,148,.30);
+  background:rgba(36,144,91,.20);
+  color:#c8f5dc;
+}
+.home-assistant-connection-badge.configured{
+  border:1px solid rgba(226,180,79,.28);
+  background:rgba(143,100,21,.17);
+  color:#f3dea7;
+}
+.home-assistant-connection-badge.offline{
+  border:1px solid rgba(255,255,255,.09);
+  background:rgba(255,255,255,.055);
+  color:#a7c1ca;
+}
+.home-assistant-status-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+  margin-top:11px;
+}
+.home-assistant-status-grid>div{
+  display:flex;
+  min-width:0;
+  padding:9px;
+  flex-direction:column;
+  gap:3px;
+  border-radius:11px;
+  background:rgba(255,255,255,.045);
+}
+.home-assistant-status-grid span{
+  color:#87a8b5;
+  font-size:9px;
+}
+.home-assistant-status-grid strong{
+  overflow:hidden;
+  color:#e9f8fc;
+  font-size:11px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.home-assistant-connect-actions{
+  margin-top:10px;
+}
+.home-assistant-setup-panel{
+  margin-top:13px;
+  padding-top:13px;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+.home-assistant-setup-step{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:9px 0;
+}
+.home-assistant-setup-step>span{
+  display:flex;
+  width:28px;
+  height:28px;
+  flex-shrink:0;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  background:rgba(65,184,255,.15);
+  color:#7ad4ff;
+  font-size:11px;
+  font-weight:900;
+}
+.home-assistant-setup-step>div{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:2px;
+}
+.home-assistant-setup-step small{
+  color:#8eabb6;
+}
+.home-assistant-entity-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:14px;
+}
+.home-assistant-entity-grid label{
+  min-width:0;
+  color:#a9c3cc;
+  font-size:9px;
+}
+.home-assistant-entity-grid input{
+  margin-top:4px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:10px;
+}
+.home-assistant-copy-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  gap:6px;
+}
+.home-assistant-copy-row input,
+.home-assistant-copy-row button{
+  margin:0;
+}
+.home-assistant-copy-row input,
+.home-assistant-yaml{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.home-assistant-yaml{
+  min-height:430px;
+  margin-top:5px;
+  font-size:10px;
+  line-height:1.45;
+  white-space:pre;
+}
+.home-assistant-test-note{
+  margin-top:11px;
+  padding:10px 11px;
+  border:1px solid rgba(65,184,255,.15);
+  border-radius:12px;
+  background:rgba(65,184,255,.065);
+  color:#b9dbe5;
+  font-size:10px;
+  line-height:1.45;
+}
+.home-assistant-test-note code{
+  color:#7ad4ff;
+}
+@media(max-width:620px){
+  .home-assistant-connect-head{
+    flex-direction:column;
+  }
+  .home-assistant-entity-grid{
+    grid-template-columns:1fr;
+  }
+  .home-assistant-copy-row{
+    grid-template-columns:1fr 1fr;
+  }
+  .home-assistant-copy-row input{
+    grid-column:1/-1;
+  }
+  .home-assistant-yaml{
+    min-height:360px;
   }
 }

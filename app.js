@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false;
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false,homeAssistantStatusCache=null,homeAssistantStatusLoading=false;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -7213,6 +7213,7 @@ async function loadTechnicalDashboard(force=false){
     saveTechnicalLocalEvents(technicalEventsCache);
 
     renderTechnicalDashboard();
+    refreshHomeAssistantConnectionStatus(false);
     setTechnicalSyncStatus(
       technicalStateCache?.updatedAt
         ?`Gedeeld dashboard bijgewerkt ${formatAccountDate(technicalStateCache.updatedAt)}`
@@ -7259,6 +7260,8 @@ function initTechnicalDashboard(){
   }
 
   renderTechnicalDashboard();
+  fillHomeAssistantMappings();
+  refreshHomeAssistantConnectionStatus(false);
   loadTechnicalDashboard(false);
 }
 
@@ -7643,12 +7646,636 @@ function renderTechnicalMaintenance(){
     :'<span class="small">Nog geen onderhoudstaken.</span>';
 }
 
+
+const HOME_ASSISTANT_LOCAL_VERSION='v1';
+
+function homeAssistantLocalKey(){
+  return `mijnserenity-ha-${HOME_ASSISTANT_LOCAL_VERSION}-${currentBoat?.id||'geen-boot'}`;
+}
+
+function defaultHomeAssistantLocalConfig(){
+  return {
+    secret:'',
+    mappings:{
+      engineHours:'',
+      houseVoltage:'',
+      startVoltage:'',
+      solarPower:'',
+      fuelPct:'',
+      waterPct:'',
+      wastePct:'',
+      shorePower:'',
+      engineTemp:'',
+      oilPressure:'',
+      heater:'',
+      bilge:''
+    }
+  };
+}
+
+function readHomeAssistantLocalConfig(){
+  try{
+    const saved=JSON.parse(
+      localStorage.getItem(homeAssistantLocalKey())||'null'
+    );
+
+    return {
+      ...defaultHomeAssistantLocalConfig(),
+      ...(saved||{}),
+      mappings:{
+        ...defaultHomeAssistantLocalConfig().mappings,
+        ...(saved?.mappings||{})
+      }
+    };
+  }catch(error){
+    console.warn('Home Assistant-configuratie lezen mislukt:',error);
+    return defaultHomeAssistantLocalConfig();
+  }
+}
+
+function saveHomeAssistantLocalConfig(config){
+  try{
+    localStorage.setItem(
+      homeAssistantLocalKey(),
+      JSON.stringify(config)
+    );
+  }catch(error){
+    console.warn('Home Assistant-configuratie bewaren mislukt:',error);
+  }
+}
+
+function homeAssistantSetupMissing(error){
+  const code=String(error?.code||'');
+  const message=String(error?.message||'').toLowerCase();
+
+  return (
+    ['42883','PGRST202','PGRST203'].includes(code)||
+    message.includes('configure_home_assistant_integration')||
+    message.includes('get_home_assistant_integration_status')||
+    message.includes('home_assistant_integrations')
+  );
+}
+
+function randomHomeAssistantSecret(){
+  const bytes=new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+
+  return [...bytes]
+    .map(byte=>byte.toString(16).padStart(2,'0'))
+    .join('');
+}
+
+function setHomeAssistantConnectionStatus(message,state=''){
+  const element=$('homeAssistantConnectionStatus');
+  if(!element)return;
+
+  element.textContent=message||'';
+  element.classList.toggle('hidden',!message);
+  element.classList.remove('success','warning','error');
+
+  if(state)element.classList.add(state);
+}
+
+function homeAssistantDate(value){
+  if(!value)return 'Nog nooit';
+
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return 'Nog nooit';
+
+  return date.toLocaleString('nl-NL',{
+    day:'2-digit',
+    month:'2-digit',
+    year:'numeric',
+    hour:'2-digit',
+    minute:'2-digit'
+  });
+}
+
+function homeAssistantIsRecentlyOnline(value){
+  if(!value)return false;
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return false;
+  return Date.now()-date.getTime()<=12*60*1000;
+}
+
+function homeAssistantMappingIds(){
+  return {
+    engineHours:'haEntityEngineHours',
+    houseVoltage:'haEntityHouseVoltage',
+    startVoltage:'haEntityStartVoltage',
+    solarPower:'haEntitySolarPower',
+    fuelPct:'haEntityFuelPct',
+    waterPct:'haEntityWaterPct',
+    wastePct:'haEntityWastePct',
+    shorePower:'haEntityShorePower',
+    engineTemp:'haEntityEngineTemp',
+    oilPressure:'haEntityOilPressure',
+    heater:'haEntityHeater',
+    bilge:'haEntityBilge'
+  };
+}
+
+function fillHomeAssistantMappings(){
+  const config=readHomeAssistantLocalConfig();
+
+  Object.entries(homeAssistantMappingIds())
+    .forEach(([key,id])=>{
+      if($(id))$(id).value=config.mappings?.[key]||'';
+    });
+
+  if($('homeAssistantSecretDisplay')){
+    $('homeAssistantSecretDisplay').value=config.secret||'';
+  }
+
+  updateHomeAssistantYaml();
+}
+
+function homeAssistantCurrentMappings(){
+  const mappings={};
+
+  Object.entries(homeAssistantMappingIds())
+    .forEach(([key,id])=>{
+      mappings[key]=String($(id)?.value||'').trim();
+    });
+
+  return mappings;
+}
+
+function homeAssistantMappingChanged(){
+  const config=readHomeAssistantLocalConfig();
+  config.mappings=homeAssistantCurrentMappings();
+  saveHomeAssistantLocalConfig(config);
+  updateHomeAssistantYaml();
+}
+
+function homeAssistantNumericTemplate(entityId){
+  if(!entityId)return 'null';
+
+  return `{{ (states('${entityId}') | float(none)) | to_json }}`;
+}
+
+function homeAssistantStringTemplate(entityId){
+  if(!entityId)return 'null';
+
+  return `{{ (states('${entityId}') if states('${entityId}') not in ['unknown','unavailable','none',''] else none) | to_json }}`;
+}
+
+function homeAssistantBooleanTemplate(entityId){
+  if(!entityId)return 'null';
+
+  return `{{ (is_state('${entityId}','on') if states('${entityId}') not in ['unknown','unavailable','none',''] else none) | to_json }}`;
+}
+
+function homeAssistantMappedEntities(mappings){
+  return [...new Set(
+    Object.values(mappings||{})
+      .map(value=>String(value||'').trim())
+      .filter(Boolean)
+  )];
+}
+
+function buildHomeAssistantYaml(){
+  const config=readHomeAssistantLocalConfig();
+  const mappings=homeAssistantCurrentMappings();
+  const secret=config.secret||'NOG_GEEN_SLEUTEL';
+  const endpoint=
+    `${SUPABASE_URL}/rest/v1/rpc/ingest_home_assistant_technical_data`;
+  const entities=homeAssistantMappedEntities(mappings);
+
+  const stateTriggers=entities.length
+    ?entities.map(entity=>`      - ${entity}`).join('\n')
+    :'      # Voeg hierboven eerst één of meer entiteiten in MijnSerenity toe.';
+
+  return `# ============================================================
+# MIJNSERENITY 5.5.0 — HOME ASSISTANT KOPPELING
+# ============================================================
+
+# 1. Voeg dit toe aan secrets.yaml
+mijnserenity_rpc_url: "${endpoint}"
+mijnserenity_supabase_key: "${SUPABASE_KEY}"
+mijnserenity_authorization: "Bearer ${SUPABASE_KEY}"
+mijnserenity_secret: "${secret}"
+
+# 2. Voeg dit toe aan configuration.yaml
+rest_command:
+  mijnserenity_sync:
+    url: !secret mijnserenity_rpc_url
+    method: post
+    content_type: "application/json"
+    headers:
+      apikey: !secret mijnserenity_supabase_key
+      Authorization: !secret mijnserenity_authorization
+      x-mijnserenity-secret: !secret mijnserenity_secret
+    payload: >-
+      {
+        "p_boat_id": "${currentBoat?.id||'BOOT_ID_ONTBREEKT'}",
+        "p_payload": {
+          "engine_hours": ${homeAssistantNumericTemplate(mappings.engineHours)},
+          "house_voltage": ${homeAssistantNumericTemplate(mappings.houseVoltage)},
+          "start_voltage": ${homeAssistantNumericTemplate(mappings.startVoltage)},
+          "solar_power": ${homeAssistantNumericTemplate(mappings.solarPower)},
+          "fuel_pct": ${homeAssistantNumericTemplate(mappings.fuelPct)},
+          "water_pct": ${homeAssistantNumericTemplate(mappings.waterPct)},
+          "waste_pct": ${homeAssistantNumericTemplate(mappings.wastePct)},
+          "shore_power": ${homeAssistantBooleanTemplate(mappings.shorePower)},
+          "engine_temp": ${homeAssistantNumericTemplate(mappings.engineTemp)},
+          "oil_pressure": ${homeAssistantNumericTemplate(mappings.oilPressure)},
+          "heater": ${homeAssistantStringTemplate(mappings.heater)},
+          "bilge": ${homeAssistantStringTemplate(mappings.bilge)}
+        }
+      }
+
+# 3. Voeg dit toe aan automations.yaml
+- id: mijnserenity_techniek_synchroniseren
+  alias: MijnSerenity technisch dashboard synchroniseren
+  description: Stuurt gekozen sensoren naar MijnSerenity.
+  mode: restart
+  triggers:
+    - trigger: homeassistant
+      event: start
+    - trigger: time_pattern
+      minutes: "/5"
+${entities.length?`    - trigger: state
+      entity_id:
+${stateTriggers}
+      for:
+        seconds: 20
+`:''}  actions:
+    - action: rest_command.mijnserenity_sync
+
+# 4. Controleer de configuratie en herstart Home Assistant.
+# 5. Voer daarna rest_command.mijnserenity_sync één keer handmatig uit.
+`;
+}
+
+function updateHomeAssistantYaml(){
+  const textarea=$('homeAssistantYaml');
+  if(!textarea)return;
+
+  textarea.value=buildHomeAssistantYaml();
+}
+
+function renderHomeAssistantConnectionStatus(){
+  const status=homeAssistantStatusCache||{};
+  const badge=$('homeAssistantConnectionBadge');
+  const lastSeen=$('homeAssistantLastSeen');
+  const fieldCount=$('homeAssistantFieldCount');
+  const disableButton=$('homeAssistantDisableButton');
+  const createButton=$('homeAssistantCreateButton');
+  const panel=$('homeAssistantSetupPanel');
+
+  const enabled=Boolean(status.enabled);
+  const online=enabled&&homeAssistantIsRecentlyOnline(status.last_seen_at);
+  const configured=enabled&&!status.last_seen_at;
+
+  if(badge){
+    badge.className='home-assistant-connection-badge '+
+      (online?'online':configured?'configured':'offline');
+
+    badge.textContent=online
+      ?'Verbonden'
+      :configured
+        ?'Wacht op eerste sync'
+        :enabled
+          ?'Niet recent online'
+          :'Niet gekoppeld';
+  }
+
+  if(lastSeen){
+    lastSeen.textContent=homeAssistantDate(status.last_seen_at);
+  }
+
+  if(fieldCount){
+    fieldCount.textContent=String(
+      Number(status.field_count||0)
+    );
+  }
+
+  disableButton?.classList.toggle('hidden',!enabled);
+
+  if(createButton){
+    createButton.textContent=enabled
+      ?'⚙️ Configuratie openen'
+      :'🔗 Koppeling aanmaken';
+
+    createButton.onclick=enabled
+      ?()=>openHomeAssistantSetupPanel()
+      :()=>createHomeAssistantConnection();
+  }
+
+  const localConfig=readHomeAssistantLocalConfig();
+  if(panel&&!panel.classList.contains('hidden')){
+    fillHomeAssistantMappings();
+
+    if(enabled&&!localConfig.secret){
+      setHomeAssistantConnectionStatus(
+        'De koppeling bestaat, maar de geheime sleutel staat niet meer op dit apparaat. Maak een nieuwe sleutel om de configuratie opnieuw te tonen.',
+        'warning'
+      );
+    }
+  }
+
+  if(technicalStateCache){
+    technicalStateCache.integrations={
+      ...technicalStateCache.integrations,
+      homeAssistant:online
+        ?'connected'
+        :enabled
+          ?'planned'
+          :'not_configured'
+    };
+  }
+}
+
+async function refreshHomeAssistantConnectionStatus(showMessage=false){
+  if(!currentBoat||homeAssistantStatusLoading)return;
+
+  homeAssistantStatusLoading=true;
+
+  try{
+    const {data,error}=await sb.rpc(
+      'get_home_assistant_integration_status',
+      {p_boat_id:currentBoat.id}
+    );
+
+    if(error)throw error;
+
+    homeAssistantStatusCache=data||{
+      enabled:false,
+      last_seen_at:null,
+      field_count:0
+    };
+
+    renderHomeAssistantConnectionStatus();
+    renderTechnicalIntegrations();
+
+    if(showMessage){
+      setHomeAssistantConnectionStatus(
+        homeAssistantStatusCache.enabled
+          ?(
+            homeAssistantIsRecentlyOnline(
+              homeAssistantStatusCache.last_seen_at
+            )
+              ?'Home Assistant is verbonden en heeft recent gegevens gestuurd ✅'
+              :'Koppeling is ingesteld. Voer rest_command.mijnserenity_sync in Home Assistant uit.'
+          )
+          :'Home Assistant is nog niet gekoppeld.',
+        homeAssistantStatusCache.enabled?'success':'warning'
+      );
+    }
+  }catch(error){
+    console.error('Home Assistant-status ophalen mislukt:',error);
+
+    homeAssistantStatusCache={
+      enabled:false,
+      setup_missing:homeAssistantSetupMissing(error)
+    };
+
+    renderHomeAssistantConnectionStatus();
+
+    setHomeAssistantConnectionStatus(
+      homeAssistantSetupMissing(error)
+        ?'Voer eerst SUPABASE_HOME_ASSISTANT_5_5_0.sql uit.'
+        :'Home Assistant-status kon niet worden opgehaald.',
+      'warning'
+    );
+  }finally{
+    homeAssistantStatusLoading=false;
+  }
+}
+
+function openHomeAssistantSetupPanel(){
+  $('homeAssistantSetupPanel')?.classList.remove('hidden');
+  fillHomeAssistantMappings();
+
+  $('homeAssistantSetupPanel')?.scrollIntoView({
+    behavior:'smooth',
+    block:'start'
+  });
+}
+
+async function createHomeAssistantConnection(){
+  if(!currentBoat||!currentUser){
+    showAppToast('Log opnieuw in en koppel Serenity.');
+    return;
+  }
+
+  if(!technicalCloudReady){
+    setHomeAssistantConnectionStatus(
+      'Voer eerst de SQL van het technische dashboard 5.4.0 uit.',
+      'warning'
+    );
+    return;
+  }
+
+  const config=readHomeAssistantLocalConfig();
+  const secret=config.secret||randomHomeAssistantSecret();
+
+  setHomeAssistantConnectionStatus(
+    'Beveiligde Home Assistant-koppeling aanmaken…',
+    'warning'
+  );
+
+  try{
+    const {data,error}=await sb.rpc(
+      'configure_home_assistant_integration',
+      {
+        p_boat_id:currentBoat.id,
+        p_secret:secret
+      }
+    );
+
+    if(error)throw error;
+
+    config.secret=secret;
+    saveHomeAssistantLocalConfig(config);
+
+    homeAssistantStatusCache=data||{
+      enabled:true,
+      last_seen_at:null,
+      field_count:0
+    };
+
+    openHomeAssistantSetupPanel();
+    renderHomeAssistantConnectionStatus();
+    updateHomeAssistantYaml();
+
+    setHomeAssistantConnectionStatus(
+      'Koppeling aangemaakt. Kopieer nu de configuratie naar Home Assistant.',
+      'success'
+    );
+  }catch(error){
+    console.error('Home Assistant-koppeling aanmaken mislukt:',error);
+
+    setHomeAssistantConnectionStatus(
+      homeAssistantSetupMissing(error)
+        ?'Voer eerst SUPABASE_HOME_ASSISTANT_5_5_0.sql uit.'
+        :error?.message||'Koppeling aanmaken is mislukt.',
+      'error'
+    );
+  }
+}
+
+async function regenerateHomeAssistantSecret(){
+  if(!confirm(
+    'Een nieuwe sleutel maakt de oude Home Assistant-configuratie direct ongeldig. Doorgaan?'
+  ))return;
+
+  const config=readHomeAssistantLocalConfig();
+  config.secret=randomHomeAssistantSecret();
+  saveHomeAssistantLocalConfig(config);
+
+  try{
+    const {data,error}=await sb.rpc(
+      'configure_home_assistant_integration',
+      {
+        p_boat_id:currentBoat.id,
+        p_secret:config.secret
+      }
+    );
+
+    if(error)throw error;
+
+    homeAssistantStatusCache=data||homeAssistantStatusCache;
+    fillHomeAssistantMappings();
+    setHomeAssistantConnectionStatus(
+      'Nieuwe sleutel aangemaakt. Vervang secrets.yaml in Home Assistant.',
+      'success'
+    );
+  }catch(error){
+    console.error('Home Assistant-sleutel vernieuwen mislukt:',error);
+    setHomeAssistantConnectionStatus(
+      error?.message||'Nieuwe sleutel opslaan is mislukt.',
+      'error'
+    );
+  }
+}
+
+async function disableHomeAssistantConnection(){
+  if(!confirm(
+    'Home Assistant loskoppelen? De huidige geheime sleutel werkt daarna niet meer.'
+  ))return;
+
+  try{
+    const {error}=await sb.rpc(
+      'disable_home_assistant_integration',
+      {p_boat_id:currentBoat.id}
+    );
+
+    if(error)throw error;
+
+    localStorage.removeItem(homeAssistantLocalKey());
+    homeAssistantStatusCache={
+      enabled:false,
+      last_seen_at:null,
+      field_count:0
+    };
+
+    $('homeAssistantSetupPanel')?.classList.add('hidden');
+    renderHomeAssistantConnectionStatus();
+    renderTechnicalIntegrations();
+
+    setHomeAssistantConnectionStatus(
+      'Home Assistant is losgekoppeld.',
+      'success'
+    );
+  }catch(error){
+    console.error('Home Assistant loskoppelen mislukt:',error);
+    setHomeAssistantConnectionStatus(
+      error?.message||'Loskoppelen is mislukt.',
+      'error'
+    );
+  }
+}
+
+function toggleHomeAssistantSecret(button){
+  const input=$('homeAssistantSecretDisplay');
+  if(!input)return;
+
+  const show=input.type==='password';
+  input.type=show?'text':'password';
+
+  if(button)button.textContent=show?'Verberg':'Toon';
+}
+
+async function copyTextToClipboard(value){
+  try{
+    await navigator.clipboard.writeText(String(value||''));
+    return true;
+  }catch(error){
+    console.warn('Kopiëren via clipboard mislukt:',error);
+
+    const textarea=document.createElement('textarea');
+    textarea.value=String(value||'');
+    textarea.style.position='fixed';
+    textarea.style.opacity='0';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied=document.execCommand('copy');
+    textarea.remove();
+    return copied;
+  }
+}
+
+async function copyHomeAssistantSecret(){
+  const secret=readHomeAssistantLocalConfig().secret;
+
+  if(!secret){
+    showAppToast('Maak eerst een koppeling aan.');
+    return;
+  }
+
+  const copied=await copyTextToClipboard(secret);
+  showAppToast(
+    copied
+      ?'Geheime Home Assistant-sleutel gekopieerd.'
+      :'Kopiëren is niet gelukt.'
+  );
+}
+
+async function copyHomeAssistantYaml(){
+  const yaml=buildHomeAssistantYaml();
+  const copied=await copyTextToClipboard(yaml);
+
+  showAppToast(
+    copied
+      ?'Home Assistant-configuratie gekopieerd ✅'
+      :'Kopiëren is niet gelukt.'
+  );
+}
+
+function downloadHomeAssistantYaml(){
+  const yaml=buildHomeAssistantYaml();
+  const blob=new Blob([yaml],{type:'text/yaml;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+
+  link.href=url;
+  link.download='mijnserenity-home-assistant-5.5.0.yaml';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 function renderTechnicalIntegrations(){
   const container=$('technicalIntegrationList');
   if(!container)return;
 
   const integrations=technicalStateCache?.integrations||
     defaultTechnicalState().integrations;
+
+  const haEnabled=Boolean(homeAssistantStatusCache?.enabled);
+  const haOnline=haEnabled&&homeAssistantIsRecentlyOnline(
+    homeAssistantStatusCache?.last_seen_at
+  );
+  const haValue=haOnline
+    ?'connected'
+    :haEnabled
+      ?'planned'
+      :integrations.homeAssistant;
 
   const rows=[
     {
@@ -7660,8 +8287,10 @@ function renderTechnicalIntegrations(){
     {
       icon:'🏠',
       title:'Home Assistant',
-      text:'Automatisering, meldingen en bediening',
-      value:integrations.homeAssistant
+      text:haOnline
+        ?`Laatste sync ${homeAssistantDate(homeAssistantStatusCache.last_seen_at)}`
+        :'Automatisering, meldingen en sensordata',
+      value:haValue
     },
     {
       icon:'🛥️',
@@ -7683,6 +8312,8 @@ function renderTechnicalIntegrations(){
       </em>
     </div>
   `).join('');
+
+  renderHomeAssistantConnectionStatus();
 }
 
 function renderTechnicalEvents(){
@@ -12157,7 +12788,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.4.2';
+const APP_VERSION='5.5.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -12234,7 +12865,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5420',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5500',{updateViaCache:'none'});
 
     await registration.update();
 
