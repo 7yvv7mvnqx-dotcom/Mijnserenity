@@ -9,7 +9,7 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let tripRouteMaps={};
-let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[];
+let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiLocationSuggestionController=null,poiLiveSuggestionResults={place:[],address:[]};
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -179,53 +179,264 @@ function poiSuggestionPlace(result){
   return address.city||address.town||address.village||address.municipality||address.hamlet||'';
 }
 
-async function searchPoiAddressSuggestions(){
-  const query=[
-    $('poiName')?.value,
-    $('poiAddress')?.value,
-    $('poiPlace')?.value
-  ].map(value=>String(value||'').trim()).filter(Boolean).join(', ');
 
-  if(query.length<3){
-    alert('Vul eerst een naam, adres of plaats in.');
+function hidePoiLiveSuggestions(exceptField=''){
+  ['place','address'].forEach(field=>{
+    if(field===exceptField)return;
+    const panel=getPoiLocationSuggestionPanel(field);
+    panel?.classList.add('hidden');
+    if(panel)panel.innerHTML='';
+  });
+}
+
+function getPoiLocationSuggestionPanel(field){
+  return field==='place'
+    ?$('poiPlaceLiveSuggestions')
+    :$('poiAddressLiveSuggestions');
+}
+
+function getPoiLocationSuggestionInput(field){
+  return field==='place'
+    ?$('poiPlace')
+    :$('poiAddress');
+}
+
+function schedulePoiLocationSuggestions(field,immediate=false){
+  clearTimeout(poiLocationSuggestionTimer);
+
+  const input=getPoiLocationSuggestionInput(field);
+  const query=String(input?.value||'').trim();
+  const panel=getPoiLocationSuggestionPanel(field);
+
+  hidePoiLiveSuggestions(field);
+
+  if(query.length<2){
+    panel?.classList.add('hidden');
+    if(panel)panel.innerHTML='';
     return;
   }
 
-  const panel=$('poiOnlineSuggestions');
+  poiLocationSuggestionTimer=setTimeout(
+    ()=>loadPoiLocationSuggestions(field,query),
+    immediate?0:350
+  );
+}
+
+async function loadPoiLocationSuggestions(field,query){
+  const input=getPoiLocationSuggestionInput(field);
+  const panel=getPoiLocationSuggestionPanel(field);
+
+  if(!input||!panel)return;
+  if(String(input.value||'').trim()!==query)return;
+
+  if(poiLocationSuggestionController){
+    poiLocationSuggestionController.abort();
+  }
+  poiLocationSuggestionController=new AbortController();
+
   panel.classList.remove('hidden');
-  panel.innerHTML='<div class="small">Suggesties zoeken…</div>';
+  panel.innerHTML='<div class="poi-live-loading">Suggesties zoeken…</div>';
 
   try{
     const params=new URLSearchParams({
       q:query,
-      format:'jsonv2',
-      addressdetails:'1',
-      namedetails:'1',
-      limit:'5',
-      countrycodes:'nl',
-      'accept-language':'nl'
+      rows:'7'
     });
 
-    const response=await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`,{
-      headers:{Accept:'application/json'}
-    });
+    const response=await fetch(
+      `https://api.pdok.nl/bzk/locatieserver/search/v3_1/suggest?${params.toString()}`,
+      {
+        headers:{Accept:'application/json'},
+        signal:poiLocationSuggestionController.signal
+      }
+    );
 
-    if(!response.ok)throw new Error(`Zoekfout ${response.status}`);
+    if(!response.ok){
+      throw new Error(`Locatieserver gaf fout ${response.status}`);
+    }
 
-    poiOnlineSuggestionResults=await response.json();
+    const payload=await response.json();
+    const docs=Array.isArray(payload?.response?.docs)
+      ?payload.response.docs
+      :[];
 
-    panel.innerHTML=poiOnlineSuggestionResults.length
-      ?`<div class="poi-suggestion-list">${poiOnlineSuggestionResults.map((result,index)=>`
-          <button type="button" onclick="applyPoiOnlineSuggestion(${index})">
-            <b>${esc(poiSuggestionName(result))}</b>
-            <span>${esc(result.display_name||'')}</span>
-          </button>`).join('')}</div>
-        <div class="poi-suggestion-attribution">Adresgegevens © OpenStreetMap-bijdragers</div>`
-      :'<div class="small">Geen passende suggesties gevonden.</div>';
+    const allowedTypes=field==='place'
+      ?new Set(['woonplaats','gemeente','buurt','wijk','provincie'])
+      :new Set(['adres','weg','postcode','woonplaats']);
+
+    let results=docs.filter(result=>
+      allowedTypes.has(String(result.type||'').toLowerCase())
+    );
+
+    if(!results.length)results=docs;
+    results=results.slice(0,7);
+
+    poiLiveSuggestionResults[field]=results;
+    renderPoiLiveSuggestions(field);
   }catch(error){
-    console.error('Adres zoeken mislukt:',error);
-    panel.innerHTML='<div class="small">Adres zoeken is nu niet beschikbaar.</div>';
+    if(error?.name==='AbortError')return;
+    console.error('Locatiesuggesties laden mislukt:',error);
+    panel.innerHTML='<div class="poi-live-loading">Suggesties zijn nu niet beschikbaar.</div>';
   }
+}
+
+function renderPoiLiveSuggestions(field){
+  const panel=getPoiLocationSuggestionPanel(field);
+  const results=poiLiveSuggestionResults[field]||[];
+
+  if(!panel)return;
+
+  if(!results.length){
+    panel.innerHTML='<div class="poi-live-loading">Geen passende suggesties gevonden.</div>';
+    panel.classList.remove('hidden');
+    return;
+  }
+
+  panel.innerHTML=results.map((result,index)=>`
+    <button type="button" onclick="selectPoiLocationSuggestion('${field}',${index})">
+      <b>${esc(result.weergavenaam||result.naam||'Locatie')}</b>
+      <span>${esc(result.type||'')}</span>
+    </button>
+  `).join('');
+
+  panel.classList.remove('hidden');
+}
+
+function parsePdokPoint(value){
+  const match=String(value||'').match(
+    /POINT\s*\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)/i
+  );
+
+  if(!match)return null;
+
+  const longitude=Number(match[1]);
+  const latitude=Number(match[2]);
+
+  if(!Number.isFinite(latitude)||!Number.isFinite(longitude))return null;
+  return {latitude,longitude};
+}
+
+function buildPdokAddress(doc){
+  const parts=[];
+
+  const street=doc.straatnaam||doc.openbareruimtenaam||'';
+  const number=[
+    doc.huisnummer,
+    doc.huisletter,
+    doc.huisnummertoevoeging
+  ].filter(value=>
+    value!==null&&
+    value!==undefined&&
+    String(value).trim()
+  ).join('');
+
+  if(street){
+    parts.push(`${street}${number?' '+number:''}`.trim());
+  }
+
+  const postcode=doc.postcode||'';
+  const place=doc.woonplaatsnaam||doc.gemeentenaam||'';
+  const locality=[postcode,place].filter(Boolean).join(' ');
+
+  if(locality)parts.push(locality);
+
+  return parts.join(', ')||doc.weergavenaam||'';
+}
+
+async function selectPoiLocationSuggestion(field,index){
+  const result=(poiLiveSuggestionResults[field]||[])[index];
+  if(!result)return;
+
+  const input=getPoiLocationSuggestionInput(field);
+  const panel=getPoiLocationSuggestionPanel(field);
+
+  if(input)input.value=result.weergavenaam||result.naam||input.value;
+  panel?.classList.add('hidden');
+
+  try{
+    const params=new URLSearchParams({id:result.id});
+    const response=await fetch(
+      `https://api.pdok.nl/bzk/locatieserver/search/v3_1/lookup?${params.toString()}`,
+      {headers:{Accept:'application/json'}}
+    );
+
+    if(!response.ok){
+      throw new Error(`Locatie opzoeken gaf fout ${response.status}`);
+    }
+
+    const payload=await response.json();
+    const doc=payload?.response?.docs?.[0];
+
+    if(!doc){
+      throw new Error('Geen locatiegegevens ontvangen.');
+    }
+
+    const point=parsePdokPoint(
+      doc.centroide_ll||
+      doc.geometrie_ll||
+      ''
+    );
+
+    const resultType=String(doc.type||result.type||'').toLowerCase();
+    const place=doc.woonplaatsnaam||
+      doc.gemeentenaam||
+      (resultType==='woonplaats'
+        ?result.weergavenaam
+        :''
+      );
+
+    if(place)$('poiPlace').value=place;
+
+    if(field==='address'||resultType==='adres'){
+      const address=buildPdokAddress(doc);
+      if(address)$('poiAddress').value=address;
+    }
+
+    if(point){
+      $('poiLatitude').value=point.latitude.toFixed(7);
+      $('poiLongitude').value=point.longitude.toFixed(7);
+      showAppToast('Plaats, adres en kaartlocatie overgenomen ✅');
+    }else{
+      showAppToast('Plaats of adres overgenomen. Kaartlocatie kon niet worden bepaald.');
+    }
+  }catch(error){
+    console.error('Locatiesuggestie verwerken mislukt:',error);
+    showAppToast('De tekst is overgenomen, maar de kaartlocatie niet.');
+  }
+}
+
+document.addEventListener('click',event=>{
+  const insidePlace=
+    event.target===$('poiPlace')||
+    $('poiPlaceLiveSuggestions')?.contains(event.target);
+
+  const insideAddress=
+    event.target===$('poiAddress')||
+    $('poiAddressLiveSuggestions')?.contains(event.target);
+
+  if(!insidePlace){
+    $('poiPlaceLiveSuggestions')?.classList.add('hidden');
+  }
+  if(!insideAddress){
+    $('poiAddressLiveSuggestions')?.classList.add('hidden');
+  }
+});
+
+async function searchPoiAddressSuggestions(){
+  const address=String($('poiAddress')?.value||'').trim();
+  const place=String($('poiPlace')?.value||'').trim();
+
+  if(address.length>=2){
+    await loadPoiLocationSuggestions('address',address);
+    return;
+  }
+
+  if(place.length>=2){
+    await loadPoiLocationSuggestions('place',place);
+    return;
+  }
+
+  alert('Typ eerst minimaal twee letters bij plaats of adres.');
 }
 
 function applyPoiOnlineSuggestion(index){
@@ -264,7 +475,30 @@ function goToTab(id){
 }
 function showTab(id,b){document.querySelectorAll('#appView > section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
 function setPoiProgress(text){$('poiProgress').textContent=text;$('poiProgress').classList.toggle('hidden',!text)}
-function clearPoiForm(){$('poiFavorite').checked=false;['poiId','poiName','poiPlace','poiAddress','poiReview','poiRating','poiLatitude','poiLongitude'].forEach(id=>$(id).value='');$('poiCategory').value='Haven';$('poiPhotos').value='';$('poiFormTitle').textContent='POI toevoegen';$('poiSaveButton').textContent='Opslaan';$('poiCancelButton').classList.add('hidden');setPoiProgress('')}
+function clearPoiForm(){
+  $('poiFavorite').checked=false;
+  ['poiId','poiName','poiPlace','poiAddress','poiReview','poiRating','poiLatitude','poiLongitude']
+    .forEach(id=>$(id).value='');
+
+  $('poiCategory').value='Haven';
+  $('poiPhotos').value='';
+  $('poiFormTitle').textContent='POI toevoegen';
+  $('poiSaveButton').textContent='Opslaan';
+  $('poiCancelButton').classList.add('hidden');
+
+  ['poiPlaceLiveSuggestions','poiAddressLiveSuggestions','poiOnlineSuggestions']
+    .forEach(id=>{
+      const panel=$(id);
+      panel?.classList.add('hidden');
+      if(panel)panel.innerHTML='';
+    });
+
+  clearTimeout(poiLocationSuggestionTimer);
+  poiLocationSuggestionController?.abort();
+  poiLiveSuggestionResults={place:[],address:[]};
+  poiOnlineSuggestionResults=[];
+  setPoiProgress('');
+}
 function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
@@ -2811,7 +3045,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.15';
+const APP_VERSION='5.1.16';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

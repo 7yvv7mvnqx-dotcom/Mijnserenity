@@ -1040,3 +1040,48 @@ header{
   color:#fff;
   font-size:16px;
 }
+
+/* Cloud 5.1.16 — live plaats- en adressuggesties */
+.poi-live-suggestions{
+  position:relative;
+  z-index:50;
+  display:grid;
+  gap:1px;
+  margin-top:5px;
+  overflow:hidden;
+  border:1px solid rgba(126,190,218,.38);
+  border-radius:12px;
+  background:#f4fbff;
+  box-shadow:0 12px 30px rgba(0,0,0,.28);
+}
+.poi-live-suggestions button{
+  width:100%;
+  min-height:0;
+  padding:11px 12px;
+  border:0;
+  border-radius:0;
+  background:#f4fbff;
+  color:#0a2436;
+  text-align:left;
+}
+.poi-live-suggestions button+button{
+  border-top:1px solid #d6e5ec;
+}
+.poi-live-suggestions button:active{
+  background:#dff2fa;
+}
+.poi-live-suggestions b,
+.poi-live-suggestions span{
+  display:block;
+}
+.poi-live-suggestions span{
+  margin-top:3px;
+  color:#607986;
+  font-size:11px;
+  text-transform:capitalize;
+}
+.poi-live-loading{
+  padding:11px 12px;
+  color:#526d7b;
+  font-size:12px;
+}

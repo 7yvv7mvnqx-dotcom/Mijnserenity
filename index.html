@@ -126,7 +126,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.15</div>
+          <div class="label">Sync · v5.1.16</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -220,16 +220,23 @@
       </div>
       <div class="row">
         <div><label>Plaats</label>
-          <input id="poiPlace" list="poiPlaceSuggestions" autocomplete="off">
+          <input id="poiPlace" list="poiPlaceSuggestions" autocomplete="off"
+            oninput="schedulePoiLocationSuggestions('place')"
+            onfocus="schedulePoiLocationSuggestions('place',true)">
           <datalist id="poiPlaceSuggestions"></datalist>
+          <div id="poiPlaceLiveSuggestions" class="poi-live-suggestions hidden"></div>
         </div>
         <div><label>Beoordeling 1–5</label><input id="poiRating" type="number" min="1" max="5"></div>
       </div>
       <label>Adres</label>
-      <input id="poiAddress" list="poiAddressSuggestions" autocomplete="off" placeholder="Straat, huisnummer, postcode en plaats">
+      <input id="poiAddress" list="poiAddressSuggestions" autocomplete="off"
+        placeholder="Straat, huisnummer, postcode en plaats"
+        oninput="schedulePoiLocationSuggestions('address')"
+        onfocus="schedulePoiLocationSuggestions('address',true)">
       <datalist id="poiAddressSuggestions"></datalist>
+      <div id="poiAddressLiveSuggestions" class="poi-live-suggestions hidden"></div>
       <div class="poi-suggestion-tools">
-        <button type="button" class="secondary" onclick="searchPoiAddressSuggestions()">🔎 Zoek adres of plaats</button>
+        <button type="button" class="secondary" onclick="searchPoiAddressSuggestions()">🔎 Toon suggesties</button>
       </div>
       <div id="poiOnlineSuggestions" class="poi-online-suggestions hidden"></div>
       <div class="coordinate-card">
