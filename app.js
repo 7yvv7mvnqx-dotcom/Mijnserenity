@@ -3086,12 +3086,106 @@ function initLiveMode(){
   },160);
 }
 
-function fillLiveTripDefaults(force=false){
-  const startDate=liveNavState.startedAt?new Date(liveNavState.startedAt):new Date();
-  if(force||!$('liveTitle')?.value){
-    const date=startDate.toLocaleDateString('nl-NL');
-    $('liveTitle').value=`Live vaartocht ${date}`;
+
+function updateLiveRouteTitle(){
+  const departure=String($('liveFrom')?.value||'').trim();
+  const arrival=String($('liveTo')?.value||'').trim();
+  const title=$('liveTitle');
+
+  if(title){
+    title.value=departure&&arrival
+      ?`${departure} - ${arrival}`
+      :'';
   }
+
+  const status=$('liveRouteNameStatus');
+  if(!status)return;
+
+  if(departure&&arrival){
+    status.textContent=`Wordt opgeslagen als: ${departure} - ${arrival}`;
+    status.classList.add('success');
+  }else{
+    status.textContent='Vertrek en aankomst moeten beide ingevuld zijn voordat je kunt opslaan.';
+    status.classList.remove('success');
+  }
+}
+
+async function fillLiveDepartureAndArrival(force=false){
+  if(!Array.isArray(liveNavState.points)||liveNavState.points.length<2){
+    updateLiveRouteTitle();
+    return false;
+  }
+
+  const first=liveNavState.points[0];
+  const last=liveNavState.points[liveNavState.points.length-1];
+  const fromInput=$('liveFrom');
+  const toInput=$('liveTo');
+  const status=$('liveRouteNameStatus');
+
+  const needDeparture=force||!String(fromInput?.value||'').trim();
+  const needArrival=force||!String(toInput?.value||'').trim();
+
+  if(!needDeparture&&!needArrival){
+    updateLiveRouteTitle();
+    return true;
+  }
+
+  if(status){
+    status.textContent='Vertrek en aankomst bepalen via de GPS-route…';
+    status.classList.remove('success');
+  }
+
+  const [departure,arrival]=await Promise.all([
+    needDeparture
+      ?reverseRouteLocation([Number(first.lon),Number(first.lat)])
+      :Promise.resolve(String(fromInput.value||'').trim()),
+    needArrival
+      ?reverseRouteLocation([Number(last.lon),Number(last.lat)])
+      :Promise.resolve(String(toInput.value||'').trim())
+  ]);
+
+  if(needDeparture&&departure)fromInput.value=departure;
+  if(needArrival&&arrival)toInput.value=arrival;
+
+  updateLiveRouteTitle();
+
+  return Boolean(
+    String(fromInput?.value||'').trim()&&
+    String(toInput?.value||'').trim()
+  );
+}
+
+function validateLiveDepartureAndArrival(){
+  const departure=String($('liveFrom')?.value||'').trim();
+  const arrival=String($('liveTo')?.value||'').trim();
+
+  if(!departure){
+    alert('Vul de vertrekplaats in.');
+    $('liveFrom')?.focus();
+    return false;
+  }
+
+  if(!arrival){
+    alert('Vul de aankomstplaats in.');
+    $('liveTo')?.focus();
+    return false;
+  }
+
+  updateLiveRouteTitle();
+  return true;
+}
+
+function fillLiveTripDefaults(force=false){
+  if(force||!String($('liveCrew')?.value||'').trim()){
+    $('liveCrew').value='Michel, Desi';
+  }
+
+  if(force){
+    $('liveFrom').value='';
+    $('liveTo').value='';
+  }
+
+  updateLiveRouteTitle();
 }
 
 function ensureLiveMap(){
@@ -3306,20 +3400,36 @@ function pauseLiveNavigation(){
   renderLiveState();
 }
 
-function stopLiveNavigation(){
+async function stopLiveNavigation(){
   if(liveNavState.status==='active'){
     liveNavState.accumulatedMs=getLiveElapsedMs();
   }
+
   liveNavState.segmentStartedAt=null;
   liveNavState.status='stopped';
   liveNavState.speedKmh=0;
   stopLiveGpsWatch();
   releaseLiveWakeLock();
-  $('liveGpsStatus').textContent=liveNavState.points.length>=2
-    ?'Opname gereed. Controleer de gegevens en sla de vaartocht op.'
-    :'Te weinig GPS-punten. Laat de opname iets langer lopen.';
   persistLiveState();
   renderLiveState();
+
+  const saveButton=$('liveSaveButton');
+  if(saveButton)saveButton.disabled=true;
+
+  if(liveNavState.points.length>=2){
+    $('liveGpsStatus').textContent='Opname gereed. Vertrek en aankomst worden bepaald…';
+
+    const complete=await fillLiveDepartureAndArrival(false);
+
+    $('liveGpsStatus').textContent=complete
+      ?'Opname gereed. Controleer vertrek en aankomst en sla de vaartocht op.'
+      :'Opname gereed. Vul vertrek en aankomst handmatig aan en sla daarna op.';
+  }else{
+    $('liveGpsStatus').textContent='Te weinig GPS-punten. Laat de opname iets langer lopen.';
+    updateLiveRouteTitle();
+  }
+
+  if(saveButton)saveButton.disabled=false;
 }
 
 function stopLiveGpsWatch(){
@@ -3453,48 +3563,63 @@ async function saveLiveTrip(){
   }
 
   const saveStatus=$('liveSaveStatus');
-  saveStatus.textContent='Live vaartocht opslaan…';
+  const saveButton=$('liveSaveButton');
+
+  saveStatus.textContent='Vertrek en aankomst controleren…';
   saveStatus.classList.remove('hidden');
-  $('liveSaveButton').disabled=true;
-
-  const durationHours=getLiveElapsedMs()/3600000;
-  const title=$('liveTitle').value.trim()||`Live vaartocht ${localDateISO()}`;
-  const fuelLiters=durationHours&&settingsCache?.fuel_per_hour
-    ?durationHours*Number(settingsCache.fuel_per_hour)
-    :null;
-  const fuelCost=fuelLiters&&settingsCache?.fuel_price
-    ?fuelLiters*Number(settingsCache.fuel_price)
-    :null;
-
-  const routeGeojson={
-    type:'LineString',
-    coordinates:liveNavState.points.map(point=>[
-      Number(point.lon),
-      Number(point.lat)
-    ])
-  };
-
-  const row={
-    boat_id:currentBoat.id,
-    created_by:currentUser.id,
-    trip_date:localDateISO(new Date(liveNavState.startedAt||Date.now())),
-    title,
-    departure:$('liveFrom').value.trim(),
-    arrival:$('liveTo').value.trim(),
-    distance_km:Number(liveNavState.distanceKm.toFixed(2)),
-    duration_hours:Number(durationHours.toFixed(2)),
-    crew:$('liveCrew').value.trim(),
-    notes:[
-      $('liveNotes').value.trim(),
-      `Live opgenomen met MijnSerenity · ${liveNavState.points.length} GPS-punten`
-    ].filter(Boolean).join('\n'),
-    fuel_liters:fuelLiters?Number(fuelLiters.toFixed(2)):null,
-    fuel_cost:fuelCost?Number(fuelCost.toFixed(2)):null,
-    route_geojson:routeGeojson,
-    updated_at:new Date().toISOString()
-  };
+  saveButton.disabled=true;
 
   try{
+    await fillLiveDepartureAndArrival(false);
+
+    if(!validateLiveDepartureAndArrival()){
+      saveStatus.textContent='Vul vertrek en aankomst in om de vaartocht op te slaan.';
+      return;
+    }
+
+    const departure=$('liveFrom').value.trim();
+    const arrival=$('liveTo').value.trim();
+    const title=`${departure} - ${arrival}`;
+    $('liveTitle').value=title;
+
+    saveStatus.textContent=`${title} opslaan…`;
+
+    const durationHours=getLiveElapsedMs()/3600000;
+    const fuelLiters=durationHours&&settingsCache?.fuel_per_hour
+      ?durationHours*Number(settingsCache.fuel_per_hour)
+      :null;
+    const fuelCost=fuelLiters&&settingsCache?.fuel_price
+      ?fuelLiters*Number(settingsCache.fuel_price)
+      :null;
+
+    const routeGeojson={
+      type:'LineString',
+      coordinates:liveNavState.points.map(point=>[
+        Number(point.lon),
+        Number(point.lat)
+      ])
+    };
+
+    const row={
+      boat_id:currentBoat.id,
+      created_by:currentUser.id,
+      trip_date:localDateISO(new Date(liveNavState.startedAt||Date.now())),
+      title,
+      departure,
+      arrival,
+      distance_km:Number(liveNavState.distanceKm.toFixed(2)),
+      duration_hours:Number(durationHours.toFixed(2)),
+      crew:$('liveCrew').value.trim()||'Michel, Desi',
+      notes:[
+        $('liveNotes').value.trim(),
+        `Live opgenomen met MijnSerenity · ${liveNavState.points.length} GPS-punten`
+      ].filter(Boolean).join('\n'),
+      fuel_liters:fuelLiters?Number(fuelLiters.toFixed(2)):null,
+      fuel_cost:fuelCost?Number(fuelCost.toFixed(2)):null,
+      route_geojson:routeGeojson,
+      updated_at:new Date().toISOString()
+    };
+
     const {data,error}=await sb.from('trips').insert(row).select('id').single();
     if(error)throw error;
 
@@ -3515,7 +3640,7 @@ async function saveLiveTrip(){
       console.warn('GPX-bestand uploaden mislukt; route staat wel in het logboek:',uploadError);
     }
 
-    saveStatus.textContent='Vaartocht opgeslagen ✅';
+    saveStatus.textContent=`${title} opgeslagen ✅`;
     await loadTrips();
     clearLiveTrip();
     setTimeout(()=>captainNavigate('logbook'),500);
@@ -3523,7 +3648,7 @@ async function saveLiveTrip(){
     console.error('Live vaartocht opslaan mislukt:',error);
     saveStatus.textContent='Opslaan mislukt: '+(error?.message||'onbekende fout');
   }finally{
-    $('liveSaveButton').disabled=false;
+    saveButton.disabled=false;
   }
 }
 
@@ -3541,8 +3666,9 @@ function clearLiveTrip(){
     if($(id))$(id).value='';
   });
   $('liveSaveStatus').classList.add('hidden');
-  $('liveGpsStatus').textContent='Tik op Start varen en geef toestemming voor je locatie.';
+  $('liveGpsStatus').textContent='Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten.';
   fillLiveTripDefaults(true);
+  updateLiveRouteTitle();
   renderLiveState();
   renderLiveRoute();
 }
@@ -3557,7 +3683,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.25';
+const APP_VERSION='5.1.26';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

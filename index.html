@@ -162,7 +162,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.25</div>
+          <div class="label">Sync · v5.1.26</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -206,12 +206,26 @@
     <div class="card">
       <h2>Vaartocht opslaan</h2>
       <div class="row">
-        <div><label>Titel</label><input id="liveTitle" placeholder="Bijv. Hengelo naar Deventer"></div>
+        <div>
+          <label>Titel <span class="required-label">automatisch</span></label>
+          <input id="liveTitle" readonly placeholder="Vertrek - Aankomst">
+        </div>
         <div><label>Bemanning</label><input id="liveCrew" placeholder="Michel, Desi"></div>
       </div>
       <div class="row">
-        <div><label>Vertrek</label><input id="liveFrom" placeholder="Vertrekplaats"></div>
-        <div><label>Aankomst</label><input id="liveTo" placeholder="Aankomstplaats"></div>
+        <div>
+          <label>Vertrek <span class="required-label">verplicht</span></label>
+          <input id="liveFrom" required placeholder="Wordt via GPS ingevuld"
+            oninput="updateLiveRouteTitle()">
+        </div>
+        <div>
+          <label>Aankomst <span class="required-label">verplicht</span></label>
+          <input id="liveTo" required placeholder="Wordt via GPS ingevuld"
+            oninput="updateLiveRouteTitle()">
+        </div>
+      </div>
+      <div id="liveRouteNameStatus" class="status small">
+        Na stoppen worden vertrek en aankomst automatisch via de GPS-route ingevuld.
       </div>
       <label>Notities</label>
       <textarea id="liveNotes" placeholder="Bijzonderheden onderweg"></textarea>
