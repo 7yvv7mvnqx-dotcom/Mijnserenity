@@ -723,3 +723,27 @@ header{
     grid-template-columns:repeat(2,1fr);
   }
 }
+
+/* Cloud 5.1.3 — juiste POI-locaties en vaste favorietenfilter */
+#allPoiMapButton.poi-filter-active,
+#favoritesMapButton.poi-filter-active{
+  background:#f5b52f;
+  border-color:#f5b52f;
+  color:#102a3d;
+  font-weight:900;
+}
+.location-correction-button{
+  border-color:#5a7d91;
+}
+.map-picker-panel{
+  max-height:94vh;
+  overflow:auto;
+}
+#poiPickerMap{
+  min-height:420px;
+}
+@media(max-width:600px){
+  #poiPickerMap{
+    min-height:52vh;
+  }
+}

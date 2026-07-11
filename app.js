@@ -8,7 +8,7 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let tripRouteMaps={};
-let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null;
+let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 function setMsg(t){$('authMsg').textContent=t}
@@ -47,7 +47,9 @@ async function joinBoat(){const code=$('joinCode').value.trim();if(!code)return 
 async function savePoi(){
   if(!currentBoat)return alert('Koppel eerst Serenity.');
   const id=$('poiId').value.trim();
-  const row={boat_id:currentBoat.id,created_by:currentUser.id,name:$('poiName').value.trim(),category:$('poiCategory').value,place:$('poiPlace').value.trim(),address:$('poiAddress').value.trim(),review:$('poiReview').value.trim(),rating:Number($('poiRating').value)||null,is_favorite:$('poiFavorite').checked,latitude:Number($('poiLatitude').value)||null,longitude:Number($('poiLongitude').value)||null,updated_at:new Date().toISOString()};
+  const latitude=parsePoiCoordinateInput($('poiLatitude').value,90);
+  const longitude=parsePoiCoordinateInput($('poiLongitude').value,180);
+  const row={boat_id:currentBoat.id,created_by:currentUser.id,name:$('poiName').value.trim(),category:$('poiCategory').value,place:$('poiPlace').value.trim(),address:$('poiAddress').value.trim(),review:$('poiReview').value.trim(),rating:Number($('poiRating').value)||null,is_favorite:$('poiFavorite').checked,latitude,longitude,updated_at:new Date().toISOString()};
   if(!row.name)return alert('Vul een naam in.');
   setPoiProgress(id?'POI bijwerken…':'POI opslaan…');
   let poiId=id;
@@ -114,8 +116,8 @@ async function loadPois(){
   if(error)return alert(error.message);
   poiCache=(data||[]).map(poi=>({
     ...poi,
-    latitude:poi.latitude===null||poi.latitude===''?null:Number(poi.latitude),
-    longitude:poi.longitude===null||poi.longitude===''?null:Number(poi.longitude),
+    latitude:poi.latitude,
+    longitude:poi.longitude,
     is_favorite:isFavoritePoi(poi)
   }));
   poiPhotoCache=photos;
@@ -310,22 +312,146 @@ function renderFinance(){
   fuelTrips.forEach(t=>{const m=String(t.trip_date||'').slice(0,7);if(m)months[m]=(months[m]||0)+Number(t.fuel_cost||0)});
   $('financeMonths').innerHTML=Object.entries(months).sort().map(([m,v])=>`<div class="finance-row"><div>${m}</div><div>€${v.toFixed(2)}</div></div>`).join('')||'<span class="small">Geen maandgegevens.</span>';
 }
-function setPoiPickerLocation(lat,lon,move=true){
-  poiPickerSelection={lat:Number(lat),lon:Number(lon)};
-  if(poiPickerMarker)poiPickerMarker.setLatLng([lat,lon]);
-  else poiPickerMarker=L.marker([lat,lon]).addTo(poiPickerMap);
-  $('pickerCoordinates').textContent=`Breedtegraad ${Number(lat).toFixed(6)} · Lengtegraad ${Number(lon).toFixed(6)}`;
-  if(move)poiPickerMap.panTo([lat,lon]);
+function parsePoiCoordinateInput(value,maximum){
+  if(value===null||value===undefined||value==='')return null;
+  const cleaned=String(value).trim().replace(',','.');
+  const number=Number(cleaned);
+  return Number.isFinite(number)&&Math.abs(number)<=maximum?number:null;
 }
-function confirmPoiMapSelection(){
+
+function getPoiMapPosition(poi){
+  let lat=parsePoiCoordinateInput(poi?.latitude,90);
+  let lon=parsePoiCoordinateInput(poi?.longitude,180);
+  let swapped=false;
+
+  // Zeer waarschijnlijk omgewisselde Nederlandse/Europese coördinaten:
+  // bijvoorbeeld 6.12, 52.25 in plaats van 52.25, 6.12.
+  if(lat!==null&&lon!==null&&Math.abs(lat)<=25&&Math.abs(lon)>=35&&Math.abs(lon)<=70){
+    [lat,lon]=[lon,lat];
+    swapped=true;
+  }
+
+  return {lat,lon,swapped,valid:lat!==null&&lon!==null};
+}
+
+function setPoiPickerLocation(lat,lon,move=true){
+  const parsedLat=parsePoiCoordinateInput(lat,90);
+  const parsedLon=parsePoiCoordinateInput(lon,180);
+  if(parsedLat===null||parsedLon===null)return;
+
+  poiPickerSelection={lat:parsedLat,lon:parsedLon};
+  if(poiPickerMarker)poiPickerMarker.setLatLng([parsedLat,parsedLon]);
+  else poiPickerMarker=L.marker([parsedLat,parsedLon],{draggable:true}).addTo(poiPickerMap);
+
+  poiPickerMarker.off('dragend');
+  poiPickerMarker.on('dragend',event=>{
+    const position=event.target.getLatLng();
+    setPoiPickerLocation(position.lat,position.lng,false);
+  });
+
+  $('pickerCoordinates').textContent=`Breedtegraad ${parsedLat.toFixed(6)} · Lengtegraad ${parsedLon.toFixed(6)}`;
+  if(move)poiPickerMap.setView([parsedLat,parsedLon],15);
+}
+
+function ensurePoiPickerMap(){
+  if(poiPickerMap)return;
+
+  poiPickerMap=L.map('poiPickerMap',{
+    preferCanvas:true,
+    tap:false
+  }).setView([52.2,5.5],7);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution:'&copy; OpenStreetMap',
+    keepBuffer:4
+  }).addTo(poiPickerMap);
+
+  poiPickerMap.on('click',event=>{
+    setPoiPickerLocation(event.latlng.lat,event.latlng.lng,false);
+  });
+}
+
+function openPoiMapPicker(){
+  poiPickerTargetId=null;
+  $('poiMapPicker').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  ensurePoiPickerMap();
+
+  const lat=parsePoiCoordinateInput($('poiLatitude').value,90);
+  const lon=parsePoiCoordinateInput($('poiLongitude').value,180);
+
+  setTimeout(()=>{
+    poiPickerMap.invalidateSize({pan:false});
+    if(lat!==null&&lon!==null){
+      setPoiPickerLocation(lat,lon,true);
+    }else{
+      poiPickerMap.setView([52.2,5.5],7);
+      $('pickerCoordinates').textContent='Tik op de juiste locatie op de kaart';
+    }
+  },120);
+}
+
+function openPoiLocationCorrection(id){
+  const poi=getPoiById(id);
+  if(!poi)return alert('Deze POI kon niet worden gevonden.');
+
+  poiPickerTargetId=poi.id;
+  const position=getPoiMapPosition(poi);
+
+  mapInstance?.closePopup();
+  closePoiDetails();
+
+  $('poiMapPicker').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  ensurePoiPickerMap();
+
+  setTimeout(()=>{
+    poiPickerMap.invalidateSize({pan:false});
+    if(position.valid){
+      setPoiPickerLocation(position.lat,position.lon,true);
+    }else{
+      poiPickerMap.setView([52.2,5.5],7);
+      $('pickerCoordinates').textContent='Tik op de juiste locatie van deze favoriet';
+    }
+  },120);
+}
+
+async function confirmPoiMapSelection(){
   if(!poiPickerSelection)return alert('Tik eerst op een plek op de kaart.');
+
+  if(poiPickerTargetId){
+    const targetId=poiPickerTargetId;
+    const {error}=await sb.from('pois').update({
+      latitude:Number(poiPickerSelection.lat.toFixed(7)),
+      longitude:Number(poiPickerSelection.lon.toFixed(7)),
+      updated_at:new Date().toISOString()
+    }).eq('id',targetId).eq('boat_id',currentBoat.id);
+
+    if(error)return alert('Locatie opslaan mislukt: '+error.message);
+
+    closePoiMapPicker();
+    await loadPois();
+    renderPoiMarkers();
+    fitPoiMarkers(false);
+    showAppToast('Locatie bijgewerkt ✅');
+    return;
+  }
+
   $('poiLatitude').value=poiPickerSelection.lat.toFixed(6);
   $('poiLongitude').value=poiPickerSelection.lon.toFixed(6);
   closePoiMapPicker();
 }
+
 function closePoiMapPicker(){
   $('poiMapPicker').classList.add('hidden');
   document.body.style.overflow='';
+  poiPickerTargetId=null;
+  poiPickerSelection=null;
+  if(poiPickerMarker){
+    poiPickerMarker.remove();
+    poiPickerMarker=null;
+  }
 }
 
 function initMap(){
@@ -359,13 +485,11 @@ function initMap(){
 }
 
 function normalisePoiCoordinate(value,maximum){
-  const number=Number(value);
-  return Number.isFinite(number)&&Math.abs(number)<=maximum?number:null;
+  return parsePoiCoordinateInput(value,maximum);
 }
 
 function hasPoiLocation(poi){
-  return normalisePoiCoordinate(poi?.latitude,90)!==null&&
-    normalisePoiCoordinate(poi?.longitude,180)!==null;
+  return getPoiMapPosition(poi).valid;
 }
 
 function isFavoritePoi(poi){
@@ -390,36 +514,38 @@ function poiMarkerIcon(poi){
 
 function updatePoiMapStatus(visiblePois){
   const status=$('poiMapStatus');
-  const button=$('favoritesMapButton');
+  const favoritesButton=$('favoritesMapButton');
+  const allButton=$('allPoiMapButton');
   if(!status)return;
 
   const allFavorites=poiCache.filter(isFavoritePoi);
   const favoritesWithLocation=allFavorites.filter(hasPoiLocation);
   const favoritesWithoutLocation=allFavorites.length-favoritesWithLocation.length;
   const visibleWithLocation=visiblePois.filter(hasPoiLocation).length;
+  const autoSwapped=visiblePois.filter(poi=>getPoiMapPosition(poi).swapped).length;
 
-  if(button){
-    button.classList.toggle('favorites-active',favoritesOnly);
-    button.textContent=favoritesOnly
-      ?'⭐ Favorieten zichtbaar'
-      :'⭐ Alleen favorieten';
-  }
+  favoritesButton?.classList.toggle('poi-filter-active',favoritesOnly);
+  allButton?.classList.toggle('poi-filter-active',!favoritesOnly);
 
   const parts=[];
   if(favoritesOnly){
-    parts.push(`${favoritesWithLocation.length} favoriet${favoritesWithLocation.length===1?'':'en'} op de kaart`);
+    parts.push(`Filter: alleen favorieten`);
+    parts.push(`${favoritesWithLocation.length} zichtbaar`);
   }else{
-    parts.push(`${visibleWithLocation} POI${visibleWithLocation===1?'':'’s'} op de kaart`);
-    if(favoritesWithLocation.length){
-      parts.push(`${favoritesWithLocation.length} met gouden ster`);
-    }
+    parts.push(`Filter: alle POI’s`);
+    parts.push(`${visibleWithLocation} zichtbaar`);
+    if(favoritesWithLocation.length)parts.push(`${favoritesWithLocation.length} favoriet`);
+  }
+
+  if(autoSwapped){
+    parts.push(`${autoSwapped} locatie${autoSwapped===1?'':'s'} automatisch rechtgezet`);
   }
   if(favoritesWithoutLocation){
-    parts.push(`${favoritesWithoutLocation} favoriet${favoritesWithoutLocation===1?' heeft':'en hebben'} nog geen kaartlocatie`);
+    parts.push(`${favoritesWithoutLocation} favoriet${favoritesWithoutLocation===1?' heeft':'en hebben'} geen locatie`);
   }
 
   status.textContent=parts.join(' · ');
-  status.classList.toggle('warning',favoritesWithoutLocation>0);
+  status.classList.toggle('warning',favoritesWithoutLocation>0||autoSwapped>0);
 }
 
 function renderPoiMarkers(){
@@ -429,9 +555,9 @@ function renderPoiMarkers(){
   const visiblePois=poiCache.filter(poi=>!favoritesOnly||isFavoritePoi(poi));
 
   visiblePois.forEach(poi=>{
-    const lat=normalisePoiCoordinate(poi.latitude,90);
-    const lon=normalisePoiCoordinate(poi.longitude,180);
-    if(lat===null||lon===null)return;
+    const position=getPoiMapPosition(poi);
+    if(!position.valid)return;
+    const {lat,lon}=position;
 
     const favorite=isFavoritePoi(poi);
     const marker=L.marker([lat,lon],{
@@ -450,6 +576,7 @@ function renderPoiMarkers(){
         <div class="map-popup-actions">
           <button onclick="openPoiRouteInWaterkaarten('${poi.id}')">🧭 Route in Waterkaarten</button>
           <button class="secondary" onclick="showPoiDetails('${poi.id}')">Meer info</button>
+          <button class="secondary location-correction-button" onclick="openPoiLocationCorrection('${poi.id}')">📍 Locatie corrigeren</button>
         </div>
       </div>
     `);
@@ -473,8 +600,9 @@ function showAppToast(message,duration=2600){
 }
 
 async function copyPoiDestination(poi){
-  const lat=normalisePoiCoordinate(poi?.latitude,90);
-  const lon=normalisePoiCoordinate(poi?.longitude,180);
+  const position=getPoiMapPosition(poi);
+  const lat=position.lat;
+  const lon=position.lon;
   const destination=[
     poi?.name||'Bestemming',
     poi?.address||poi?.place||'',
@@ -536,6 +664,7 @@ function showPoiDetails(id){
     ${photoHtml}
     <div class="poi-detail-actions">
       <button onclick="openPoiRouteInWaterkaarten('${poi.id}')">🧭 Route in Waterkaarten</button>
+      <button class="secondary" onclick="openPoiLocationCorrection('${poi.id}')">📍 Locatie corrigeren</button>
       <button class="secondary" onclick='closePoiDetails();editPoi(
         ${JSON.stringify(poi.id)},
         ${JSON.stringify(poi.name)},
@@ -565,10 +694,10 @@ function getVisiblePoiCoordinates(){
   return poiCache
     .filter(poi=>!favoritesOnly||isFavoritePoi(poi))
     .filter(hasPoiLocation)
-    .map(poi=>[
-      normalisePoiCoordinate(poi.latitude,90),
-      normalisePoiCoordinate(poi.longitude,180)
-    ]);
+    .map(poi=>{
+      const position=getPoiMapPosition(poi);
+      return [position.lat,position.lon];
+    });
 }
 
 function fitPoiMarkers(showEmptyMessage=true){
@@ -592,8 +721,8 @@ function showAllPoiMarkers(){
   fitPoiMarkers();
 }
 
-function toggleFavoritesOnly(){
-  favoritesOnly=!favoritesOnly;
+function showFavoritesOnly(){
+  favoritesOnly=true;
   renderPoiMarkers();
   fitPoiMarkers();
 }
@@ -1570,7 +1699,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.2';
+const APP_VERSION='5.1.3';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
