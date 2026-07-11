@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-v5-1-24';
+const CACHE_NAME='mijnserenity-v5-1-25';
 const APP_SHELL=[
   '/',
   '/index.html',

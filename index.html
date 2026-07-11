@@ -76,35 +76,72 @@
     </div>
 
     <div class="dashboard-actions">
-      <button class="dashboard-tile live-mode-tile" onclick="captainNavigate('live')">
-        <span class="tile-icon">⛵</span><b>Live varen</b><small>GPS, snelheid en route</small>
+      <button class="dashboard-tile tile-live" onclick="captainNavigate('live')">
+        <span class="tile-icon-shell"><span class="tile-icon">⛵</span></span>
+        <span class="tile-copy"><b>Live varen</b><small>GPS, snelheid en route</small></span>
+        <span class="tile-arrow">›</span>
       </button>
-      <button class="dashboard-tile" onclick="goToTab('map')">
-        <span class="tile-icon">🗺️</span><b>Kaart</b><small>POI's en positie</small>
+
+      <button class="dashboard-tile tile-map" onclick="goToTab('map')">
+        <span class="tile-icon-shell"><span class="tile-icon">🗺️</span></span>
+        <span class="tile-copy"><b>Kaart</b><small>POI’s en positie</small></span>
+        <span class="tile-arrow">›</span>
       </button>
-      <button class="dashboard-tile waterkaarten-image-tile" type="button"
+
+      <button class="dashboard-tile tile-waterkaarten" type="button"
         aria-label="Open Waterkaarten via Opdrachten"
         onclick="openWaterkaarten()">
-        <img src="waterkaarten-dashboard.png" alt="Open Waterkaarten">
+        <span class="tile-icon-shell waterkaarten-icon-shell">
+          <img src="waterkaarten-dashboard.png" alt="">
+        </span>
+        <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
+        <span class="tile-arrow">›</span>
       </button>
-      <button class="dashboard-tile" onclick="goToTab('logbook')">
-        <span class="tile-icon">📖</span><b>Logboek</b><small id="dTrips">0 vaartochten</small>
+
+      <button class="dashboard-tile tile-logbook" onclick="goToTab('logbook')">
+        <span class="tile-icon-shell"><span class="tile-icon">📖</span></span>
+        <span class="tile-copy"><b>Logboek</b><small id="dTrips">0 vaartochten</small></span>
+        <span class="tile-arrow">›</span>
       </button>
-      <button class="dashboard-tile" onclick="goToTab('pois')">
-        <span class="tile-icon">📍</span><b>POI's</b><small id="dPois">0 locaties</small>
+
+      <button class="dashboard-tile tile-poi" onclick="goToTab('pois')">
+        <span class="tile-icon-shell"><span class="tile-icon">📍</span></span>
+        <span class="tile-copy"><b>POI’s</b><small id="dPois">0 locaties</small></span>
+        <span class="tile-arrow">›</span>
       </button>
-      <button class="dashboard-tile" onclick="goToTab('finance')">
-        <span class="tile-icon">💶</span><b>Financieel</b><small id="dCosts">€0</small>
+
+      <button class="dashboard-tile tile-finance" onclick="openFinanceFromDashboard()">
+        <span class="tile-icon-shell"><span class="tile-icon">💶</span></span>
+        <span class="tile-copy"><b>Financieel</b><small id="dCosts">€0</small></span>
+        <span class="tile-arrow">›</span>
       </button>
-      <button class="dashboard-tile" onclick="goToTab('costs')">
-        <span class="tile-icon">🧾</span><b>Kosten</b><small>Nieuwe kosten</small>
+
+      <button class="dashboard-tile tile-costs" onclick="goToTab('costs')">
+        <span class="tile-icon-shell"><span class="tile-icon">🧾</span></span>
+        <span class="tile-copy"><b>Kosten</b><small>Toevoegen en bekijken</small></span>
+        <span class="tile-arrow">›</span>
       </button>
-      <button class="dashboard-tile" onclick="goToTab('settings')">
-        <span class="tile-icon">⚙️</span><b>Instellingen</b><small>Brandstof en boot</small>
+
+      <button class="dashboard-tile tile-settings" onclick="goToTab('settings')">
+        <span class="tile-icon-shell"><span class="tile-icon">⚙️</span></span>
+        <span class="tile-copy"><b>Instellingen</b><small>Brandstof en boot</small></span>
+        <span class="tile-arrow">›</span>
       </button>
     </div>
 
-    
+    <div id="dashboardFinanceCard" class="card dashboard-finance-card">
+      <button type="button" class="dashboard-finance-total" onclick="openFinanceFromDashboard()">
+        <span>
+          <small>Totale uitgaven</small>
+          <strong id="dashboardFinanceTotal">€0,00</strong>
+        </span>
+        <span class="dashboard-finance-open">Bekijk alles ›</span>
+      </button>
+      <div id="dashboardFinanceCategories" class="dashboard-finance-categories">
+        <span class="small">Nog geen kosten beschikbaar.</span>
+      </div>
+    </div>
+
     <div id="latestRouteCard" class="card latest-route-card hidden">
       <div class="latest-route-head">
         <div>
@@ -125,7 +162,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.24</div>
+          <div class="label">Sync · v5.1.25</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -513,6 +550,17 @@
     <div class="card">
       <h2>Kosten per maand binnen filter</h2>
       <div id="financeMonths"></div>
+    </div>
+
+    <div id="financeDetailsCard" class="card">
+      <div class="finance-details-head">
+        <div>
+          <h2>Inhoud van het filter</h2>
+          <p id="financeDetailsSummary" class="small">Alle kostenposten</p>
+        </div>
+        <button type="button" class="secondary finance-details-cost-button" onclick="captainNavigate('costs')">Open kosten</button>
+      </div>
+      <div id="financeDetails"></div>
     </div>
   </section>
 <section id="settings" class="hidden">

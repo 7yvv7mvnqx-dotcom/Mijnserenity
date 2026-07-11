@@ -1518,6 +1518,8 @@ async function loadCosts(){
     .reduce((sum,cost)=>sum+Number(cost.amount||0),0)
     .toFixed(0);
 
+  updateDashboardFinanceSummary();
+
   $('costList').innerHTML=costCache.length
     ?costCache.map(cost=>`
       <div class="item cost-item">
@@ -1793,6 +1795,148 @@ function populateFinanceYears(){
   }
 }
 
+
+function formatEuro(value){
+  return Number(value||0).toLocaleString('nl-NL',{
+    style:'currency',
+    currency:'EUR',
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
+
+function getAllFinanceEntries(){
+  const regular=costCache.map(cost=>({
+    type:'cost',
+    id:cost.id,
+    date:cost.expense_date,
+    category:cost.category||'Overig',
+    description:cost.description||'Kostenpost',
+    amount:Number(cost.amount||0)
+  }));
+
+  const fuel=tripCache
+    .filter(trip=>Number(trip.fuel_cost||0)>0)
+    .map(trip=>({
+      type:'trip',
+      id:trip.id,
+      date:trip.trip_date,
+      category:'Diesel',
+      description:trip.title||`${trip.departure||''} - ${trip.arrival||''}`.trim()||'Brandstof vaartocht',
+      amount:Number(trip.fuel_cost||0)
+    }));
+
+  return [...regular,...fuel]
+    .filter(entry=>Number.isFinite(entry.amount)&&entry.amount>0)
+    .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+}
+
+function updateDashboardFinanceSummary(){
+  const totalElement=$('dashboardFinanceTotal');
+  const categoriesElement=$('dashboardFinanceCategories');
+  if(!totalElement||!categoriesElement)return;
+
+  const entries=getAllFinanceEntries();
+  const total=entries.reduce((sum,entry)=>sum+entry.amount,0);
+  totalElement.textContent=formatEuro(total);
+
+  const groups={};
+  entries.forEach(entry=>{
+    groups[entry.category]=(groups[entry.category]||0)+entry.amount;
+  });
+
+  const top=Object.entries(groups)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,5);
+
+  categoriesElement.innerHTML=top.length
+    ?top.map(([category,value])=>`
+      <button type="button" class="dashboard-category-chip"
+        onclick='openFinanceFromDashboard(${JSON.stringify(category)})'>
+        <span>${esc(category)}</span>
+        <strong>${formatEuro(value)}</strong>
+      </button>
+    `).join('')
+    :'<span class="small">Nog geen kosten beschikbaar.</span>';
+}
+
+function openFinanceFromDashboard(category=''){
+  captainNavigate('finance');
+
+  if($('financePeriodType'))$('financePeriodType').value='all';
+  if($('financeCategory'))$('financeCategory').value=category||'';
+
+  updateFinanceFilterInputs();
+  renderFinance();
+
+  setTimeout(()=>{
+    const target=category
+      ?$('financeDetailsCard')
+      :document.querySelector('#finance .card.hero');
+    target?.scrollIntoView({behavior:'smooth',block:'start'});
+  },120);
+}
+
+function openFinanceCategory(category){
+  if($('financeCategory'))$('financeCategory').value=category||'';
+  renderFinance();
+  setTimeout(()=>{
+    $('financeDetailsCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
+}
+
+function openFinanceMonth(month){
+  if($('financePeriodType'))$('financePeriodType').value='month';
+  if($('financeMonth'))$('financeMonth').value=month||'';
+  updateFinanceFilterInputs();
+  renderFinance();
+  setTimeout(()=>{
+    $('financeDetailsCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
+}
+
+function renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory){
+  const container=$('financeDetails');
+  const summary=$('financeDetailsSummary');
+  if(!container||!summary)return;
+
+  const entries=[
+    ...regular.map(cost=>({
+      type:'cost',
+      id:cost.id,
+      date:cost.expense_date,
+      category:cost.category||'Overig',
+      description:cost.description||'Kostenpost',
+      amount:Number(cost.amount||0)
+    })),
+    ...fuelTrips.map(trip=>({
+      type:'trip',
+      id:trip.id,
+      date:trip.trip_date,
+      category:'Diesel',
+      description:trip.title||`${trip.departure||''} - ${trip.arrival||''}`.trim()||'Brandstof vaartocht',
+      amount:Number(trip.fuel_cost||0)
+    }))
+  ].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+
+  const total=entries.reduce((sum,entry)=>sum+entry.amount,0);
+  summary.textContent=`${financePeriodLabel(periodType)} · ${selectedCategory||'Alle categorieën'} · ${entries.length} ${entries.length===1?'post':'posten'} · ${formatEuro(total)}`;
+
+  container.innerHTML=entries.length
+    ?entries.map(entry=>`
+      <button type="button" class="finance-detail-row"
+        onclick="${entry.type==='cost'?"captainNavigate('costs')":"captainNavigate('logbook')"}">
+        <span class="finance-detail-main">
+          <b>${esc(entry.category)}</b>
+          <small>${esc(entry.date||'')} · ${esc(entry.description||'')}</small>
+        </span>
+        <strong>${formatEuro(entry.amount)}</strong>
+        <span class="finance-detail-arrow">›</span>
+      </button>
+    `).join('')
+    :'<span class="small">Geen kosten binnen dit filter.</span>';
+}
+
 function renderFinance(){
   if(!$('fTotal'))return;
 
@@ -1832,12 +1976,12 @@ function renderFinance(){
   );
   const itemCount=regular.length+fuelTrips.length;
 
-  $('fTotal').textContent='€'+filteredTotal.toFixed(2);
+  $('fTotal').textContent=formatEuro(filteredTotal);
   $('fCount').textContent=String(itemCount);
-  $('fFuel').textContent='€'+filteredFuel.toFixed(2);
+  $('fFuel').textContent=formatEuro(filteredFuel);
   $('fPerHour').textContent=filteredHours
-    ?'€'+(filteredTotal/filteredHours).toFixed(2)
-    :'€0';
+    ?formatEuro(filteredTotal/filteredHours)
+    :formatEuro(0);
 
   const categoryLabel=selectedCategory||'Alle categorieën';
   $('financeFilterSummary').textContent=
@@ -1856,15 +2000,16 @@ function renderFinance(){
   $('financeBreakdown').innerHTML=Object.entries(groups)
     .sort((a,b)=>b[1]-a[1])
     .map(([category,value])=>`
-      <div class="finance-row">
+      <button type="button" class="finance-row finance-row-button"
+        onclick='openFinanceCategory(${JSON.stringify(category)})'>
         <div>
           <b>${esc(category)}</b>
           <div class="finance-bar">
             <span style="width:${Math.round(value/max*100)}%"></span>
           </div>
         </div>
-        <div>€${value.toFixed(2)}</div>
-      </div>
+        <div class="finance-row-value">${formatEuro(value)} <span>›</span></div>
+      </button>
     `).join('')||'<span class="small">Geen kosten binnen dit filter.</span>';
 
   const months={};
@@ -1885,8 +2030,17 @@ function renderFinance(){
         month:'long',
         year:'numeric'
       });
-      return `<div class="finance-row"><div>${esc(label)}</div><div>€${value.toFixed(2)}</div></div>`;
+      return `
+        <button type="button" class="finance-row finance-row-button"
+          onclick='openFinanceMonth(${JSON.stringify(month)})'>
+          <div>${esc(label)}</div>
+          <div class="finance-row-value">${formatEuro(value)} <span>›</span></div>
+        </button>
+      `;
     }).join('')||'<span class="small">Geen maandgegevens binnen dit filter.</span>';
+
+  renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory);
+  updateDashboardFinanceSummary();
 }
 function parsePoiCoordinateInput(value,maximum){
   if(value===null||value===undefined||value==='')return null;
@@ -2652,6 +2806,7 @@ async function loadTrips(){
   renderTripList();
   renderFinance();
   updateLatestRouteDashboard();
+  updateDashboardFinanceSummary();
 }
 
 
@@ -2805,7 +2960,10 @@ function captainNavigate(id, sourceButton=null){
 
   if(id==='live' && typeof initLiveMode==='function')setTimeout(()=>initLiveMode(),80);
   if(id==='map' && typeof initMap==='function')setTimeout(()=>initMap(),80);
-  if(id==='dashboard' && typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
+  if(id==='dashboard'){
+    if(typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
+    if(typeof updateDashboardFinanceSummary==='function')updateDashboardFinanceSummary();
+  }
   if(id==='pois'){
     resetPoiFilters(false);
     renderPoiList();
@@ -3399,7 +3557,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.24';
+const APP_VERSION='5.1.25';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
