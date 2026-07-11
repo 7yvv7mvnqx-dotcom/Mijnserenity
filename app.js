@@ -3087,9 +3087,68 @@ function initLiveMode(){
 }
 
 
+
+function cleanLivePlaceName(value){
+  return String(value||'')
+    .trim()
+    .split(',')[0]
+    .replace(/\s*\([^)]*\)\s*$/,'')
+    .replace(/^(gemeente|provincie)\s+/i,'')
+    .trim();
+}
+
+async function reverseLivePlaceName(coordinate){
+  if(!Array.isArray(coordinate)||coordinate.length<2)return '';
+
+  const longitude=Number(coordinate[0]);
+  const latitude=Number(coordinate[1]);
+
+  if(!Number.isFinite(latitude)||!Number.isFinite(longitude))return '';
+
+  try{
+    const params=new URLSearchParams({
+      lat:String(latitude),
+      lon:String(longitude),
+      rows:'5',
+      type:'woonplaats'
+    });
+
+    const response=await fetch(
+      `https://api.pdok.nl/bzk/locatieserver/search/v3_1/reverse?${params.toString()}`,
+      {headers:{Accept:'application/json'}}
+    );
+
+    if(!response.ok)return '';
+
+    const payload=await response.json();
+    const docs=Array.isArray(payload?.response?.docs)
+      ?payload.response.docs
+      :[];
+
+    const woonplaats=docs
+      .map(doc=>String(doc.woonplaatsnaam||'').trim())
+      .find(Boolean);
+
+    if(woonplaats)return cleanLivePlaceName(woonplaats);
+
+    const plaatsResult=docs.find(doc=>
+      String(doc.type||'').toLowerCase()==='woonplaats'
+    );
+
+    return cleanLivePlaceName(
+      plaatsResult?.naam||
+      plaatsResult?.weergavenaam||
+      ''
+    );
+  }catch(error){
+    console.warn('Woonplaats voor live vaartocht bepalen mislukt:',error);
+    return '';
+  }
+}
+
 function updateLiveRouteTitle(){
-  const departure=String($('liveFrom')?.value||'').trim();
-  const arrival=String($('liveTo')?.value||'').trim();
+  const departure=cleanLivePlaceName($('liveFrom')?.value);
+  const arrival=cleanLivePlaceName($('liveTo')?.value);
   const title=$('liveTitle');
 
   if(title){
@@ -3137,10 +3196,10 @@ async function fillLiveDepartureAndArrival(force=false){
 
   const [departure,arrival]=await Promise.all([
     needDeparture
-      ?reverseRouteLocation([Number(first.lon),Number(first.lat)])
+      ?reverseLivePlaceName([Number(first.lon),Number(first.lat)])
       :Promise.resolve(String(fromInput.value||'').trim()),
     needArrival
-      ?reverseRouteLocation([Number(last.lon),Number(last.lat)])
+      ?reverseLivePlaceName([Number(last.lon),Number(last.lat)])
       :Promise.resolve(String(toInput.value||'').trim())
   ]);
 
@@ -3577,8 +3636,12 @@ async function saveLiveTrip(){
       return;
     }
 
-    const departure=$('liveFrom').value.trim();
-    const arrival=$('liveTo').value.trim();
+    const departure=cleanLivePlaceName($('liveFrom').value);
+    const arrival=cleanLivePlaceName($('liveTo').value);
+
+    $('liveFrom').value=departure;
+    $('liveTo').value=arrival;
+
     const title=`${departure} - ${arrival}`;
     $('liveTitle').value=title;
 
@@ -3683,7 +3746,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.27';
+const APP_VERSION='5.1.28';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
