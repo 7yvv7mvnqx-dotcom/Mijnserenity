@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null;
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -107,7 +107,8 @@ async function refreshMijnSerenity(button){
       ['instellingen',loadSettings],
       ['POI’s',loadPois],
       ['kosten',loadCosts],
-      ['logboek',loadTrips]
+      ['logboek',loadTrips],
+      ['techniek',()=>loadTechnicalDashboard(true)]
     ];
 
     let succeeded=0;
@@ -2203,12 +2204,13 @@ function goToTab(id){
     live:1,
     map:2,
     planner:3,
-    pois:4,
-    logbook:5,
-    costs:6,
-    finance:7,
-    settings:8,
-    boat:9
+    technical:4,
+    pois:5,
+    logbook:6,
+    costs:7,
+    finance:8,
+    settings:9,
+    boat:10
   };
   const button=buttons[map[id]];
 
@@ -2216,6 +2218,7 @@ function goToTab(id){
   if(id==='live')initLiveMode();
   if(id==='map')initMap();
   if(id==='planner')initPlanner();
+  if(id==='technical')initTechnicalDashboard();
   if(id==='finance')renderFinance();
   if(id==='settings')loadSettingsForm();
 }
@@ -3087,7 +3090,8 @@ async function initialise(session){
       loadSettings(),
       loadPois(),
       loadCosts(),
-      loadTrips()
+      loadTrips(),
+      loadTechnicalDashboard()
     ]);
     subscribeRealtime();
   }
@@ -5001,7 +5005,64 @@ async function loadCosts(){
     :'<span class="small">Nog geen kosten.</span>';
 }
 
-function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'cost_receipts',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},loadSettings).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
+function subscribeRealtime(){
+  if(liveChannel)sb.removeChannel(liveChannel);
+
+  liveChannel=sb.channel('serenity-'+currentBoat.id)
+    .on(
+      'postgres_changes',
+      {event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},
+      loadPois
+    )
+    .on(
+      'postgres_changes',
+      {event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},
+      loadPois
+    )
+    .on(
+      'postgres_changes',
+      {event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},
+      loadCosts
+    )
+    .on(
+      'postgres_changes',
+      {event:'*',schema:'public',table:'cost_receipts',filter:`boat_id=eq.${currentBoat.id}`},
+      loadCosts
+    )
+    .on(
+      'postgres_changes',
+      {event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},
+      loadTrips
+    )
+    .on(
+      'postgres_changes',
+      {event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},
+      loadTrips
+    )
+    .on(
+      'postgres_changes',
+      {event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},
+      loadSettings
+    );
+
+  if(technicalCloudReady){
+    liveChannel
+      .on(
+        'postgres_changes',
+        {event:'*',schema:'public',table:'technical_state',filter:`boat_id=eq.${currentBoat.id}`},
+        ()=>loadTechnicalDashboard(true)
+      )
+      .on(
+        'postgres_changes',
+        {event:'*',schema:'public',table:'technical_events',filter:`boat_id=eq.${currentBoat.id}`},
+        ()=>loadTechnicalDashboard(true)
+      );
+  }
+
+  liveChannel.subscribe(status=>{
+    $('dSync').textContent=status==='SUBSCRIBED'?'Live':'…';
+  });
+}
 
 function resetPoiFilters(render=true){
   if($('poiSearch'))$('poiSearch').value='';
@@ -5126,6 +5187,12 @@ async function loadSettings(){
 
   await loadDashboardPhoto();
   plannerSetDefaults();
+
+  if(technicalStateCache&&!technicalStateCache.fuelCapacity&&settingsCache?.tank_capacity){
+    technicalStateCache.fuelCapacity=Number(settingsCache.tank_capacity);
+    saveTechnicalLocalState(technicalStateCache);
+    renderTechnicalDashboard();
+  }
 }
 
 async function loadDashboardPhoto(){
@@ -6512,6 +6579,1420 @@ function openNearbyHarbourSearchFromLibrary(){
     $('poiCategory').value='Haven';
     searchNearbyPois('Haven');
   },120);
+}
+
+
+const TECHNICAL_LOCAL_VERSION='v1';
+
+function technicalLocalKey(){
+  return `mijnserenity-technical-${TECHNICAL_LOCAL_VERSION}-${currentBoat?.id||'geen-boot'}`;
+}
+
+function technicalEventsLocalKey(){
+  return `${technicalLocalKey()}-events`;
+}
+
+function technicalToday(){
+  return localDateISO(new Date());
+}
+
+function defaultTechnicalTasks(){
+  return [
+    {
+      id:'engine-oil',
+      title:'Motorolie vervangen',
+      category:'Motor',
+      intervalMonths:12,
+      intervalHours:100,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'oil-filter',
+      title:'Oliefilter vervangen',
+      category:'Motor',
+      intervalMonths:12,
+      intervalHours:100,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'fuel-prefilter',
+      title:'Dieselvoorfilter controleren/vervangen',
+      category:'Motor',
+      intervalMonths:12,
+      intervalHours:100,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'fuel-filter',
+      title:'Fijn brandstoffilter vervangen',
+      category:'Motor',
+      intervalMonths:24,
+      intervalHours:200,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'impeller',
+      title:'Impeller vervangen',
+      category:'Motor',
+      intervalMonths:12,
+      intervalHours:150,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'gearbox-oil',
+      title:'Keerkoppelingolie vervangen',
+      category:'Motor',
+      intervalMonths:24,
+      intervalHours:250,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'coolant',
+      title:'Koelvloeistof vervangen',
+      category:'Motor',
+      intervalMonths:24,
+      intervalHours:null,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'heater-service',
+      title:'Dieselverwarming onderhouden',
+      category:'Verwarming',
+      intervalMonths:12,
+      intervalHours:null,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'antifouling',
+      title:'Onderwaterschip en antifouling controleren',
+      category:'Romp',
+      intervalMonths:12,
+      intervalHours:null,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'anodes',
+      title:'Anodes controleren',
+      category:'Romp',
+      intervalMonths:12,
+      intervalHours:null,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'fire-extinguishers',
+      title:'Brandblussers controleren',
+      category:'Veiligheid',
+      intervalMonths:12,
+      intervalHours:null,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'safety-equipment',
+      title:'Reddingsmiddelen en nooduitrusting controleren',
+      category:'Veiligheid',
+      intervalMonths:12,
+      intervalHours:null,
+      lastDate:'',
+      lastHours:null
+    },
+    {
+      id:'battery-check',
+      title:'Accu’s, klemmen en laadspanning controleren',
+      category:'Elektrisch',
+      intervalMonths:6,
+      intervalHours:null,
+      lastDate:'',
+      lastHours:null
+    }
+  ];
+}
+
+function defaultTechnicalState(){
+  return {
+    boat:{
+      name:currentBoat?.name||'Serenity',
+      model:'VriJon Contessa 37E',
+      buildYear:1994,
+      lengthM:11.2,
+      hull:'Staal'
+    },
+    engineHours:0,
+    engineTemp:null,
+    oilPressure:null,
+    coolantLevel:'unknown',
+    batteryType:'lead',
+    houseVoltage:null,
+    startVoltage:null,
+    fuelPct:null,
+    fuelCapacity:Number(settingsCache?.tank_capacity||0)||null,
+    waterPct:null,
+    wastePct:null,
+    shorePower:false,
+    solarPower:null,
+    heater:'unknown',
+    bilge:'unknown',
+    integrations:{
+      victron:'not_configured',
+      homeAssistant:'planned',
+      nmea2000:'planned'
+    },
+    notes:'',
+    maintenance:defaultTechnicalTasks(),
+    lastSnapshotAt:null,
+    updatedAt:null
+  };
+}
+
+function mergeTechnicalTasks(savedTasks=[]){
+  const defaults=defaultTechnicalTasks();
+  const savedMap=new Map(
+    (Array.isArray(savedTasks)?savedTasks:[])
+      .map(task=>[String(task.id),task])
+  );
+
+  const merged=defaults.map(task=>({
+    ...task,
+    ...(savedMap.get(String(task.id))||{})
+  }));
+
+  const defaultIds=new Set(defaults.map(task=>String(task.id)));
+  const custom=(Array.isArray(savedTasks)?savedTasks:[])
+    .filter(task=>!defaultIds.has(String(task.id)));
+
+  return [...merged,...custom];
+}
+
+function normaliseTechnicalState(value){
+  const base=defaultTechnicalState();
+  const saved=value&&typeof value==='object'?value:{};
+
+  return {
+    ...base,
+    ...saved,
+    boat:{
+      ...base.boat,
+      ...(saved.boat||{})
+    },
+    integrations:{
+      ...base.integrations,
+      ...(saved.integrations||{})
+    },
+    maintenance:mergeTechnicalTasks(saved.maintenance)
+  };
+}
+
+function readTechnicalLocalState(){
+  try{
+    return normaliseTechnicalState(
+      JSON.parse(localStorage.getItem(technicalLocalKey())||'null')
+    );
+  }catch(error){
+    console.warn('Technische lokale gegevens lezen mislukt:',error);
+    return defaultTechnicalState();
+  }
+}
+
+function saveTechnicalLocalState(state){
+  try{
+    localStorage.setItem(
+      technicalLocalKey(),
+      JSON.stringify(state)
+    );
+  }catch(error){
+    console.warn('Technische lokale gegevens bewaren mislukt:',error);
+  }
+}
+
+function readTechnicalLocalEvents(){
+  try{
+    const events=JSON.parse(
+      localStorage.getItem(technicalEventsLocalKey())||'[]'
+    );
+    return Array.isArray(events)?events:[];
+  }catch(error){
+    console.warn('Technische lokale logitems lezen mislukt:',error);
+    return [];
+  }
+}
+
+function saveTechnicalLocalEvents(events){
+  try{
+    localStorage.setItem(
+      technicalEventsLocalKey(),
+      JSON.stringify((events||[]).slice(0,300))
+    );
+  }catch(error){
+    console.warn('Technische logitems lokaal bewaren mislukt:',error);
+  }
+}
+
+function technicalTableMissing(error){
+  const code=String(error?.code||'');
+  const message=String(error?.message||'').toLowerCase();
+
+  return (
+    ['42P01','PGRST205','PGRST204'].includes(code)||
+    message.includes('technical_state')&&
+      (
+        message.includes('does not exist')||
+        message.includes('schema cache')||
+        message.includes('could not find')
+      )
+  );
+}
+
+function setTechnicalSyncStatus(message,state=''){
+  const element=$('technicalSyncStatus');
+  if(!element)return;
+
+  element.textContent=message||'';
+  element.classList.toggle('hidden',!message);
+  element.classList.remove('success','warning','error');
+
+  if(state)element.classList.add(state);
+}
+
+async function loadTechnicalDashboard(force=false){
+  if(!currentBoat||technicalLoading)return;
+
+  technicalLoading=true;
+
+  if(!technicalStateCache||force){
+    technicalStateCache=readTechnicalLocalState();
+    technicalEventsCache=readTechnicalLocalEvents();
+    renderTechnicalDashboard();
+  }
+
+  try{
+    const [{data:stateRow,error:stateError},{data:eventRows,error:eventError}]
+      =await Promise.all([
+        sb.from('technical_state')
+          .select('data,updated_at')
+          .eq('boat_id',currentBoat.id)
+          .maybeSingle(),
+        sb.from('technical_events')
+          .select('*')
+          .eq('boat_id',currentBoat.id)
+          .order('event_date',{ascending:false})
+          .order('created_at',{ascending:false})
+          .limit(200)
+      ]);
+
+    if(stateError)throw stateError;
+    if(eventError)throw eventError;
+
+    technicalCloudReady=true;
+
+    if(stateRow?.data){
+      technicalStateCache=normaliseTechnicalState({
+        ...stateRow.data,
+        updatedAt:stateRow.updated_at||
+          stateRow.data.updatedAt||
+          null
+      });
+      saveTechnicalLocalState(technicalStateCache);
+    }else{
+      technicalStateCache=normaliseTechnicalState(technicalStateCache);
+    }
+
+    technicalEventsCache=(eventRows||[]).map(event=>({
+      ...event,
+      source:'cloud'
+    }));
+    saveTechnicalLocalEvents(technicalEventsCache);
+
+    renderTechnicalDashboard();
+    setTechnicalSyncStatus(
+      technicalStateCache?.updatedAt
+        ?`Gedeeld dashboard bijgewerkt ${formatAccountDate(technicalStateCache.updatedAt)}`
+        :'Gedeeld technisch dashboard is gereed.',
+      'success'
+    );
+  }catch(error){
+    if(technicalTableMissing(error)){
+      technicalCloudReady=false;
+      setTechnicalSyncStatus(
+        'Technische gegevens staan nu lokaal. Voer SUPABASE_TECHNISCH_DASHBOARD_5_4_0.sql uit om ze met Desi te delen.',
+        'warning'
+      );
+    }else{
+      console.error('Technisch dashboard laden mislukt:',error);
+      setTechnicalSyncStatus(
+        'Cloud synchronisatie is tijdelijk niet beschikbaar. Lokale gegevens blijven zichtbaar.',
+        'warning'
+      );
+    }
+
+    technicalStateCache=normaliseTechnicalState(
+      technicalStateCache||readTechnicalLocalState()
+    );
+    technicalEventsCache=technicalEventsCache.length
+      ?technicalEventsCache
+      :readTechnicalLocalEvents();
+    renderTechnicalDashboard();
+  }finally{
+    technicalLoading=false;
+  }
+}
+
+function initTechnicalDashboard(){
+  if(!currentBoat){
+    showAppToast('Koppel eerst Serenity.');
+    captainNavigate(isAppAdmin()?'boat':'settings');
+    return;
+  }
+
+  if(!technicalStateCache){
+    technicalStateCache=readTechnicalLocalState();
+    technicalEventsCache=readTechnicalLocalEvents();
+  }
+
+  renderTechnicalDashboard();
+  loadTechnicalDashboard(false);
+}
+
+function technicalNumber(value,digits=1){
+  const number=Number(value);
+  if(!Number.isFinite(number))return null;
+
+  return number.toLocaleString('nl-NL',{
+    minimumFractionDigits:0,
+    maximumFractionDigits:digits
+  });
+}
+
+function technicalPercent(value){
+  const number=Number(value);
+  return Number.isFinite(number)
+    ?`${Math.round(number)}%`
+    :'–%';
+}
+
+function technicalClampPercent(value){
+  const number=Number(value);
+  if(!Number.isFinite(number))return null;
+  return Math.max(0,Math.min(100,number));
+}
+
+function technicalBatteryStatus(voltage,type='lead'){
+  const value=Number(voltage);
+  if(!Number.isFinite(value)||value<=0){
+    return {level:'unknown',label:'Nog niet gemeten'};
+  }
+
+  if(type==='lithium'){
+    if(value<12.2)return {level:'critical',label:'Kritiek laag'};
+    if(value<12.8)return {level:'warning',label:'Laag'};
+    return {level:'good',label:'In orde'};
+  }
+
+  if(value<11.9)return {level:'critical',label:'Kritiek laag'};
+  if(value<12.2)return {level:'warning',label:'Laag'};
+  return {level:'good',label:'In orde'};
+}
+
+function technicalAddMonths(dateValue,months){
+  if(!dateValue||!Number(months))return null;
+
+  const date=new Date(`${dateValue}T12:00:00`);
+  if(Number.isNaN(date.getTime()))return null;
+
+  date.setMonth(date.getMonth()+Number(months));
+  return date;
+}
+
+function technicalDaysUntil(date){
+  if(!(date instanceof Date)||Number.isNaN(date.getTime()))return null;
+  return Math.ceil(
+    (date.getTime()-Date.now())/86400000
+  );
+}
+
+function technicalTaskStatus(task){
+  const engineHours=Number(technicalStateCache?.engineHours||0);
+  const dueDate=technicalAddMonths(
+    task.lastDate,
+    Number(task.intervalMonths||0)
+  );
+  const daysLeft=technicalDaysUntil(dueDate);
+
+  const nextHours=(
+    Number.isFinite(Number(task.lastHours))&&
+    Number(task.intervalHours||0)>0
+  )
+    ?Number(task.lastHours)+Number(task.intervalHours)
+    :null;
+
+  const hoursLeft=Number.isFinite(nextHours)
+    ?nextHours-engineHours
+    :null;
+
+  const neverDone=!task.lastDate&&!Number.isFinite(Number(task.lastHours));
+  const overdue=(
+    Number.isFinite(daysLeft)&&daysLeft<0
+  )||(
+    Number.isFinite(hoursLeft)&&hoursLeft<0
+  );
+
+  const dueSoon=(
+    Number.isFinite(daysLeft)&&daysLeft<=30
+  )||(
+    Number.isFinite(hoursLeft)&&hoursLeft<=10
+  );
+
+  let level='good';
+  let label='In orde';
+
+  if(neverDone){
+    level='warning';
+    label='Eerste controle nodig';
+  }else if(overdue){
+    level='critical';
+    label='Achterstallig';
+  }else if(dueSoon){
+    level='warning';
+    label='Binnenkort';
+  }
+
+  const detail=[];
+
+  if(dueDate){
+    detail.push(
+      `datum ${dueDate.toLocaleDateString('nl-NL',{
+        day:'2-digit',
+        month:'2-digit',
+        year:'numeric'
+      })}`
+    );
+  }
+
+  if(Number.isFinite(nextHours)){
+    detail.push(
+      `bij ${technicalNumber(nextHours,1)} uur`
+    );
+  }
+
+  return {
+    level,
+    label,
+    detail:detail.length?detail.join(' · '):'Nog geen interval ingesteld',
+    daysLeft,
+    hoursLeft,
+    dueDate,
+    nextHours,
+    neverDone
+  };
+}
+
+function technicalWarnings(){
+  const state=technicalStateCache||defaultTechnicalState();
+  const warnings=[];
+
+  const push=(level,title,text,icon='⚠️')=>{
+    warnings.push({level,title,text,icon});
+  };
+
+  const house=technicalBatteryStatus(
+    state.houseVoltage,
+    state.batteryType
+  );
+  const start=technicalBatteryStatus(state.startVoltage,'lead');
+
+  if(house.level==='critical'){
+    push('critical','Huishoudaccu kritisch',
+      `${technicalNumber(state.houseVoltage,2)} V gemeten.`,'🔋');
+  }else if(house.level==='warning'){
+    push('warning','Huishoudaccu laag',
+      `${technicalNumber(state.houseVoltage,2)} V gemeten.`,'🔋');
+  }
+
+  if(start.level==='critical'){
+    push('critical','Startaccu kritisch',
+      `${technicalNumber(state.startVoltage,2)} V gemeten.`,'🔌');
+  }else if(start.level==='warning'){
+    push('warning','Startaccu laag',
+      `${technicalNumber(state.startVoltage,2)} V gemeten.`,'🔌');
+  }
+
+  if(Number.isFinite(Number(state.fuelPct))&&Number(state.fuelPct)<=20){
+    push(
+      Number(state.fuelPct)<=10?'critical':'warning',
+      'Dieselvoorraad laag',
+      `Tank staat op ${Math.round(Number(state.fuelPct))}%.`,
+      '⛽'
+    );
+  }
+
+  if(Number.isFinite(Number(state.waterPct))&&Number(state.waterPct)<=20){
+    push('warning','Drinkwater bijna op',
+      `Watertank staat op ${Math.round(Number(state.waterPct))}%.`,'💧');
+  }
+
+  if(Number.isFinite(Number(state.wastePct))&&Number(state.wastePct)>=75){
+    push(
+      Number(state.wastePct)>=90?'critical':'warning',
+      'Vuilwatertank raakt vol',
+      `Tank staat op ${Math.round(Number(state.wastePct))}%.`,
+      '🚽'
+    );
+  }
+
+  if(Number(state.engineTemp)>100){
+    push(
+      Number(state.engineTemp)>105?'critical':'warning',
+      'Motortemperatuur hoog',
+      `${technicalNumber(state.engineTemp,0)} °C gemeten.`,
+      '🌡️'
+    );
+  }
+
+  if(
+    Number.isFinite(Number(state.oilPressure))&&
+    Number(state.oilPressure)>0&&
+    Number(state.oilPressure)<1
+  ){
+    push('critical','Oliedruk laag',
+      `${technicalNumber(state.oilPressure,1)} bar gemeten.`,'🛢️');
+  }
+
+  if(state.coolantLevel==='low'){
+    push('critical','Koelvloeistof laag',
+      'Controleer het niveau voor vertrek.','🧊');
+  }
+
+  if(state.heater==='fault'){
+    push('critical','Storing dieselverwarming',
+      'Controle of service nodig.','🔥');
+  }else if(state.heater==='service'){
+    push('warning','Verwarming heeft onderhoud nodig',
+      'Plan een servicebeurt.','🔥');
+  }
+
+  if(state.bilge==='alarm'){
+    push('critical','Bilge-alarm',
+      'Water aanwezig of bilgepomp vraagt direct aandacht.','🚨');
+  }else if(state.bilge==='active'){
+    push('warning','Bilgepomp actief',
+      'Controleer waarom de pomp draait.','🌊');
+  }
+
+  (state.maintenance||[]).forEach(task=>{
+    const status=technicalTaskStatus(task);
+    if(status.level==='critical'){
+      push('critical',task.title,
+        `${status.label} · ${status.detail}`,'🛠️');
+    }else if(status.level==='warning'&&!status.neverDone){
+      push('warning',task.title,
+        `${status.label} · ${status.detail}`,'🔧');
+    }
+  });
+
+  return warnings.slice(0,12);
+}
+
+function technicalHealth(){
+  const warnings=technicalWarnings();
+  const critical=warnings.filter(item=>item.level==='critical').length;
+  const attention=warnings.filter(item=>item.level==='warning').length;
+
+  if(critical){
+    return {
+      level:'critical',
+      label:`${critical} dringend`,
+      dashboard:'Techniek vraagt aandacht'
+    };
+  }
+
+  if(attention){
+    return {
+      level:'warning',
+      label:`${attention} aandachtspunt${attention===1?'':'en'}`,
+      dashboard:`${attention} technisch aandachtspunt${attention===1?'':'en'}`
+    };
+  }
+
+  if(!technicalStateCache?.lastSnapshotAt){
+    return {
+      level:'unknown',
+      label:'Nog controleren',
+      dashboard:'Eerste controle invullen'
+    };
+  }
+
+  return {
+    level:'good',
+    label:'Alles in orde',
+    dashboard:'Techniek in orde'
+  };
+}
+
+function technicalIntegrationLabel(value){
+  return {
+    connected:'Verbonden',
+    planned:'Koppeling gepland',
+    not_configured:'Niet gekoppeld'
+  }[value]||'Niet gekoppeld';
+}
+
+function technicalIntegrationClass(value){
+  return value==='connected'
+    ?'connected'
+    :value==='planned'
+      ?'planned'
+      :'offline';
+}
+
+function renderTechnicalAlerts(){
+  const container=$('technicalAlertList');
+  if(!container)return;
+
+  const warnings=technicalWarnings();
+
+  if(!warnings.length){
+    container.innerHTML=`
+      <div class="technical-alert good">
+        <span>✅</span>
+        <div>
+          <b>Geen actieve waarschuwingen.</b>
+          <small>De laatst ingevoerde waarden vallen binnen de ingestelde grenzen.</small>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML=warnings.map(item=>`
+    <div class="technical-alert ${item.level}">
+      <span>${item.icon}</span>
+      <div>
+        <b>${esc(item.title)}</b>
+        <small>${esc(item.text)}</small>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTechnicalMaintenance(){
+  const summary=$('technicalMaintenanceSummary');
+  const list=$('technicalMaintenanceList');
+  if(!summary||!list)return;
+
+  const tasks=(technicalStateCache?.maintenance||[])
+    .map(task=>({
+      task,
+      status:technicalTaskStatus(task)
+    }))
+    .sort((a,b)=>{
+      const priority={critical:0,warning:1,good:2};
+      const levelDifference=
+        priority[a.status.level]-priority[b.status.level];
+      if(levelDifference)return levelDifference;
+      return String(a.task.title).localeCompare(
+        String(b.task.title),
+        'nl'
+      );
+    });
+
+  const counts={
+    critical:tasks.filter(item=>item.status.level==='critical').length,
+    warning:tasks.filter(item=>item.status.level==='warning').length,
+    good:tasks.filter(item=>item.status.level==='good').length
+  };
+
+  summary.innerHTML=`
+    <span class="critical">${counts.critical} achterstallig</span>
+    <span class="warning">${counts.warning} binnenkort/eerste controle</span>
+    <span class="good">${counts.good} in orde</span>
+  `;
+
+  list.innerHTML=tasks.length
+    ?tasks.map(({task,status})=>`
+      <article class="technical-maintenance-item ${status.level}">
+        <div class="technical-maintenance-status">
+          ${status.level==='critical'?'!':status.level==='warning'?'•':'✓'}
+        </div>
+        <div class="technical-maintenance-copy">
+          <strong>${esc(task.title)}</strong>
+          <small>${esc(task.category||'Onderhoud')} · ${esc(status.detail)}</small>
+          <span>${esc(status.label)}</span>
+        </div>
+        <div class="technical-maintenance-actions">
+          <button type="button"
+            onclick="completeTechnicalTask('${task.id}')">
+            Uitgevoerd
+          </button>
+          ${String(task.id).startsWith('custom-')
+            ?`<button type="button" class="record-delete-mini"
+                onclick="deleteTechnicalTask('${task.id}')"
+                aria-label="Onderhoudstaak verwijderen">🗑️</button>`
+            :''}
+        </div>
+      </article>
+    `).join('')
+    :'<span class="small">Nog geen onderhoudstaken.</span>';
+}
+
+function renderTechnicalIntegrations(){
+  const container=$('technicalIntegrationList');
+  if(!container)return;
+
+  const integrations=technicalStateCache?.integrations||
+    defaultTechnicalState().integrations;
+
+  const rows=[
+    {
+      icon:'🔷',
+      title:'Victron',
+      text:'Accu, walstroom, zonnepaneel en tanks',
+      value:integrations.victron
+    },
+    {
+      icon:'🏠',
+      title:'Home Assistant',
+      text:'Automatisering, meldingen en bediening',
+      value:integrations.homeAssistant
+    },
+    {
+      icon:'🛥️',
+      title:'NMEA2000',
+      text:'Motor, sensoren en navigatiegegevens',
+      value:integrations.nmea2000
+    }
+  ];
+
+  container.innerHTML=rows.map(row=>`
+    <div class="technical-integration-row">
+      <span>${row.icon}</span>
+      <div>
+        <b>${row.title}</b>
+        <small>${row.text}</small>
+      </div>
+      <em class="${technicalIntegrationClass(row.value)}">
+        ${technicalIntegrationLabel(row.value)}
+      </em>
+    </div>
+  `).join('');
+}
+
+function renderTechnicalEvents(){
+  const container=$('technicalEventList');
+  if(!container)return;
+
+  const query=String($('technicalEventSearch')?.value||'')
+    .toLowerCase()
+    .trim();
+  const category=$('technicalEventFilter')?.value||'';
+
+  const filtered=[...(technicalEventsCache||[])]
+    .filter(event=>{
+      if(category&&event.category!==category)return false;
+
+      const haystack=[
+        event.title,
+        event.category,
+        event.notes,
+        event.event_date,
+        event.engine_hours
+      ].join(' ').toLowerCase();
+
+      return !query||haystack.includes(query);
+    })
+    .sort((a,b)=>{
+      const aDate=new Date(
+        `${a.event_date||'1900-01-01'}T12:00:00`
+      ).getTime();
+      const bDate=new Date(
+        `${b.event_date||'1900-01-01'}T12:00:00`
+      ).getTime();
+
+      return bDate-aDate||
+        new Date(b.created_at||0).getTime()-
+        new Date(a.created_at||0).getTime();
+    });
+
+  container.innerHTML=filtered.length
+    ?filtered.map(event=>`
+      <article class="technical-event-item">
+        <div class="technical-event-date">
+          <strong>${esc(
+            new Date(`${event.event_date}T12:00:00`)
+              .toLocaleDateString('nl-NL',{
+                day:'2-digit',
+                month:'short'
+              })
+          )}</strong>
+          <small>${esc(event.category||'Log')}</small>
+        </div>
+        <div class="technical-event-copy">
+          <strong>${esc(event.title||'Technisch logitem')}</strong>
+          <small>
+            ${Number.isFinite(Number(event.engine_hours))
+              ?`${technicalNumber(event.engine_hours,1)} motoruren`
+              :'Geen motoruren'}
+          </small>
+          ${event.notes?`<p>${esc(event.notes)}</p>`:''}
+        </div>
+        <button type="button" class="record-delete-mini"
+          onclick="deleteTechnicalEvent('${event.id}')"
+          aria-label="Technisch logitem verwijderen">🗑️</button>
+      </article>
+    `).join('')
+    :'<span class="small">Nog geen technische logitems met deze selectie.</span>';
+}
+
+function renderTechnicalDashboard(){
+  if(!technicalStateCache){
+    technicalStateCache=readTechnicalLocalState();
+  }
+
+  const state=technicalStateCache;
+  const health=technicalHealth();
+  const badge=$('technicalHealthBadge');
+
+  if(badge){
+    badge.className=`technical-health-badge ${health.level}`;
+    badge.textContent=health.label;
+  }
+
+  if($('dashboardTechnicalStatus')){
+    $('dashboardTechnicalStatus').textContent=health.dashboard;
+  }
+
+  $('techEngineHours').textContent=
+    technicalNumber(state.engineHours,1)||'0,0';
+
+  const engineTasks=(state.maintenance||[])
+    .map(task=>({task,status:technicalTaskStatus(task)}))
+    .filter(item=>item.task.category==='Motor')
+    .sort((a,b)=>{
+      const priority={critical:0,warning:1,good:2};
+      return priority[a.status.level]-priority[b.status.level];
+    });
+
+  $('techEngineService').textContent=engineTasks[0]
+    ?`${engineTasks[0].task.title}: ${engineTasks[0].status.label}`
+    :'Nog geen motoronderhoud';
+
+  const houseStatus=technicalBatteryStatus(
+    state.houseVoltage,
+    state.batteryType
+  );
+  const startStatus=technicalBatteryStatus(
+    state.startVoltage,
+    'lead'
+  );
+
+  $('techHouseVoltage').textContent=
+    technicalNumber(state.houseVoltage,2)
+      ?`${technicalNumber(state.houseVoltage,2)} V`
+      :'– V';
+  $('techHouseBatteryStatus').textContent=houseStatus.label;
+
+  $('techStartVoltage').textContent=
+    technicalNumber(state.startVoltage,2)
+      ?`${technicalNumber(state.startVoltage,2)} V`
+      :'– V';
+  $('techStartBatteryStatus').textContent=startStatus.label;
+
+  $('techFuelLevel').textContent=technicalPercent(state.fuelPct);
+  const fuelPct=technicalClampPercent(state.fuelPct);
+  const capacity=Number(state.fuelCapacity||settingsCache?.tank_capacity||0);
+
+  $('techFuelLiters').textContent=(
+    fuelPct!==null&&capacity>0
+  )
+    ?`circa ${technicalNumber(capacity*fuelPct/100,0)} van ${technicalNumber(capacity,0)} liter`
+    :capacity>0
+      ?`${technicalNumber(capacity,0)} liter tank`
+      :'Inhoud onbekend';
+
+  $('techWaterLevel').textContent=technicalPercent(state.waterPct);
+  $('techWasteLevel').textContent=technicalPercent(state.wastePct);
+  $('techWasteStatus').textContent=
+    Number(state.wastePct)>=75
+      ?'Legen aanbevolen'
+      :'Beschikbare ruimte';
+
+  $('techSolarPower').textContent=
+    technicalNumber(state.solarPower,0)
+      ?`${technicalNumber(state.solarPower,0)} W`
+      :'– W';
+  $('techShorePowerStatus').textContent=state.shorePower
+    ?'Walstroom aangesloten'
+    :'Geen walstroom gemeld';
+
+  $('techHeaterStatus').textContent={
+    unknown:'Onbekend',
+    off:'Uit',
+    running:'In bedrijf',
+    service:'Onderhoud',
+    fault:'Storing'
+  }[state.heater]||'Onbekend';
+
+  $('techBilgeStatus').textContent={
+    unknown:'Bilge onbekend',
+    ok:'Bilgepomp in orde',
+    active:'Bilgepomp actief',
+    alarm:'Bilge-alarm'
+  }[state.bilge]||'Bilge onbekend';
+
+  renderTechnicalAlerts();
+  renderTechnicalMaintenance();
+  renderTechnicalIntegrations();
+  renderTechnicalEvents();
+}
+
+function fillTechnicalSnapshotForm(){
+  const state=technicalStateCache||defaultTechnicalState();
+
+  const setValue=(id,value)=>{
+    if($(id))$(id).value=value??'';
+  };
+
+  setValue('techInputEngineHours',state.engineHours);
+  setValue('techInputEngineTemp',state.engineTemp);
+  setValue('techInputOilPressure',state.oilPressure);
+  setValue('techInputCoolantLevel',state.coolantLevel||'unknown');
+  setValue('techInputBatteryType',state.batteryType||'lead');
+  setValue('techInputHouseVoltage',state.houseVoltage);
+  setValue('techInputStartVoltage',state.startVoltage);
+  setValue('techInputSolarPower',state.solarPower);
+  setValue('techInputFuelPct',state.fuelPct);
+  setValue('techInputWaterPct',state.waterPct);
+  setValue('techInputWastePct',state.wastePct);
+  setValue('techInputFuelCapacity',
+    state.fuelCapacity||settingsCache?.tank_capacity||'');
+  setValue('techInputHeater',state.heater||'unknown');
+  setValue('techInputBilge',state.bilge||'unknown');
+  setValue('techInputVictron',
+    state.integrations?.victron||'not_configured');
+  setValue('techInputHomeAssistant',
+    state.integrations?.homeAssistant||'planned');
+  setValue('techInputNmea',
+    state.integrations?.nmea2000||'planned');
+  setValue('techInputNotes',state.notes||'');
+
+  if($('techInputShorePower')){
+    $('techInputShorePower').checked=Boolean(state.shorePower);
+  }
+}
+
+function openTechnicalSnapshotForm(section=''){
+  fillTechnicalSnapshotForm();
+  $('technicalSnapshotCard')?.classList.remove('hidden');
+
+  if(section){
+    const target=document.querySelector(
+      `.technical-form-section[data-tech-section="${section}"]`
+    );
+    target?.scrollIntoView({
+      behavior:'smooth',
+      block:'center'
+    });
+  }else{
+    $('technicalSnapshotCard')?.scrollIntoView({
+      behavior:'smooth',
+      block:'start'
+    });
+  }
+}
+
+function closeTechnicalSnapshotForm(){
+  $('technicalSnapshotCard')?.classList.add('hidden');
+}
+
+function technicalInputNumber(id){
+  const value=String($(id)?.value||'').trim();
+  if(value==='')return null;
+
+  const number=Number(value);
+  return Number.isFinite(number)?number:null;
+}
+
+async function persistTechnicalState(message='Technische gegevens opgeslagen.'){
+  technicalStateCache=normaliseTechnicalState({
+    ...technicalStateCache,
+    updatedAt:new Date().toISOString()
+  });
+
+  saveTechnicalLocalState(technicalStateCache);
+  renderTechnicalDashboard();
+
+  if(!technicalCloudReady){
+    setTechnicalSyncStatus(
+      `${message} Lokaal bewaard; voer de SQL-installatie uit voor delen met Desi.`,
+      'warning'
+    );
+    return false;
+  }
+
+  const {error}=await sb.from('technical_state').upsert({
+    boat_id:currentBoat.id,
+    updated_by:currentUser.id,
+    data:technicalStateCache,
+    updated_at:new Date().toISOString()
+  },{
+    onConflict:'boat_id'
+  });
+
+  if(error){
+    console.error('Technische status opslaan mislukt:',error);
+
+    if(technicalTableMissing(error)){
+      technicalCloudReady=false;
+    }
+
+    setTechnicalSyncStatus(
+      `${message} Lokaal bewaard; cloud synchronisatie is niet gelukt.`,
+      'warning'
+    );
+    return false;
+  }
+
+  setTechnicalSyncStatus(
+    `${message} Gedeeld met Desi ✅`,
+    'success'
+  );
+  return true;
+}
+
+async function saveTechnicalSnapshot(){
+  const button=document.querySelector(
+    '#technicalSnapshotCard button[onclick="saveTechnicalSnapshot()"]'
+  );
+  if(button)button.disabled=true;
+
+  try{
+    const previousHours=Number(technicalStateCache?.engineHours||0);
+    const engineHours=technicalInputNumber('techInputEngineHours')??0;
+
+    technicalStateCache=normaliseTechnicalState({
+      ...technicalStateCache,
+      engineHours,
+      engineTemp:technicalInputNumber('techInputEngineTemp'),
+      oilPressure:technicalInputNumber('techInputOilPressure'),
+      coolantLevel:$('techInputCoolantLevel')?.value||'unknown',
+      batteryType:$('techInputBatteryType')?.value||'lead',
+      houseVoltage:technicalInputNumber('techInputHouseVoltage'),
+      startVoltage:technicalInputNumber('techInputStartVoltage'),
+      solarPower:technicalInputNumber('techInputSolarPower'),
+      shorePower:Boolean($('techInputShorePower')?.checked),
+      fuelPct:technicalClampPercent(
+        technicalInputNumber('techInputFuelPct')
+      ),
+      waterPct:technicalClampPercent(
+        technicalInputNumber('techInputWaterPct')
+      ),
+      wastePct:technicalClampPercent(
+        technicalInputNumber('techInputWastePct')
+      ),
+      fuelCapacity:technicalInputNumber('techInputFuelCapacity'),
+      heater:$('techInputHeater')?.value||'unknown',
+      bilge:$('techInputBilge')?.value||'unknown',
+      integrations:{
+        victron:$('techInputVictron')?.value||'not_configured',
+        homeAssistant:$('techInputHomeAssistant')?.value||'planned',
+        nmea2000:$('techInputNmea')?.value||'planned'
+      },
+      notes:String($('techInputNotes')?.value||'').trim(),
+      lastSnapshotAt:new Date().toISOString()
+    });
+
+    await persistTechnicalState('Technische momentopname opgeslagen.');
+
+    const changes=[];
+
+    if(engineHours!==previousHours){
+      changes.push(
+        `Motoruren ${technicalNumber(previousHours,1)} → ${technicalNumber(engineHours,1)}`
+      );
+    }
+
+    const warnings=technicalWarnings();
+
+    await createTechnicalEvent({
+      category:'Metingen',
+      title:'Technische momentopname',
+      event_date:technicalToday(),
+      engine_hours:engineHours,
+      notes:[
+        changes.join(' · '),
+        warnings.length
+          ?`${warnings.length} aandachtspunt${warnings.length===1?'':'en'} gedetecteerd.`
+          :'Geen actieve waarschuwingen.',
+        technicalStateCache.notes||''
+      ].filter(Boolean).join('\n')
+    },{
+      silent:true
+    });
+
+    closeTechnicalSnapshotForm();
+    showAppToast('Technische momentopname opgeslagen ✅');
+  }catch(error){
+    console.error('Technische momentopname opslaan mislukt:',error);
+    setTechnicalSyncStatus(
+      error?.message||'Technische gegevens opslaan is mislukt.',
+      'error'
+    );
+  }finally{
+    if(button)button.disabled=false;
+  }
+}
+
+function toggleTechnicalTaskForm(force){
+  const form=$('technicalTaskForm');
+  if(!form)return;
+
+  const show=typeof force==='boolean'
+    ?force
+    :form.classList.contains('hidden');
+
+  form.classList.toggle('hidden',!show);
+
+  if(show){
+    $('technicalTaskTitle')?.focus();
+  }
+}
+
+async function addTechnicalTask(){
+  const title=String($('technicalTaskTitle')?.value||'').trim();
+  if(!title){
+    alert('Vul een onderhoudstaak in.');
+    return;
+  }
+
+  const intervalMonths=Math.max(
+    0,
+    Number($('technicalTaskMonths')?.value||0)
+  );
+  const intervalHours=Math.max(
+    0,
+    Number($('technicalTaskHours')?.value||0)
+  );
+
+  if(!intervalMonths&&!intervalHours){
+    alert('Vul een interval in maanden of motoruren in.');
+    return;
+  }
+
+  technicalStateCache=normaliseTechnicalState(technicalStateCache);
+
+  technicalStateCache.maintenance.push({
+    id:`custom-${crypto.randomUUID()}`,
+    title,
+    category:$('technicalTaskCategory')?.value||'Overig',
+    intervalMonths:intervalMonths||null,
+    intervalHours:intervalHours||null,
+    lastDate:'',
+    lastHours:null
+  });
+
+  await persistTechnicalState('Onderhoudstaak toegevoegd.');
+
+  $('technicalTaskTitle').value='';
+  $('technicalTaskMonths').value='12';
+  $('technicalTaskHours').value='';
+  toggleTechnicalTaskForm(false);
+  renderTechnicalMaintenance();
+}
+
+async function completeTechnicalTask(id){
+  const task=(technicalStateCache?.maintenance||[])
+    .find(item=>String(item.id)===String(id));
+  if(!task)return;
+
+  if(!confirm(`${task.title} als uitgevoerd registreren?`))return;
+
+  task.lastDate=technicalToday();
+  task.lastHours=Number(technicalStateCache.engineHours||0);
+
+  await persistTechnicalState(`${task.title} bijgewerkt.`);
+
+  await createTechnicalEvent({
+    category:'Onderhoud',
+    title:task.title,
+    event_date:technicalToday(),
+    engine_hours:Number(technicalStateCache.engineHours||0),
+    notes:`Uitgevoerd en volgende interval opnieuw berekend.`
+  },{
+    silent:true
+  });
+
+  showAppToast(`${task.title} geregistreerd ✅`);
+}
+
+async function deleteTechnicalTask(id){
+  const task=(technicalStateCache?.maintenance||[])
+    .find(item=>String(item.id)===String(id));
+  if(!task)return;
+
+  if(!confirm(`Onderhoudstaak “${task.title}” verwijderen?`))return;
+
+  technicalStateCache.maintenance=
+    technicalStateCache.maintenance.filter(
+      item=>String(item.id)!==String(id)
+    );
+
+  await persistTechnicalState('Onderhoudstaak verwijderd.');
+}
+
+function toggleTechnicalEventForm(force){
+  const form=$('technicalEventForm');
+  if(!form)return;
+
+  const show=typeof force==='boolean'
+    ?force
+    :form.classList.contains('hidden');
+
+  form.classList.toggle('hidden',!show);
+
+  if(show){
+    $('technicalEventDate').value=
+      $('technicalEventDate').value||technicalToday();
+    $('technicalEventHours').value=
+      technicalStateCache?.engineHours??'';
+    $('technicalEventTitle')?.focus();
+  }
+}
+
+async function createTechnicalEvent(event,{silent=false}={}){
+  const normalized={
+    id:event.id||crypto.randomUUID(),
+    boat_id:currentBoat.id,
+    created_by:currentUser.id,
+    event_date:event.event_date||technicalToday(),
+    category:event.category||'Overig',
+    title:event.title||'Technisch logitem',
+    notes:event.notes||'',
+    engine_hours:Number.isFinite(Number(event.engine_hours))
+      ?Number(event.engine_hours)
+      :null,
+    value:Number.isFinite(Number(event.value))
+      ?Number(event.value)
+      :null,
+    unit:event.unit||null,
+    created_at:new Date().toISOString(),
+    source:technicalCloudReady?'cloud':'local'
+  };
+
+  technicalEventsCache=[
+    normalized,
+    ...(technicalEventsCache||[]).filter(
+      item=>String(item.id)!==String(normalized.id)
+    )
+  ].slice(0,300);
+
+  saveTechnicalLocalEvents(technicalEventsCache);
+  renderTechnicalEvents();
+
+  if(technicalCloudReady){
+    const {data,error}=await sb.from('technical_events')
+      .insert({
+        boat_id:normalized.boat_id,
+        created_by:normalized.created_by,
+        event_date:normalized.event_date,
+        category:normalized.category,
+        title:normalized.title,
+        notes:normalized.notes,
+        engine_hours:normalized.engine_hours,
+        value:normalized.value,
+        unit:normalized.unit
+      })
+      .select('*')
+      .single();
+
+    if(error){
+      console.error('Technisch logitem opslaan mislukt:',error);
+      normalized.source='local';
+      technicalCloudReady=!technicalTableMissing(error);
+      saveTechnicalLocalEvents(technicalEventsCache);
+
+      if(!silent){
+        setTechnicalSyncStatus(
+          'Logitem lokaal bewaard; synchronisatie is niet gelukt.',
+          'warning'
+        );
+      }
+      return normalized;
+    }
+
+    technicalEventsCache=[
+      {...data,source:'cloud'},
+      ...technicalEventsCache.filter(
+        item=>String(item.id)!==String(normalized.id)
+      )
+    ].slice(0,300);
+
+    saveTechnicalLocalEvents(technicalEventsCache);
+    renderTechnicalEvents();
+  }
+
+  return normalized;
+}
+
+async function addTechnicalEvent(){
+  const title=String($('technicalEventTitle')?.value||'').trim();
+
+  if(!title){
+    alert('Vul een omschrijving in.');
+    $('technicalEventTitle')?.focus();
+    return;
+  }
+
+  await createTechnicalEvent({
+    event_date:$('technicalEventDate')?.value||technicalToday(),
+    category:$('technicalEventCategory')?.value||'Overig',
+    title,
+    notes:String($('technicalEventNotes')?.value||'').trim(),
+    engine_hours:technicalInputNumber('technicalEventHours')
+  });
+
+  $('technicalEventTitle').value='';
+  $('technicalEventNotes').value='';
+  $('technicalEventHours').value=
+    technicalStateCache?.engineHours??'';
+  toggleTechnicalEventForm(false);
+  showAppToast('Technisch logitem opgeslagen ✅');
+}
+
+async function deleteTechnicalEvent(id){
+  const event=(technicalEventsCache||[])
+    .find(item=>String(item.id)===String(id));
+  if(!event)return;
+
+  if(!confirm(`Logitem “${event.title}” verwijderen?`))return;
+
+  technicalEventsCache=technicalEventsCache.filter(
+    item=>String(item.id)!==String(id)
+  );
+  saveTechnicalLocalEvents(technicalEventsCache);
+  renderTechnicalEvents();
+
+  if(technicalCloudReady&&event.source==='cloud'){
+    const {error}=await sb.from('technical_events')
+      .delete()
+      .eq('id',id)
+      .eq('boat_id',currentBoat.id);
+
+    if(error){
+      console.error('Technisch logitem verwijderen mislukt:',error);
+      showAppToast('Lokaal verwijderd, maar cloudverwijdering mislukte.');
+      return;
+    }
+  }
+
+  showAppToast('Technisch logitem verwijderd.');
 }
 
 function formatEuro(value){
@@ -8326,12 +9807,13 @@ function captainNavigate(id, sourceButton=null){
     live:1,
     map:2,
     planner:3,
-    pois:4,
-    logbook:5,
-    costs:6,
-    finance:7,
-    settings:8,
-    boat:9
+    technical:4,
+    pois:5,
+    logbook:6,
+    costs:7,
+    finance:8,
+    settings:9,
+    boat:10
   };
   const desktopButton=desktopButtons[map[id]];
 
@@ -8361,6 +9843,10 @@ function captainNavigate(id, sourceButton=null){
     setTimeout(()=>initPlanner(),60);
   }
 
+  if(id==='technical'&&typeof initTechnicalDashboard==='function'){
+    setTimeout(()=>initTechnicalDashboard(),60);
+  }
+
   if(id==='dashboard'){
     if(typeof updateLatestRouteDashboard==='function'){
       setTimeout(()=>updateLatestRouteDashboard(),80);
@@ -8370,6 +9856,9 @@ function captainNavigate(id, sourceButton=null){
     }
     if(typeof renderCaptainCommandCenter==='function'){
       renderCaptainCommandCenter();
+    }
+    if(typeof renderTechnicalDashboard==='function'){
+      renderTechnicalDashboard();
     }
     if(isAppAdmin())loadAdminAccounts();
   }
@@ -9934,7 +11423,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.3.1';
+const APP_VERSION='5.4.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -10011,7 +11500,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5310',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5400',{updateViaCache:'none'});
 
     await registration.update();
 

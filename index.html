@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="5.3.1">
-<link rel="apple-touch-icon" href="icon-192.png?v=5310">
+<meta name="mijnserenity-build" content="5.4.0">
+<link rel="apple-touch-icon" href="icon-192.png?v=5400">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=5310">
+<link rel="manifest" href="manifest.json?v=5400">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=5310">
+<link rel="stylesheet" href="styles.css?v=5400">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5310" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5400" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5310" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5400" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -88,6 +88,7 @@
     <button class="tab" onclick="showTab('live',this);initLiveMode()">Live varen</button>
     <button class="tab" onclick="showTab('map',this);initMap()">Kaart</button>
     <button class="tab" onclick="showTab('planner',this);initPlanner()">Reisplanner</button>
+    <button class="tab" onclick="showTab('technical',this);initTechnicalDashboard()">Techniek</button>
 <button class="tab" onclick="showTab('pois',this)">POI's</button>
     <button class="tab" onclick="showTab('logbook',this)">Logboek</button>
 <button class="tab" onclick="showTab('costs',this)">Kosten</button>
@@ -237,7 +238,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=5310" alt="">
+          <img src="waterkaarten-dashboard.png?v=5400" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -246,6 +247,12 @@
       <button class="dashboard-tile tile-planner" onclick="captainNavigate('planner')">
         <span class="tile-icon-shell"><span class="tile-icon">🧭</span></span>
         <span class="tile-copy"><b>Reisplanner</b><small>Route, tijd en brandstof</small></span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="dashboard-tile tile-technical" onclick="captainNavigate('technical')">
+        <span class="tile-icon-shell"><span class="tile-icon">⚙️</span></span>
+        <span class="tile-copy"><b>Techniek</b><small id="dashboardTechnicalStatus">Controleer Serenity</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
@@ -325,7 +332,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v5.3.1</div>
+          <div class="label">Sync · v5.4.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -543,7 +550,7 @@
             en zet de planning daarna klaar in het gedeelde logboek.
           </p>
         </div>
-        <span class="planner-version-badge">5.3.1</span>
+        <span class="planner-version-badge">5.4.0</span>
       </div>
       <div class="planner-warning">
         Afstand is een schatting op basis van rechte lijnen en een instelbare
@@ -777,6 +784,426 @@
     </div>
     <div class="card map-card"><div id="mapCanvas"></div>
       <div id="poiMapStatus" class="status small poi-map-status"></div></div>
+  </section>
+
+
+  <section id="technical" class="hidden">
+    <div class="card hero technical-hero">
+      <div class="technical-hero-head">
+        <div>
+          <span class="eyebrow">TECHNISCH SCHEEPSDASHBOARD</span>
+          <h2>Serenity technisch in beeld</h2>
+          <p class="small">
+            Motor, accu’s, tanks, energie, verwarming en onderhoud in één
+            gedeeld overzicht voor Michel en Desi.
+          </p>
+        </div>
+        <span id="technicalHealthBadge"
+          class="technical-health-badge unknown">Nog controleren</span>
+      </div>
+
+      <div id="technicalAlertList" class="technical-alert-list">
+        <div class="technical-alert info">
+          <span>ℹ️</span>
+          <div><b>Vul de eerste technische momentopname in.</b>
+            <small>Daarna bewaakt MijnSerenity onderhoud en grenswaarden.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions technical-hero-actions">
+        <button type="button" onclick="openTechnicalSnapshotForm()">
+          ＋ Nieuwe momentopname
+        </button>
+        <button type="button" class="secondary"
+          onclick="loadTechnicalDashboard(true)">
+          ↻ Vernieuwen
+        </button>
+      </div>
+
+      <div id="technicalSyncStatus" class="status small hidden"></div>
+    </div>
+
+    <div class="technical-overview-grid">
+      <button type="button" class="card technical-gauge"
+        onclick="openTechnicalSnapshotForm('engine')">
+        <span class="technical-gauge-icon">⚙️</span>
+        <span>Motoruren</span>
+        <strong id="techEngineHours">0,0</strong>
+        <small id="techEngineService">Nog geen onderhoudsgegevens</small>
+      </button>
+
+      <button type="button" class="card technical-gauge"
+        onclick="openTechnicalSnapshotForm('battery')">
+        <span class="technical-gauge-icon">🔋</span>
+        <span>Huishoudaccu</span>
+        <strong id="techHouseVoltage">– V</strong>
+        <small id="techHouseBatteryStatus">Nog niet gemeten</small>
+      </button>
+
+      <button type="button" class="card technical-gauge"
+        onclick="openTechnicalSnapshotForm('battery')">
+        <span class="technical-gauge-icon">🔌</span>
+        <span>Startaccu</span>
+        <strong id="techStartVoltage">– V</strong>
+        <small id="techStartBatteryStatus">Nog niet gemeten</small>
+      </button>
+
+      <button type="button" class="card technical-gauge"
+        onclick="openTechnicalSnapshotForm('tanks')">
+        <span class="technical-gauge-icon">⛽</span>
+        <span>Dieseltank</span>
+        <strong id="techFuelLevel">–%</strong>
+        <small id="techFuelLiters">Inhoud onbekend</small>
+      </button>
+
+      <button type="button" class="card technical-gauge"
+        onclick="openTechnicalSnapshotForm('tanks')">
+        <span class="technical-gauge-icon">💧</span>
+        <span>Drinkwater</span>
+        <strong id="techWaterLevel">–%</strong>
+        <small>Beschikbare voorraad</small>
+      </button>
+
+      <button type="button" class="card technical-gauge"
+        onclick="openTechnicalSnapshotForm('tanks')">
+        <span class="technical-gauge-icon">🚽</span>
+        <span>Vuilwatertank</span>
+        <strong id="techWasteLevel">–%</strong>
+        <small id="techWasteStatus">Nog niet gemeten</small>
+      </button>
+
+      <button type="button" class="card technical-gauge"
+        onclick="openTechnicalSnapshotForm('energy')">
+        <span class="technical-gauge-icon">☀️</span>
+        <span>Zonnepaneel</span>
+        <strong id="techSolarPower">– W</strong>
+        <small id="techShorePowerStatus">Walstroom onbekend</small>
+      </button>
+
+      <button type="button" class="card technical-gauge"
+        onclick="openTechnicalSnapshotForm('systems')">
+        <span class="technical-gauge-icon">🔥</span>
+        <span>Verwarming</span>
+        <strong id="techHeaterStatus">Onbekend</strong>
+        <small id="techBilgeStatus">Bilge onbekend</small>
+      </button>
+    </div>
+
+    <div id="technicalSnapshotCard" class="card technical-snapshot-card hidden">
+      <div class="technical-card-heading">
+        <div>
+          <span class="eyebrow">MOMENTOPNAME</span>
+          <h3>Werk de actuele waarden bij</h3>
+        </div>
+        <button type="button" class="technical-close-button"
+          onclick="closeTechnicalSnapshotForm()">×</button>
+      </div>
+
+      <div class="technical-form-section" data-tech-section="engine">
+        <h4>Motor</h4>
+        <div class="row">
+          <div>
+            <label for="techInputEngineHours">Motoruren</label>
+            <input id="techInputEngineHours" type="number" min="0"
+              step="0.1" inputmode="decimal">
+          </div>
+          <div>
+            <label for="techInputEngineTemp">Motortemperatuur °C</label>
+            <input id="techInputEngineTemp" type="number" min="0"
+              step="1" inputmode="decimal">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="techInputOilPressure">Oliedruk bar</label>
+            <input id="techInputOilPressure" type="number" min="0"
+              step="0.1" inputmode="decimal">
+          </div>
+          <div>
+            <label for="techInputCoolantLevel">Koelvloeistof</label>
+            <select id="techInputCoolantLevel">
+              <option value="unknown">Niet gecontroleerd</option>
+              <option value="good">Op niveau</option>
+              <option value="low">Laag</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="technical-form-section" data-tech-section="battery">
+        <h4>Accu’s en energie</h4>
+        <div class="row">
+          <div>
+            <label for="techInputBatteryType">Type huishoudaccu</label>
+            <select id="techInputBatteryType">
+              <option value="lead">Loodzuur</option>
+              <option value="agm">AGM/Gel</option>
+              <option value="lithium">Lithium LiFePO4</option>
+            </select>
+          </div>
+          <div>
+            <label for="techInputHouseVoltage">Huishoudaccu V</label>
+            <input id="techInputHouseVoltage" type="number" min="0"
+              step="0.01" inputmode="decimal">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="techInputStartVoltage">Startaccu V</label>
+            <input id="techInputStartVoltage" type="number" min="0"
+              step="0.01" inputmode="decimal">
+          </div>
+          <div>
+            <label for="techInputSolarPower">Zonnepaneel W</label>
+            <input id="techInputSolarPower" type="number" min="0"
+              step="1" inputmode="numeric">
+          </div>
+        </div>
+        <label class="checkline">
+          <input id="techInputShorePower" type="checkbox">
+          Walstroom aangesloten
+        </label>
+      </div>
+
+      <div class="technical-form-section" data-tech-section="tanks">
+        <h4>Tanks</h4>
+        <div class="row">
+          <div>
+            <label for="techInputFuelPct">Diesel %</label>
+            <input id="techInputFuelPct" type="number" min="0" max="100"
+              step="1" inputmode="numeric">
+          </div>
+          <div>
+            <label for="techInputWaterPct">Drinkwater %</label>
+            <input id="techInputWaterPct" type="number" min="0" max="100"
+              step="1" inputmode="numeric">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="techInputWastePct">Vuilwater %</label>
+            <input id="techInputWastePct" type="number" min="0" max="100"
+              step="1" inputmode="numeric">
+          </div>
+          <div>
+            <label for="techInputFuelCapacity">Dieseltank liter</label>
+            <input id="techInputFuelCapacity" type="number" min="0"
+              step="1" inputmode="numeric">
+          </div>
+        </div>
+      </div>
+
+      <div class="technical-form-section" data-tech-section="systems">
+        <h4>Boordsystemen</h4>
+        <div class="row">
+          <div>
+            <label for="techInputHeater">Dieselverwarming</label>
+            <select id="techInputHeater">
+              <option value="unknown">Onbekend</option>
+              <option value="off">Uit</option>
+              <option value="running">In bedrijf</option>
+              <option value="service">Onderhoud nodig</option>
+              <option value="fault">Storing</option>
+            </select>
+          </div>
+          <div>
+            <label for="techInputBilge">Bilgepomp</label>
+            <select id="techInputBilge">
+              <option value="unknown">Niet gecontroleerd</option>
+              <option value="ok">In orde</option>
+              <option value="active">Pomp actief</option>
+              <option value="alarm">Alarm / water aanwezig</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="techInputVictron">Victron</label>
+            <select id="techInputVictron">
+              <option value="not_configured">Niet gekoppeld</option>
+              <option value="planned">Koppeling gepland</option>
+              <option value="connected">Verbonden</option>
+            </select>
+          </div>
+          <div>
+            <label for="techInputHomeAssistant">Home Assistant</label>
+            <select id="techInputHomeAssistant">
+              <option value="not_configured">Niet gekoppeld</option>
+              <option value="planned">Koppeling gepland</option>
+              <option value="connected">Verbonden</option>
+            </select>
+          </div>
+        </div>
+        <label for="techInputNmea">NMEA2000</label>
+        <select id="techInputNmea">
+          <option value="not_configured">Niet gekoppeld</option>
+          <option value="planned">Koppeling gepland</option>
+          <option value="connected">Verbonden</option>
+        </select>
+      </div>
+
+      <label for="techInputNotes">Technische bijzonderheden</label>
+      <textarea id="techInputNotes"
+        placeholder="Bijv. acculader gereset, koelwater gecontroleerd of afwijkend geluid"></textarea>
+
+      <div class="actions">
+        <button type="button" onclick="saveTechnicalSnapshot()">
+          💾 Momentopname opslaan
+        </button>
+        <button type="button" class="secondary"
+          onclick="closeTechnicalSnapshotForm()">Annuleren</button>
+      </div>
+      <div id="technicalSnapshotStatus" class="status small hidden"></div>
+    </div>
+
+    <div class="technical-columns">
+      <div class="card technical-maintenance-card">
+        <div class="technical-card-heading">
+          <div>
+            <span class="eyebrow">ONDERHOUDSPLANNER</span>
+            <h3>Wat komt eraan?</h3>
+          </div>
+          <button type="button" class="secondary"
+            onclick="toggleTechnicalTaskForm()">＋ Taak</button>
+        </div>
+
+        <div id="technicalTaskForm" class="technical-task-form hidden">
+          <div class="row">
+            <div>
+              <label for="technicalTaskTitle">Onderhoudstaak</label>
+              <input id="technicalTaskTitle"
+                placeholder="Bijv. Dynamo-riem controleren">
+            </div>
+            <div>
+              <label for="technicalTaskCategory">Categorie</label>
+              <select id="technicalTaskCategory">
+                <option>Motor</option>
+                <option>Elektrisch</option>
+                <option>Romp</option>
+                <option>Veiligheid</option>
+                <option>Verwarming</option>
+                <option>Overig</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="technicalTaskMonths">Interval maanden</label>
+              <input id="technicalTaskMonths" type="number" min="0"
+                step="1" value="12">
+            </div>
+            <div>
+              <label for="technicalTaskHours">Interval motoruren</label>
+              <input id="technicalTaskHours" type="number" min="0"
+                step="1" placeholder="Optioneel">
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" onclick="addTechnicalTask()">Taak toevoegen</button>
+            <button type="button" class="secondary"
+              onclick="toggleTechnicalTaskForm(false)">Sluiten</button>
+          </div>
+        </div>
+
+        <div id="technicalMaintenanceSummary"
+          class="technical-maintenance-summary"></div>
+        <div id="technicalMaintenanceList"
+          class="technical-maintenance-list"></div>
+      </div>
+
+      <div class="card technical-integrations-card">
+        <div class="technical-card-heading">
+          <div>
+            <span class="eyebrow">KOPPELINGEN</span>
+            <h3>Van handmatig naar live data</h3>
+          </div>
+        </div>
+
+        <div id="technicalIntegrationList"
+          class="technical-integration-list"></div>
+
+        <div class="technical-roadmap">
+          <b>Volgende technische stap</b>
+          <p>
+            Victron of Home Assistant kan later accu, walstroom, zonnepaneel
+            en tankniveaus automatisch naar dit dashboard sturen.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card technical-log-card">
+      <div class="technical-card-heading">
+        <div>
+          <span class="eyebrow">TECHNISCH LOGBOEK</span>
+          <h3>Onderhoud, controles en storingen</h3>
+        </div>
+        <button type="button" class="secondary"
+          onclick="toggleTechnicalEventForm()">＋ Logitem</button>
+      </div>
+
+      <div id="technicalEventForm" class="technical-event-form hidden">
+        <div class="row">
+          <div>
+            <label for="technicalEventDate">Datum</label>
+            <input id="technicalEventDate" type="date">
+          </div>
+          <div>
+            <label for="technicalEventCategory">Categorie</label>
+            <select id="technicalEventCategory">
+              <option>Onderhoud</option>
+              <option>Controle</option>
+              <option>Storing</option>
+              <option>Reparatie</option>
+              <option>Metingen</option>
+              <option>Overig</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="technicalEventTitle">Omschrijving</label>
+            <input id="technicalEventTitle"
+              placeholder="Bijv. Impeller vervangen">
+          </div>
+          <div>
+            <label for="technicalEventHours">Motoruren</label>
+            <input id="technicalEventHours" type="number" min="0"
+              step="0.1" inputmode="decimal">
+          </div>
+        </div>
+        <label for="technicalEventNotes">Notities</label>
+        <textarea id="technicalEventNotes"
+          placeholder="Onderdelen, leverancier, kosten of bijzonderheden"></textarea>
+        <div class="actions">
+          <button type="button" onclick="addTechnicalEvent()">Logitem opslaan</button>
+          <button type="button" class="secondary"
+            onclick="toggleTechnicalEventForm(false)">Annuleren</button>
+        </div>
+      </div>
+
+      <div class="technical-log-toolbar">
+        <input id="technicalEventSearch" type="search"
+          autocomplete="off"
+          placeholder="Zoek in technisch logboek"
+          oninput="renderTechnicalEvents()">
+        <select id="technicalEventFilter"
+          onchange="renderTechnicalEvents()">
+          <option value="">Alle categorieën</option>
+          <option>Onderhoud</option>
+          <option>Controle</option>
+          <option>Storing</option>
+          <option>Reparatie</option>
+          <option>Metingen</option>
+          <option>Overig</option>
+        </select>
+      </div>
+
+      <div id="technicalEventList" class="technical-event-list">
+        <span class="small">Nog geen technische logitems.</span>
+      </div>
+    </div>
   </section>
 
   <section id="pois" class="hidden">
@@ -1299,6 +1726,9 @@
     <button class="bottom-nav-item" data-target="planner" onclick="captainNavigate('planner',this)">
       <span>🧭</span><small>Plan</small>
     </button>
+    <button class="bottom-nav-item" data-target="technical" onclick="captainNavigate('technical',this)">
+      <span>⚙️</span><small>Techniek</small>
+    </button>
     <button class="bottom-nav-item" data-target="logbook" onclick="captainNavigate('logbook',this)">
       <span>📖</span><small>Logboek</small>
     </button>
@@ -1368,6 +1798,6 @@
   </div>
 </div>
 
-<script src="app.js?v=5310"></script>
+<script src="app.js?v=5400"></script>
 </body>
 </html>
