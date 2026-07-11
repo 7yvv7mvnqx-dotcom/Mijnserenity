@@ -22,7 +22,7 @@
   <div class="header-title-row">
     <div>
       <h1>⚓ MijnSerenity Cloud</h1>
-      <div class="sub">Cloud 5.1.6 · Persoonlijke namen</div>
+      <div class="sub">Cloud 5.1.7 · POI-herstel</div>
     </div>
     <span id="connectionStatus" class="connection-status online">Online</span>
   </div>
@@ -205,15 +205,31 @@
       <h2 id="poiFormTitle">POI toevoegen</h2>
       <input id="poiId" type="hidden">
       <div class="row">
-        <div><label>Naam</label><input id="poiName"></div>
+        <div>
+          <label>Naam</label>
+          <input id="poiName" list="poiNameSuggestions" autocomplete="off" onchange="applyLocalPoiSuggestion('name')">
+          <datalist id="poiNameSuggestions"></datalist>
+        </div>
         <div><label>Categorie</label><select id="poiCategory"><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
       </div>
       <div class="row">
-        <div><label>Plaats</label><input id="poiPlace"></div>
+        <div>
+          <label>Plaats</label>
+          <input id="poiPlace" list="poiPlaceSuggestions" autocomplete="off" onchange="applyLocalPoiSuggestion('place')">
+          <datalist id="poiPlaceSuggestions"></datalist>
+        </div>
         <div><label>Beoordeling 1–5</label><input id="poiRating" type="number" min="1" max="5"></div>
       </div>
       <label>Adres</label>
-      <input id="poiAddress" placeholder="Straat, huisnummer, postcode en plaats">
+      <input id="poiAddress" list="poiAddressSuggestions" autocomplete="off"
+        placeholder="Straat, huisnummer, postcode en plaats"
+        onchange="applyLocalPoiSuggestion('address')">
+      <datalist id="poiAddressSuggestions"></datalist>
+      <div class="poi-suggestion-tools">
+        <button type="button" class="secondary" onclick="searchPoiAddressSuggestions()">🔎 Zoek adres of plaats</button>
+        <span class="small">Tijdens typen verschijnen suggesties uit jullie bestaande POI's.</span>
+      </div>
+      <div id="poiOnlineSuggestions" class="poi-online-suggestions hidden"></div>
       <div class="coordinate-card">
         <div class="coordinate-title">GPS-locatie</div>
         <div class="row">
@@ -250,7 +266,7 @@
       </button>
       <div id="poiSearchWrap" class="collapsible-content hidden">
         <div class="row">
-          <div><label>Zoeken</label><input id="poiSearch" placeholder="Naam, plaats of notitie" oninput="renderPoiList()"></div>
+          <div><label>Zoeken</label><input id="poiSearch" autocomplete="off" placeholder="Naam, plaats of notitie" oninput="renderPoiList()"></div>
           <div><label>Categorie</label><select id="poiFilterCategory" onchange="renderPoiList()"><option value="">Alle categorieën</option><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
         </div>
         <div class="row">

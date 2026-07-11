@@ -903,3 +903,59 @@ header{
 @keyframes refreshSpin{
   to{transform:rotate(360deg)}
 }
+
+/* Cloud 5.1.7 — POI-herstel, persoonlijke naam en suggesties */
+.poi-suggestion-tools{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:10px 0 4px;
+}
+.poi-suggestion-tools button{
+  width:auto;
+}
+.poi-online-suggestions{
+  margin:10px 0 14px;
+  padding:10px;
+  border:1px solid rgba(126,190,218,.35);
+  border-radius:14px;
+  background:rgba(17,55,73,.62);
+}
+.poi-suggestion-list{
+  display:grid;
+  gap:8px;
+}
+.poi-suggestion-list button{
+  width:100%;
+  min-height:0;
+  padding:11px;
+  text-align:left;
+  background:#f1f8fb;
+  color:#0a2436;
+}
+.poi-suggestion-list button b,
+.poi-suggestion-list button span{
+  display:block;
+}
+.poi-suggestion-list button span{
+  margin-top:4px;
+  color:#4e6877;
+  font-size:12px;
+  line-height:1.35;
+}
+.poi-suggestion-attribution{
+  margin-top:9px;
+  color:#9bb3bf;
+  font-size:10px;
+  text-align:right;
+}
+.refresh-nav-button{
+  -webkit-tap-highlight-color:transparent;
+}
+@media(max-width:600px){
+  .poi-suggestion-tools,
+  .poi-suggestion-tools button{
+    width:100%;
+  }
+}
