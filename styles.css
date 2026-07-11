@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.2.2";
+  content:" · v5.2.3";
   color:#6fcfee;
   font-weight:800;
 }
@@ -2846,4 +2846,119 @@ main{
 .nearby-harbour-suggestion em{
   background:rgba(216,180,92,.14)!important;
   color:#f0d58c!important;
+}
+
+/* MijnSerenity Cloud 5.2.3 — internetfoto’s voor POI en plaats */
+.poi-web-photo-tools{
+  display:flex;
+  margin-top:9px;
+}
+.poi-web-photo-tools button{
+  width:100%;
+}
+.poi-web-photo-status{
+  margin:10px 0;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.055);
+  color:#a9c8d3;
+  font-size:12px;
+  line-height:1.4;
+}
+.poi-web-photo-status.success{
+  border:1px solid rgba(61,208,132,.22);
+  background:rgba(30,126,81,.16);
+  color:#c8f5dc;
+}
+.poi-web-photo-status.warning{
+  border:1px solid rgba(229,183,76,.22);
+  background:rgba(133,95,24,.15);
+  color:#f4dfa7;
+}
+.poi-web-photo-status.error{
+  border:1px solid rgba(227,89,101,.24);
+  background:rgba(137,38,48,.16);
+  color:#ffd1d6;
+}
+.poi-web-photo-results{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+  margin:10px 0 14px;
+}
+.poi-web-photo-card{
+  overflow:hidden;
+  min-width:0;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  background:rgba(255,255,255,.045);
+}
+.poi-web-photo-card.selected{
+  border-color:rgba(83,219,148,.70);
+  box-shadow:0 0 0 2px rgba(83,219,148,.16);
+}
+.poi-web-photo-select{
+  position:relative;
+  display:block;
+  width:100%;
+  min-height:0;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:#071a27;
+}
+.poi-web-photo-select img{
+  display:block;
+  width:100%;
+  aspect-ratio:4/3;
+  object-fit:cover;
+}
+.poi-web-photo-check{
+  position:absolute;
+  right:7px;
+  bottom:7px;
+  padding:5px 7px;
+  border-radius:999px;
+  background:rgba(3,17,26,.86);
+  color:#eaf9ff;
+  font-size:10px;
+  font-weight:900;
+  backdrop-filter:blur(6px);
+}
+.poi-web-photo-card.selected .poi-web-photo-check{
+  background:rgba(24,136,80,.92);
+}
+.poi-web-photo-meta{
+  display:flex;
+  min-width:0;
+  padding:9px;
+  flex-direction:column;
+  gap:4px;
+}
+.poi-web-photo-meta strong,
+.poi-web-photo-meta small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.poi-web-photo-meta strong{
+  color:#eaf8fc;
+  font-size:11px;
+}
+.poi-web-photo-meta small{
+  color:#87a8b5;
+  font-size:9px;
+}
+.poi-web-photo-meta a{
+  margin-top:2px;
+  color:#6fd4f3;
+  font-size:10px;
+  font-weight:800;
+  text-decoration:none;
+}
+@media(max-width:680px){
+  .poi-web-photo-results{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
 }

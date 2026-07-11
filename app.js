@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]};
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -1755,6 +1755,7 @@ function clearPoiForm(closePanel=true){
   poiHarbourSuggestionController?.abort();
   poiLiveSuggestionResults={name:[],place:[],address:[]};
   poiOnlineSuggestionResults=[];
+  resetPoiWebPhotoSearch();
   setPoiProgress('');
 
   if(closePanel){
@@ -2642,7 +2643,7 @@ async function savePoi(){
     const name=String($('poiName')?.value||'').trim();
     const place=String($('poiPlace')?.value||'').trim();
     const address=String($('poiAddress')?.value||'').trim();
-    const review=String($('poiReview')?.value||'').trim();
+    const originalReview=String($('poiReview')?.value||'').trim();
     const ratingValue=String($('poiRating')?.value||'').trim();
     const rating=ratingValue?Number(ratingValue):null;
     const latitude=parsePoiCoordinateInput($('poiLatitude')?.value,90);
@@ -2662,10 +2663,41 @@ async function savePoi(){
 
     const hasLatitude=latitude!==null;
     const hasLongitude=longitude!==null;
+
     if(hasLatitude!==hasLongitude){
       alert('Vul zowel breedtegraad als lengtegraad in, of laat beide leeg.');
       return;
     }
+
+    saveButton.disabled=true;
+
+    const localFiles=[...($('poiPhotos')?.files||[])].slice(0,6);
+    const availableSlots=Math.max(0,6-localFiles.length);
+    const selectedWebPhotos=selectedPoiWebPhotos.slice(0,availableSlots);
+    const downloadedWebPhotos=[];
+    const webFiles=[];
+    let webPhotoFailures=0;
+
+    for(let i=0;i<selectedWebPhotos.length;i++){
+      const photo=selectedWebPhotos[i];
+
+      try{
+        setPoiProgress(
+          `Internetfoto ${i+1} van ${selectedWebPhotos.length} voorbereiden…`
+        );
+        const file=await webPhotoToFile(photo,i);
+        webFiles.push(file);
+        downloadedWebPhotos.push(photo);
+      }catch(error){
+        webPhotoFailures++;
+        console.warn('Internetfoto voorbereiden mislukt:',photo,error);
+      }
+    }
+
+    const review=composePoiReviewWithWebPhotos(
+      originalReview,
+      downloadedWebPhotos
+    );
 
     const row={
       boat_id:currentBoat.id,
@@ -2681,7 +2713,6 @@ async function savePoi(){
       updated_at:new Date().toISOString()
     };
 
-    saveButton.disabled=true;
     setPoiProgress(id?'POI bijwerken…':'POI opslaan…');
 
     let poiId=id;
@@ -2709,18 +2740,29 @@ async function savePoi(){
       poiId=data.id;
     }
 
-    const files=[...($('poiPhotos')?.files||[])].slice(0,6);
+    const files=[...localFiles,...webFiles].slice(0,6);
+
     if(files.length){
-      setPoiProgress(`POI opgeslagen · ${files.length} foto${files.length===1?'':'’s'} uploaden…`);
+      setPoiProgress(
+        `POI opgeslagen · ${files.length} foto${files.length===1?'':'’s'} uploaden…`
+      );
       await uploadPoiPhotos(poiId,files);
     }
 
     resetPoiFilters(false);
     await loadPois();
+
     if(mapInstance)renderPoiMarkers();
 
     clearPoiForm(true);
-    showAppToast(id?'POI bijgewerkt ✅':'POI opgeslagen ✅');
+
+    if(webPhotoFailures){
+      showAppToast(
+        `POI opgeslagen. ${webPhotoFailures} internetfoto${webPhotoFailures===1?' kon':'’s konden'} niet worden toegevoegd.`
+      );
+    }else{
+      showAppToast(id?'POI bijgewerkt ✅':'POI opgeslagen ✅');
+    }
   }catch(error){
     console.error('POI opslaan mislukt:',error);
     const message=error?.message||'Onbekende fout';
@@ -2731,6 +2773,7 @@ async function savePoi(){
   }
 }
 function editPoi(id,name,category,place,address,rating,review,isFavorite,latitude,longitude){
+  resetPoiWebPhotoSearch();
   $('poiId').value=id;$('poiName').value=name;$('poiCategory').value=category||'Haven';$('poiPlace').value=place||'';$('poiAddress').value=address||'';$('poiRating').value=rating||'';$('poiReview').value=review||'';$('poiFavorite').checked=!!isFavorite;$('poiLatitude').value=latitude??'';$('poiLongitude').value=longitude??'';
   $('poiFormTitle').textContent='POI bewerken';openPoiFormPanel();$('poiSaveButton').textContent='Wijzigingen opslaan';$('poiClearButton')?.classList.add('hidden');$('poiCancelButton').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
@@ -2742,6 +2785,467 @@ async function deletePoi(id){
   const {error}=await sb.from('pois').delete().eq('id',id);
   if(error)alert(error.message);
 }
+
+function plainTextFromHtml(value){
+  const container=document.createElement('div');
+  container.innerHTML=String(value||'');
+  return String(container.textContent||container.innerText||'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function commonsMetadataValue(metadata,key){
+  return plainTextFromHtml(metadata?.[key]?.value||'');
+}
+
+function commonsPhotoKey(photo){
+  return String(
+    photo?.pageId||
+    photo?.sourceUrl||
+    photo?.downloadUrl||
+    photo?.title||
+    ''
+  );
+}
+
+function normalizeCommonsPhoto(page,kind='zoekresultaat'){
+  const info=page?.imageinfo?.[0];
+  if(!info)return null;
+
+  const mime=String(info.mime||'').toLowerCase();
+  if(!['image/jpeg','image/png','image/webp'].includes(mime))return null;
+
+  const width=Number(info.width||0);
+  const height=Number(info.height||0);
+  if(width&&height&&Math.max(width,height)<350)return null;
+
+  const metadata=info.extmetadata||{};
+  const title=String(page.title||'')
+    .replace(/^File:/i,'')
+    .replace(/_/g,' ')
+    .trim();
+
+  const description=
+    commonsMetadataValue(metadata,'ImageDescription')||
+    title;
+
+  const artist=
+    commonsMetadataValue(metadata,'Artist')||
+    commonsMetadataValue(metadata,'Credit')||
+    'Onbekende maker';
+
+  const license=
+    commonsMetadataValue(metadata,'LicenseShortName')||
+    commonsMetadataValue(metadata,'UsageTerms')||
+    'Zie bronpagina';
+
+  const sourceUrl=
+    info.descriptionurl||
+    `https://commons.wikimedia.org/wiki/${encodeURIComponent(
+      String(page.title||'').replace(/ /g,'_')
+    )}`;
+
+  return {
+    pageId:String(page.pageid||page.title||sourceUrl),
+    title,
+    description,
+    artist,
+    license,
+    sourceUrl,
+    previewUrl:info.thumburl||info.url,
+    downloadUrl:info.thumburl||info.url,
+    originalUrl:info.url,
+    mime,
+    width,
+    height,
+    kind
+  };
+}
+
+function commonsApiPages(payload){
+  return Object.values(payload?.query?.pages||{});
+}
+
+async function fetchCommonsPhotosByText(query,signal){
+  const clean=String(query||'').trim();
+  if(!clean)return [];
+
+  const params=new URLSearchParams({
+    action:'query',
+    format:'json',
+    origin:'*',
+    generator:'search',
+    gsrnamespace:'6',
+    gsrsearch:clean,
+    gsrlimit:'20',
+    prop:'imageinfo',
+    iiprop:'url|mime|size|extmetadata',
+    iiurlwidth:'960'
+  });
+
+  const response=await fetch(
+    `https://commons.wikimedia.org/w/api.php?${params.toString()}`,
+    {
+      headers:{Accept:'application/json'},
+      signal
+    }
+  );
+
+  if(!response.ok){
+    throw new Error(`Afbeeldingen zoeken gaf fout ${response.status}`);
+  }
+
+  const payload=await response.json();
+  return commonsApiPages(payload)
+    .map(page=>normalizeCommonsPhoto(page,'naam en plaats'))
+    .filter(Boolean);
+}
+
+async function fetchCommonsPhotosByCoordinates(latitude,longitude,signal){
+  if(!Number.isFinite(latitude)||!Number.isFinite(longitude))return [];
+
+  const params=new URLSearchParams({
+    action:'query',
+    format:'json',
+    origin:'*',
+    generator:'geosearch',
+    ggsnamespace:'6',
+    ggsprimary:'all',
+    ggscoord:`${latitude}|${longitude}`,
+    ggsradius:'10000',
+    ggslimit:'24',
+    prop:'imageinfo|coordinates',
+    iiprop:'url|mime|size|extmetadata',
+    iiurlwidth:'960'
+  });
+
+  const response=await fetch(
+    `https://commons.wikimedia.org/w/api.php?${params.toString()}`,
+    {
+      headers:{Accept:'application/json'},
+      signal
+    }
+  );
+
+  if(!response.ok){
+    throw new Error(`Foto’s in de omgeving zoeken gaf fout ${response.status}`);
+  }
+
+  const payload=await response.json();
+  return commonsApiPages(payload)
+    .map(page=>normalizeCommonsPhoto(page,'in de omgeving'))
+    .filter(Boolean);
+}
+
+function poiWebPhotoSearchQueries(){
+  const name=String($('poiName')?.value||'').trim();
+  const place=String($('poiPlace')?.value||'').trim();
+  const address=String($('poiAddress')?.value||'').trim();
+  const category=String($('poiCategory')?.value||'').trim();
+
+  const queries=[
+    [name,place].filter(Boolean).join(' '),
+    [name,address].filter(Boolean).join(' '),
+    [place,category,'Nederland'].filter(Boolean).join(' ')
+  ];
+
+  const seen=new Set();
+  return queries.filter(query=>{
+    const key=query.toLowerCase();
+    if(query.length<3||seen.has(key))return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function setPoiWebPhotoStatus(message,state=''){
+  const status=$('poiWebPhotoStatus');
+  if(!status)return;
+
+  status.textContent=message||'';
+  status.classList.toggle('hidden',!message);
+  status.classList.remove('success','warning','error');
+
+  if(state)status.classList.add(state);
+}
+
+function isPoiWebPhotoSelected(photo){
+  const key=commonsPhotoKey(photo);
+  return selectedPoiWebPhotos.some(
+    selected=>commonsPhotoKey(selected)===key
+  );
+}
+
+function renderPoiWebPhotos(){
+  const container=$('poiWebPhotoResults');
+  if(!container)return;
+
+  if(!poiWebPhotoResults.length){
+    container.innerHTML='';
+    container.classList.add('hidden');
+    return;
+  }
+
+  container.innerHTML=poiWebPhotoResults.map((photo,index)=>{
+    const selected=isPoiWebPhotoSelected(photo);
+
+    return `
+      <article class="poi-web-photo-card ${selected?'selected':''}">
+        <button type="button"
+          class="poi-web-photo-select"
+          onclick="togglePoiWebPhoto(${index})"
+          aria-label="${selected?'Foto niet gebruiken':'Foto gebruiken'}">
+          <img src="${esc(photo.previewUrl)}"
+            loading="lazy"
+            alt="${esc(photo.description||photo.title)}">
+          <span class="poi-web-photo-check">
+            ${selected?'✓ Geselecteerd':'＋ Gebruiken'}
+          </span>
+        </button>
+
+        <div class="poi-web-photo-meta">
+          <strong>${esc(photo.title||'Internetfoto')}</strong>
+          <small>${esc(photo.artist||'Onbekende maker')}</small>
+          <small>${esc(photo.license||'Zie bronpagina')}</small>
+          <a href="${esc(photo.sourceUrl)}"
+            target="_blank"
+            rel="noopener noreferrer">
+            Bekijk bron
+          </a>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  container.classList.remove('hidden');
+
+  const selectedCount=selectedPoiWebPhotos.length;
+  setPoiWebPhotoStatus(
+    selectedCount
+      ?`${selectedCount} internetfoto${selectedCount===1?'':'’s'} geselecteerd. Deze worden bij Opslaan toegevoegd.`
+      :'Tik op Gebruiken om maximaal 3 internetfoto’s te selecteren.',
+    selectedCount?'success':''
+  );
+}
+
+function togglePoiWebPhoto(index){
+  const photo=poiWebPhotoResults[index];
+  if(!photo)return;
+
+  const key=commonsPhotoKey(photo);
+  const selectedIndex=selectedPoiWebPhotos.findIndex(
+    selected=>commonsPhotoKey(selected)===key
+  );
+
+  if(selectedIndex>=0){
+    selectedPoiWebPhotos.splice(selectedIndex,1);
+  }else{
+    if(selectedPoiWebPhotos.length>=3){
+      showAppToast('Je kunt maximaal 3 internetfoto’s selecteren.');
+      return;
+    }
+
+    selectedPoiWebPhotos.push(photo);
+  }
+
+  renderPoiWebPhotos();
+}
+
+function resetPoiWebPhotoSearch(){
+  poiWebPhotoController?.abort();
+  poiWebPhotoController=null;
+  poiWebPhotoResults=[];
+  selectedPoiWebPhotos=[];
+
+  const results=$('poiWebPhotoResults');
+  if(results){
+    results.innerHTML='';
+    results.classList.add('hidden');
+  }
+
+  const status=$('poiWebPhotoStatus');
+  if(status){
+    status.textContent='';
+    status.classList.add('hidden');
+    status.classList.remove('success','warning','error');
+  }
+}
+
+async function searchPoiWebPhotos({silent=false}={}){
+  const name=String($('poiName')?.value||'').trim();
+  const place=String($('poiPlace')?.value||'').trim();
+  const latitude=Number($('poiLatitude')?.value);
+  const longitude=Number($('poiLongitude')?.value);
+  const queries=poiWebPhotoSearchQueries();
+
+  if(!name&&!place){
+    if(!silent){
+      alert('Vul eerst de naam of plaats van de POI in.');
+      $('poiName')?.focus();
+    }
+    return;
+  }
+
+  poiWebPhotoController?.abort();
+  poiWebPhotoController=new AbortController();
+  const signal=poiWebPhotoController.signal;
+
+  if(!silent){
+    setPoiWebPhotoStatus(
+      `Foto’s zoeken voor ${[name,place].filter(Boolean).join(' · ')}…`,
+      'warning'
+    );
+  }
+
+  try{
+    const jobs=queries
+      .slice(0,3)
+      .map(query=>fetchCommonsPhotosByText(query,signal));
+
+    if(Number.isFinite(latitude)&&Number.isFinite(longitude)){
+      jobs.push(
+        fetchCommonsPhotosByCoordinates(latitude,longitude,signal)
+      );
+    }
+
+    const batches=await Promise.allSettled(jobs);
+    const seen=new Set();
+    const photos=[];
+
+    batches.forEach(batch=>{
+      if(batch.status!=='fulfilled')return;
+
+      batch.value.forEach(photo=>{
+        const key=commonsPhotoKey(photo);
+        if(!key||seen.has(key))return;
+        seen.add(key);
+        photos.push(photo);
+      });
+    });
+
+    poiWebPhotoResults=photos.slice(0,24);
+    selectedPoiWebPhotos=selectedPoiWebPhotos.filter(selected=>
+      poiWebPhotoResults.some(photo=>
+        commonsPhotoKey(photo)===commonsPhotoKey(selected)
+      )
+    );
+
+    renderPoiWebPhotos();
+
+    if(!poiWebPhotoResults.length){
+      setPoiWebPhotoStatus(
+        'Geen bruikbare internetfoto’s gevonden. Probeer een preciezere naam of plaats.',
+        'warning'
+      );
+    }else if(!silent){
+      setPoiWebPhotoStatus(
+        `${poiWebPhotoResults.length} foto’s gevonden. Kies maximaal 3 foto’s.`,
+        'success'
+      );
+    }
+  }catch(error){
+    if(error?.name==='AbortError')return;
+
+    console.error('Internetfoto’s zoeken mislukt:',error);
+    setPoiWebPhotoStatus(
+      'Internetfoto’s zoeken is niet gelukt. Probeer het later opnieuw.',
+      'error'
+    );
+  }
+}
+
+function safeWebPhotoFilename(photo,index=0){
+  const base=String(photo?.title||`poi-foto-${index+1}`)
+    .replace(/\.[^.]+$/,'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zA-Z0-9_-]+/g,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,80)||
+    `poi-foto-${index+1}`;
+
+  const extension=photo?.mime==='image/png'
+    ?'png'
+    :photo?.mime==='image/webp'
+      ?'webp'
+      :'jpg';
+
+  return `${base}.${extension}`;
+}
+
+async function webPhotoToFile(photo,index=0){
+  const response=await fetch(photo.downloadUrl,{
+    mode:'cors',
+    cache:'no-store'
+  });
+
+  if(!response.ok){
+    throw new Error(`Foto downloaden gaf fout ${response.status}`);
+  }
+
+  const blob=await response.blob();
+  if(!blob.type.startsWith('image/')){
+    throw new Error('Het gedownloade bestand is geen afbeelding.');
+  }
+
+  return new File(
+    [blob],
+    safeWebPhotoFilename(photo,index),
+    {
+      type:blob.type||photo.mime||'image/jpeg',
+      lastModified:Date.now()
+    }
+  );
+}
+
+function webPhotoAttributionLine(photo){
+  return [
+    `Internetfoto: ${photo.title||'Afbeelding'}`,
+    `maker ${photo.artist||'onbekend'}`,
+    `licentie ${photo.license||'zie bron'}`,
+    `bron ${photo.sourceUrl||''}`
+  ].filter(Boolean).join(' — ');
+}
+
+function composePoiReviewWithWebPhotos(review,photos=[]){
+  const current=String(review||'').trim();
+  const lines=photos
+    .map(webPhotoAttributionLine)
+    .filter(line=>line&&!current.includes(line));
+
+  if(!lines.length)return current;
+
+  const block=`Fotobronnen:\n${lines.join('\n')}`;
+  return current?`${current}\n\n${block}`:block;
+}
+
+function openPoiWebPhotoSearchForPoi(id){
+  const poi=getPoiById(id);
+  if(!poi)return;
+
+  closePoiDetails();
+  editPoi(
+    poi.id,
+    poi.name,
+    poi.category,
+    poi.place,
+    poi.address,
+    poi.rating,
+    poi.review,
+    isFavoritePoi(poi),
+    poi.latitude,
+    poi.longitude
+  );
+
+  setTimeout(()=>{
+    $('poiWebPhotoResults')?.scrollIntoView({
+      behavior:'smooth',
+      block:'center'
+    });
+    searchPoiWebPhotos();
+  },180);
+}
+
 async function uploadPoiPhotos(poiId,files){
   for(let i=0;i<files.length;i++){
     const file=files[i];
@@ -5575,6 +6079,11 @@ function showPoiDetails(id){
           </button>`
         :''}
 
+      <button class="secondary"
+        onclick="openPoiWebPhotoSearchForPoi('${poi.id}')">
+        🌐 Zoek internetfoto’s
+      </button>
+
       <button class="secondary" onclick='closePoiDetails();editPoi(
         ${JSON.stringify(poi.id)},
         ${JSON.stringify(poi.name)},
@@ -7169,7 +7678,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.2.2';
+const APP_VERSION='5.2.3';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -7246,7 +7755,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5220',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5230',{updateViaCache:'none'});
 
     await registration.update();
 
