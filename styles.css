@@ -959,3 +959,32 @@ header{
     width:100%;
   }
 }
+
+/* Cloud 5.1.8 — veilig verversen, Boot terug en versie in Sync */
+.dashboard-status-button{
+  width:100%;
+  min-height:88px;
+  margin:0;
+  padding:13px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:14px;
+  background:rgba(255,255,255,.035);
+  color:inherit;
+  text-align:left;
+}
+.dashboard-status-button .value{
+  margin-top:5px;
+}
+.dashboard-status-button:active{
+  transform:scale(.985);
+}
+.dashboard-status-button.is-refreshing .value{
+  display:inline-block;
+  animation:refreshSpin .75s linear infinite;
+}
+.sync-status-button{
+  cursor:pointer;
+}
+.settings-share-button{
+  margin-top:10px;
+}

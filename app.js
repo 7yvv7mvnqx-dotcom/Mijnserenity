@@ -47,52 +47,66 @@ function getLoggedInFirstName(){
 }
 
 
-function ensureRefreshNavigation(){
+function ensureBootNavigation(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
 
-  let button=nav.querySelector('.refresh-nav-button');
-  const oldBoatButton=nav.querySelector('[data-target="boat"]');
+  let button=nav.querySelector('[data-target="settings"]');
+  const oldRefresh=nav.querySelector('.refresh-nav-button');
 
-  if(!button&&oldBoatButton){
-    button=oldBoatButton;
-    button.removeAttribute('data-target');
-    button.className='bottom-nav-item refresh-nav-button';
-    button.setAttribute('onclick','refreshMijnSerenity(this)');
-    button.innerHTML='<span>🔄</span><small>Ververs</small>';
-  }
-
-  if(button){
-    button.removeAttribute('data-target');
-    button.setAttribute('onclick','refreshMijnSerenity(this)');
-    button.innerHTML='<span>🔄</span><small>Ververs</small>';
+  if(!button&&oldRefresh){
+    button=oldRefresh;
+    button.className='bottom-nav-item';
+    button.dataset.target='settings';
+    button.setAttribute('onclick',"captainNavigate('settings',this)");
+    button.innerHTML='<span>🚤</span><small>Boot</small>';
   }
 }
 
 async function refreshMijnSerenity(button){
-  button?.classList.add('is-refreshing');
-
-  try{
-    if('caches' in window){
-      const cacheNames=await caches.keys();
-      await Promise.all(
-        cacheNames
-          .filter(name=>name.startsWith('mijnserenity-'))
-          .map(name=>caches.delete(name))
-      );
-    }
-
-    if('serviceWorker' in navigator){
-      const registration=await navigator.serviceWorker.getRegistration();
-      await registration?.update();
-    }
-  }catch(error){
-    console.warn('Verversen van appbestanden mislukt:',error);
+  if(!currentUser||!currentBoat){
+    window.location.reload();
+    return;
   }
 
-  const url=new URL(window.location.href);
-  url.searchParams.set('v',Date.now());
-  window.location.replace(url.toString());
+  button?.classList.add('is-refreshing');
+  const sync=$('dSync');
+  if(sync)sync.textContent='…';
+
+  try{
+    await loadMembership();
+    renderBoat();
+
+    const results=await Promise.allSettled([
+      loadSettings(),
+      loadPois(),
+      loadCosts(),
+      loadTrips()
+    ]);
+
+    const failed=results.filter(result=>result.status==='rejected');
+    if(failed.length){
+      console.warn('Niet alle onderdelen konden worden ververst:',failed);
+      if(sync)sync.textContent='Deels';
+      showAppToast('Een deel kon niet worden ververst. Bestaande gegevens blijven zichtbaar.');
+    }else{
+      if(sync)sync.textContent='Live';
+      showAppToast('MijnSerenity is bijgewerkt ✅');
+    }
+
+    loadSettingsForm();
+    renderPoiList();
+    renderTripList();
+    renderFinance();
+    updateLatestRouteDashboard();
+    await loadDashboardPhoto();
+  }catch(error){
+    console.error('Verversen mislukt:',error);
+    if(sync)sync.textContent='Fout';
+    showAppToast('Verversen mislukt. Je bestaande gegevens zijn niet gewist.');
+  }finally{
+    button?.classList.remove('is-refreshing');
+  }
 }
 
 function setMsg(t){$('authMsg').textContent=t}
@@ -137,7 +151,7 @@ async function initialise(session){
   $('authView').classList.toggle('hidden',!!currentUser);
   $('appView').classList.toggle('hidden',!currentUser);
 
-  ensureRefreshNavigation();
+  ensureBootNavigation();
 
   if(!currentUser){
     currentBoat=null;
@@ -154,14 +168,23 @@ async function initialise(session){
 
   await loadMembership();
   renderBoat();
+  restoreBoatDataCache();
 
   if(currentBoat){
-    await Promise.all([
+    const results=await Promise.allSettled([
       loadSettings(),
       loadPois(),
       loadCosts(),
       loadTrips()
     ]);
+
+    if(results.some(result=>result.status==='rejected')){
+      console.warn('Niet alle bootgegevens zijn geladen:',results);
+      if($('dSync'))$('dSync').textContent='Deels';
+    }else{
+      if($('dSync'))$('dSync').textContent='Live';
+    }
+
     subscribeRealtime();
   }
 
@@ -231,6 +254,7 @@ async function loadPois(){
   $('dPois').textContent=poiCache.length;
   updatePoiSuggestionLists();
   renderPoiList();
+  storeBoatCache('pois',poiCache);
 
   if(mapInstance)renderPoiMarkers();
 }
@@ -526,6 +550,52 @@ async function loadCosts(){
 function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'cost_receipts',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},loadSettings).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
 
 
+
+function boatCacheKey(type){
+  return `mijnserenity-${type}-${currentBoat?.id||'geen-boot'}`;
+}
+
+function storeBoatCache(type,value){
+  if(!currentBoat)return;
+  try{
+    localStorage.setItem(boatCacheKey(type),JSON.stringify({
+      savedAt:Date.now(),
+      value
+    }));
+  }catch(error){
+    console.warn(`Lokale ${type}-cache kon niet worden opgeslagen:`,error);
+  }
+}
+
+function readBoatCache(type){
+  if(!currentBoat)return null;
+  try{
+    const cached=JSON.parse(localStorage.getItem(boatCacheKey(type))||'null');
+    return cached?.value??null;
+  }catch(error){
+    return null;
+  }
+}
+
+function restoreBoatDataCache(){
+  const cachedPois=readBoatCache('pois');
+  if(Array.isArray(cachedPois)&&cachedPois.length){
+    poiCache=cachedPois;
+    $('dPois').textContent=poiCache.length;
+    updatePoiSuggestionLists();
+    renderPoiList();
+  }
+
+  const cachedTrips=readBoatCache('trips');
+  if(Array.isArray(cachedTrips)&&cachedTrips.length){
+    tripCache=cachedTrips;
+    $('dTrips').textContent=tripCache.length;
+    renderTripList();
+    renderFinance();
+    updateLatestRouteDashboard();
+  }
+}
+
 function resetPoiFilters(render=true){
   if($('poiSearch'))$('poiSearch').value='';
   if($('poiFilterCategory'))$('poiFilterCategory').value='';
@@ -743,6 +813,7 @@ function applyPoiOnlineSuggestion(index){
 function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
 async function loadSettings(){
   if(!currentBoat)return;
+
   const {data,error}=await sb
     .from('boat_settings')
     .select('*')
@@ -751,6 +822,13 @@ async function loadSettings(){
 
   if(error){
     console.error('Instellingen laden mislukt:',error);
+    const cachedPath=localStorage.getItem(`mijnserenity-dashboard-photo-${currentBoat.id}`);
+    settingsCache=settingsCache||{
+      boat_id:currentBoat.id,
+      boat_name:currentBoat.name,
+      dashboard_photo_path:cachedPath||null
+    };
+    await loadDashboardPhoto();
     return;
   }
 
@@ -760,7 +838,59 @@ async function loadSettings(){
     dashboard_photo_path:null
   };
 
+  if(settingsCache.dashboard_photo_path){
+    localStorage.setItem(
+      `mijnserenity-dashboard-photo-${currentBoat.id}`,
+      settingsCache.dashboard_photo_path
+    );
+  }else{
+    const cachedPath=localStorage.getItem(`mijnserenity-dashboard-photo-${currentBoat.id}`);
+    if(cachedPath)settingsCache.dashboard_photo_path=cachedPath;
+    await recoverDashboardPhotoPath();
+  }
+
   await loadDashboardPhoto();
+}
+
+
+async function recoverDashboardPhotoPath(){
+  if(!currentBoat||settingsCache?.dashboard_photo_path)return;
+
+  try{
+    const {data,error}=await sb.storage
+      .from(BOAT_PHOTO_BUCKET)
+      .list(currentBoat.id,{
+        limit:100,
+        sortBy:{column:'created_at',order:'desc'}
+      });
+
+    if(error)throw error;
+
+    const latest=(data||[])
+      .filter(file=>String(file.name||'').startsWith('dashboard-'))
+      .sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')))[0];
+
+    if(!latest)return;
+
+    const recoveredPath=`${currentBoat.id}/${latest.name}`;
+    settingsCache.dashboard_photo_path=recoveredPath;
+    localStorage.setItem(
+      `mijnserenity-dashboard-photo-${currentBoat.id}`,
+      recoveredPath
+    );
+
+    await sb.from('boat_settings').upsert({
+      boat_id:currentBoat.id,
+      boat_name:settingsCache.boat_name||currentBoat.name||'Serenity',
+      fuel_price:settingsCache.fuel_price??null,
+      fuel_per_hour:settingsCache.fuel_per_hour??null,
+      tank_capacity:settingsCache.tank_capacity??null,
+      dashboard_photo_path:recoveredPath,
+      updated_at:new Date().toISOString()
+    },{onConflict:'boat_id'});
+  }catch(error){
+    console.warn('Dashboardfoto automatisch herstellen mislukt:',error);
+  }
 }
 
 async function loadDashboardPhoto(){
@@ -831,6 +961,7 @@ async function uploadDashboardPhoto(){
   }
   if(oldPath&&oldPath!==path)await sb.storage.from(BOAT_PHOTO_BUCKET).remove([oldPath]);
   settingsCache=row;
+  localStorage.setItem(`mijnserenity-dashboard-photo-${currentBoat.id}`,path);
   $('dashboardPhotoMsg').textContent='Dashboardfoto opgeslagen ✅';
   $('settingBoatPhoto').value='';
   await loadDashboardPhoto();
@@ -841,7 +972,9 @@ async function removeDashboardPhoto(){
   await sb.storage.from(BOAT_PHOTO_BUCKET).remove([settingsCache.dashboard_photo_path]);
   const {error}=await sb.from('boat_settings').update({dashboard_photo_path:null,updated_at:new Date().toISOString()}).eq('boat_id',currentBoat.id);
   if(error)return alert(error.message);
-  settingsCache.dashboard_photo_path=null;await loadDashboardPhoto();
+  settingsCache.dashboard_photo_path=null;
+  localStorage.removeItem(`mijnserenity-dashboard-photo-${currentBoat.id}`);
+  await loadDashboardPhoto();
 }
 
 function loadSettingsForm(){if(!settingsCache)return;$('settingBoatName').value=settingsCache.boat_name||'Serenity';$('settingFuelPrice').value=settingsCache.fuel_price??'';$('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';$('settingTankCapacity').value=settingsCache.tank_capacity??''}
@@ -1583,10 +1716,11 @@ async function loadTrips(){
   if(error){console.error(error);return}
   tripCache=data;
   window.tripPhotoCache=photos;
-  $('dTrips').textContent=data.length;
+  $('dTrips').textContent=tripCache.length;
   renderTripList();
   renderFinance();
   updateLatestRouteDashboard();
+  storeBoatCache('trips',tripCache);
 }
 
 
@@ -1737,6 +1871,8 @@ function captainNavigate(id, sourceButton=null){
   });
 
   if(id==='live' && typeof initLiveMode==='function')setTimeout(()=>initLiveMode(),80);
+  if(id==='pois' && currentBoat && typeof loadPois==='function')loadPois();
+  if(id==='logbook' && currentBoat && typeof loadTrips==='function')loadTrips();
   if(id==='map' && typeof initMap==='function')setTimeout(()=>initMap(),80);
   if(id==='dashboard' && typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
   if(id==='finance' && typeof renderFinance==='function')renderFinance();
@@ -2304,7 +2440,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.7';
+const APP_VERSION='5.1.8';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -2870,4 +3006,4 @@ function closeLightbox(){
 }
 
 
-document.addEventListener('DOMContentLoaded',ensureRefreshNavigation);
+document.addEventListener('DOMContentLoaded',ensureBootNavigation);
