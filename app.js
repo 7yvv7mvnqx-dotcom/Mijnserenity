@@ -12,6 +12,48 @@ let tripRouteMaps={};
 let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
+
+function getLoggedInFirstName(){
+  const metadata=currentUser?.user_metadata||{};
+  const candidates=[
+    metadata.first_name,
+    metadata.given_name,
+    metadata.full_name,
+    metadata.name
+  ];
+
+  let name=candidates.find(value=>String(value||'').trim());
+
+  if(name){
+    name=String(name).trim().split(/\s+/)[0];
+  }else{
+    const emailName=String(currentUser?.email||'').split('@')[0];
+    name=emailName
+      .replace(/[._-]+/g,' ')
+      .trim()
+      .split(/\s+/)[0]||'kapitein';
+  }
+
+  return name.charAt(0).toUpperCase()+name.slice(1);
+}
+
+async function refreshMijnSerenity(button){
+  button?.classList.add('is-refreshing');
+
+  try{
+    if('serviceWorker' in navigator){
+      const registration=await navigator.serviceWorker.getRegistration();
+      await registration?.update();
+    }
+  }catch(error){
+    console.warn('Updatecontrole mislukt:',error);
+  }
+
+  const url=new URL(window.location.href);
+  url.searchParams.set('v',Date.now());
+  window.location.replace(url.toString());
+}
+
 function setMsg(t){$('authMsg').textContent=t}
 function toggleSection(id,button){
   const el=$(id);
@@ -36,7 +78,7 @@ function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
 async function signOut(){await sb.auth.signOut()}
-async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+currentUser.email;await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}setTimeout(()=>captainNavigate('dashboard'),0)}
+async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}setTimeout(()=>captainNavigate('dashboard'),0)}
 sb.auth.onAuthStateChange((_e,s)=>initialise(s));
 
 async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
@@ -1985,7 +2027,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.4';
+const APP_VERSION='5.1.5';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

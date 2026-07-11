@@ -894,3 +894,12 @@ header{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
+
+/* Cloud 5.1.5 — persoonlijk welkom en verversknop */
+.refresh-nav-button.is-refreshing span{
+  display:inline-block;
+  animation:refreshSpin .75s linear infinite;
+}
+@keyframes refreshSpin{
+  to{transform:rotate(360deg)}
+}
