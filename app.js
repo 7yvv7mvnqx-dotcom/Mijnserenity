@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]};
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]};
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -851,7 +851,23 @@ function goToTab(id){
   if(id==='finance')renderFinance();
   if(id==='settings')loadSettingsForm();
 }
-function showTab(id,b){document.querySelectorAll('#appView > section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
+function showTab(id,b){
+  if(id==='boat'&&!isAppAdmin()){
+    showAppToast('Boot & delen is alleen toegankelijk voor Michel.');
+    captainNavigate('settings');
+    return;
+  }
+
+  document.querySelectorAll('#appView > section')
+    .forEach(section=>section.classList.add('hidden'));
+
+  $(id)?.classList.remove('hidden');
+
+  document.querySelectorAll('.tab')
+    .forEach(tab=>tab.classList.remove('active'));
+
+  b?.classList.add('active');
+}
 function setPoiProgress(text){$('poiProgress').textContent=text;$('poiProgress').classList.toggle('hidden',!text)}
 function clearPoiForm(closePanel=true){
   $('poiFavorite').checked=false;
@@ -1130,69 +1146,217 @@ function adminStatusClass(status){
   return 'pending';
 }
 
+
+function accountDisplayName(account){
+  const name=String(account?.display_name||'').trim();
+  if(name)return name;
+
+  return String(account?.email||'Account')
+    .split('@')[0]
+    .split(/[._-]/)
+    .filter(Boolean)
+    .map(part=>part.charAt(0).toUpperCase()+part.slice(1))
+    .join(' ');
+}
+
+function accountIsOnline(account){
+  if(!account?.last_seen_at)return false;
+  const lastSeen=new Date(account.last_seen_at).getTime();
+  return Number.isFinite(lastSeen)&&Date.now()-lastSeen<2*60*1000;
+}
+
+function accountLastSeenLabel(account){
+  if(!account?.last_seen_at)return 'Nog niet actief geweest';
+
+  if(accountIsOnline(account))return 'Nu online';
+
+  const timestamp=new Date(account.last_seen_at);
+  const difference=Date.now()-timestamp.getTime();
+
+  if(difference<60*60*1000){
+    const minutes=Math.max(2,Math.round(difference/60000));
+    return `${minutes} minuten geleden actief`;
+  }
+
+  return `Laatst actief ${formatAccountDate(account.last_seen_at)}`;
+}
+
+function currentDeviceLabel(){
+  const userAgent=navigator.userAgent||'';
+  const platform=navigator.platform||'';
+
+  if(/iPad/i.test(userAgent)||(
+    platform==='MacIntel'&&navigator.maxTouchPoints>1
+  ))return 'iPad';
+
+  if(/iPhone/i.test(userAgent))return 'iPhone';
+  if(/Mac/i.test(platform))return 'Mac';
+  if(/Android/i.test(userAgent))return 'Android';
+  if(/Windows/i.test(platform))return 'Windows';
+
+  return 'Webbrowser';
+}
+
+async function touchAccountPresence(){
+  if(!currentUser)return;
+
+  const displayName=[
+    currentUser.user_metadata?.first_name,
+    currentUser.user_metadata?.given_name,
+    currentUser.user_metadata?.full_name,
+    getLoggedInFirstName()
+  ].find(value=>String(value||'').trim())||'';
+
+  try{
+    const {error}=await sb.rpc('touch_my_account_presence',{
+      device_name:currentDeviceLabel(),
+      profile_name:String(displayName).trim()
+    });
+
+    if(error){
+      if(
+        error.code==='PGRST202'||
+        String(error.message||'').includes('touch_my_account_presence')
+      ){
+        console.warn('Online status is nog niet via SQL geactiveerd.');
+        return;
+      }
+      throw error;
+    }
+
+    if(isAppAdmin()&&!$('adminAccessSection')?.classList.contains('hidden')){
+      loadAdminAccounts();
+    }
+  }catch(error){
+    console.warn('Online status bijwerken mislukt:',error);
+  }
+}
+
+function startPresenceHeartbeat(){
+  stopPresenceHeartbeat();
+  touchAccountPresence();
+
+  presenceHeartbeatTimer=setInterval(
+    ()=>touchAccountPresence(),
+    60000
+  );
+}
+
+function stopPresenceHeartbeat(){
+  if(presenceHeartbeatTimer){
+    clearInterval(presenceHeartbeatTimer);
+    presenceHeartbeatTimer=null;
+  }
+  if(adminAccountRefreshTimer){
+    clearInterval(adminAccountRefreshTimer);
+    adminAccountRefreshTimer=null;
+  }
+}
+
+function startAdminAccountRefresh(){
+  if(adminAccountRefreshTimer){
+    clearInterval(adminAccountRefreshTimer);
+  }
+
+  adminAccountRefreshTimer=setInterval(()=>{
+    if(
+      isAppAdmin()&&
+      !$('adminAccessSection')?.classList.contains('hidden')
+    ){
+      loadAdminAccounts();
+    }
+  },45000);
+}
+
+function applyAdminVisibility(){
+  const admin=isAppAdmin();
+
+  $('boatManagementTab')?.classList.toggle('hidden',!admin);
+  document.querySelector('.settings-share-button')
+    ?.classList.toggle('hidden',!admin);
+  $('boat')?.classList.toggle('admin-section-locked',!admin);
+
+  if(!admin&&document.querySelector('#boat:not(.hidden)')){
+    captainNavigate('settings');
+  }
+}
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&currentUser){
+    touchAccountPresence();
+  }
+});
+
 function renderAdminAccounts(accounts=[]){
   const pending=accounts.filter(account=>account.status==='pending');
-  const others=accounts.filter(account=>account.status!=='pending');
+  const online=accounts.filter(account=>accountIsOnline(account));
 
+  $('totalAccountCount').textContent=String(accounts.length);
+  $('onlineAccountCount').textContent=String(online.length);
   $('pendingAccountCount').textContent=String(pending.length);
   $('dashboardPendingAccountCount').textContent=String(pending.length);
-  $('adminApprovalDashboardCard')?.classList.toggle('hidden',!isAppAdmin()||pending.length===0);
+  $('adminApprovalDashboardCard')?.classList.toggle(
+    'hidden',
+    !isAppAdmin()||pending.length===0
+  );
 
-  $('pendingAccountsList').innerHTML=pending.length
-    ?pending.map(account=>`
-      <div class="admin-account-row pending">
+  const accountRow=(account,showActions=true)=>{
+    const own=account.user_id===currentUser?.id;
+    const admin=account.is_admin===true;
+    const onlineNow=accountIsOnline(account);
+    const statusClass=adminStatusClass(account.status);
+
+    return `
+      <div class="admin-account-row ${statusClass}">
+        <div class="account-presence-dot ${onlineNow?'online':'offline'}"></div>
+
         <div class="admin-account-copy">
-          <b>${esc(account.email||'Onbekend account')}</b>
-          <small>Aangevraagd ${formatAccountDate(account.requested_at)}</small>
+          <b>${esc(accountDisplayName(account))}</b>
+          <span class="admin-account-email">${esc(account.email||'Onbekend account')}</span>
+          <small>
+            <span class="admin-status-pill ${statusClass}">
+              ${adminStatusLabel(account.status)}
+            </span>
+            ${admin?' · Beheerder':''}
+            · ${esc(accountLastSeenLabel(account))}
+            ${account.last_device?' · '+esc(account.last_device):''}
+          </small>
         </div>
-        <div class="admin-account-actions">
-          <button type="button"
-            onclick='setAccountApproval(${JSON.stringify(account.user_id)},"approved")'>
-            Goedkeuren
-          </button>
-          <button type="button" class="small-danger"
-            onclick='setAccountApproval(${JSON.stringify(account.user_id)},"rejected")'>
-            Weigeren
-          </button>
-        </div>
-      </div>
-    `).join('')
-    :'<span class="small">Geen wachtende accounts.</span>';
 
-  $('allAccountsList').innerHTML=others.length
-    ?others.map(account=>{
-      const own=account.user_id===currentUser?.id;
-      const admin=account.is_admin===true;
-
-      return `
-        <div class="admin-account-row ${adminStatusClass(account.status)}">
-          <div class="admin-account-copy">
-            <b>${esc(account.email||'Onbekend account')}</b>
-            <small>
-              <span class="admin-status-pill ${adminStatusClass(account.status)}">
-                ${adminStatusLabel(account.status)}
-              </span>
-              ${admin?' · Beheerder':''}
-            </small>
-          </div>
-          ${own||admin
-            ?'<span class="small">Beschermd account</span>'
-            :`<div class="admin-account-actions">
-                ${account.status==='approved'
-                  ?`<button type="button" class="small-danger"
+        ${!showActions||own||admin
+          ?'<span class="small protected-account">Beschermd</span>'
+          :`<div class="admin-account-actions">
+              ${account.status==='approved'
+                ?`<button type="button" class="small-danger"
+                    onclick='setAccountApproval(${JSON.stringify(account.user_id)},"rejected")'>
+                    Toegang intrekken
+                  </button>`
+                :account.status==='pending'
+                  ?`<button type="button"
+                      onclick='setAccountApproval(${JSON.stringify(account.user_id)},"approved")'>
+                      Goedkeuren
+                    </button>
+                    <button type="button" class="small-danger"
                       onclick='setAccountApproval(${JSON.stringify(account.user_id)},"rejected")'>
-                      Toegang intrekken
+                      Weigeren
                     </button>`
                   :`<button type="button"
                       onclick='setAccountApproval(${JSON.stringify(account.user_id)},"approved")'>
                       Alsnog goedkeuren
                     </button>`}
-              </div>`
-          }
-        </div>
-      `;
-    }).join('')
-    :'<span class="small">Nog geen andere accounts.</span>';
+            </div>`
+        }
+      </div>
+    `;
+  };
+
+  $('pendingAccountsList').innerHTML=pending.length
+    ?pending.map(account=>accountRow(account,true)).join('')
+    :'<span class="small">Geen wachtende accounts.</span>';
+
+  $('allAccountsList').innerHTML=accounts.length
+    ?accounts.map(account=>accountRow(account,true)).join('')
+    :'<span class="small">Nog geen accounts.</span>';
 }
 
 async function loadAdminAccounts(){
@@ -1209,15 +1373,20 @@ async function loadAdminAccounts(){
   try{
     const {data,error}=await sb
       .from('account_access')
-      .select('user_id,email,status,is_admin,requested_at,reviewed_at')
+      .select(
+        'user_id,email,display_name,status,is_admin,requested_at,reviewed_at,last_seen_at,last_device'
+      )
       .order('requested_at',{ascending:false});
 
     if(error)throw error;
+
     renderAdminAccounts(data||[]);
+    startAdminAccountRefresh();
   }catch(error){
     console.error('Gebruikersbeheer laden mislukt:',error);
     $('pendingAccountsList').innerHTML=
       `<span class="small">Gebruikers konden niet worden geladen: ${esc(error?.message||'onbekende fout')}</span>`;
+    $('allAccountsList').innerHTML='';
   }
 }
 
@@ -1359,6 +1528,7 @@ async function saveAccountProfile(){
 
     currentUser=data.user||currentUser;
     $('welcome').textContent='Welkom '+getLoggedInFirstName();
+    await touchAccountPresence();
     setAccountMsg('Profielnaam opgeslagen ✅');
   }catch(error){
     console.error('Profielnaam opslaan mislukt:',error);
@@ -1431,6 +1601,8 @@ async function sendPasswordReset(fromAccount=false){
 }
 
 async function signOutCurrentDevice(){
+  stopPresenceHeartbeat();
+
   try{
     const {error}=await sb.auth.signOut({scope:'local'});
     if(error)throw error;
@@ -1455,6 +1627,8 @@ async function signOutOtherDevices(){
 
 async function signOutAllDevices(){
   if(!confirm('Alle apparaten uitloggen, inclusief dit apparaat?'))return;
+
+  stopPresenceHeartbeat();
 
   try{
     const {error}=await sb.auth.signOut({scope:'global'});
@@ -1486,6 +1660,7 @@ async function initialise(session){
   $('appView').classList.add('hidden');
 
   if(!currentUser){
+    stopPresenceHeartbeat();
     accountAccess=null;
     currentBoat=null;
     currentRole=null;
@@ -1509,6 +1684,7 @@ async function initialise(session){
   }
 
   if(accountAccess?.status!=='approved'){
+    startPresenceHeartbeat();
     currentBoat=null;
     currentRole=null;
     $('approvalView').classList.remove('hidden');
@@ -1522,6 +1698,8 @@ async function initialise(session){
   }
 
   $('appView').classList.remove('hidden');
+  startPresenceHeartbeat();
+  applyAdminVisibility();
   $('welcome').textContent='Welkom '+getLoggedInFirstName();
   resetPoiFilters(false);
 
@@ -1547,6 +1725,7 @@ async function initialise(session){
   }
 
   if(isAppAdmin()){
+    startAdminAccountRefresh();
     loadAdminAccounts().catch(error=>
       console.error('Wachtende accounts laden mislukt:',error)
     );
@@ -1559,7 +1738,24 @@ sb.auth.onAuthStateChange((event,session)=>{
 });
 
 async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
-function renderBoat(){$('noBoatCard').classList.toggle('hidden',!!currentBoat);$('boatCard').classList.toggle('hidden',!currentBoat);$('dBoat').textContent=currentBoat?.name||'-';if(currentBoat){$('boatName').textContent=currentBoat.name;$('rolePill').textContent=currentRole==='owner'?'Eigenaar':'Lid';$('ownerInvite').classList.toggle('hidden',currentRole!=='owner')}}
+function renderBoat(){
+  const admin=isAppAdmin();
+
+  $('noBoatCard').classList.toggle('hidden',!!currentBoat||!admin);
+  $('boatCard').classList.toggle('hidden',!currentBoat||!admin);
+  $('dBoat').textContent=currentBoat?.name||'-';
+
+  if(currentBoat){
+    $('boatName').textContent=currentBoat.name;
+    $('rolePill').textContent=currentRole==='owner'?'Eigenaar':'Lid';
+    $('ownerInvite').classList.toggle(
+      'hidden',
+      !admin||currentRole!=='owner'
+    );
+  }
+
+  applyAdminVisibility();
+}
 async function createBoat(){const {error}=await sb.rpc('create_boat_with_owner',{boat_name:$('newBoatName').value.trim()||'Serenity'});if(error)return alert('Boot aanmaken mislukt: '+error.message);await loadMembership();renderBoat();await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}
 async function createInvite(){const {data,error}=await sb.rpc('create_boat_invite',{target_boat:currentBoat.id});if(error)return alert('Deelcode maken mislukt: '+error.message);$('inviteCode').textContent=data}
 async function joinBoat(){const code=$('joinCode').value.trim();if(!code)return alert('Vul eerst de deelcode in.');const {error}=await sb.rpc('join_boat_by_code',{invite_code:code});if(error)return alert('Deelnemen mislukt: '+error.message);await loadMembership();renderBoat();await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}
@@ -4477,6 +4673,11 @@ function openWaterkaarten(){
 }
 
 function captainNavigate(id, sourceButton=null){
+  if(id==='boat'&&!isAppAdmin()){
+    showAppToast('Boot & delen is alleen toegankelijk voor Michel.');
+    id='settings';
+    sourceButton=null;
+  }
   const desktopButtons=[...document.querySelectorAll('.tab')];
   const map={dashboard:0,live:1,map:2,pois:3,logbook:4,costs:5,finance:6,settings:7,boat:8};
   const desktopButton=desktopButtons[map[id]];
@@ -5517,7 +5718,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.37';
+const APP_VERSION='5.1.38';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

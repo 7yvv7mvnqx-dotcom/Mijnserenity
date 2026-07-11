@@ -98,7 +98,8 @@
 <button class="tab" onclick="showTab('costs',this)">Kosten</button>
 <button class="tab" onclick="showTab('finance',this);renderFinance()">Financieel</button>
 <button class="tab" onclick="showTab('settings',this);loadSettingsForm()">Instellingen</button>
-    <button class="tab" onclick="showTab('boat',this)">Boot & delen</button>
+    <button id="boatManagementTab" class="tab admin-only"
+      onclick="showTab('boat',this)">Boot & delen</button>
   </div>
 
   <section id="dashboard">
@@ -223,7 +224,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.37</div>
+          <div class="label">Sync · v5.1.38</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -791,25 +792,31 @@
         <div id="adminAccessSection" class="account-section admin-access-section hidden">
           <div class="admin-access-head">
             <div>
-              <h3>Nieuwe gebruikers goedkeuren</h3>
-              <p class="small">Alle nieuwe accounts blijven geblokkeerd totdat jij toestemming geeft.</p>
+              <h3>Gebruikersbeheer</h3>
+              <p class="small">Bekijk alle accounts, hun toegang en recente online status.</p>
             </div>
             <button type="button" class="secondary" onclick="loadAdminAccounts()">↻ Vernieuwen</button>
           </div>
 
-          <div class="admin-summary">
-            <span>Wachtend</span>
-            <strong id="pendingAccountCount">0</strong>
+          <div class="admin-summary-grid">
+            <div><span>Accounts</span><strong id="totalAccountCount">0</strong></div>
+            <div><span>Online</span><strong id="onlineAccountCount">0</strong></div>
+            <div><span>Wachtend</span><strong id="pendingAccountCount">0</strong></div>
           </div>
 
+          <p class="small presence-help">
+            Online betekent dat het account de app in de afgelopen twee minuten actief heeft gebruikt.
+          </p>
+
+          <div class="admin-list-heading">Wacht op toestemming</div>
           <div id="pendingAccountsList" class="admin-account-list">
             <span class="small">Geen wachtende accounts.</span>
           </div>
 
-          <details class="admin-approved-details">
-            <summary>Goedgekeurde en geweigerde accounts</summary>
-            <div id="allAccountsList" class="admin-account-list"></div>
-          </details>
+          <div class="admin-list-heading">Alle accounts</div>
+          <div id="allAccountsList" class="admin-account-list">
+            <span class="small">Nog geen accounts geladen.</span>
+          </div>
         </div>
 
         <div id="accountMsg" class="status small hidden"></div>

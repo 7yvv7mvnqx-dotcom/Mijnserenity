@@ -2117,3 +2117,69 @@ header{
     flex:1;
   }
 }
+
+/* Cloud 5.1.38 — online gebruikersstatus en Boot alleen voor beheerder */
+.admin-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin:12px 0 8px;
+}
+.admin-summary-grid>div{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding:10px;
+  border:1px solid rgba(112,207,238,.15);
+  border-radius:12px;
+  background:rgba(255,255,255,.04);
+}
+.admin-summary-grid span{
+  color:#91aeba;
+  font-size:11px;
+}
+.admin-summary-grid strong{
+  color:#eefbff;
+  font-size:22px;
+}
+.presence-help{
+  margin:0 0 14px;
+  color:#86a6b2;
+}
+.admin-list-heading{
+  margin:14px 0 8px;
+  color:#e7f8ff;
+  font-size:13px;
+  font-weight:800;
+}
+.account-presence-dot{
+  width:11px;
+  height:11px;
+  flex:0 0 11px;
+  border-radius:50%;
+  box-shadow:0 0 0 4px rgba(255,255,255,.035);
+}
+.account-presence-dot.online{
+  background:#48d58d;
+  box-shadow:0 0 0 4px rgba(72,213,141,.12);
+}
+.account-presence-dot.offline{
+  background:#718791;
+}
+.admin-account-email{
+  overflow:hidden;
+  color:#a8c1cb;
+  font-size:11px;
+  text-overflow:ellipsis;
+}
+.protected-account{
+  flex-shrink:0;
+}
+.admin-section-locked{
+  display:none!important;
+}
+@media(max-width:520px){
+  .admin-summary-grid{
+    grid-template-columns:1fr;
+  }
+}
