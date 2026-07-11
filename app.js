@@ -507,7 +507,7 @@ function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
 async function signOut(){await sb.auth.signOut()}
-async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();resetPoiFilters(false);await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}$('tripCrew').value=$('tripCrew').value||'Michel, Desi';setTimeout(()=>captainNavigate('dashboard'),0)}
+async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();resetPoiFilters(false);await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}$('tripCrew').value=$('tripCrew').value||'Michel, Desi';closeTripForm();setTimeout(()=>captainNavigate('dashboard'),0)}
 sb.auth.onAuthStateChange((_e,s)=>initialise(s));
 
 async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
@@ -2176,6 +2176,25 @@ function setTripProgress(text){
   $('tripProgress').textContent=text;
   $('tripProgress').classList.toggle('hidden',!text);
 }
+
+function setTripFormCollapsed(collapsed=true){
+  const wrap=$('tripFormWrap');
+  const toggle=$('tripFormToggle');
+
+  if(!wrap)return;
+
+  wrap.classList.toggle('hidden',collapsed);
+  toggle?.classList.toggle('open',!collapsed);
+}
+
+function openTripForm(){
+  setTripFormCollapsed(false);
+}
+
+function closeTripForm(){
+  setTripFormCollapsed(true);
+}
+
 function clearTripForm(){
   ['tripId','tripTitle','tripFrom','tripTo','tripDistance','tripHours','tripFuelLiters','tripFuelCost','tripCrew','tripNotes']
     .forEach(id=>$(id).value='');
@@ -2196,6 +2215,7 @@ function clearTripForm(){
   if(importStatus)importStatus.innerHTML='';
 
   setTripProgress('');
+  closeTripForm();
 }
 function cancelTripEdit(){clearTripForm()}
 function editTrip(id,tripDate,title,departure,arrival,distance,hours,fuelLiters,fuelCost,crew,notes){
@@ -2210,7 +2230,7 @@ function editTrip(id,tripDate,title,departure,arrival,distance,hours,fuelLiters,
   $('tripHours').value=hours??'';$('tripFuelLiters').value=fuelLiters??'';$('tripFuelCost').value=fuelCost??'';
   $('tripCrew').value=crew||'';
   $('tripNotes').value=notes||'';
-  $('tripFormTitle').textContent='Vaartocht bewerken';$('tripFormWrap').classList.remove('hidden');document.querySelector('[onclick*=\"tripFormWrap\"]')?.classList.add('open');
+  $('tripFormTitle').textContent='Vaartocht bewerken';openTripForm();
   $('tripSaveButton').textContent='Wijzigingen opslaan';
   $('tripCancelButton').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
@@ -2503,6 +2523,13 @@ function captainNavigate(id, sourceButton=null){
     }
   }
   if(id==='logbook'){
+    const editing=Boolean($('tripId')?.value);
+    const imported=Boolean(pendingTripRouteDetails||pendingTripRouteFile);
+
+    if(!editing&&!imported){
+      closeTripForm();
+    }
+
     setTimeout(()=>autoCheckSavedICloudRouteFolder(),150);
   }
   if(id==='finance' && typeof renderFinance==='function')renderFinance();
@@ -3073,7 +3100,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.19';
+const APP_VERSION='5.1.20';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -3407,7 +3434,6 @@ async function scanICloudRouteDirectory(handle,userInitiated=false){
 }
 
 async function chooseICloudRouteFolder(){
-  $('tripFormWrap')?.classList.remove('hidden');
 
   if('showDirectoryPicker' in window){
     try{
@@ -4211,6 +4237,7 @@ async function handleManualTripRouteImport(file){
 }
 
 async function handleTripRouteImport(file,sourceLabel='bestand'){
+  openTripForm();
   if(!file)return;
 
   pendingTripRouteFile=file;
