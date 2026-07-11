@@ -40,30 +40,67 @@ function getLoggedInFirstName(){
 }
 
 async function refreshMijnSerenity(button){
-  if(!currentBoat)return;
+  const sync=$('dSync');
+  const originalLabel=sync?.textContent||'Live';
 
   button?.classList.add('is-refreshing');
-  if($('dSync'))$('dSync').textContent='…';
+  if(button)button.disabled=true;
+  if(sync)sync.textContent='Verversen…';
 
-  const results=await Promise.allSettled([
-    loadSettings(),
-    loadPois(),
-    loadCosts(),
-    loadTrips()
-  ]);
+  try{
+    if(!currentUser){
+      const {data:{session}}=await sb.auth.getSession();
+      currentUser=session?.user||null;
+    }
 
-  const failed=results.filter(result=>result.status==='rejected');
-  if(failed.length){
-    console.warn('Niet alles kon worden ververst:',failed);
-    if($('dSync'))$('dSync').textContent='Deels';
-    showAppToast('Niet alles kon worden ververst. Bestaande gegevens blijven staan.');
-  }else{
-    if($('dSync'))$('dSync').textContent='Live';
-    loadSettingsForm();
-    showAppToast('MijnSerenity bijgewerkt ✅');
+    if(!currentBoat){
+      await loadMembership();
+      renderBoat();
+    }
+
+    if(!currentBoat){
+      throw new Error('Serenity is niet gekoppeld aan dit account.');
+    }
+
+    resetPoiFilters(false);
+
+    const results=await Promise.allSettled([
+      loadSettings(),
+      loadPois(),
+      loadCosts(),
+      loadTrips()
+    ]);
+
+    const failed=results.filter(result=>result.status==='rejected');
+    if(failed.length){
+      console.warn('Niet alles kon worden ververst:',failed);
+      if(sync)sync.textContent='Deels';
+      showAppToast('Een deel kon niet worden ververst. Bestaande gegevens blijven zichtbaar.');
+    }else{
+      loadSettingsForm();
+      renderPoiList();
+      renderFinance();
+
+      const time=new Date().toLocaleTimeString('nl-NL',{
+        hour:'2-digit',
+        minute:'2-digit'
+      });
+
+      if(sync)sync.textContent=`Live ${time}`;
+      showAppToast('MijnSerenity is ververst ✅');
+    }
+  }catch(error){
+    console.error('Verversen mislukt:',error);
+    if(sync)sync.textContent='Fout';
+    showAppToast(error?.message||'Verversen mislukt.');
+  }finally{
+    button?.classList.remove('is-refreshing');
+    if(button)button.disabled=false;
+
+    if(sync&&sync.textContent==='Verversen…'){
+      sync.textContent=originalLabel;
+    }
   }
-
-  button?.classList.remove('is-refreshing');
 }
 
 function updatePoiSuggestionLists(){
@@ -186,7 +223,7 @@ function cancelPoiEdit(){clearPoiForm()}
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
 async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
 async function signOut(){await sb.auth.signOut()}
-async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();$('poiSearch').value='';$('poiFilterCategory').value='';$('poiFilterRating').value='0';$('poiFilterExtra').value='';await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}setTimeout(()=>captainNavigate('dashboard'),0)}
+async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();resetPoiFilters(false);await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}setTimeout(()=>captainNavigate('dashboard'),0)}
 sb.auth.onAuthStateChange((_e,s)=>initialise(s));
 
 async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
@@ -260,25 +297,34 @@ async function loadPoiPhotos(){
   return grouped;
 }
 async function loadPois(){
+  if(!currentBoat)return;
+
   const [{data,error},photos]=await Promise.all([
-    sb.from('pois').select('*').eq('boat_id',currentBoat.id).order('created_at',{ascending:false}),
+    sb.from('pois')
+      .select('*')
+      .eq('boat_id',currentBoat.id)
+      .order('created_at',{ascending:false}),
     loadPoiPhotos()
   ]);
-  if(error)return alert(error.message);
+
+  if(error){
+    console.error('POI laden mislukt:',error);
+    throw error;
+  }
+
   poiCache=(data||[]).map(poi=>({
     ...poi,
     latitude:poi.latitude,
     longitude:poi.longitude,
     is_favorite:isFavoritePoi(poi)
   }));
-  poiPhotoCache=photos;
+  poiPhotoCache=photos||{};
+
   $('dPois').textContent=poiCache.length;
   updatePoiSuggestionLists();
-  data=poiCache;
-  $('poiList').innerHTML=data.length?data.map(p=>{
-    const photoHtml=(photos[p.id]||[]).map(ph=>`<div class="photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(p.name)}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="photo-delete" onclick="deletePhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
-    return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?'<span class="favorite-badge">⭐</span>':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${photoHtml?`<div class="photo-grid">${photoHtml}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>✏️ Bewerken</button></div></div>`;
-  }).join(''):'<span class="small">Nog geen POI’s.</span>';if(mapInstance)renderPoiMarkers();
+  renderPoiList();
+
+  if(mapInstance)renderPoiMarkers();
 }
 
 let pendingCostReceiptFiles=[];
@@ -892,7 +938,13 @@ async function loadCosts(){
 
 function subscribeRealtime(){if(liveChannel)sb.removeChannel(liveChannel);liveChannel=sb.channel('serenity-'+currentBoat.id).on('postgres_changes',{event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},loadPois).on('postgres_changes',{event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'cost_receipts',filter:`boat_id=eq.${currentBoat.id}`},loadCosts).on('postgres_changes',{event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},loadTrips).on('postgres_changes',{event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},loadSettings).subscribe(s=>$('dSync').textContent=s==='SUBSCRIBED'?'Live':'…')}
 
-function resetPoiFilters(){$('poiSearch').value='';$('poiFilterCategory').value='';$('poiFilterRating').value='0';$('poiFilterExtra').value='';renderPoiList()}
+function resetPoiFilters(render=true){
+  if($('poiSearch'))$('poiSearch').value='';
+  if($('poiFilterCategory'))$('poiFilterCategory').value='';
+  if($('poiFilterRating'))$('poiFilterRating').value='0';
+  if($('poiFilterExtra'))$('poiFilterExtra').value='';
+  if(render)renderPoiList();
+}
 function renderPoiList(){if(!$('poiList'))return;const q=($('poiSearch')?.value||'').toLowerCase(),cat=$('poiFilterCategory')?.value||'',rating=Number($('poiFilterRating')?.value||0),extra=$('poiFilterExtra')?.value||'';const f=poiCache.filter(p=>{const h=[p.name,p.place,p.review,p.category].join(' ').toLowerCase();return(!q||h.includes(q))&&(!cat||p.category===cat)&&(!rating||Number(p.rating||0)>=rating)&&(extra!=='favorite'||p.is_favorite)&&(extra!=='photos'||(poiPhotoCache[p.id]||[]).length)&&(extra!=='notes'||String(p.review||'').trim())});$('poiList').innerHTML=f.length?f.map(p=>{const ph=(poiPhotoCache[p.id]||[]).map(x=>`<div class="photo-wrap"><img src="${esc(x.url)}" onclick="openLightbox(${JSON.stringify(x.url)})"><button class="photo-delete" onclick="deletePhoto('${x.id}','${esc(x.storage_path)}')">×</button></div>`).join('');return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${ph?`<div class="photo-grid">${ph}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>Bewerken</button><button class="danger" onclick="deletePoi('${p.id}')">Verwijderen</button></div></div>`}).join(''):'<span class="small">Geen POI’s gevonden.</span>'}
 async function loadSettings(){
   if(!currentBoat)return;
@@ -2054,6 +2106,13 @@ function captainNavigate(id, sourceButton=null){
   if(id==='live' && typeof initLiveMode==='function')setTimeout(()=>initLiveMode(),80);
   if(id==='map' && typeof initMap==='function')setTimeout(()=>initMap(),80);
   if(id==='dashboard' && typeof updateLatestRouteDashboard==='function')setTimeout(()=>updateLatestRouteDashboard(),80);
+  if(id==='pois'){
+    resetPoiFilters(false);
+    renderPoiList();
+    if(currentBoat){
+      loadPois().catch(error=>console.error('POI opnieuw laden mislukt:',error));
+    }
+  }
   if(id==='finance' && typeof renderFinance==='function')renderFinance();
   if(id==='settings'){
     if(typeof loadSettingsForm==='function')loadSettingsForm();
@@ -2622,7 +2681,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.13';
+const APP_VERSION='5.1.14';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

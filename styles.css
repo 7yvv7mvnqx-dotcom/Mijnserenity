@@ -992,3 +992,19 @@ header{
 #financeFilterWrap > .secondary{
   margin-top:8px;
 }
+
+/* Cloud 5.1.14 — betrouwbare verversknop en POI-reset */
+.dashboard-status-button{
+  cursor:pointer;
+  touch-action:manipulation;
+  position:relative;
+  z-index:2;
+}
+.dashboard-status-button:disabled{
+  opacity:.72;
+  cursor:wait;
+}
+.dashboard-status-button.is-refreshing .value{
+  display:inline-block;
+  animation:refreshSpin .75s linear infinite;
+}
