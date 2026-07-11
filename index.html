@@ -29,12 +29,38 @@
 </header>
 <main>
 <section id="authView">
-  <div class="card hero">
-    <h2>Inloggen</h2>
+  <div class="card hero auth-card">
+    <div class="auth-heading">
+      <div>
+        <span class="eyebrow">BEVEILIGDE TOEGANG</span>
+        <h2>Inloggen</h2>
+      </div>
+      <span class="auth-lock">🔐</span>
+    </div>
     <p class="small">Michel en Desi gebruiken ieder een eigen account.</p>
-    <label>E-mailadres</label><input id="email" type="email" autocomplete="email">
-    <label>Wachtwoord</label><input id="password" type="password" minlength="6" autocomplete="current-password">
-    <div class="actions"><button onclick="signIn()">Inloggen</button><button class="secondary" onclick="signUp()">Account maken</button></div>
+
+    <label for="email">E-mailadres</label>
+    <input id="email" type="email" autocomplete="email" autocapitalize="none"
+      onkeydown="handleAuthEnter(event)">
+
+    <label for="password">Wachtwoord</label>
+    <div class="password-field">
+      <input id="password" type="password" minlength="10"
+        autocomplete="current-password" onkeydown="handleAuthEnter(event)">
+      <button type="button" class="password-toggle"
+        aria-label="Wachtwoord tonen"
+        onclick="togglePasswordVisibility('password',this)">👁</button>
+    </div>
+
+    <div class="actions auth-actions">
+      <button id="signInButton" type="button" onclick="signIn()">Inloggen</button>
+      <button type="button" class="secondary" onclick="signUp()">Account maken</button>
+    </div>
+
+    <button type="button" class="auth-link-button" onclick="sendPasswordReset(false)">
+      Wachtwoord vergeten?
+    </button>
+
     <div id="authMsg" class="status small">Nog niet ingelogd.</div>
   </div>
 </section>
@@ -162,7 +188,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.34</div>
+          <div class="label">Sync · v5.1.36</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -649,11 +675,93 @@
       </div>
       <div id="dashboardPhotoMsg" class="status small hidden"></div><div class="row"><div><label>Bootnaam</label><input id="settingBoatName" value="Serenity"></div><div><label>Tankinhoud liter</label><input id="settingTankCapacity" type="number" step="1"></div></div><div class="row"><div><label>Brandstofprijs per liter €</label><input id="settingFuelPrice" type="number" step="0.01"></div><div><label>Gemiddeld verbruik per uur</label><input id="settingFuelPerHour" type="number" step="0.1"></div></div><button onclick="saveSettings()">Instellingen opslaan</button>
       <button type="button" class="secondary settings-share-button" onclick="captainNavigate('boat')">Boot delen en leden beheren</button>
-      <div id="settingsMsg" class="status small hidden"></div></div></div><div class="card"><p class="small">Geen reserveniveau. Als werkelijke liters of kosten leeg blijven, rekent MijnSerenity automatisch met vaartijd × verbruik per uur × literprijs.</p></div></section>
+      <div id="settingsMsg" class="status small hidden"></div></div></div>
+
+    <div class="card collapsible-card account-card">
+      <button id="accountPanelToggle" class="section-toggle" type="button"
+        onclick="toggleSection('accountPanelWrap',this);loadAccountManagement()">
+        <span>🔐 Account en beveiliging</span><span class="chevron">⌄</span>
+      </button>
+
+      <div id="accountPanelWrap" class="collapsible-content hidden">
+        <div class="account-heading">
+          <div>
+            <h2>Accountbeheer</h2>
+            <p class="small">Beheer je profiel, wachtwoord en actieve aanmeldingen.</p>
+          </div>
+          <span id="accountSecurityBadge" class="account-security-badge">Beveiligd</span>
+        </div>
+
+        <div class="account-info-grid">
+          <div><span>E-mailadres</span><strong id="accountEmail">–</strong></div>
+          <div><span>E-mailstatus</span><strong id="accountEmailStatus">–</strong></div>
+          <div><span>Bootrol</span><strong id="accountBoatRole">–</strong></div>
+          <div><span>Laatste login</span><strong id="accountLastSignIn">–</strong></div>
+        </div>
+
+        <div class="account-section">
+          <h3>Profielnaam</h3>
+          <label for="accountFirstName">Voornaam</label>
+          <input id="accountFirstName" autocomplete="given-name" placeholder="Bijv. Michel">
+          <button type="button" class="secondary" onclick="saveAccountProfile()">Naam opslaan</button>
+        </div>
+
+        <div class="account-section">
+          <h3>Wachtwoord wijzigen</h3>
+          <label for="accountNewPassword">Nieuw wachtwoord</label>
+          <div class="password-field">
+            <input id="accountNewPassword" type="password" minlength="10"
+              autocomplete="new-password" oninput="updatePasswordStrength()">
+            <button type="button" class="password-toggle"
+              aria-label="Wachtwoord tonen"
+              onclick="togglePasswordVisibility('accountNewPassword',this)">👁</button>
+          </div>
+
+          <label for="accountConfirmPassword">Herhaal nieuw wachtwoord</label>
+          <div class="password-field">
+            <input id="accountConfirmPassword" type="password" minlength="10"
+              autocomplete="new-password">
+            <button type="button" class="password-toggle"
+              aria-label="Wachtwoord tonen"
+              onclick="togglePasswordVisibility('accountConfirmPassword',this)">👁</button>
+          </div>
+
+          <div class="password-strength"><span id="passwordStrengthBar"></span></div>
+          <div id="passwordStrengthText" class="small">Gebruik minimaal 10 tekens.</div>
+
+          <button id="changePasswordButton" type="button" onclick="changeAccountPassword()">
+            Wachtwoord wijzigen
+          </button>
+        </div>
+
+        <div class="account-section">
+          <h3>Aanmeldingen beheren</h3>
+          <div class="account-session-actions">
+            <button type="button" class="secondary" onclick="sendPasswordReset(true)">
+              Herstelmail sturen
+            </button>
+            <button type="button" class="secondary" onclick="signOutOtherDevices()">
+              Andere apparaten uitloggen
+            </button>
+            <button type="button" class="secondary" onclick="signOutCurrentDevice()">
+              Dit apparaat uitloggen
+            </button>
+            <button type="button" class="small-danger" onclick="signOutAllDevices()">
+              Alle apparaten uitloggen
+            </button>
+          </div>
+        </div>
+
+        <div id="accountMsg" class="status small hidden"></div>
+      </div>
+    </div>
+
+    <div class="card"><p class="small">Geen reserveniveau. Als werkelijke liters of kosten leeg blijven, rekent MijnSerenity automatisch met vaartijd × verbruik per uur × literprijs.</p></div>
+  </section>
   <section id="boat" class="hidden">
     <div id="noBoatCard" class="card"><h2>Serenity koppelen</h2><p class="small">Michel maakt Serenity één keer aan. Desi gebruikt daarna de deelcode.</p><div class="row"><div><label>Bootnaam</label><input id="newBoatName" value="Serenity"><button onclick="createBoat()">Boot aanmaken</button></div><div><label>Deelcode</label><input id="joinCode" autocapitalize="characters" placeholder="Bijvoorbeeld A1B2C3"><button class="secondary" onclick="joinBoat()">Deelnemen</button></div></div></div>
     <div id="boatCard" class="card hidden"><h2 id="boatName">Serenity</h2><span class="pill" id="rolePill">Lid</span><div id="ownerInvite" class="hidden" style="margin-top:14px"><p class="small">Maak een tijdelijke deelcode voor Desi. De code blijft 7 dagen geldig.</p><button onclick="createInvite()">Deelcode maken</button><div id="inviteCode" class="invite-code"></div></div></div>
-    <div class="card"><button class="danger" onclick="signOut()">Uitloggen</button></div>
+    <div class="card"><button class="danger" onclick="signOutCurrentDevice()">Dit apparaat uitloggen</button></div>
   </section>
 </section>
 

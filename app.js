@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiLiveSuggestionResults={name:[],place:[],address:[]};
+let currentUser=null,currentBoat=null,currentRole=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]};
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -210,24 +210,49 @@ function getMatchingLocalPois(query,field='place'){
   const normalized=String(query||'').trim().toLowerCase();
   if(normalized.length<2)return [];
 
+  const words=normalized
+    .split(/\s+/)
+    .filter(word=>word.length>1);
+
   return poiCache
     .map(poi=>{
       const name=String(poi.name||'').trim();
       const place=String(poi.place||'').trim();
       const address=String(poi.address||'').trim();
       const category=String(poi.category||'POI').trim();
-      const haystack=[name,place,address,category].join(' ').toLowerCase();
+
+      const nameLower=name.toLowerCase();
+      const placeLower=place.toLowerCase();
+      const addressLower=address.toLowerCase();
+      const categoryLower=category.toLowerCase();
+      const haystack=[nameLower,placeLower,addressLower,categoryLower].join(' ');
 
       let score=0;
-      if(name.toLowerCase().startsWith(normalized))score+=100;
-      if(place.toLowerCase().startsWith(normalized))score+=90;
-      if(address.toLowerCase().startsWith(normalized))score+=70;
-      if(haystack.includes(normalized))score+=30;
-      if(field==='place'&&place)score+=10;
-      if(field==='name'&&name)score+=10;
+
+      if(nameLower===normalized)score+=180;
+      if(nameLower.startsWith(normalized))score+=120;
+      else if(nameLower.includes(normalized))score+=85;
+
+      if(placeLower===normalized)score+=115;
+      else if(placeLower.startsWith(normalized))score+=90;
+      else if(placeLower.includes(normalized))score+=65;
+
+      if(addressLower.includes(normalized))score+=45;
+
+      const allWordsMatch=words.length&&words.every(word=>haystack.includes(word));
+      if(allWordsMatch)score+=55;
+
+      const asksForHarbour=/\b(haven|jachthaven|marina)\b/.test(normalized);
+      if(asksForHarbour&&categoryLower==='haven'&&
+         words.some(word=>placeLower.includes(word)||nameLower.includes(word))){
+        score+=50;
+      }
+
+      if(score>0&&field==='name')score+=10;
+      if(score>0&&field==='place'&&place)score+=10;
 
       return {
-        _source:'local-poi',
+        _source:'saved-poi',
         _poi:poi,
         weergavenaam:name||place||'POI',
         naam:name,
@@ -240,22 +265,233 @@ function getMatchingLocalPois(query,field='place'){
     .slice(0,6);
 }
 
+
+function harbourSearchQuery(query){
+  const clean=String(query||'').trim();
+  if(!clean)return '';
+
+  return /\b(haven|jachthaven|marina)\b/i.test(clean)
+    ?`${clean}, Nederland`
+    :`${clean} jachthaven, Nederland`;
+}
+
+function harbourSuggestionTitle(result){
+  return String(
+    result?.namedetails?.['name:nl']||
+    result?.namedetails?.name||
+    result?.name||
+    String(result?.display_name||'').split(',')[0]||
+    'Haven'
+  ).trim();
+}
+
+function harbourSuggestionPlace(result){
+  const address=result?.address||{};
+  return String(
+    address.city||
+    address.town||
+    address.village||
+    address.municipality||
+    address.county||
+    ''
+  ).trim();
+}
+
+function isHarbourSuggestion(result){
+  const type=String(result?.type||'').toLowerCase();
+  const category=String(result?.category||result?.class||'').toLowerCase();
+  const extra=result?.extratags||{};
+  const text=[
+    result?.display_name,
+    result?.name,
+    result?.namedetails?.name,
+    extra?.harbour,
+    extra?.leisure,
+    extra?.seamark_type
+  ].join(' ').toLowerCase();
+
+  return type==='marina'||
+    type==='harbour'||
+    category==='leisure'&&type==='marina'||
+    extra.harbour==='yes'||
+    extra.leisure==='marina'||
+    /\b(jachthaven|marina|haven|harbour)\b/.test(text);
+}
+
+function normalizeHarbourSuggestion(result){
+  const title=harbourSuggestionTitle(result);
+  const place=harbourSuggestionPlace(result);
+  const address=result?.address||{};
+
+  const addressText=[
+    address.road,
+    address.house_number,
+    address.postcode,
+    place
+  ].filter(Boolean).join(' ').trim();
+
+  return {
+    _source:'osm-harbour',
+    _harbour:result,
+    weergavenaam:title,
+    naam:title,
+    type:`Haven${place?' · '+place:''}`,
+    place,
+    address:addressText,
+    latitude:Number(result.lat),
+    longitude:Number(result.lon)
+  };
+}
+
+function mergePoiNameSuggestions(localResults,harbourResults,query){
+  const asksForHarbour=/\b(haven|jachthaven|marina)\b/i.test(query);
+  const ordered=asksForHarbour
+    ?[...harbourResults,...localResults]
+    :[...localResults,...harbourResults];
+
+  const seen=new Set();
+
+  return ordered.filter(result=>{
+    const key=[
+      String(result.weergavenaam||'').toLowerCase(),
+      String(result.place||result._poi?.place||'').toLowerCase()
+    ].join('|');
+
+    if(!key||seen.has(key))return false;
+    seen.add(key);
+    return true;
+  }).slice(0,10);
+}
+
+async function loadPoiNameAndHarbourSuggestions(query){
+  const currentQuery=String($('poiName')?.value||'').trim();
+  if(currentQuery!==query||query.length<3)return;
+
+  const localResults=getMatchingLocalPois(query,'name');
+  const cacheKey=query.toLowerCase();
+
+  if(poiHarbourSuggestionCache.has(cacheKey)){
+    const cached=poiHarbourSuggestionCache.get(cacheKey)||[];
+    poiLiveSuggestionResults.name=mergePoiNameSuggestions(
+      localResults,
+      cached,
+      query
+    );
+    renderPoiLiveSuggestions('name');
+    return;
+  }
+
+  poiHarbourSuggestionController?.abort();
+  poiHarbourSuggestionController=new AbortController();
+
+  const wait=Math.max(
+    0,
+    1100-(Date.now()-Number(poiHarbourLastRequestAt||0))
+  );
+
+  if(wait){
+    await new Promise(resolve=>setTimeout(resolve,wait));
+  }
+
+  if(String($('poiName')?.value||'').trim()!==query)return;
+
+  try{
+    poiHarbourLastRequestAt=Date.now();
+
+    const params=new URLSearchParams({
+      q:harbourSearchQuery(query),
+      format:'jsonv2',
+      countrycodes:'nl',
+      limit:'8',
+      addressdetails:'1',
+      namedetails:'1',
+      extratags:'1',
+      'accept-language':'nl'
+    });
+
+    const response=await fetch(
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+      {
+        headers:{Accept:'application/json'},
+        signal:poiHarbourSuggestionController.signal
+      }
+    );
+
+    if(!response.ok){
+      throw new Error(`Havenzoekdienst gaf fout ${response.status}`);
+    }
+
+    const payload=await response.json();
+    const harbourResults=(Array.isArray(payload)?payload:[])
+      .filter(isHarbourSuggestion)
+      .map(normalizeHarbourSuggestion)
+      .filter(result=>
+        result.weergavenaam&&
+        Number.isFinite(result.latitude)&&
+        Number.isFinite(result.longitude)
+      );
+
+    poiHarbourSuggestionCache.set(cacheKey,harbourResults);
+
+    if(String($('poiName')?.value||'').trim()!==query)return;
+
+    poiLiveSuggestionResults.name=mergePoiNameSuggestions(
+      localResults,
+      harbourResults,
+      query
+    );
+    renderPoiLiveSuggestions('name');
+  }catch(error){
+    if(error?.name==='AbortError')return;
+    console.warn('Online havensuggesties laden mislukt:',error);
+
+    poiLiveSuggestionResults.name=localResults;
+    renderPoiLiveSuggestions('name');
+  }
+}
+
+function selectHarbourSuggestion(result){
+  if(!result)return;
+
+  $('poiName').value=result.weergavenaam||result.naam||'';
+  $('poiCategory').value='Haven';
+  $('poiPlace').value=result.place||'';
+  $('poiAddress').value=result.address||'';
+
+  if(Number.isFinite(result.latitude)){
+    $('poiLatitude').value=result.latitude.toFixed(7);
+  }
+  if(Number.isFinite(result.longitude)){
+    $('poiLongitude').value=result.longitude.toFixed(7);
+  }
+
+  $('poiNameLiveSuggestions')?.classList.add('hidden');
+  showAppToast(`Haven ${result.weergavenaam||''} overgenomen ✅`);
+}
+
 function schedulePoiNameSuggestions(immediate=false){
   clearTimeout(poiNameSuggestionTimer);
 
   const query=String($('poiName')?.value||'').trim();
   const panel=$('poiNameLiveSuggestions');
 
+  poiHarbourSuggestionController?.abort();
+
   if(query.length<2){
     panel?.classList.add('hidden');
     if(panel)panel.innerHTML='';
+    poiLiveSuggestionResults.name=[];
     return;
   }
 
-  poiNameSuggestionTimer=setTimeout(()=>{
-    poiLiveSuggestionResults.name=getMatchingLocalPois(query,'name');
-    renderPoiLiveSuggestions('name');
-  },immediate?0:180);
+  const localResults=getMatchingLocalPois(query,'name');
+  poiLiveSuggestionResults.name=localResults;
+  renderPoiLiveSuggestions('name');
+
+  poiNameSuggestionTimer=setTimeout(
+    ()=>loadPoiNameAndHarbourSuggestions(query),
+    immediate?650:850
+  );
 }
 
 function selectLocalPoiSuggestion(field,result){
@@ -389,26 +625,40 @@ function renderPoiLiveSuggestions(field){
   if(!panel)return;
 
   if(!results.length){
-    panel.innerHTML='<div class="poi-live-loading">Geen passende suggesties gevonden.</div>';
+    panel.innerHTML=field==='name'
+      ?'<div class="poi-live-loading">Passende POI’s en havens zoeken…</div>'
+      :'<div class="poi-live-loading">Geen passende suggesties gevonden.</div>';
     panel.classList.remove('hidden');
     return;
   }
 
   panel.innerHTML=results.map((result,index)=>{
-    const local=result._source==='local-poi';
+    const saved=result._source==='saved-poi'||result._source==='local-poi';
+    const harbour=result._source==='osm-harbour';
     const title=result.weergavenaam||result.naam||'Locatie';
-    const subtitle=local
-      ?`Eigen POI · ${result.type||''}`
-      :(result.type||'Plaats of adres');
+    const subtitle=harbour
+      ?result.type||'Haven'
+      :saved
+        ?result.type||'Opgeslagen POI'
+        :result.type||'Plaats of adres';
 
     return `
-      <button type="button" class="${local?'local-poi-suggestion':''}"
+      <button type="button"
+        class="${saved?'local-poi-suggestion ':''}${harbour?'harbour-suggestion':''}"
         onclick="selectPoiLocationSuggestion('${field}',${index})">
         <b>${esc(title)}</b>
         <span>${esc(subtitle)}</span>
       </button>
     `;
   }).join('');
+
+  if(field==='name'&&results.some(result=>result._source==='osm-harbour')){
+    panel.innerHTML+=`
+      <div class="poi-suggestion-attribution">
+        Havens via OpenStreetMap
+      </div>
+    `;
+  }
 
   panel.classList.remove('hidden');
 }
@@ -458,8 +708,13 @@ async function selectPoiLocationSuggestion(field,index){
   const result=(poiLiveSuggestionResults[field]||[])[index];
   if(!result)return;
 
-  if(result._source==='local-poi'){
+  if(result._source==='saved-poi'||result._source==='local-poi'){
     selectLocalPoiSuggestion(field,result);
+    return;
+  }
+
+  if(result._source==='osm-harbour'){
+    selectHarbourSuggestion(result);
     return;
   }
 
@@ -628,6 +883,7 @@ function clearPoiForm(closePanel=true){
   clearTimeout(poiNameSuggestionTimer);
   clearTimeout(poiLocationSuggestionTimer);
   poiLocationSuggestionController?.abort();
+  poiHarbourSuggestionController?.abort();
   poiLiveSuggestionResults={name:[],place:[],address:[]};
   poiOnlineSuggestionResults=[];
   setPoiProgress('');
@@ -649,10 +905,346 @@ function cancelPoiEdit(){
   clearPoiForm(true);
 }
 async function signUp(){const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6)return setMsg('Vul een geldig e-mailadres en minimaal 6 tekens als wachtwoord in.');const {data,error}=await sb.auth.signUp({email,password});if(error)return setMsg(error.message);setMsg(data.session?'Account gemaakt en ingelogd.':'Account gemaakt. Open de bevestigingsmail en log daarna in.')}
-async function signIn(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)setMsg(error.message)}
-async function signOut(){await sb.auth.signOut()}
+
+function setAccountMsg(message,isError=false){
+  const element=$('accountMsg');
+  if(!element)return;
+  element.textContent=message||'';
+  element.classList.toggle('hidden',!message);
+  element.classList.toggle('account-error',!!isError);
+}
+
+function friendlyAuthError(error){
+  const message=String(error?.message||'').toLowerCase();
+
+  if(message.includes('invalid login credentials')){
+    return 'Inloggen mislukt. Controleer e-mailadres en wachtwoord.';
+  }
+  if(message.includes('email not confirmed')){
+    return 'Bevestig eerst je e-mailadres via de ontvangen e-mail.';
+  }
+  if(message.includes('rate limit')||message.includes('too many')){
+    return 'Te veel pogingen. Wacht even en probeer het daarna opnieuw.';
+  }
+  if(message.includes('password')){
+    return 'Het wachtwoord voldoet niet aan de beveiligingseisen.';
+  }
+
+  return error?.message||'Er ging iets mis. Probeer het opnieuw.';
+}
+
+function handleAuthEnter(event){
+  if(event.key!=='Enter')return;
+  event.preventDefault();
+  signIn();
+}
+
+function togglePasswordVisibility(inputId,button){
+  const input=$(inputId);
+  if(!input)return;
+
+  const showing=input.type==='text';
+  input.type=showing?'password':'text';
+  button.textContent=showing?'👁':'🙈';
+  button.setAttribute(
+    'aria-label',
+    showing?'Wachtwoord tonen':'Wachtwoord verbergen'
+  );
+}
+
+function passwordStrengthScore(password){
+  const value=String(password||'');
+  let score=0;
+
+  if(value.length>=10)score++;
+  if(value.length>=14)score++;
+  if(/[a-z]/.test(value)&&/[A-Z]/.test(value))score++;
+  if(/\d/.test(value))score++;
+  if(/[^A-Za-z0-9]/.test(value))score++;
+
+  return Math.min(4,score);
+}
+
+function updatePasswordStrength(){
+  const password=$('accountNewPassword')?.value||'';
+  const score=passwordStrengthScore(password);
+  const bar=$('passwordStrengthBar');
+  const text=$('passwordStrengthText');
+  const labels=[
+    'Gebruik minimaal 10 tekens.',
+    'Zwak wachtwoord',
+    'Redelijk wachtwoord',
+    'Sterk wachtwoord',
+    'Zeer sterk wachtwoord'
+  ];
+
+  if(bar){
+    bar.style.width=password?`${score*25}%`:'0%';
+    bar.dataset.score=String(score);
+  }
+  if(text)text.textContent=labels[score];
+}
+
+function formatAccountDate(value){
+  if(!value)return 'Onbekend';
+
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return 'Onbekend';
+
+  return date.toLocaleString('nl-NL',{
+    day:'2-digit',
+    month:'2-digit',
+    year:'numeric',
+    hour:'2-digit',
+    minute:'2-digit'
+  });
+}
+
+async function signIn(){
+  const email=String($('email')?.value||'').trim();
+  const password=$('password')?.value||'';
+  const button=$('signInButton');
+
+  if(!email||!password){
+    return setMsg('Vul e-mailadres en wachtwoord in.');
+  }
+
+  try{
+    button.disabled=true;
+    setMsg('Veilig inloggen…');
+
+    const {error}=await sb.auth.signInWithPassword({email,password});
+    if(error)throw error;
+
+    $('password').value='';
+  }catch(error){
+    console.error('Inloggen mislukt:',error);
+    setMsg(friendlyAuthError(error));
+  }finally{
+    button.disabled=false;
+  }
+}
+
+async function signUp(){
+  const email=String($('email')?.value||'').trim();
+  const password=$('password')?.value||'';
+
+  if(!email||password.length<10){
+    return setMsg('Vul een geldig e-mailadres en minimaal 10 tekens als wachtwoord in.');
+  }
+
+  if(passwordStrengthScore(password)<2){
+    return setMsg('Gebruik een sterker wachtwoord met cijfers en verschillende tekens.');
+  }
+
+  try{
+    setMsg('Account aanmaken…');
+
+    const {data,error}=await sb.auth.signUp({email,password});
+    if(error)throw error;
+
+    setMsg(
+      data.session
+        ?'Account gemaakt en ingelogd.'
+        :'Account gemaakt. Open de bevestigingsmail en log daarna in.'
+    );
+  }catch(error){
+    console.error('Account maken mislukt:',error);
+    setMsg(friendlyAuthError(error));
+  }
+}
+
+async function signOut(){
+  await signOutCurrentDevice();
+}
+
+async function loadAccountManagement(){
+  if(!currentUser)return;
+
+  try{
+    const {data,error}=await sb.auth.getUser();
+    if(error)throw error;
+
+    currentUser=data.user||currentUser;
+    const metadata=currentUser.user_metadata||{};
+
+    $('accountEmail').textContent=currentUser.email||'–';
+    $('accountEmailStatus').textContent=currentUser.email_confirmed_at
+      ?'Bevestigd ✅'
+      :'Nog niet bevestigd';
+    $('accountBoatRole').textContent=currentRole==='owner'
+      ?'Eigenaar'
+      :currentRole==='member'
+        ?'Lid'
+        :'Geen boot gekoppeld';
+    $('accountLastSignIn').textContent=formatAccountDate(
+      currentUser.last_sign_in_at
+    );
+    $('accountFirstName').value=
+      metadata.first_name||
+      metadata.given_name||
+      getLoggedInFirstName()||
+      '';
+
+    $('accountSecurityBadge').textContent=currentUser.email_confirmed_at
+      ?'Beveiligd'
+      :'E-mail controleren';
+    $('accountSecurityBadge').classList.toggle(
+      'warning',
+      !currentUser.email_confirmed_at
+    );
+
+    setAccountMsg('');
+  }catch(error){
+    console.error('Accountgegevens laden mislukt:',error);
+    setAccountMsg(friendlyAuthError(error),true);
+  }
+}
+
+async function saveAccountProfile(){
+  const firstName=String($('accountFirstName')?.value||'').trim();
+
+  if(firstName.length<2){
+    return setAccountMsg('Vul een geldige voornaam in.',true);
+  }
+
+  try{
+    setAccountMsg('Profielnaam opslaan…');
+
+    const {data,error}=await sb.auth.updateUser({
+      data:{
+        ...(currentUser?.user_metadata||{}),
+        first_name:firstName
+      }
+    });
+
+    if(error)throw error;
+
+    currentUser=data.user||currentUser;
+    $('welcome').textContent='Welkom '+getLoggedInFirstName();
+    setAccountMsg('Profielnaam opgeslagen ✅');
+  }catch(error){
+    console.error('Profielnaam opslaan mislukt:',error);
+    setAccountMsg(friendlyAuthError(error),true);
+  }
+}
+
+async function changeAccountPassword(){
+  const password=$('accountNewPassword')?.value||'';
+  const confirmation=$('accountConfirmPassword')?.value||'';
+  const button=$('changePasswordButton');
+
+  if(password.length<10){
+    return setAccountMsg('Gebruik een wachtwoord van minimaal 10 tekens.',true);
+  }
+  if(password!==confirmation){
+    return setAccountMsg('De twee wachtwoorden zijn niet gelijk.',true);
+  }
+  if(passwordStrengthScore(password)<2){
+    return setAccountMsg('Kies een sterker wachtwoord met cijfers en verschillende tekens.',true);
+  }
+
+  try{
+    button.disabled=true;
+    setAccountMsg('Wachtwoord wijzigen…');
+
+    const {error}=await sb.auth.updateUser({password});
+    if(error)throw error;
+
+    $('accountNewPassword').value='';
+    $('accountConfirmPassword').value='';
+    updatePasswordStrength();
+
+    setAccountMsg('Wachtwoord gewijzigd ✅ Andere apparaten kun je hieronder uitloggen.');
+  }catch(error){
+    console.error('Wachtwoord wijzigen mislukt:',error);
+    setAccountMsg(friendlyAuthError(error),true);
+  }finally{
+    button.disabled=false;
+  }
+}
+
+async function sendPasswordReset(fromAccount=false){
+  const email=fromAccount
+    ?String(currentUser?.email||'').trim()
+    :String($('email')?.value||'').trim();
+
+  const showMessage=(message,isError=false)=>{
+    if(fromAccount)setAccountMsg(message,isError);
+    else setMsg(message);
+  };
+
+  if(!email){
+    showMessage('Vul eerst je e-mailadres in.',true);
+    return;
+  }
+
+  try{
+    showMessage('Herstelmail wordt verstuurd…');
+
+    const redirectTo=window.location.origin+window.location.pathname;
+    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error)throw error;
+
+    showMessage('Herstelmail verstuurd. Controleer ook de map Ongewenste e-mail.');
+  }catch(error){
+    console.error('Herstelmail sturen mislukt:',error);
+    showMessage(friendlyAuthError(error),true);
+  }
+}
+
+async function signOutCurrentDevice(){
+  try{
+    const {error}=await sb.auth.signOut({scope:'local'});
+    if(error)throw error;
+  }catch(error){
+    alert('Uitloggen mislukt: '+friendlyAuthError(error));
+  }
+}
+
+async function signOutOtherDevices(){
+  if(!confirm('Alle andere apparaten uitloggen, maar dit apparaat ingelogd houden?'))return;
+
+  try{
+    setAccountMsg('Andere apparaten uitloggen…');
+    const {error}=await sb.auth.signOut({scope:'others'});
+    if(error)throw error;
+    setAccountMsg('Andere apparaten zijn uitgelogd ✅');
+  }catch(error){
+    console.error('Andere apparaten uitloggen mislukt:',error);
+    setAccountMsg(friendlyAuthError(error),true);
+  }
+}
+
+async function signOutAllDevices(){
+  if(!confirm('Alle apparaten uitloggen, inclusief dit apparaat?'))return;
+
+  try{
+    const {error}=await sb.auth.signOut({scope:'global'});
+    if(error)throw error;
+  }catch(error){
+    alert('Alle apparaten uitloggen mislukt: '+friendlyAuthError(error));
+  }
+}
+
+async function handleAuthStateChange(event,session){
+  await initialise(session);
+
+  if(event==='PASSWORD_RECOVERY'&&session?.user){
+    setTimeout(()=>{
+      captainNavigate('settings');
+      setPanelCollapsed('accountPanelWrap','accountPanelToggle',false);
+      loadAccountManagement();
+      $('accountNewPassword')?.focus();
+      setAccountMsg('Kies nu een nieuw wachtwoord voor je account.');
+    },120);
+  }
+}
+
 async function initialise(session){currentUser=session?.user||null;$('authView').classList.toggle('hidden',!!currentUser);$('appView').classList.toggle('hidden',!currentUser);if(!currentUser){currentBoat=null;currentRole=null;if(liveChannel){await sb.removeChannel(liveChannel);liveChannel=null}return}$('welcome').textContent='Welkom '+getLoggedInFirstName();resetPoiFilters(false);await loadMembership();renderBoat();if(currentBoat){await Promise.all([loadSettings(),loadPois(),loadCosts(),loadTrips()]);subscribeRealtime()}$('tripCrew').value=$('tripCrew').value||'Michel, Desi';closeTripForm();collapseDefaultPanels();setTimeout(()=>captainNavigate('dashboard'),0)}
-sb.auth.onAuthStateChange((_e,s)=>initialise(s));
+sb.auth.onAuthStateChange((event,session)=>{
+  setTimeout(()=>handleAuthStateChange(event,session),0);
+});
 
 async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
 function renderBoat(){$('noBoatCard').classList.toggle('hidden',!!currentBoat);$('boatCard').classList.toggle('hidden',!currentBoat);$('dBoat').textContent=currentBoat?.name||'-';if(currentBoat){$('boatName').textContent=currentBoat.name;$('rolePill').textContent=currentRole==='owner'?'Eigenaar':'Lid';$('ownerInvite').classList.toggle('hidden',currentRole!=='owner')}}
@@ -3232,6 +3824,7 @@ function collapseDefaultPanels(section=''){
 
   if(!section||section==='settings'){
     setPanelCollapsed('settingsFormWrap','settingsFormToggle',true);
+    setPanelCollapsed('accountPanelWrap','accountPanelToggle',true);
   }
 }
 
@@ -3616,6 +4209,9 @@ function captainNavigate(id, sourceButton=null){
   if(id==='settings'){
     if(typeof loadSettingsForm==='function')loadSettingsForm();
     if(typeof loadDashboardPhoto==='function')loadDashboardPhoto();
+    if(!$('accountPanelWrap')?.classList.contains('hidden')){
+      loadAccountManagement();
+    }
   }
 }
 
@@ -4608,7 +5204,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.34';
+const APP_VERSION='5.1.36';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

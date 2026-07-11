@@ -1877,3 +1877,51 @@ header{
 .receipt-rescan-button:active{
   background:rgba(62,180,220,.20);
 }
+
+/* Cloud 5.1.35 — relevante POI- en online havensuggesties */
+.poi-live-suggestions .harbour-suggestion{
+  border-left:4px solid #30bddd;
+  background:linear-gradient(90deg,#e9fbff,#eef8ff);
+}
+.poi-live-suggestions .harbour-suggestion span{
+  color:#28647a;
+  font-weight:700;
+}
+.poi-suggestion-attribution{
+  padding:7px 11px;
+  border-top:1px solid rgba(33,105,135,.16);
+  background:#f6fbfd;
+  color:#527381;
+  font-size:10px;
+  text-align:right;
+}
+
+/* Cloud 5.1.36 — beveiligde login en accountbeheer */
+.auth-card{max-width:620px;margin-inline:auto}
+.auth-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.auth-lock{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border:1px solid rgba(99,213,244,.22);border-radius:15px;background:rgba(71,191,226,.10);font-size:23px}
+.password-field{position:relative}
+.password-field input{padding-right:54px}
+.password-toggle{position:absolute;top:50%;right:7px;width:42px;min-height:38px;padding:0;transform:translateY(-50%);border:0;background:transparent;font-size:18px}
+.auth-actions{margin-top:14px}
+.auth-link-button{width:auto;margin-top:4px;padding:7px 0;border:0;background:transparent;color:#79dafa;font-size:13px;text-decoration:underline}
+.account-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.account-heading h2{margin-bottom:3px}
+.account-security-badge{display:inline-flex;align-items:center;min-height:30px;padding:6px 10px;border:1px solid rgba(63,200,132,.40);border-radius:999px;background:rgba(63,200,132,.13);color:#bff4d5;font-size:11px;font-weight:800;white-space:nowrap}
+.account-security-badge.warning{border-color:rgba(239,177,65,.42);background:rgba(239,177,65,.13);color:#ffe1a5}
+.account-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.account-info-grid>div{display:flex;min-width:0;flex-direction:column;gap:4px;padding:11px;border:1px solid rgba(112,207,238,.14);border-radius:12px;background:rgba(255,255,255,.04)}
+.account-info-grid span{color:#91afbb;font-size:11px}
+.account-info-grid strong{overflow:hidden;color:#eefbff;font-size:13px;text-overflow:ellipsis}
+.account-section{margin-top:12px;padding:14px;border:1px solid rgba(112,207,238,.15);border-radius:14px;background:rgba(255,255,255,.035)}
+.account-section h3{margin:0 0 10px;color:#eefbff;font-size:16px}
+.account-section>button{margin-top:10px}
+.password-strength{height:7px;margin-top:10px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.08)}
+.password-strength span{display:block;width:0;height:100%;border-radius:inherit;background:#db5a62;transition:width .18s ease,background .18s ease}
+.password-strength span[data-score="2"]{background:#e8a342}
+.password-strength span[data-score="3"]{background:#5ab8df}
+.password-strength span[data-score="4"]{background:#49cb8f}
+.account-session-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.account-session-actions button{width:100%;min-height:48px}
+#accountMsg.account-error{border-color:rgba(226,83,96,.38);background:rgba(226,83,96,.14);color:#ffe2e5}
+@media(max-width:520px){.account-info-grid,.account-session-actions{grid-template-columns:1fr}}
