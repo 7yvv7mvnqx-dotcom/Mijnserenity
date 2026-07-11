@@ -956,3 +956,22 @@ header{
   font-size:10px;
   text-align:right;
 }
+
+/* Cloud 5.1.12 — bonfoto automatisch uitlezen */
+.receipt-ocr-actions{margin-top:12px}
+.receipt-ocr-actions button{width:100%}
+.receipt-ocr-status{
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:11px;
+  background:rgba(64,190,135,.16);
+  border:1px solid rgba(64,190,135,.32);
+  color:#dfffee;
+  line-height:1.45;
+}
+.receipt-ocr-status.receipt-ocr-error{
+  background:rgba(224,91,91,.14);
+  border-color:rgba(224,91,91,.35);
+  color:#ffe4e4;
+}
+.receipt-ocr-note{margin:10px 0 0}

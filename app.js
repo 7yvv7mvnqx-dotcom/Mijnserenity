@@ -283,6 +283,9 @@ async function loadPois(){
 
 let pendingCostReceiptFiles=[];
 let costReceiptPreviewUrls=[];
+let receiptOcrLibraryPromise=null;
+let receiptOcrRunning=false;
+let lastReceiptOcrText='';
 
 function setCostProgress(message){
   const element=$('costProgress');
@@ -293,6 +296,7 @@ function setCostProgress(message){
 
 function addCostReceiptFiles(fileList){
   const incoming=[...(fileList||[])];
+  const newImages=[];
 
   for(const file of incoming){
     if(pendingCostReceiptFiles.length>=3){
@@ -300,8 +304,8 @@ function addCostReceiptFiles(fileList){
       break;
     }
 
-    const isAllowed=file.type.startsWith('image/')||file.type==='application/pdf';
-    if(!isAllowed){
+    const allowed=file.type.startsWith('image/')||file.type==='application/pdf';
+    if(!allowed){
       alert(`${file.name} is geen afbeelding of PDF.`);
       continue;
     }
@@ -312,14 +316,29 @@ function addCostReceiptFiles(fileList){
     }
 
     const duplicate=pendingCostReceiptFiles.some(existing=>
-      existing.name===file.name&&existing.size===file.size&&existing.lastModified===file.lastModified
+      existing.name===file.name &&
+      existing.size===file.size &&
+      existing.lastModified===file.lastModified
     );
-    if(!duplicate)pendingCostReceiptFiles.push(file);
+
+    if(!duplicate){
+      pendingCostReceiptFiles.push(file);
+      if(file.type.startsWith('image/'))newImages.push(file);
+    }
   }
 
   $('costReceiptCamera').value='';
   $('costReceiptFiles').value='';
   renderCostReceiptPreview();
+
+  const hasImage=pendingCostReceiptFiles.some(file=>file.type.startsWith('image/'));
+  $('costOcrRetryButton')?.classList.toggle('hidden',!hasImage);
+
+  if(newImages.length){
+    scanCostReceipt(newImages[0]);
+  }else if(incoming.some(file=>file.type==='application/pdf')){
+    setCostOcrStatus('Een PDF wordt wel opgeslagen, maar automatisch uitlezen werkt alleen bij een foto.');
+  }
 }
 
 function renderCostReceiptPreview(){
@@ -359,15 +378,317 @@ function renderCostReceiptPreview(){
 function removePendingCostReceipt(index){
   pendingCostReceiptFiles.splice(index,1);
   renderCostReceiptPreview();
+  const hasImage=pendingCostReceiptFiles.some(file=>file.type.startsWith('image/'));
+  $('costOcrRetryButton')?.classList.toggle('hidden',!hasImage);
+  if(!hasImage){
+    lastReceiptOcrText='';
+    setCostOcrStatus('');
+  }
 }
 
 function resetCostReceiptSelection(){
   pendingCostReceiptFiles=[];
   costReceiptPreviewUrls.forEach(url=>URL.revokeObjectURL(url));
   costReceiptPreviewUrls=[];
+  lastReceiptOcrText='';
+
   if($('costReceiptCamera'))$('costReceiptCamera').value='';
   if($('costReceiptFiles'))$('costReceiptFiles').value='';
+
+  $('costOcrRetryButton')?.classList.add('hidden');
+  setCostOcrStatus('');
   renderCostReceiptPreview();
+}
+
+
+function setCostOcrStatus(message,isError=false){
+  const el=$('costOcrStatus');
+  if(!el)return;
+  el.textContent=message||'';
+  el.classList.toggle('hidden',!message);
+  el.classList.toggle('receipt-ocr-error',!!isError);
+}
+
+async function loadReceiptOcrLibrary(){
+  if(window.Tesseract)return window.Tesseract;
+  if(receiptOcrLibraryPromise)return receiptOcrLibraryPromise;
+
+  receiptOcrLibraryPromise=new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    script.async=true;
+    script.onload=()=>window.Tesseract
+      ?resolve(window.Tesseract)
+      :reject(new Error('OCR-bibliotheek is niet beschikbaar.'));
+    script.onerror=()=>reject(new Error('OCR-bibliotheek kon niet worden geladen.'));
+    document.head.appendChild(script);
+  });
+
+  try{
+    return await receiptOcrLibraryPromise;
+  }catch(error){
+    receiptOcrLibraryPromise=null;
+    throw error;
+  }
+}
+
+function readReceiptImage(file){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror=()=>{
+      URL.revokeObjectURL(url);
+      reject(new Error('De bonfoto kon niet worden geopend.'));
+    };
+    img.src=url;
+  });
+}
+
+async function prepareReceiptImageForOcr(file){
+  try{
+    const img=await readReceiptImage(file);
+    const maxSide=1900;
+    const scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+    const width=Math.max(1,Math.round(img.naturalWidth*scale));
+    const height=Math.max(1,Math.round(img.naturalHeight*scale));
+
+    const canvas=document.createElement('canvas');
+    canvas.width=width;
+    canvas.height=height;
+
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,width,height);
+    ctx.filter='grayscale(1) contrast(1.35)';
+    ctx.drawImage(img,0,0,width,height);
+
+    return await new Promise((resolve,reject)=>{
+      canvas.toBlob(
+        blob=>blob?resolve(blob):reject(new Error('De bonfoto kon niet worden voorbereid.')),
+        'image/jpeg',
+        .92
+      );
+    });
+  }catch(error){
+    console.warn('Voorbewerking mislukt; originele foto wordt gebruikt:',error);
+    return file;
+  }
+}
+
+function receiptLines(text){
+  return String(text||'')
+    .replace(/\r/g,'')
+    .split('\n')
+    .map(line=>line.replace(/\s+/g,' ').trim())
+    .filter(Boolean);
+}
+
+function parseReceiptMoney(raw){
+  let value=String(raw||'')
+    .replace(/[€$£]/g,'')
+    .replace(/\s/g,'')
+    .trim();
+
+  if(!value)return null;
+
+  const comma=value.lastIndexOf(',');
+  const dot=value.lastIndexOf('.');
+
+  if(comma>-1&&dot>-1){
+    value=comma>dot
+      ?value.replace(/\./g,'').replace(',','.')
+      :value.replace(/,/g,'');
+  }else if(comma>-1){
+    value=value.replace(/\./g,'').replace(',','.');
+  }else{
+    const parts=value.split('.');
+    if(parts.length>2){
+      const decimal=parts.pop();
+      value=parts.join('')+'.'+decimal;
+    }
+  }
+
+  const number=Number(value);
+  return Number.isFinite(number)&&number>0&&number<100000?number:null;
+}
+
+function extractReceiptAmount(text){
+  const lines=receiptLines(text);
+  const candidates=[];
+  const pattern=/(?:€\s*)?\d{1,5}(?:[.\s]\d{3})*[,.]\d{2}/g;
+
+  lines.forEach((line,index)=>{
+    const lower=line.toLowerCase();
+    const matches=line.match(pattern)||[];
+
+    for(const match of matches){
+      const amount=parseReceiptMoney(match);
+      if(amount===null)continue;
+
+      let score=index/Math.max(lines.length,1)*18;
+      if(/\b(eind)?totaal\b|te betalen|verschuldigd|betaald|pin(?:betaling)?|amount due|grand total/.test(lower))score+=120;
+      if(/€/.test(line))score+=12;
+      if(/\bsubtotaal\b|\bbtw\b|\bvat\b|belasting|korting|wisselgeld|contant terug/.test(lower))score-=45;
+      if(/\bdatum\b|\bdate\b|\btijd\b|\btime\b/.test(lower))score-=30;
+
+      candidates.push({amount,score,index});
+    }
+  });
+
+  if(!candidates.length)return null;
+  candidates.sort((a,b)=>b.score-a.score||b.index-a.index||b.amount-a.amount);
+  return candidates[0].amount;
+}
+
+function validReceiptDate(year,month,day){
+  const date=new Date(year,month-1,day);
+  if(date.getFullYear()!==year||date.getMonth()!==month-1||date.getDate()!==day)return null;
+
+  const tomorrow=new Date();
+  tomorrow.setDate(tomorrow.getDate()+1);
+  tomorrow.setHours(23,59,59,999);
+
+  if(date>tomorrow||year<2000)return null;
+
+  const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);
+  return local.toISOString().slice(0,10);
+}
+
+function extractReceiptDate(text){
+  const lines=receiptLines(text);
+  const candidates=[];
+
+  lines.forEach((line,index)=>{
+    const preferred=/\bdatum\b|\bdate\b|aankoopdatum|transactiedatum/.test(line.toLowerCase());
+
+    for(const match of line.matchAll(/\b(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})\b/g)){
+      const date=validReceiptDate(Number(match[1]),Number(match[2]),Number(match[3]));
+      if(date)candidates.push({date,score:(preferred?100:0)-index});
+    }
+
+    for(const match of line.matchAll(/\b(\d{1,2})[-/.](\d{1,2})[-/.](20\d{2}|\d{2})\b/g)){
+      let year=Number(match[3]);
+      if(year<100)year+=year>=70?1900:2000;
+      const date=validReceiptDate(year,Number(match[2]),Number(match[1]));
+      if(date)candidates.push({date,score:(preferred?100:0)-index});
+    }
+  });
+
+  if(!candidates.length)return null;
+  candidates.sort((a,b)=>b.score-a.score);
+  return candidates[0].date;
+}
+
+function extractReceiptMerchant(text){
+  const lines=receiptLines(text).slice(0,12);
+
+  for(const line of lines){
+    const lower=line.toLowerCase();
+    if(line.length<2||line.length>60)continue;
+    if(!/[a-zA-ZÀ-ÿ]{3}/.test(line))continue;
+    if(/bon|receipt|factuur|invoice|kassabon|betaalbewijs/.test(lower))continue;
+    if(/totaal|subtotal|subtotaal|bedrag|te betalen|btw|vat|datum|date|tijd|time/.test(lower))continue;
+    if(/www\.|https?:|@|tel(?:efoon)?|kvk|iban|transactie|terminal|kaartnummer/.test(lower))continue;
+    if(/\b\d{4}\s?[a-z]{2}\b/i.test(line))continue;
+    if(/\b(straat|weg|laan|plein|kade|haven|nummer|nr\.)\b/i.test(line)&&/\d/.test(line))continue;
+    return line.replace(/^[^a-zA-ZÀ-ÿ]+|[^a-zA-ZÀ-ÿ0-9&.' -]+$/g,'').trim();
+  }
+
+  return null;
+}
+
+function detectReceiptCategory(text){
+  const lower=String(text||'').toLowerCase();
+  const rules=[
+    ['Diesel',/\bdiesel\b|\bbrandstof\b|\bfuel\b|\btankstation\b|\bshell\b|\besso\b|\bbp\b|\btango\b|\btinq\b|\bavia\b/],
+    ['Havengeld',/\bhavengeld\b|\bjachthaven\b|\bmarina\b|\bliggeld\b|\bligplaats\b|\bpassantenhaven\b/],
+    ['Winterstalling',/\bwinterstalling\b|\bstalling\b|\bwinterberging\b/],
+    ['Onderhoud',/\bonderhoud\b|\breparatie\b|\bservice\b|\bwerkplaats\b|\bscheepswerf\b|\bmonteur\b/],
+    ['Onderdelen',/\bonderdeel\b|\bmaterialen\b|\bbouwmarkt\b|\bgamma\b|\bpraxis\b|\bkarwei\b|\bhornbach\b|\bwatersportwinkel\b/]
+  ];
+  return rules.find(([,pattern])=>pattern.test(lower))?.[0]||null;
+}
+
+function applyReceiptOcrResult(text){
+  const amount=extractReceiptAmount(text);
+  const date=extractReceiptDate(text);
+  const merchant=extractReceiptMerchant(text);
+  const category=detectReceiptCategory(text);
+  const found=[];
+
+  if(amount!==null){
+    $('costAmount').value=amount.toFixed(2);
+    found.push(`bedrag €${amount.toFixed(2).replace('.',',')}`);
+  }
+  if(date){
+    $('costDate').value=date;
+    found.push(`datum ${date.split('-').reverse().join('-')}`);
+  }
+  if(merchant){
+    if(!$('costDescription').value.trim())$('costDescription').value=merchant;
+    found.push(`omschrijving ${merchant}`);
+  }
+  if(category){
+    $('costCategory').value=category;
+    found.push(`categorie ${category}`);
+  }
+
+  setCostOcrStatus(
+    found.length
+      ?`Automatisch ingevuld: ${found.join(' · ')}. Controleer de gegevens.`
+      :'De bon is gelezen, maar er konden geen betrouwbare gegevens worden ingevuld.',
+    !found.length
+  );
+}
+
+async function scanCostReceipt(file){
+  if(!file?.type?.startsWith('image/')||receiptOcrRunning)return;
+
+  receiptOcrRunning=true;
+  $('costOcrRetryButton')?.classList.remove('hidden');
+  setCostOcrStatus('Bon voorbereiden…');
+
+  let worker=null;
+
+  try{
+    const Tesseract=await loadReceiptOcrLibrary();
+    const image=await prepareReceiptImageForOcr(file);
+
+    worker=await Tesseract.createWorker('nld',1,{
+      logger:message=>{
+        if(message.status==='recognizing text'){
+          setCostOcrStatus(`Bon lezen… ${Math.round(Number(message.progress||0)*100)}%`);
+        }else if(message.status){
+          setCostOcrStatus('Bon lezen…');
+        }
+      }
+    });
+
+    const result=await worker.recognize(image);
+    lastReceiptOcrText=String(result?.data?.text||'');
+    applyReceiptOcrResult(lastReceiptOcrText);
+  }catch(error){
+    console.error('Bon uitlezen mislukt:',error);
+    setCostOcrStatus('Automatisch uitlezen lukte niet. De foto wordt wel gewoon toegevoegd.',true);
+  }finally{
+    if(worker){
+      try{await worker.terminate()}catch(error){console.warn(error)}
+    }
+    receiptOcrRunning=false;
+  }
+}
+
+function scanFirstPendingCostReceipt(){
+  const image=pendingCostReceiptFiles.find(file=>file.type.startsWith('image/'));
+  if(!image){
+    setCostOcrStatus('Voeg eerst een foto van een bonnetje toe.',true);
+    return;
+  }
+  scanCostReceipt(image);
 }
 
 async function uploadCostReceipts(costId,files){
@@ -2139,7 +2460,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.11';
+const APP_VERSION='5.1.12';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
