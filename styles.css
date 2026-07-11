@@ -1216,3 +1216,21 @@ header{
 .record-delete-mini:active{
   transform:scale(.96);
 }
+
+/* Cloud 5.1.24 — betrouwbaar POI opslaan en lokale POI-suggesties */
+.poi-form-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+}
+.poi-form-actions button{
+  flex:1 1 140px;
+}
+.poi-live-suggestions .local-poi-suggestion{
+  background:#e8f7ff;
+  border-left:4px solid #3f72d8;
+}
+.poi-live-suggestions .local-poi-suggestion span{
+  color:#365e78;
+  font-weight:700;
+}

@@ -125,7 +125,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.23</div>
+          <div class="label">Sync · v5.1.24</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -212,7 +212,10 @@
       <input id="poiId" type="hidden">
       <div class="row">
         <div><label>Naam</label>
-          <input id="poiName" list="poiNameSuggestions" autocomplete="off">
+          <input id="poiName" list="poiNameSuggestions" autocomplete="off"
+            oninput="schedulePoiNameSuggestions()"
+            onfocus="schedulePoiNameSuggestions(true)">
+          <div id="poiNameLiveSuggestions" class="poi-live-suggestions hidden"></div>
           <datalist id="poiNameSuggestions"></datalist>
         </div>
         <div><label>Categorie</label><select id="poiCategory"><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
@@ -262,11 +265,13 @@
       <label>Foto's toevoegen</label>
       <input id="poiPhotos" type="file" accept="image/*" multiple>
       <p class="small">Je kunt foto's maken of uit je fotobibliotheek kiezen. Maximaal 6 foto's per keer.</p>
-      <div class="actions">
-        <button id="poiSaveButton" onclick="savePoi()">Opslaan</button>
-        <button id="poiCancelButton" class="secondary hidden" onclick="cancelPoiEdit()">Annuleren</button>
+      <div class="actions poi-form-actions">
+        <button id="poiSaveButton" type="button" onclick="savePoi()">Opslaan</button>
+        <button id="poiClearButton" type="button" class="secondary" onclick="resetPoiEntryForm()">Leegmaken</button>
+        <button id="poiCancelButton" type="button" class="secondary hidden" onclick="cancelPoiEdit()">Annuleren</button>
       </div>
       <div id="poiProgress" class="status small hidden"></div>
+      </div>
     </div>
     <div class="card collapsible-card">
       <button id="poiSearchToggle" class="section-toggle" type="button" onclick="toggleSection('poiSearchWrap',this)">
