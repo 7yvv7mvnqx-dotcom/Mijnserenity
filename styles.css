@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.2.1";
+  content:" · v5.2.2";
   color:#6fcfee;
   font-weight:800;
 }
@@ -2810,4 +2810,40 @@ main{
   .poi-quick-search button{
     width:100%;
   }
+}
+
+/* MijnSerenity Cloud 5.2.2 — automatische POI-verrijking en kleine havens */
+.poi-auto-info{
+  margin:10px 0 2px;
+  padding:10px 12px;
+  border-radius:12px;
+  font-size:12px;
+  line-height:1.4;
+}
+.poi-auto-info.success{
+  border:1px solid rgba(64,207,132,.25);
+  background:rgba(29,133,82,.18);
+  color:#c8f5da;
+}
+.poi-auto-info.warning{
+  border:1px solid rgba(226,180,79,.25);
+  background:rgba(143,100,21,.18);
+  color:#f5dfa8;
+}
+.poi-auto-info.error{
+  border:1px solid rgba(228,91,102,.25);
+  background:rgba(139,40,49,.18);
+  color:#ffd0d5;
+}
+.nearby-harbour-suggestion{
+  border-left-color:#d8b45c!important;
+  background:linear-gradient(
+    90deg,
+    rgba(216,180,92,.08),
+    transparent
+  )!important;
+}
+.nearby-harbour-suggestion em{
+  background:rgba(216,180,92,.14)!important;
+  color:#f0d58c!important;
 }
