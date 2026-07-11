@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.2.0";
+  content:" · v5.2.1";
   color:#6fcfee;
   font-weight:800;
 }
@@ -2737,5 +2737,77 @@ main{
   .captain-search-results{
     left:12px;
     right:12px;
+  }
+}
+
+/* MijnSerenity Cloud 5.2.1 — verbeterde POI- en havensuggesties */
+.poi-quick-search{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:8px;
+}
+.poi-quick-search button{
+  width:auto;
+  min-height:34px;
+  margin:0;
+  padding:6px 9px;
+  border:1px solid rgba(109,208,239,.16);
+  border-radius:999px;
+  background:rgba(255,255,255,.055);
+  color:#d9f2f9;
+  font-size:11px;
+  font-weight:800;
+}
+.poi-search-hint{
+  margin:7px 0 0;
+  color:#83a7b5;
+}
+.poi-live-suggestions button{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  gap:10px;
+}
+.poi-suggestion-main{
+  display:flex;
+  min-width:0;
+  flex:1;
+  flex-direction:column;
+  gap:3px;
+}
+.poi-suggestion-main b,
+.poi-suggestion-main span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.poi-live-suggestions button em{
+  flex-shrink:0;
+  padding:4px 7px;
+  border-radius:999px;
+  background:rgba(111,207,238,.12);
+  color:#84ddf7;
+  font-size:10px;
+  font-style:normal;
+  font-weight:900;
+}
+.online-poi-suggestion{
+  border-left:3px solid rgba(111,207,238,.75)!important;
+}
+.poi-suggestion-attribution{
+  padding:8px 10px;
+  color:#6f909d;
+  font-size:10px;
+  text-align:center;
+}
+@media(max-width:520px){
+  .poi-quick-search{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .poi-quick-search button{
+    width:100%;
   }
 }

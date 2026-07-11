@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="5.2.0">
-<link rel="apple-touch-icon" href="icon-192.png?v=5200">
+<meta name="mijnserenity-build" content="5.2.1">
+<link rel="apple-touch-icon" href="icon-192.png?v=5210">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=5200">
+<link rel="manifest" href="manifest.json?v=5210">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=5200">
+<link rel="stylesheet" href="styles.css?v=5210">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5200" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5210" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5200" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5210" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -236,7 +236,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=5200" alt="">
+          <img src="waterkaarten-dashboard.png?v=5210" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -318,7 +318,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v5.2.0</div>
+          <div class="label">Sync · v5.2.1</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -475,30 +475,38 @@
       <input id="poiId" type="hidden">
       <div class="row">
         <div><label>Naam</label>
-          <input id="poiName" list="poiNameSuggestions" autocomplete="off"
+          <input id="poiName" autocomplete="off" inputmode="search"
             oninput="schedulePoiNameSuggestions()"
             onfocus="schedulePoiNameSuggestions(true)">
           <div id="poiNameLiveSuggestions" class="poi-live-suggestions hidden"></div>
-          <datalist id="poiNameSuggestions"></datalist>
+          <div class="poi-quick-search" aria-label="Snel online POI zoeken">
+            <button type="button" onclick="quickPoiSearch('jachthaven','Haven')">⚓ Havens</button>
+            <button type="button" onclick="quickPoiSearch('supermarkt','Supermarkt')">🛒 Supermarkt</button>
+            <button type="button" onclick="quickPoiSearch('cafetaria','Cafetaria')">🍟 Cafetaria</button>
+            <button type="button" onclick="quickPoiSearch('tankstation','Tankstation')">⛽ Tankstation</button>
+            <button type="button" onclick="quickPoiSearch('restaurant','Restaurant')">🍽️ Restaurant</button>
+            <button type="button" onclick="quickPoiSearch('café','Café')">☕ Café</button>
+          </div>
+          <p class="small poi-search-hint">
+            Vul eerst een plaats in voor resultaten in de juiste omgeving.
+          </p>
         </div>
-        <div><label>Categorie</label><select id="poiCategory"><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
+        <div><label>Categorie</label><select id="poiCategory"><option>Haven</option><option>Brug</option><option>Sluis</option><option>Supermarkt</option><option>Cafetaria</option><option>Restaurant</option><option>Café</option><option>Tankstation</option><option>Bakker</option><option>Apotheek</option><option>Winkel</option><option>Camping</option><option>Parkeren</option><option>Toilet</option><option>Watertappunt</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
       </div>
       <div class="row">
         <div><label>Plaats</label>
-          <input id="poiPlace" list="poiPlaceSuggestions" autocomplete="off"
+          <input id="poiPlace" autocomplete="off" inputmode="search"
             oninput="schedulePoiLocationSuggestions('place')"
             onfocus="schedulePoiLocationSuggestions('place',true)">
-          <datalist id="poiPlaceSuggestions"></datalist>
           <div id="poiPlaceLiveSuggestions" class="poi-live-suggestions hidden"></div>
         </div>
         <div><label>Beoordeling 1–5</label><input id="poiRating" type="number" min="1" max="5"></div>
       </div>
       <label>Adres</label>
-      <input id="poiAddress" list="poiAddressSuggestions" autocomplete="off"
+      <input id="poiAddress" autocomplete="off" inputmode="search"
         placeholder="Straat, huisnummer, postcode en plaats"
         oninput="schedulePoiLocationSuggestions('address')"
         onfocus="schedulePoiLocationSuggestions('address',true)">
-      <datalist id="poiAddressSuggestions"></datalist>
       <div id="poiAddressLiveSuggestions" class="poi-live-suggestions hidden"></div>
       <div class="poi-suggestion-tools">
         <button type="button" class="secondary" onclick="searchPoiAddressSuggestions()">🔎 Toon suggesties</button>
@@ -543,7 +551,7 @@
       <div id="poiSearchWrap" class="collapsible-content hidden">
         <div class="row">
           <div><label>Zoeken</label><input id="poiSearch" autocomplete="off" placeholder="Naam, plaats of notitie" oninput="renderPoiList()"></div>
-          <div><label>Categorie</label><select id="poiFilterCategory" onchange="renderPoiList()"><option value="">Alle categorieën</option><option>Haven</option><option>Brug</option><option>Sluis</option><option>Restaurant</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
+          <div><label>Categorie</label><select id="poiFilterCategory" onchange="renderPoiList()"><option value="">Alle categorieën</option><option>Haven</option><option>Brug</option><option>Sluis</option><option>Supermarkt</option><option>Cafetaria</option><option>Restaurant</option><option>Café</option><option>Tankstation</option><option>Bakker</option><option>Apotheek</option><option>Winkel</option><option>Camping</option><option>Parkeren</option><option>Toilet</option><option>Watertappunt</option><option>Tankplaats</option><option>Ankerplek</option><option>Overig</option></select></div>
         </div>
         <div class="row">
           <div><label>Beoordeling minimaal</label><select id="poiFilterRating" onchange="renderPoiList()"><option value="0">Alle beoordelingen</option><option value="3">3 sterren</option><option value="4">4 sterren</option><option value="5">5 sterren</option></select></div>
@@ -1014,6 +1022,6 @@
   </div>
 </div>
 
-<script src="app.js?v=5200"></script>
+<script src="app.js?v=5210"></script>
 </body>
 </html>
