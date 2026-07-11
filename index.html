@@ -22,7 +22,7 @@
   <div class="header-title-row">
     <div>
       <h1>⚓ MijnSerenity Cloud</h1>
-      <div class="sub">Cloud 5.1 · Live Vaarmodus</div>
+      <div class="sub">Cloud 5.1.1 · Favorietenkaart</div>
     </div>
     <span id="connectionStatus" class="connection-status online">Online</span>
   </div>
@@ -187,12 +187,13 @@
       <p class="small">Toont jullie gedeelde POI's en, na toestemming, je actuele positie.</p>
       <div class="actions">
         <button onclick="locateMe()">📍 Mijn positie</button>
-        <button class="secondary" onclick="fitPoiMarkers()">Alle POI's</button>
-        <button class="secondary" onclick="toggleFavoritesOnly()">⭐ Alleen favorieten</button>
+        <button class="secondary" onclick="showAllPoiMarkers()">Alle POI's</button>
+        <button id="favoritesMapButton" class="secondary" onclick="toggleFavoritesOnly()">⭐ Alleen favorieten</button>
         <button class="waterkaarten-button" onclick="openWaterkaarten()">🧭 Open Waterkaarten</button>
       </div>
     </div>
-    <div class="card map-card"><div id="mapCanvas"></div></div>
+    <div class="card map-card"><div id="mapCanvas"></div>
+      <div id="poiMapStatus" class="status small poi-map-status"></div></div>
   </section>
 
   <section id="pois" class="hidden">

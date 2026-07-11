@@ -552,3 +552,53 @@ header{
     min-height:310px;
   }
 }
+
+/* Cloud 5.1.1 — zichtbare favorieten op de kaart */
+.poi-marker-shell{
+  background:transparent;
+  border:0;
+}
+.poi-map-marker{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  filter:drop-shadow(0 4px 6px rgba(0,0,0,.35));
+}
+.poi-map-marker.favorite{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  border:3px solid #fff;
+  background:#f5b52f;
+  color:#102a3d;
+  font-size:25px;
+  line-height:1;
+}
+.poi-map-marker.normal{
+  position:relative;
+  width:30px;
+  height:30px;
+  border-radius:50% 50% 50% 0;
+  transform:rotate(-45deg);
+  border:3px solid #fff;
+  background:#1685a8;
+}
+.poi-map-marker.normal span{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#fff;
+}
+.poi-map-status{
+  margin-top:9px;
+  min-height:20px;
+}
+.poi-map-status.warning{
+  color:#ffd88b;
+}
+#favoritesMapButton.favorites-active{
+  background:#f5b52f;
+  border-color:#f5b52f;
+  color:#102a3d;
+  font-weight:800;
+}

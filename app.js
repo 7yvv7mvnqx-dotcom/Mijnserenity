@@ -112,7 +112,15 @@ async function loadPois(){
     loadPoiPhotos()
   ]);
   if(error)return alert(error.message);
-  poiCache=data;poiPhotoCache=photos;$('dPois').textContent=data.length;
+  poiCache=(data||[]).map(poi=>({
+    ...poi,
+    latitude:poi.latitude===null||poi.latitude===''?null:Number(poi.latitude),
+    longitude:poi.longitude===null||poi.longitude===''?null:Number(poi.longitude),
+    is_favorite:isFavoritePoi(poi)
+  }));
+  poiPhotoCache=photos;
+  $('dPois').textContent=poiCache.length;
+  data=poiCache;
   $('poiList').innerHTML=data.length?data.map(p=>{
     const photoHtml=(photos[p.id]||[]).map(ph=>`<div class="photo-wrap"><img src="${esc(ph.url)}" alt="Foto van ${esc(p.name)}" onclick="openLightbox(${JSON.stringify(ph.url)})"><button class="photo-delete" onclick="deletePhoto('${ph.id}','${esc(ph.storage_path)}')">×</button></div>`).join('');
     return `<div class="item"><h3>${esc(p.name)}${p.is_favorite?'<span class="favorite-badge">⭐</span>':''}</h3><div class="small">${esc(p.category)} · ${esc(p.place)} · ${'★★★★★'.slice(0,p.rating||0)}</div>${p.address?`<div class="small">📍 ${esc(p.address)}</div>`:''}<p>${esc(p.review)}</p>${photoHtml?`<div class="photo-grid">${photoHtml}</div>`:''}<button class="delete-mini" onclick="deletePoi('${p.id}')">🗑️</button><div class="item-actions"><button class="edit-button" onclick='editPoi(${JSON.stringify(p.id)},${JSON.stringify(p.name)},${JSON.stringify(p.category)},${JSON.stringify(p.place)},${JSON.stringify(p.address)},${JSON.stringify(p.rating)},${JSON.stringify(p.review)},${JSON.stringify(!!p.is_favorite)},${JSON.stringify(p.latitude)},${JSON.stringify(p.longitude)})'>✏️ Bewerken</button></div></div>`;
@@ -321,38 +329,168 @@ function closePoiMapPicker(){
 }
 
 function initMap(){
-  if(mapInstance){setTimeout(()=>mapInstance.invalidateSize(),100);return}
-  mapInstance=L.map('mapCanvas').setView([52.5,5.75],7);
+  if(mapInstance){
+    renderPoiMarkers();
+    setTimeout(()=>{
+      mapInstance.invalidateSize({pan:false});
+      fitPoiMarkers(false);
+    },120);
+    return;
+  }
+
+  mapInstance=L.map('mapCanvas',{
+    preferCanvas:true,
+    tap:false
+  }).setView([52.5,5.75],7);
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     maxZoom:19,
-    attribution:'&copy; OpenStreetMap'
+    attribution:'&copy; OpenStreetMap',
+    keepBuffer:4
   }).addTo(mapInstance);
+
   poiLayer=L.layerGroup().addTo(mapInstance);
   renderPoiMarkers();
-  setTimeout(()=>mapInstance.invalidateSize(),150);
+
+  setTimeout(()=>{
+    mapInstance.invalidateSize({pan:false});
+    fitPoiMarkers(false);
+  },180);
 }
+
+function normalisePoiCoordinate(value,maximum){
+  const number=Number(value);
+  return Number.isFinite(number)&&Math.abs(number)<=maximum?number:null;
+}
+
+function hasPoiLocation(poi){
+  return normalisePoiCoordinate(poi?.latitude,90)!==null&&
+    normalisePoiCoordinate(poi?.longitude,180)!==null;
+}
+
+function isFavoritePoi(poi){
+  return poi?.is_favorite===true||
+    poi?.is_favorite===1||
+    poi?.is_favorite==='true'||
+    poi?.is_favorite==='1';
+}
+
+function poiMarkerIcon(poi){
+  const favorite=isFavoritePoi(poi);
+  return L.divIcon({
+    className:'poi-marker-shell',
+    html:favorite
+      ?'<div class="poi-map-marker favorite" aria-label="Favoriet">★</div>'
+      :'<div class="poi-map-marker normal" aria-label="POI"><span></span></div>',
+    iconSize:favorite?[38,38]:[30,38],
+    iconAnchor:favorite?[19,19]:[15,36],
+    popupAnchor:[0,favorite?-18:-32]
+  });
+}
+
+function updatePoiMapStatus(visiblePois){
+  const status=$('poiMapStatus');
+  const button=$('favoritesMapButton');
+  if(!status)return;
+
+  const allFavorites=poiCache.filter(isFavoritePoi);
+  const favoritesWithLocation=allFavorites.filter(hasPoiLocation);
+  const favoritesWithoutLocation=allFavorites.length-favoritesWithLocation.length;
+  const visibleWithLocation=visiblePois.filter(hasPoiLocation).length;
+
+  if(button){
+    button.classList.toggle('favorites-active',favoritesOnly);
+    button.textContent=favoritesOnly
+      ?'⭐ Favorieten zichtbaar'
+      :'⭐ Alleen favorieten';
+  }
+
+  const parts=[];
+  if(favoritesOnly){
+    parts.push(`${favoritesWithLocation.length} favoriet${favoritesWithLocation.length===1?'':'en'} op de kaart`);
+  }else{
+    parts.push(`${visibleWithLocation} POI${visibleWithLocation===1?'':'’s'} op de kaart`);
+    if(favoritesWithLocation.length){
+      parts.push(`${favoritesWithLocation.length} met gouden ster`);
+    }
+  }
+  if(favoritesWithoutLocation){
+    parts.push(`${favoritesWithoutLocation} favoriet${favoritesWithoutLocation===1?' heeft':'en hebben'} nog geen kaartlocatie`);
+  }
+
+  status.textContent=parts.join(' · ');
+  status.classList.toggle('warning',favoritesWithoutLocation>0);
+}
+
 function renderPoiMarkers(){
   if(!mapInstance||!poiLayer)return;
+
   poiLayer.clearLayers();
-  const points=[];
-  poiCache.filter(p=>!favoritesOnly||p.is_favorite).forEach(p=>{
-    if(typeof p.latitude!=='number'||typeof p.longitude!=='number')return;
-    const marker=L.marker([p.latitude,p.longitude]).addTo(poiLayer);
-    marker.bindPopup(`<div class="map-popup"><h3>${esc(p.name)}${p.is_favorite?' ⭐':''}</h3><p>${esc(p.category||'')} · ${esc(p.place||'')}</p>${p.address?`<p>📍 ${esc(p.address)}</p>`:''}<p>${esc(p.review||'')}</p></div>`);
-    points.push([p.latitude,p.longitude]);
+  const visiblePois=poiCache.filter(poi=>!favoritesOnly||isFavoritePoi(poi));
+
+  visiblePois.forEach(poi=>{
+    const lat=normalisePoiCoordinate(poi.latitude,90);
+    const lon=normalisePoiCoordinate(poi.longitude,180);
+    if(lat===null||lon===null)return;
+
+    const favorite=isFavoritePoi(poi);
+    const marker=L.marker([lat,lon],{
+      icon:poiMarkerIcon(poi),
+      zIndexOffset:favorite?1000:0,
+      riseOnHover:true
+    }).addTo(poiLayer);
+
+    marker.bindPopup(`
+      <div class="map-popup">
+        <h3>${favorite?'⭐ ':''}${esc(poi.name||'POI')}</h3>
+        <p>${esc(poi.category||'')}${poi.place?` · ${esc(poi.place)}`:''}</p>
+        ${poi.address?`<p>📍 ${esc(poi.address)}</p>`:''}
+        ${poi.review?`<p>${esc(poi.review)}</p>`:''}
+        ${favorite?'<p><b>Favoriet</b></p>':''}
+      </div>
+    `);
   });
-  if(points.length===1)mapInstance.setView(points[0],14);
+
+  updatePoiMapStatus(visiblePois);
 }
-function fitPoiMarkers(){
-  const points=poiCache.filter(p=>(!favoritesOnly||p.is_favorite)&&typeof p.latitude==='number'&&typeof p.longitude==='number').map(p=>[p.latitude,p.longitude]);
+
+function getVisiblePoiCoordinates(){
+  return poiCache
+    .filter(poi=>!favoritesOnly||isFavoritePoi(poi))
+    .filter(hasPoiLocation)
+    .map(poi=>[
+      normalisePoiCoordinate(poi.latitude,90),
+      normalisePoiCoordinate(poi.longitude,180)
+    ]);
+}
+
+function fitPoiMarkers(showEmptyMessage=true){
   if(!mapInstance)initMap();
-  if(points.length)mapInstance.fitBounds(points,{padding:[30,30],maxZoom:14});
+  const points=getVisiblePoiCoordinates();
+
+  if(points.length===1){
+    mapInstance.setView(points[0],14);
+  }else if(points.length>1){
+    mapInstance.fitBounds(points,{padding:[34,34],maxZoom:14});
+  }else if(showEmptyMessage){
+    alert(favoritesOnly
+      ?'Er zijn nog geen favorieten met een kaartlocatie.'
+      :'Er zijn nog geen POI’s met een kaartlocatie.');
+  }
 }
+
+function showAllPoiMarkers(){
+  favoritesOnly=false;
+  renderPoiMarkers();
+  fitPoiMarkers();
+}
+
 function toggleFavoritesOnly(){
   favoritesOnly=!favoritesOnly;
   renderPoiMarkers();
   fitPoiMarkers();
 }
+
 function locateMe(){
   if(!navigator.geolocation)return alert('Locatie wordt niet ondersteund.');
   navigator.geolocation.getCurrentPosition(pos=>{
@@ -1325,7 +1463,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.0';
+const APP_VERSION='5.1.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
