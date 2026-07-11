@@ -22,7 +22,7 @@
   <div class="header-title-row">
     <div>
       <h1>⚓ MijnSerenity Cloud</h1>
-      <div class="sub">Cloud 5.1.1 · Favorietenkaart</div>
+      <div class="sub">Cloud 5.1.2 · Waterkaarten-route</div>
     </div>
     <span id="connectionStatus" class="connection-status online">Online</span>
   </div>
@@ -398,6 +398,16 @@
   </div>
   <button onclick="applyAppUpdate()">Bijwerken</button>
 </div>
+
+
+<div id="poiDetailModal" class="poi-detail-modal hidden" onclick="closePoiDetails(event)">
+  <div class="poi-detail-card">
+    <button class="poi-detail-close" onclick="closePoiDetails()">×</button>
+    <div id="poiDetailContent"></div>
+  </div>
+</div>
+
+<div id="appToast" class="app-toast hidden"></div>
 
 <div id="installHelp" class="install-help hidden" onclick="closeInstallHelp(event)">
   <div class="install-help-card">

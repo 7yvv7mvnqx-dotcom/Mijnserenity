@@ -447,11 +447,118 @@ function renderPoiMarkers(){
         ${poi.address?`<p>📍 ${esc(poi.address)}</p>`:''}
         ${poi.review?`<p>${esc(poi.review)}</p>`:''}
         ${favorite?'<p><b>Favoriet</b></p>':''}
+        <div class="map-popup-actions">
+          <button onclick="openPoiRouteInWaterkaarten('${poi.id}')">🧭 Route in Waterkaarten</button>
+          <button class="secondary" onclick="showPoiDetails('${poi.id}')">Meer info</button>
+        </div>
       </div>
     `);
   });
 
   updatePoiMapStatus(visiblePois);
+}
+
+
+function getPoiById(id){
+  return poiCache.find(poi=>String(poi.id)===String(id))||null;
+}
+
+function showAppToast(message,duration=2600){
+  const toast=$('appToast');
+  if(!toast)return;
+  toast.textContent=message;
+  toast.classList.remove('hidden');
+  clearTimeout(showAppToast.timer);
+  showAppToast.timer=setTimeout(()=>toast.classList.add('hidden'),duration);
+}
+
+async function copyPoiDestination(poi){
+  const lat=normalisePoiCoordinate(poi?.latitude,90);
+  const lon=normalisePoiCoordinate(poi?.longitude,180);
+  const destination=[
+    poi?.name||'Bestemming',
+    poi?.address||poi?.place||'',
+    lat!==null&&lon!==null?`${lat.toFixed(6)}, ${lon.toFixed(6)}`:''
+  ].filter(Boolean).join(' · ');
+
+  try{
+    await navigator.clipboard.writeText(destination);
+    return true;
+  }catch(error){
+    console.warn('Bestemming kopiëren mislukt:',error);
+    return false;
+  }
+}
+
+async function openPoiRouteInWaterkaarten(id){
+  const poi=getPoiById(id);
+  if(!poi)return alert('Deze POI kon niet worden gevonden.');
+  if(!hasPoiLocation(poi))return alert('Deze favoriet heeft nog geen kaartlocatie.');
+
+  mapInstance?.closePopup();
+
+  const copied=await copyPoiDestination(poi);
+  showAppToast(
+    copied
+      ?`${poi.name||'Bestemming'} gekopieerd. Waterkaarten wordt geopend.`
+      :'Waterkaarten wordt geopend.'
+  );
+
+  setTimeout(()=>openWaterkaarten(),220);
+}
+
+function showPoiDetails(id){
+  const poi=getPoiById(id);
+  if(!poi)return;
+
+  mapInstance?.closePopup();
+
+  const favorite=isFavoritePoi(poi);
+  const photos=(poiPhotoCache?.[poi.id]||[]);
+  const stars='★★★★★'.slice(0,Math.max(0,Math.min(5,Number(poi.rating)||0)));
+  const photoHtml=photos.length
+    ?`<div class="poi-detail-photos">${photos.map(photo=>
+      `<img src="${esc(photo.url)}" alt="Foto van ${esc(poi.name||'POI')}" onclick="openLightbox(${JSON.stringify(photo.url)})">`
+    ).join('')}</div>`
+    :'';
+
+  $('poiDetailContent').innerHTML=`
+    <div class="poi-detail-heading">
+      <span class="poi-detail-icon">${favorite?'⭐':'📍'}</span>
+      <div>
+        <h2>${esc(poi.name||'POI')}</h2>
+        <p>${esc(poi.category||'')}${poi.place?` · ${esc(poi.place)}`:''}</p>
+      </div>
+    </div>
+    ${poi.address?`<div class="poi-detail-line"><b>Adres</b><span>${esc(poi.address)}</span></div>`:''}
+    ${stars?`<div class="poi-detail-line"><b>Beoordeling</b><span>${stars}</span></div>`:''}
+    ${poi.review?`<div class="poi-detail-review">${esc(poi.review)}</div>`:''}
+    ${photoHtml}
+    <div class="poi-detail-actions">
+      <button onclick="openPoiRouteInWaterkaarten('${poi.id}')">🧭 Route in Waterkaarten</button>
+      <button class="secondary" onclick='closePoiDetails();editPoi(
+        ${JSON.stringify(poi.id)},
+        ${JSON.stringify(poi.name)},
+        ${JSON.stringify(poi.category)},
+        ${JSON.stringify(poi.place)},
+        ${JSON.stringify(poi.address)},
+        ${JSON.stringify(poi.rating)},
+        ${JSON.stringify(poi.review)},
+        ${JSON.stringify(favorite)},
+        ${JSON.stringify(poi.latitude)},
+        ${JSON.stringify(poi.longitude)}
+      );captainNavigate("pois")'>✏️ Bewerken</button>
+    </div>
+  `;
+
+  $('poiDetailModal').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+
+function closePoiDetails(event){
+  if(event&&event.target!==$('poiDetailModal'))return;
+  $('poiDetailModal')?.classList.add('hidden');
+  document.body.style.overflow='';
 }
 
 function getVisiblePoiCoordinates(){
@@ -1463,7 +1570,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.1';
+const APP_VERSION='5.1.2';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
