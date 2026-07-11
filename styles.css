@@ -2243,7 +2243,83 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.1.40";
+  content:" · v5.1.41";
   color:#6fcfee;
   font-weight:800;
+}
+
+/* Cloud 5.1.41 — logo volledige breedte en onlineknop in Sync */
+.full-width-brand-header{
+  padding-left:0;
+  padding-right:0;
+}
+.full-width-brand-header .branded-header-row{
+  width:100%;
+  display:block;
+}
+.full-width-brand-header .app-brand{
+  width:100%;
+  align-items:stretch;
+}
+.full-width-brand-header .app-brand-logo{
+  width:100%;
+  max-width:none;
+  max-height:240px;
+  padding:10px 14px;
+  border-radius:0;
+  object-fit:contain;
+  box-shadow:none;
+}
+.full-width-brand-header .app-brand-edition{
+  padding:7px 16px 0;
+}
+.sync-status-stat{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.sync-status-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:4px;
+}
+.sync-online-button{
+  width:auto;
+  min-width:76px;
+  min-height:34px;
+  margin:0;
+  padding:6px 11px;
+  border:1px solid rgba(65,211,132,.45);
+  border-radius:999px;
+  background:rgba(23,116,72,.28);
+  color:#bff5d3;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+}
+.sync-online-button.offline{
+  border-color:rgba(231,85,96,.42);
+  background:rgba(134,35,45,.28);
+  color:#ffd1d5;
+}
+.sync-online-button:active{
+  transform:scale(.97);
+}
+@media(max-width:520px){
+  .full-width-brand-header .app-brand-logo{
+    width:100%;
+    max-height:205px;
+    padding:8px 10px;
+  }
+  .full-width-brand-header .app-brand-edition{
+    padding-left:12px;
+    padding-right:12px;
+  }
+  .sync-status-row{
+    align-items:flex-end;
+    flex-direction:column;
+    gap:7px;
+  }
 }

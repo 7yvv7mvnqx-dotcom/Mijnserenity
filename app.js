@@ -5718,7 +5718,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.40';
+const APP_VERSION='5.1.41';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -5795,7 +5795,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5140',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5141',{updateViaCache:'none'});
 
     await registration.update();
 

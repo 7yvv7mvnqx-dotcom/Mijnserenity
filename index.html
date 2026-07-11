@@ -8,30 +8,29 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="5.1.40">
-<link rel="apple-touch-icon" href="icon-192.png?v=5140">
+<meta name="mijnserenity-build" content="5.1.41">
+<link rel="apple-touch-icon" href="icon-192.png?v=5141">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=5140">
+<link rel="manifest" href="manifest.json?v=5141">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=5140">
+<link rel="stylesheet" href="styles.css?v=5141">
 </head>
 <body>
-<header>
+<header class="full-width-brand-header">
   <div class="header-title-row branded-header-row">
     <div class="app-brand">
-      <img class="app-brand-logo" src="mijnserenity-logo.png?v=5140" alt="MijnSerenity">
+      <img class="app-brand-logo" src="mijnserenity-logo.png?v=5141" alt="MijnSerenity">
       <div class="app-brand-edition">Cloud · Captain Edition</div>
     </div>
-    <span id="connectionStatus" class="connection-status online">Online</span>
   </div>
 </header>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5140" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=5141" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -70,7 +69,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5140" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=5141" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -145,7 +144,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=5140" alt="">
+          <img src="waterkaarten-dashboard.png?v=5141" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -226,9 +225,18 @@
           <div class="label">Ververs</div>
           <div class="value">🔄</div>
         </button>
-        <div class="stat">
-          <div class="label">Sync · v5.1.40</div>
-          <div class="value" id="dSync">Live</div>
+        <div class="stat sync-status-stat">
+          <div class="label">Sync · v5.1.41</div>
+          <div class="sync-status-row">
+            <div class="value" id="dSync">Live</div>
+            <button id="connectionStatus"
+              class="connection-status online sync-online-button"
+              type="button"
+              onclick="refreshMijnSerenity(document.getElementById('dashboardRefreshButton'))"
+              aria-label="Online status controleren en verversen">
+              Online
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -914,6 +922,6 @@
   </div>
 </div>
 
-<script src="app.js?v=5140"></script>
+<script src="app.js?v=5141"></script>
 </body>
 </html>
