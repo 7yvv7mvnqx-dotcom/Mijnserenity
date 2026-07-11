@@ -3015,7 +3015,14 @@ function createEmptyLiveState(){
     points:[],
     distanceKm:0,
     speedKmh:0,
+    maxSpeedKmh:0,
     accuracy:null,
+    engineRpm:0,
+    rudderAngle:0,
+    weather:null,
+    weatherUpdatedAt:null,
+    lastWeatherLat:null,
+    lastWeatherLon:null,
     follow:true
   };
 }
@@ -3049,6 +3056,9 @@ function restoreLiveState(){
     liveNavState={
       ...createEmptyLiveState(),
       ...saved,
+      maxSpeedKmh:Number(saved.maxSpeedKmh)||0,
+      engineRpm:Number(saved.engineRpm)||0,
+      rudderAngle:Number(saved.rudderAngle)||0,
       points:saved.points.filter(point=>
         Number.isFinite(Number(point.lat))&&
         Number.isFinite(Number(point.lon))&&
@@ -3353,13 +3363,16 @@ function renderLiveState(){
   const status=liveNavState.status;
 
   $('liveSpeedKmh').textContent=formatDecimal(liveNavState.speedKmh,1);
-  $('liveSpeedKnots').textContent=formatDecimal(liveNavState.speedKmh/1.852,1);
+  $('liveMaxSpeed').textContent=formatDecimal(liveNavState.maxSpeedKmh,1);
   $('liveDistance').textContent=formatDecimal(liveNavState.distanceKm,2);
   $('liveDuration').textContent=formatLiveDuration(elapsedMs);
   $('liveAverage').textContent=formatDecimal(average,1);
   $('liveAccuracy').textContent=Number.isFinite(Number(liveNavState.accuracy))
     ?`${Math.round(liveNavState.accuracy)} m`
     :'–';
+
+  renderLiveWeather();
+  renderLiveInstruments();
 
   const badge=$('liveRecordingBadge');
   badge.className='live-recording-badge '+status;
@@ -3511,6 +3524,206 @@ function startLiveGpsWatch(){
   );
 }
 
+
+function weatherCodeDescription(code){
+  const value=Number(code);
+  if(value===0)return 'Helder';
+  if([1,2].includes(value))return 'Licht bewolkt';
+  if(value===3)return 'Bewolkt';
+  if([45,48].includes(value))return 'Mist';
+  if([51,53,55,56,57].includes(value))return 'Motregen';
+  if([61,63,65,66,67].includes(value))return 'Regen';
+  if([71,73,75,77].includes(value))return 'Sneeuw';
+  if([80,81,82].includes(value))return 'Regenbuien';
+  if([85,86].includes(value))return 'Sneeuwbuien';
+  if([95,96,99].includes(value))return 'Onweer';
+  return 'Onbekend';
+}
+
+function weatherSummary(weather){
+  if(!weather)return 'Wachten op GPS';
+  const description=weatherCodeDescription(weather.weatherCode);
+  const wind=Number.isFinite(Number(weather.windSpeed))
+    ?`${Number(weather.windSpeed).toFixed(0)} km/u wind`
+    :'';
+  return [description,wind].filter(Boolean).join(' · ');
+}
+
+function liveWeatherDistanceKm(lat,lon){
+  if(!Number.isFinite(Number(liveNavState.lastWeatherLat))||
+     !Number.isFinite(Number(liveNavState.lastWeatherLon))){
+    return Infinity;
+  }
+
+  return haversineKm(
+    {lat:Number(liveNavState.lastWeatherLat),lon:Number(liveNavState.lastWeatherLon)},
+    {lat:Number(lat),lon:Number(lon)}
+  );
+}
+
+function renderLiveWeather(){
+  const weather=liveNavState.weather;
+
+  $('liveWeatherTemp').textContent=weather&&Number.isFinite(Number(weather.temperature))
+    ?`${Number(weather.temperature).toFixed(1)}°`
+    :'–';
+  $('liveWeatherShort').textContent=weatherSummary(weather);
+
+  $('liveWeatherTemperature').textContent=weather&&Number.isFinite(Number(weather.temperature))
+    ?`${Number(weather.temperature).toFixed(1)} °C`
+    :'–';
+  $('liveWeatherFeels').textContent=weather&&Number.isFinite(Number(weather.apparentTemperature))
+    ?`${Number(weather.apparentTemperature).toFixed(1)} °C`
+    :'–';
+  $('liveWeatherWind').textContent=weather&&Number.isFinite(Number(weather.windSpeed))
+    ?`${Number(weather.windSpeed).toFixed(1)} km/u`
+    :'–';
+  $('liveWeatherGusts').textContent=weather&&Number.isFinite(Number(weather.windGusts))
+    ?`${Number(weather.windGusts).toFixed(1)} km/u`
+    :'–';
+  $('liveWeatherRain').textContent=weather&&Number.isFinite(Number(weather.precipitation))
+    ?`${Number(weather.precipitation).toFixed(1)} mm`
+    :'–';
+  $('liveWeatherDescription').textContent=weather
+    ?weatherCodeDescription(weather.weatherCode)
+    :'Wachten op GPS';
+
+  if(weather&&liveNavState.weatherUpdatedAt){
+    const time=new Date(liveNavState.weatherUpdatedAt).toLocaleTimeString('nl-NL',{
+      hour:'2-digit',
+      minute:'2-digit'
+    });
+    $('liveWeatherStatus').textContent=`Actueel weer bij de route · bijgewerkt ${time}`;
+  }
+}
+
+async function fetchLiveWeather(lat,lon,force=false){
+  if(!Number.isFinite(Number(lat))||!Number.isFinite(Number(lon)))return;
+
+  const age=Date.now()-Number(liveNavState.weatherUpdatedAt||0);
+  const movedKm=liveWeatherDistanceKm(lat,lon);
+
+  if(!force&&liveNavState.weather&&age<15*60*1000&&movedKm<5){
+    return;
+  }
+
+  $('liveWeatherStatus').textContent='Actueel weer ophalen…';
+
+  try{
+    const params=new URLSearchParams({
+      latitude:String(Number(lat).toFixed(6)),
+      longitude:String(Number(lon).toFixed(6)),
+      current:[
+        'temperature_2m',
+        'apparent_temperature',
+        'precipitation',
+        'weather_code',
+        'wind_speed_10m',
+        'wind_gusts_10m'
+      ].join(','),
+      wind_speed_unit:'kmh',
+      timezone:'auto'
+    });
+
+    const response=await fetch(
+      `https://api.open-meteo.com/v1/forecast?${params.toString()}`,
+      {headers:{Accept:'application/json'}}
+    );
+
+    if(!response.ok){
+      throw new Error(`Weerservice gaf fout ${response.status}`);
+    }
+
+    const payload=await response.json();
+    const current=payload?.current;
+
+    if(!current){
+      throw new Error('Geen actuele weergegevens ontvangen.');
+    }
+
+    liveNavState.weather={
+      temperature:Number(current.temperature_2m),
+      apparentTemperature:Number(current.apparent_temperature),
+      precipitation:Number(current.precipitation),
+      weatherCode:Number(current.weather_code),
+      windSpeed:Number(current.wind_speed_10m),
+      windGusts:Number(current.wind_gusts_10m)
+    };
+    liveNavState.weatherUpdatedAt=Date.now();
+    liveNavState.lastWeatherLat=Number(lat);
+    liveNavState.lastWeatherLon=Number(lon);
+
+    persistLiveState();
+    renderLiveWeather();
+  }catch(error){
+    console.error('Live weer ophalen mislukt:',error);
+    $('liveWeatherStatus').textContent='Weer kon niet worden opgehaald. Tik op Weer om opnieuw te proberen.';
+  }
+}
+
+async function refreshLiveWeather(force=false){
+  const latest=liveNavState.points.at(-1);
+
+  if(latest){
+    await fetchLiveWeather(latest.lat,latest.lon,force);
+    return;
+  }
+
+  if(!navigator.geolocation){
+    $('liveWeatherStatus').textContent='Dit apparaat ondersteunt geen GPS-locatie.';
+    return;
+  }
+
+  $('liveWeatherStatus').textContent='GPS-locatie ophalen voor het weer…';
+
+  navigator.geolocation.getCurrentPosition(
+    position=>fetchLiveWeather(
+      position.coords.latitude,
+      position.coords.longitude,
+      true
+    ),
+    ()=>{$('liveWeatherStatus').textContent='Geef locatietoegang om het weer op te halen.';},
+    {enableHighAccuracy:true,maximumAge:60000,timeout:15000}
+  );
+}
+
+function formatRudderAngle(value){
+  const angle=Math.max(-35,Math.min(35,Number(value)||0));
+  if(Math.abs(angle)<1)return 'Midden';
+  return angle<0
+    ?`BB ${Math.abs(angle).toFixed(0)}°`
+    :`SB ${angle.toFixed(0)}°`;
+}
+
+function updateLiveEngineRpm(value){
+  liveNavState.engineRpm=Math.max(0,Math.min(5000,Number(value)||0));
+  persistLiveState();
+  renderLiveState();
+}
+
+function updateLiveRudderAngle(value){
+  liveNavState.rudderAngle=Math.max(-35,Math.min(35,Number(value)||0));
+  persistLiveState();
+  renderLiveState();
+}
+
+function renderLiveInstruments(){
+  const rpm=Math.max(0,Number(liveNavState.engineRpm)||0);
+  const rudder=Number(liveNavState.rudderAngle)||0;
+  const rudderText=formatRudderAngle(rudder);
+
+  $('liveEngineRpm').textContent=Math.round(rpm).toLocaleString('nl-NL');
+  $('liveRudderDisplay').textContent=rudderText;
+
+  if($('liveEngineRpmInput')&&document.activeElement!==$('liveEngineRpmInput')){
+    $('liveEngineRpmInput').value=String(Math.round(rpm));
+  }
+  if($('liveRudderInput')&&document.activeElement!==$('liveRudderInput')){
+    $('liveRudderInput').value=String(Math.round(rudder));
+  }
+  $('liveRudderInputDisplay').textContent=rudderText;
+}
+
 function handleLivePosition(position){
   if(liveNavState.status!=='active')return;
 
@@ -3546,6 +3759,10 @@ function handleLivePosition(position){
     }
 
     liveNavState.speedKmh=Number.isFinite(point.speed)?point.speed:calculatedSpeed;
+    liveNavState.maxSpeedKmh=Math.max(
+      Number(liveNavState.maxSpeedKmh)||0,
+      Number(liveNavState.speedKmh)||0
+    );
 
     // Voorkomt GPS-dwarrelen wanneer Serenity vrijwel stil ligt.
     if(segmentKm<0.004&&seconds<12){
@@ -3557,6 +3774,10 @@ function handleLivePosition(position){
     liveNavState.distanceKm+=segmentKm;
   }else{
     liveNavState.speedKmh=Number.isFinite(point.speed)?point.speed:0;
+    liveNavState.maxSpeedKmh=Math.max(
+      Number(liveNavState.maxSpeedKmh)||0,
+      Number(liveNavState.speedKmh)||0
+    );
   }
 
   liveNavState.points.push(point);
@@ -3568,6 +3789,7 @@ function handleLivePosition(position){
   persistLiveState();
   renderLiveState();
   renderLiveRoute();
+  fetchLiveWeather(point.lat,point.lon,false);
 }
 
 function handleLivePositionError(error){
@@ -3675,7 +3897,15 @@ async function saveLiveTrip(){
       crew:$('liveCrew').value.trim()||'Michel, Desi',
       notes:[
         $('liveNotes').value.trim(),
-        `Live opgenomen met MijnSerenity · ${liveNavState.points.length} GPS-punten`
+        `Live opgenomen met MijnSerenity · ${liveNavState.points.length} GPS-punten`,
+        `Max. snelheid: ${Number(liveNavState.maxSpeedKmh||0).toFixed(1)} km/u`,
+        Number(liveNavState.engineRpm)>0
+          ?`Motortoerental: ${Math.round(Number(liveNavState.engineRpm))} tpm`
+          :'',
+        `Roerstand: ${formatRudderAngle(liveNavState.rudderAngle)}`,
+        liveNavState.weather
+          ?`Weer: ${weatherCodeDescription(liveNavState.weather.weatherCode)} · ${Number(liveNavState.weather.temperature).toFixed(1)} °C · wind ${Number(liveNavState.weather.windSpeed).toFixed(1)} km/u · windstoten ${Number(liveNavState.weather.windGusts).toFixed(1)} km/u`
+          :''
       ].filter(Boolean).join('\n'),
       fuel_liters:fuelLiters?Number(fuelLiters.toFixed(2)):null,
       fuel_cost:fuelCost?Number(fuelCost.toFixed(2)):null,
@@ -3730,6 +3960,7 @@ function clearLiveTrip(){
   });
   $('liveSaveStatus').classList.add('hidden');
   $('liveGpsStatus').textContent='Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten. Open beide schermen op de iPad in Split View en laat beide schermen open totdat de reis is opgeslagen.';
+  $('liveWeatherStatus').textContent='Het weer wordt na het eerste GPS-punt automatisch opgehaald.';
   fillLiveTripDefaults(true);
   updateLiveRouteTitle();
   renderLiveState();
@@ -3746,7 +3977,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.28';
+const APP_VERSION='5.1.29';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

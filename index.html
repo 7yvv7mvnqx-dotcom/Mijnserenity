@@ -162,7 +162,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.28</div>
+          <div class="label">Sync · v5.1.29</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -191,11 +191,58 @@
 
     <div class="live-metrics">
       <div class="card live-metric"><span>Snelheid</span><strong id="liveSpeedKmh">0,0</strong><small>km/u</small></div>
-      <div class="card live-metric"><span>Snelheid</span><strong id="liveSpeedKnots">0,0</strong><small>knopen</small></div>
+      <div class="card live-metric live-metric-highlight"><span>Max. snelheid</span><strong id="liveMaxSpeed">0,0</strong><small>km/u</small></div>
       <div class="card live-metric"><span>Afstand</span><strong id="liveDistance">0,00</strong><small>km</small></div>
       <div class="card live-metric"><span>Vaartijd</span><strong id="liveDuration">00:00:00</strong><small>uur:min:sec</small></div>
       <div class="card live-metric"><span>Gemiddeld</span><strong id="liveAverage">0,0</strong><small>km/u</small></div>
       <div class="card live-metric"><span>GPS</span><strong id="liveAccuracy">–</strong><small>nauwkeurigheid</small></div>
+      <div class="card live-metric live-weather-metric">
+        <span>Weer</span><strong id="liveWeatherTemp">–</strong><small id="liveWeatherShort">Wachten op GPS</small>
+      </div>
+      <div class="card live-metric"><span>Motor</span><strong id="liveEngineRpm">0</strong><small>toeren/min</small></div>
+      <div class="card live-metric"><span>Roerstand</span><strong id="liveRudderDisplay">Midden</strong><small>graden</small></div>
+    </div>
+
+    <div class="card live-instruments-card">
+      <div class="live-instruments-head">
+        <div>
+          <h2>Weer, motor en roer</h2>
+          <p class="small">Het weer wordt via de GPS-locatie opgehaald. Toerental en roerstand vul je in de webversie handmatig in.</p>
+        </div>
+        <button type="button" class="secondary live-weather-refresh" onclick="refreshLiveWeather(true)">↻ Weer</button>
+      </div>
+
+      <div id="liveWeatherDetails" class="live-weather-details">
+        <div><span>Temperatuur</span><strong id="liveWeatherTemperature">–</strong></div>
+        <div><span>Gevoel</span><strong id="liveWeatherFeels">–</strong></div>
+        <div><span>Wind</span><strong id="liveWeatherWind">–</strong></div>
+        <div><span>Windstoten</span><strong id="liveWeatherGusts">–</strong></div>
+        <div><span>Neerslag</span><strong id="liveWeatherRain">–</strong></div>
+        <div><span>Situatie</span><strong id="liveWeatherDescription">Wachten op GPS</strong></div>
+      </div>
+      <div id="liveWeatherStatus" class="status small">Het weer wordt na het eerste GPS-punt automatisch opgehaald.</div>
+
+      <div class="live-instrument-inputs">
+        <div class="live-instrument-control">
+          <label for="liveEngineRpmInput">Motortoerental</label>
+          <div class="live-number-input">
+            <input id="liveEngineRpmInput" type="number" min="0" max="5000" step="50" value="0"
+              inputmode="numeric" oninput="updateLiveEngineRpm(this.value)">
+            <span>tpm</span>
+          </div>
+        </div>
+
+        <div class="live-instrument-control">
+          <label for="liveRudderInput">Roerstand</label>
+          <input id="liveRudderInput" type="range" min="-35" max="35" step="1" value="0"
+            oninput="updateLiveRudderAngle(this.value)">
+          <div class="rudder-scale">
+            <span>BB 35°</span><b id="liveRudderInputDisplay">Midden</b><span>SB 35°</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="small live-nmea-note">Automatisch toerental en roerstand uitlezen kan later via een geschikte NMEA2000-gegevenskoppeling.</p>
     </div>
 
     <div class="card live-map-card">

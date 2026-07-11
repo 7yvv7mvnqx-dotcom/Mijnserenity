@@ -1535,3 +1535,111 @@ header{
   background:rgba(65,198,142,.14);
   color:#dcffed;
 }
+
+/* Cloud 5.1.29 — max snelheid, weer, motor en roer; knopen verwijderd */
+.live-metric-highlight{
+  border-color:rgba(75,211,247,.34);
+  background:linear-gradient(145deg,rgba(22,77,99,.98),rgba(10,40,57,.98));
+}
+.live-weather-metric strong{
+  white-space:nowrap;
+}
+.live-instruments-card{
+  overflow:hidden;
+}
+.live-instruments-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.live-instruments-head h2{
+  margin-bottom:4px;
+}
+.live-weather-refresh{
+  width:auto;
+  min-width:82px;
+  white-space:nowrap;
+}
+.live-weather-details{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:10px;
+}
+.live-weather-details>div{
+  display:flex;
+  min-height:65px;
+  flex-direction:column;
+  justify-content:center;
+  padding:10px;
+  gap:4px;
+  border:1px solid rgba(128,209,238,.13);
+  border-radius:12px;
+  background:rgba(255,255,255,.04);
+}
+.live-weather-details span{
+  color:#9fbac6;
+  font-size:11px;
+}
+.live-weather-details strong{
+  overflow:hidden;
+  color:#eefbff;
+  font-size:14px;
+  text-overflow:ellipsis;
+}
+.live-instrument-inputs{
+  display:grid;
+  grid-template-columns:1fr 1.4fr;
+  gap:12px;
+  margin-top:13px;
+}
+.live-instrument-control{
+  padding:12px;
+  border:1px solid rgba(128,209,238,.13);
+  border-radius:14px;
+  background:rgba(255,255,255,.035);
+}
+.live-number-input{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.live-number-input input{
+  min-width:0;
+  font-size:20px;
+  font-weight:800;
+}
+.live-number-input span{
+  color:#a7c1cc;
+  font-size:12px;
+}
+#liveRudderInput{
+  width:100%;
+  margin:12px 0 8px;
+}
+.rudder-scale{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  color:#9fbac6;
+  font-size:11px;
+}
+.rudder-scale b{
+  color:#eefbff;
+  font-size:14px;
+}
+.live-nmea-note{
+  margin:12px 0 0;
+  color:#91aeb9;
+}
+@media(max-width:650px){
+  .live-weather-details{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .live-instrument-inputs{
+    grid-template-columns:1fr;
+  }
+}
