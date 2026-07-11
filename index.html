@@ -162,7 +162,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat">
-          <div class="label">Sync · v5.1.31</div>
+          <div class="label">Sync · v5.1.32</div>
           <div class="value" id="dSync">Live</div>
         </div>
       </div>
@@ -491,7 +491,17 @@
       </div>
       <div class="row">
         <div><label>Categorie</label><select id="costCategory"><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Boodschappen</option><option>Eten &amp; Drinken</option><option>Materialen</option><option>Overig</option></select></div>
-        <div><label>Omschrijving</label><input id="costDescription"></div>
+        <div><label>Omschrijving</label><input id="costDescription" placeholder="Bijv. Da Giorgio"></div>
+      </div>
+
+      <div id="costReceiptDetailsWrap" class="receipt-details-card hidden">
+        <div class="receipt-details-title">
+          <span>🧾 Details van de bon</span>
+          <button type="button" class="secondary" onclick="clearCostReceiptDetails()">Leegmaken</button>
+        </div>
+        <textarea id="costReceiptDetails" rows="8"
+          placeholder="Producten, aantallen, prijzen, adres, tafelnummer en overige informatie van de bon"></textarea>
+        <p class="small">Deze gegevens worden samen met de kostenpost opgeslagen.</p>
       </div>
 
       <div class="receipt-scan-card">
@@ -512,7 +522,7 @@
           <button id="costOcrRetryButton" type="button" class="secondary hidden" onclick="scanFirstPendingCostReceipt()">✨ Gegevens opnieuw uit bon lezen</button>
         </div>
         <div id="costOcrStatus" class="receipt-ocr-status small hidden"></div>
-        <p class="small receipt-ocr-note">Controleer bedrag, datum, categorie en omschrijving altijd vóór het opslaan.</p>
+        <p class="small receipt-ocr-note">Controleer bedrag, datum, categorie, omschrijving en bon-details altijd vóór het opslaan.</p>
       </div>
 
       <div class="cost-form-actions">

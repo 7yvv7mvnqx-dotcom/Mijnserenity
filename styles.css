@@ -1665,3 +1665,50 @@ header{
     grid-column:auto;
   }
 }
+
+/* Cloud 5.1.32 — uitgebreide bonherkenning en bon-details */
+.receipt-details-card{
+  margin:14px 0;
+  padding:14px;
+  border:1px solid rgba(94,203,237,.28);
+  border-radius:14px;
+  background:rgba(28,87,108,.28);
+}
+.receipt-details-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+  color:#f1fbff;
+  font-weight:800;
+}
+.receipt-details-title button{
+  width:auto;
+  min-width:86px;
+  padding:7px 10px;
+}
+#costReceiptDetails{
+  min-height:180px;
+  line-height:1.45;
+  white-space:pre-wrap;
+}
+.cost-details{
+  margin-top:10px;
+  border:1px solid rgba(94,203,237,.18);
+  border-radius:12px;
+  background:rgba(255,255,255,.035);
+}
+.cost-details summary{
+  padding:10px 12px;
+  cursor:pointer;
+  color:#dff7ff;
+  font-size:13px;
+  font-weight:800;
+}
+.cost-details-content{
+  padding:0 12px 12px;
+  color:#b9d0da;
+  font-size:12px;
+  line-height:1.55;
+}

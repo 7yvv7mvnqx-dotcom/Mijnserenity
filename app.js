@@ -1042,6 +1042,170 @@ async function prepareReceiptImageForOcr(file){
   }
 }
 
+
+const COST_DETAILS_MARKER='\n\n--- BONDETAILS ---\n';
+
+function splitCostDescription(value){
+  const text=String(value||'');
+  const markerIndex=text.indexOf(COST_DETAILS_MARKER);
+
+  if(markerIndex<0){
+    return {summary:text.trim(),details:''};
+  }
+
+  return {
+    summary:text.slice(0,markerIndex).trim(),
+    details:text.slice(markerIndex+COST_DETAILS_MARKER.length).trim()
+  };
+}
+
+function composeCostDescription(summary,details){
+  const cleanSummary=String(summary||'').trim();
+  const cleanDetails=String(details||'').trim();
+  return cleanDetails
+    ?`${cleanSummary}${COST_DETAILS_MARKER}${cleanDetails}`
+    :cleanSummary;
+}
+
+function costDescriptionSummary(value){
+  return splitCostDescription(value).summary||'Kostenpost';
+}
+
+function clearCostReceiptDetails(){
+  if($('costReceiptDetails'))$('costReceiptDetails').value='';
+  $('costReceiptDetailsWrap')?.classList.add('hidden');
+}
+
+function showCostReceiptDetails(details=''){
+  if($('costReceiptDetails'))$('costReceiptDetails').value=String(details||'');
+  $('costReceiptDetailsWrap')?.classList.remove('hidden');
+}
+
+function normalizeReceiptTextLine(value){
+  return String(value||'')
+    .replace(/[|]/g,'I')
+    .replace(/\s+/g,' ')
+    .replace(/^[^A-Za-zÀ-ÿ0-9€#]+/,'')
+    .replace(/[^A-Za-zÀ-ÿ0-9€#.,:/&+()' -]+$/,'')
+    .trim();
+}
+
+function extractReceiptAddress(text){
+  const lines=receiptLines(text);
+  let street='';
+  let postal='';
+
+  for(const line of lines.slice(0,18)){
+    if(!street&&/\b(straat|weg|laan|plein|markt|kade|haven|gracht|dijk|singel|boulevard)\b/i.test(line)&&/\d/.test(line)){
+      street=normalizeReceiptTextLine(line);
+    }
+
+    if(!postal){
+      const match=line.match(/\b(\d{4}\s?[A-Z]{2})\s+([A-Za-zÀ-ÿ.' -]{2,})\b/i);
+      if(match){
+        postal=`${match[1].toUpperCase().replace(/(\d{4})\s?([A-Z]{2})/,'$1 $2')} ${match[2].trim()}`;
+      }
+    }
+  }
+
+  return [street,postal].filter(Boolean).join(', ');
+}
+
+function extractReceiptReference(text){
+  const details=[];
+
+  receiptLines(text).forEach(line=>{
+    const order=line.match(/\b(bestelling|order)\s*#?\s*([A-Z0-9-]+)/i);
+    if(order){
+      const label=order[1][0].toUpperCase()+order[1].slice(1).toLowerCase();
+      details.push(`${label}: ${order[2]}`);
+    }
+
+    const table=line.match(/\btafel\s*([A-Z0-9-]+)/i);
+    if(table)details.push(`Tafel: ${table[1]}`);
+  });
+
+  return [...new Set(details)];
+}
+
+function extractReceiptItems(text){
+  const results=[];
+  const moneyPattern=/(?:€\s*)?\d{1,5}(?:[.\s]\d{3})*[,.]\d{2}/g;
+  const reject=/\b(subtotaal|totaal|te betalen|btw|vat|incl|excl|belasting|korting|wisselgeld|contant|betaald|pin|bedrag)\b/i;
+  const header=/\b(bestelling|order|tafel|manager|kassa|datum|tijd|receipt|bonnummer)\b/i;
+
+  for(const line of receiptLines(text)){
+    if(reject.test(line)||header.test(line))continue;
+
+    const matches=[...line.matchAll(moneyPattern)];
+    if(!matches.length)continue;
+
+    const first=matches[0];
+    let description=line.slice(0,first.index).trim();
+
+    description=description
+      .replace(/^\d+\s*[xX]?\s+/,'')
+      .replace(/^[^A-Za-zÀ-ÿ0-9]+/,'')
+      .replace(/\s{2,}/g,' ')
+      .trim();
+
+    if(description.length<2||description.length>80)continue;
+    if(/^(tel|www|http|markt|straat|weg|postcode|bedankt)\b/i.test(description))continue;
+
+    const amount=parseReceiptMoney(matches[matches.length-1][0]);
+    if(amount===null)continue;
+
+    const quantityMatch=line.match(/^\s*(\d+)\s+[A-Za-zÀ-ÿ]/);
+    const quantity=quantityMatch?Number(quantityMatch[1]):1;
+
+    results.push({
+      description:normalizeReceiptTextLine(description),
+      quantity,
+      amount
+    });
+  }
+
+  const unique=[];
+  const seen=new Set();
+
+  for(const item of results){
+    const key=`${item.description.toLowerCase()}|${item.amount.toFixed(2)}`;
+    if(seen.has(key))continue;
+    seen.add(key);
+    unique.push(item);
+  }
+
+  return unique.slice(0,15);
+}
+
+function buildReceiptDetails(text,{merchant,date,amount}={}){
+  const lines=[];
+  const address=extractReceiptAddress(text);
+  const references=extractReceiptReference(text);
+  const items=extractReceiptItems(text);
+
+  if(merchant)lines.push(`Zaak: ${merchant}`);
+  if(address)lines.push(`Adres: ${address}`);
+  if(date)lines.push(`Datum: ${date.split('-').reverse().join('-')}`);
+  references.forEach(reference=>lines.push(reference));
+
+  if(items.length){
+    lines.push('');
+    lines.push('Artikelen:');
+    items.forEach(item=>{
+      const quantity=item.quantity>1?`${item.quantity} × `:'';
+      lines.push(`• ${quantity}${item.description} — €${item.amount.toFixed(2).replace('.',',')}`);
+    });
+  }
+
+  if(amount!==null&&amount!==undefined){
+    lines.push('');
+    lines.push(`Totaal: €${Number(amount).toFixed(2).replace('.',',')}`);
+  }
+
+  return lines.join('\n').trim();
+}
+
 function receiptLines(text){
   return String(text||'')
     .replace(/\r/g,'')
@@ -1147,31 +1311,50 @@ function extractReceiptDate(text){
 }
 
 function extractReceiptMerchant(text){
-  const lines=receiptLines(text).slice(0,12);
+  const candidates=[];
 
-  for(const line of lines){
+  receiptLines(text).slice(0,16).forEach((rawLine,index)=>{
+    const line=normalizeReceiptTextLine(rawLine);
     const lower=line.toLowerCase();
-    if(line.length<2||line.length>60)continue;
-    if(!/[a-zA-ZÀ-ÿ]{3}/.test(line))continue;
-    if(/bon|receipt|factuur|invoice|kassabon|betaalbewijs/.test(lower))continue;
-    if(/totaal|subtotal|subtotaal|bedrag|te betalen|btw|vat|datum|date|tijd|time/.test(lower))continue;
-    if(/www\.|https?:|@|tel(?:efoon)?|kvk|iban|transactie|terminal|kaartnummer/.test(lower))continue;
-    if(/\b\d{4}\s?[a-z]{2}\b/i.test(line))continue;
-    if(/\b(straat|weg|laan|plein|kade|haven|nummer|nr\.)\b/i.test(line)&&/\d/.test(line))continue;
-    return line.replace(/^[^a-zA-ZÀ-ÿ]+|[^a-zA-ZÀ-ÿ0-9&.' -]+$/g,'').trim();
-  }
 
-  return null;
+    if(line.length<3||line.length>60)return;
+    if(!/[A-Za-zÀ-ÿ]{3}/.test(line))return;
+    if(/bon|receipt|factuur|invoice|kassabon|betaalbewijs/.test(lower))return;
+    if(/totaal|subtotal|subtotaal|bedrag|te betalen|btw|vat|datum|date|tijd|time/.test(lower))return;
+    if(/www\.|https?:|@|tel(?:efoon)?|kvk|iban|transactie|terminal|kaartnummer/.test(lower))return;
+    if(/\b\d{4}\s?[a-z]{2}\b/i.test(line))return;
+    if(/\b(straat|weg|laan|plein|markt|kade|haven)\b/i.test(line)&&/\d/.test(line))return;
+    if(/\b(bestelling|order|tafel|manager)\b/i.test(line))return;
+
+    const letters=line.match(/[A-Za-zÀ-ÿ]/g)||[];
+    const uppercase=line.match(/[A-ZÀ-Þ]/g)||[];
+    const uppercaseRatio=letters.length?uppercase.length/letters.length:0;
+    const words=line.split(/\s+/).filter(Boolean);
+
+    let score=120-index*7;
+    if(uppercaseRatio>.72)score+=55;
+    if(words.length>=2&&words.length<=5)score+=22;
+    if(line.length>=5&&line.length<=32)score+=18;
+    if(/\b(restaurant|café|cafe|bistro|brasserie|pizzeria|jachthaven|marina|shop)\b/i.test(line))score+=24;
+
+    candidates.push({merchant:line,score});
+  });
+
+  if(!candidates.length)return null;
+  candidates.sort((a,b)=>b.score-a.score);
+  return candidates[0].merchant||null;
 }
 
 function detectReceiptCategory(text){
   const lower=String(text||'').toLowerCase();
   const rules=[
+    ['Eten & Drinken',/\brestaurant\b|\bcafé\b|\bcafe\b|\bbistro\b|\bbrasserie\b|\bpizzeria\b|\bhoreca\b|\btafel\b|\bbestelling\b|\bcola\b|\bbier\b|\bbeer\b|\bwijn\b|\bwine\b|\bspaghetti\b|\bpizza\b|\bfiletto\b|\binsalata\b|\bpasta\b|\bburger\b|\bmenu\b|\bdiner\b|\blunch\b|\bkeuken\b/],
     ['Diesel',/\bdiesel\b|\bbrandstof\b|\bfuel\b|\btankstation\b|\bshell\b|\besso\b|\bbp\b|\btango\b|\btinq\b|\bavia\b/],
     ['Havengeld',/\bhavengeld\b|\bjachthaven\b|\bmarina\b|\bliggeld\b|\bligplaats\b|\bpassantenhaven\b/],
     ['Winterstalling',/\bwinterstalling\b|\bstalling\b|\bwinterberging\b/],
     ['Onderhoud',/\bonderhoud\b|\breparatie\b|\bservice\b|\bwerkplaats\b|\bscheepswerf\b|\bmonteur\b/],
-    ['Onderdelen',/\bonderdeel\b|\bmaterialen\b|\bbouwmarkt\b|\bgamma\b|\bpraxis\b|\bkarwei\b|\bhornbach\b|\bwatersportwinkel\b/]
+    ['Onderdelen',/\bonderdeel\b|\bmaterialen\b|\bbouwmarkt\b|\bgamma\b|\bpraxis\b|\bkarwei\b|\bhornbach\b|\bwatersportwinkel\b/],
+    ['Boodschappen',/\bsupermarkt\b|\balbert heijn\b|\bjumbo\b|\blidl\b|\baldi\b|\bplus\b|\bcoop\b|\bboodschappen\b/]
   ];
   return rules.find(([,pattern])=>pattern.test(lower))?.[0]||null;
 }
@@ -1181,6 +1364,8 @@ function applyReceiptOcrResult(text){
   const date=extractReceiptDate(text);
   const merchant=extractReceiptMerchant(text);
   const category=detectReceiptCategory(text);
+  const items=extractReceiptItems(text);
+  const details=buildReceiptDetails(text,{merchant,date,amount});
   const found=[];
 
   if(amount!==null){
@@ -1192,17 +1377,21 @@ function applyReceiptOcrResult(text){
     found.push(`datum ${date.split('-').reverse().join('-')}`);
   }
   if(merchant){
-    if(!$('costDescription').value.trim())$('costDescription').value=merchant;
+    $('costDescription').value=merchant;
     found.push(`omschrijving ${merchant}`);
   }
   if(category){
     $('costCategory').value=category;
     found.push(`categorie ${category}`);
   }
+  if(details){
+    showCostReceiptDetails(details);
+    if(items.length)found.push(`${items.length} artikelregels`);
+  }
 
   setCostOcrStatus(
     found.length
-      ?`Automatisch ingevuld: ${found.join(' · ')}. Controleer de gegevens.`
+      ?`Automatisch ingevuld: ${found.join(' · ')}. Controleer en corrigeer waar nodig.`
       :'De bon is gelezen, maar er konden geen betrouwbare gegevens worden ingevuld.',
     !found.length
   );
@@ -1221,7 +1410,7 @@ async function scanCostReceipt(file){
     const Tesseract=await loadReceiptOcrLibrary();
     const image=await prepareReceiptImageForOcr(file);
 
-    worker=await Tesseract.createWorker('nld',1,{
+    worker=await Tesseract.createWorker('nld+eng',1,{
       logger:message=>{
         if(message.status==='recognizing text'){
           setCostOcrStatus(`Bon lezen… ${Math.round(Number(message.progress||0)*100)}%`);
@@ -1300,11 +1489,15 @@ async function uploadCostReceipts(costId,files){
 
 
 function editCost(id,date,amount,category,description){
+  const parsed=splitCostDescription(description);
+
   $('costId').value=id;
   $('costDate').value=date||localDateISO(new Date());
   $('costAmount').value=Number(amount||0).toFixed(2);
   $('costCategory').value=category||'Overig';
-  $('costDescription').value=description||'';
+  $('costDescription').value=parsed.summary||'';
+  $('costReceiptDetails').value=parsed.details||'';
+  $('costReceiptDetailsWrap')?.classList.toggle('hidden',!parsed.details);
 
   $('costFormTitle').textContent='Kosten bewerken';
   $('costSaveButton').textContent='Wijzigingen opslaan';
@@ -1320,6 +1513,8 @@ function cancelCostEdit(){
   $('costDate').value=localDateISO(new Date());
   $('costAmount').value='';
   $('costDescription').value='';
+  $('costReceiptDetails').value='';
+  $('costReceiptDetailsWrap')?.classList.add('hidden');
   $('costCategory').value='Havengeld';
   $('costFormTitle').textContent='Kosten toevoegen';
   $('costSaveButton').textContent='Kosten opslaan';
@@ -1345,7 +1540,10 @@ async function addCost(){
     expense_date:$('costDate').value,
     amount,
     category:$('costCategory').value,
-    description:$('costDescription').value.trim()
+    description:composeCostDescription(
+      $('costDescription').value.trim(),
+      $('costReceiptDetails')?.value.trim()||''
+    )
   };
 
   $('costSaveButton').disabled=true;
@@ -1521,10 +1719,19 @@ async function loadCosts(){
   updateDashboardFinanceSummary();
 
   $('costList').innerHTML=costCache.length
-    ?costCache.map(cost=>`
-      <div class="item cost-item">
+    ?costCache.map(cost=>{
+      const parsed=splitCostDescription(cost.description);
+      const detailsHtml=parsed.details
+        ?`<details class="cost-details">
+            <summary>🧾 Bekijk bon-details</summary>
+            <div class="cost-details-content">${esc(parsed.details).replace(/\n/g,'<br>')}</div>
+          </details>`
+        :'';
+
+      return `<div class="item cost-item">
         <h3>€${Number(cost.amount).toFixed(2)} · ${esc(cost.category)}</h3>
-        <div class="small">${esc(cost.expense_date)} · ${esc(cost.description||'')}</div>
+        <div class="small">${esc(cost.expense_date)} · ${esc(parsed.summary||'')}</div>
+        ${detailsHtml}
         ${renderCostReceipts(cost.id)}
         <div class="cost-item-actions">
           <button class="cost-edit-button" onclick='editCost(
@@ -1536,8 +1743,8 @@ async function loadCosts(){
           )'>✏️ Bewerken</button>
           <button class="cost-delete-button" aria-label="Kosten verwijderen" onclick="deleteCost('${cost.id}')">🗑️</button>
         </div>
-      </div>
-    `).join('')
+      </div>`;
+    }).join('')
     :'<span class="small">Nog geen kosten.</span>';
 }
 
@@ -1811,7 +2018,7 @@ function getAllFinanceEntries(){
     id:cost.id,
     date:cost.expense_date,
     category:cost.category||'Overig',
-    description:cost.description||'Kostenpost',
+    description:costDescriptionSummary(cost.description),
     amount:Number(cost.amount||0)
   }));
 
@@ -1906,7 +2113,7 @@ function renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory){
       id:cost.id,
       date:cost.expense_date,
       category:cost.category||'Overig',
-      description:cost.description||'Kostenpost',
+      description:costDescriptionSummary(cost.description),
       amount:Number(cost.amount||0)
     })),
     ...fuelTrips.map(trip=>({
@@ -3977,7 +4184,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.31';
+const APP_VERSION='5.1.32';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
