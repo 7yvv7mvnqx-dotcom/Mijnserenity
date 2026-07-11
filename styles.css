@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.1.41";
+  content:" · v5.1.42";
   color:#6fcfee;
   font-weight:800;
 }
@@ -2322,4 +2322,12 @@ header{
     flex-direction:column;
     gap:7px;
   }
+}
+
+/* Cloud 5.1.42 — header verwijderd */
+body > header{
+  display:none!important;
+}
+main{
+  padding-top:max(10px,env(safe-area-inset-top));
 }
