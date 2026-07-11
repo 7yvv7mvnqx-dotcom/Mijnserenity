@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.2.3";
+  content:" · v5.2.4";
   color:#6fcfee;
   font-weight:800;
 }
@@ -2960,5 +2960,45 @@ main{
 @media(max-width:680px){
   .poi-web-photo-results{
     grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+/* MijnSerenity Cloud 5.2.4 — robuuste omgevingszoeker */
+.poi-nearby-toolbar{
+  display:grid;
+  grid-template-columns:auto minmax(110px,1fr);
+  align-items:center;
+  gap:9px;
+  margin-top:9px;
+}
+.poi-nearby-toolbar label{
+  margin:0;
+  color:#9bbbc7;
+  font-size:11px;
+  font-weight:800;
+}
+.poi-nearby-toolbar select{
+  height:38px;
+  margin:0;
+  padding:0 10px;
+  border-radius:12px;
+}
+.poi-quick-search .poi-nearby-all{
+  grid-column:1/-1;
+  border-color:rgba(216,180,92,.28);
+  background:rgba(216,180,92,.10);
+  color:#f1d78d;
+}
+.nearby-harbour-suggestion{
+  border-left-color:#d8b45c!important;
+  background:linear-gradient(
+    90deg,
+    rgba(216,180,92,.09),
+    transparent
+  )!important;
+}
+@media(max-width:520px){
+  .poi-nearby-toolbar{
+    grid-template-columns:1fr;
   }
 }

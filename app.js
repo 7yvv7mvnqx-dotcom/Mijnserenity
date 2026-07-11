@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null;
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map();
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -356,6 +356,514 @@ function poiOnlineIsUseful(result){
     !['yes','building','residential'].includes(type);
 }
 
+
+function nearbyPoiRadiusKm(){
+  const radius=Number($('poiNearbyRadius')?.value||15);
+  return Math.max(1,Math.min(50,radius||15));
+}
+
+function nearbyPoiCategoryLabel(category){
+  return category==='Alle'?'POI':category;
+}
+
+function nearbyPoiFragments(category,radius,latitude,longitude){
+  const around=`around:${Math.round(radius*1000)},${latitude},${longitude}`;
+  const groups={
+    Haven:[
+      `nwr(${around})["leisure"="marina"];`,
+      `nwr(${around})["harbour"];`,
+      `nwr(${around})["seamark:type"="harbour"];`,
+      `nwr(${around})["landuse"="harbour"];`,
+      `nwr(${around})["waterway"="boatyard"];`,
+      `nwr(${around})["mooring"];`
+    ],
+    Supermarkt:[
+      `nwr(${around})["shop"="supermarket"];`,
+      `nwr(${around})["shop"="convenience"];`
+    ],
+    Cafetaria:[
+      `nwr(${around})["amenity"="fast_food"];`
+    ],
+    Tankstation:[
+      `nwr(${around})["amenity"="fuel"];`
+    ],
+    Restaurant:[
+      `nwr(${around})["amenity"="restaurant"];`
+    ],
+    Café:[
+      `nwr(${around})["amenity"="cafe"];`,
+      `nwr(${around})["amenity"="pub"];`,
+      `nwr(${around})["amenity"="bar"];`
+    ],
+    Bakker:[
+      `nwr(${around})["shop"="bakery"];`
+    ],
+    Apotheek:[
+      `nwr(${around})["amenity"="pharmacy"];`,
+      `nwr(${around})["shop"="chemist"];`
+    ],
+    Camping:[
+      `nwr(${around})["tourism"="camp_site"];`,
+      `nwr(${around})["tourism"="caravan_site"];`
+    ],
+    Toilet:[
+      `nwr(${around})["amenity"="toilets"];`
+    ],
+    Watertappunt:[
+      `nwr(${around})["amenity"="drinking_water"];`
+    ],
+    Parkeren:[
+      `nwr(${around})["amenity"="parking"];`
+    ]
+  };
+
+  if(category!=='Alle'){
+    return groups[category]||[];
+  }
+
+  return [
+    ...groups.Haven,
+    ...groups.Supermarkt,
+    ...groups.Cafetaria,
+    ...groups.Tankstation,
+    ...groups.Restaurant,
+    ...groups.Café,
+    ...groups.Bakker,
+    ...groups.Apotheek,
+    ...groups.Camping,
+    ...groups.Toilet,
+    ...groups.Watertappunt
+  ];
+}
+
+function nearbyPoiFallbackTitle(category,distance,place=''){
+  const distanceText=Number.isFinite(distance)
+    ?`${distance.toLocaleString('nl-NL',{maximumFractionDigits:1})} km`
+    :'in de omgeving';
+
+  const prefix=category==='Haven'
+    ?'Kleine haven'
+    :category||'POI';
+
+  return `${prefix} · ${distanceText}${place?' · '+place:''}`;
+}
+
+function normalizeNearbyPoi(element,center){
+  const tags=element?.tags||{};
+  const latitude=Number(element?.lat??element?.center?.lat);
+  const longitude=Number(element?.lon??element?.center?.lon);
+
+  if(!Number.isFinite(latitude)||!Number.isFinite(longitude))return null;
+
+  const synthetic={
+    type:
+      tags.amenity||
+      tags.shop||
+      tags.tourism||
+      tags.leisure||
+      tags.waterway||
+      tags.harbour||
+      '',
+    category:
+      tags.amenity?'amenity':
+      tags.shop?'shop':
+      tags.tourism?'tourism':
+      tags.leisure?'leisure':
+      tags.waterway?'waterway':'',
+    display_name:tags.name||tags.operator||'',
+    name:tags.name||tags.operator||'',
+    namedetails:{name:tags['name:nl']||tags.name||tags.operator||''},
+    extratags:tags,
+    address:{
+      road:tags['addr:street']||'',
+      house_number:tags['addr:housenumber']||'',
+      postcode:tags['addr:postcode']||'',
+      city:
+        tags['addr:city']||
+        tags['addr:place']||
+        tags['addr:village']||
+        tags['is_in:city']||
+        ''
+    }
+  };
+
+  const category=poiOnlineCategory(synthetic);
+  const place=String(
+    tags['addr:city']||
+    tags['addr:place']||
+    tags['addr:village']||
+    tags['is_in:city']||
+    ''
+  ).trim();
+
+  const distance=poiDistanceKm(
+    center.latitude,
+    center.longitude,
+    latitude,
+    longitude
+  );
+
+  const explicitName=String(
+    tags['name:nl']||
+    tags.name||
+    tags.operator||
+    tags.brand||
+    ''
+  ).trim();
+
+  const name=explicitName||
+    nearbyPoiFallbackTitle(category,distance,place);
+
+  const street=[
+    tags['addr:street'],
+    tags['addr:housenumber']
+  ].filter(Boolean).join(' ').trim();
+
+  const locality=[
+    tags['addr:postcode'],
+    place
+  ].filter(Boolean).join(' ').trim();
+
+  const address=[street,locality].filter(Boolean).join(', ');
+
+  return {
+    _source:'osm-poi-nearby',
+    _onlinePoi:{
+      ...synthetic,
+      lat:String(latitude),
+      lon:String(longitude)
+    },
+    _overpassTags:tags,
+    weergavenaam:name,
+    naam:name,
+    category,
+    type:`${category} · ${distance.toLocaleString('nl-NL',{
+      maximumFractionDigits:1
+    })} km${place?' · '+place:''}`,
+    place,
+    address,
+    latitude,
+    longitude,
+    distance_km:distance,
+    has_explicit_name:!!explicitName
+  };
+}
+
+async function fetchOverpassNearby(query,signal){
+  const endpoints=[
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass.nchc.org.tw/api/interpreter'
+  ];
+
+  let lastError=null;
+
+  for(const endpoint of endpoints){
+    try{
+      const response=await fetch(endpoint,{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
+          Accept:'application/json'
+        },
+        body:new URLSearchParams({data:query}).toString(),
+        signal
+      });
+
+      if(!response.ok){
+        throw new Error(`zoekdienst gaf fout ${response.status}`);
+      }
+
+      return await response.json();
+    }catch(error){
+      if(error?.name==='AbortError')throw error;
+      lastError=error;
+      console.warn('Omgevingszoekdienst niet beschikbaar:',endpoint,error);
+    }
+  }
+
+  throw lastError||new Error('Geen omgevingszoekdienst beschikbaar.');
+}
+
+function nearbyNominatimTerms(category){
+  const terms={
+    Haven:['jachthaven','passantenhaven','marina','boothaven','haven'],
+    Supermarkt:['supermarkt','levensmiddelenwinkel'],
+    Cafetaria:['cafetaria','snackbar','fast food'],
+    Tankstation:['tankstation','benzinepomp'],
+    Restaurant:['restaurant'],
+    Café:['café','koffiebar','pub'],
+    Bakker:['bakker'],
+    Apotheek:['apotheek'],
+    Camping:['camping'],
+    Toilet:['openbaar toilet'],
+    Watertappunt:['drinkwaterpunt']
+  };
+
+  if(category==='Alle'){
+    return [
+      'jachthaven',
+      'supermarkt',
+      'cafetaria',
+      'tankstation',
+      'restaurant',
+      'café'
+    ];
+  }
+
+  return terms[category]||[category];
+}
+
+function nearbyViewbox(center,radiusKm){
+  const latitudeDelta=radiusKm/111;
+  const longitudeScale=Math.max(
+    .2,
+    Math.cos(center.latitude*Math.PI/180)
+  );
+  const longitudeDelta=radiusKm/(111*longitudeScale);
+
+  return [
+    center.longitude-longitudeDelta,
+    center.latitude+latitudeDelta,
+    center.longitude+longitudeDelta,
+    center.latitude-latitudeDelta
+  ].join(',');
+}
+
+async function fallbackNearbyPois(category,center,radius,signal){
+  const results=[];
+  const seen=new Set();
+  const terms=nearbyNominatimTerms(category).slice(0,6);
+
+  for(const term of terms){
+    const wait=Math.max(
+      0,
+      1100-(Date.now()-Number(poiHarbourLastRequestAt||0))
+    );
+    if(wait)await new Promise(resolve=>setTimeout(resolve,wait));
+
+    poiHarbourLastRequestAt=Date.now();
+
+    const params=new URLSearchParams({
+      q:term,
+      format:'jsonv2',
+      countrycodes:'nl',
+      limit:'20',
+      bounded:'1',
+      viewbox:nearbyViewbox(center,radius),
+      addressdetails:'1',
+      namedetails:'1',
+      extratags:'1',
+      dedupe:'1',
+      'accept-language':'nl'
+    });
+
+    const response=await fetch(
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+      {headers:{Accept:'application/json'},signal}
+    );
+
+    if(!response.ok)continue;
+
+    const payload=await response.json();
+
+    (Array.isArray(payload)?payload:[])
+      .filter(poiOnlineIsUseful)
+      .map(normalizeHarbourSuggestion)
+      .forEach(result=>{
+        const distance=poiDistanceKm(
+          center.latitude,
+          center.longitude,
+          result.latitude,
+          result.longitude
+        );
+
+        if(distance>radius*1.15)return;
+
+        const normalized={
+          ...result,
+          _source:'osm-poi-nearby',
+          distance_km:distance,
+          type:`${result.category} · ${distance.toLocaleString('nl-NL',{
+            maximumFractionDigits:1
+          })} km${result.place?' · '+result.place:''}`
+        };
+
+        const key=[
+          normalized.weergavenaam.toLowerCase(),
+          normalized.latitude.toFixed(5),
+          normalized.longitude.toFixed(5)
+        ].join('|');
+
+        if(seen.has(key))return;
+        seen.add(key);
+        results.push(normalized);
+      });
+  }
+
+  return results;
+}
+
+function mergeNearbyPoiResults(results=[]){
+  const seen=new Set();
+
+  return results
+    .filter(Boolean)
+    .filter(result=>{
+      const key=[
+        String(result.weergavenaam||'').toLowerCase(),
+        Number(result.latitude).toFixed(5),
+        Number(result.longitude).toFixed(5)
+      ].join('|');
+
+      if(seen.has(key))return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a,b)=>{
+      if(a.has_explicit_name!==b.has_explicit_name){
+        return a.has_explicit_name?-1:1;
+      }
+      return Number(a.distance_km||9999)-Number(b.distance_km||9999);
+    })
+    .slice(0,120);
+}
+
+async function searchNearbyPois(category='Alle'){
+  const panel=$('poiNameLiveSuggestions');
+  const radius=nearbyPoiRadiusKm();
+
+  if(panel){
+    panel.innerHTML=`
+      <div class="poi-live-loading">
+        ${esc(nearbyPoiCategoryLabel(category))} binnen ${radius} km zoeken…
+      </div>
+    `;
+    panel.classList.remove('hidden');
+  }
+
+  showPoiAutoInfo(
+    'Zoekcentrum bepalen via gekozen plaats, GPS of huidige positie…',
+    'warning'
+  );
+
+  try{
+    const center=await resolvePoiSearchCenter();
+
+    if(!center){
+      throw new Error(
+        'Kies eerst een plaatsuggestie, vul GPS in of geef toegang tot je locatie.'
+      );
+    }
+
+    const cacheKey=[
+      category,
+      radius,
+      center.latitude.toFixed(3),
+      center.longitude.toFixed(3)
+    ].join('|');
+
+    if(poiNearbySearchCache.has(cacheKey)){
+      poiLiveSuggestionResults.name=poiNearbySearchCache.get(cacheKey)||[];
+      renderPoiLiveSuggestions('name');
+      showPoiAutoInfo(
+        `${poiLiveSuggestionResults.name.length} resultaten gevonden binnen ${radius} km.`,
+        poiLiveSuggestionResults.name.length?'success':'warning'
+      );
+      return;
+    }
+
+    poiNearbySearchController?.abort();
+    poiNearbySearchController=new AbortController();
+    const signal=poiNearbySearchController.signal;
+    const fragments=nearbyPoiFragments(
+      category,
+      radius,
+      center.latitude,
+      center.longitude
+    );
+
+    if(!fragments.length){
+      throw new Error('Deze categorie kan nog niet in de omgeving worden gezocht.');
+    }
+
+    const batches=[];
+    const chunkSize=category==='Alle'?6:10;
+
+    for(let index=0;index<fragments.length;index+=chunkSize){
+      const chunk=fragments.slice(index,index+chunkSize);
+      const query=`
+        [out:json][timeout:35];
+        (
+          ${chunk.join('\n')}
+        );
+        out center tags qt;
+      `;
+
+      try{
+        const payload=await fetchOverpassNearby(query,signal);
+        batches.push(...(payload?.elements||[]));
+      }catch(error){
+        if(error?.name==='AbortError')throw error;
+        console.warn('Een deel van de omgevingszoekactie mislukte:',error);
+      }
+    }
+
+    let results=batches
+      .map(element=>normalizeNearbyPoi(element,center))
+      .filter(Boolean)
+      .filter(result=>
+        category==='Alle'||
+        result.category===category||
+        (category==='Haven'&&result.category==='Haven')
+      );
+
+    if(results.length<5){
+      try{
+        const fallback=await fallbackNearbyPois(
+          category,
+          center,
+          radius,
+          signal
+        );
+        results.push(...fallback);
+      }catch(error){
+        if(error?.name!=='AbortError'){
+          console.warn('Naamzoek-fallback mislukte:',error);
+        }
+      }
+    }
+
+    results=mergeNearbyPoiResults(results);
+    poiNearbySearchCache.set(cacheKey,results);
+    poiLiveSuggestionResults.name=results;
+    renderPoiLiveSuggestions('name');
+
+    const centerLabel=center.source==='place'
+      ?`rond ${String($('poiPlace')?.value||'de gekozen plaats').trim()}`
+      :center.source==='form'
+        ?'rond de ingevulde GPS-locatie'
+        :'rond je huidige positie';
+
+    showPoiAutoInfo(
+      results.length
+        ?`${results.length} ${nearbyPoiCategoryLabel(category).toLowerCase()}-resultaten gevonden ${centerLabel}, binnen ${radius} km.`
+        :`Geen resultaten gevonden ${centerLabel}. Vergroot de zoekafstand of kies een andere categorie.`,
+      results.length?'success':'warning'
+    );
+  }catch(error){
+    if(error?.name==='AbortError')return;
+
+    console.error('POI’s in omgeving zoeken mislukt:',error);
+    poiLiveSuggestionResults.name=[];
+    renderPoiLiveSuggestions('name');
+    showPoiAutoInfo(
+      error?.message||'Zoeken in de omgeving is niet gelukt.',
+      'error'
+    );
+  }
+}
+
 function poiOnlineSearchQueries(query){
   const clean=String(query||'').trim();
   if(!clean)return [];
@@ -385,27 +893,13 @@ function poiOnlineSearchQueries(query){
 }
 
 function quickPoiSearch(term,category){
-  $('poiName').value=term;
-  if(category)$('poiCategory').value=category;
-
-  const query=String(term||'').trim();
-  const panel=$('poiNameLiveSuggestions');
-
-  if(panel){
-    panel.innerHTML=category==='Haven'
-      ?'<div class="poi-live-loading">Alle grote en kleine havens in de omgeving zoeken…</div>'
-      :'<div class="poi-live-loading">Online POI’s zoeken…</div>';
-    panel.classList.remove('hidden');
+  if(category){
+    searchNearbyPois(category);
+    return;
   }
 
-  showPoiAutoInfo(
-    category==='Haven'
-      ?'Kleine havens worden binnen 30 km van de gekozen plaats of positie gezocht.'
-      :'Kies een resultaat; adres, GPS en beschikbare informatie worden ingevuld.',
-    'warning'
-  );
-
-  loadPoiNameAndHarbourSuggestions(query);
+  $('poiName').value=term;
+  schedulePoiNameSuggestions(true);
 }
 
 
@@ -959,7 +1453,8 @@ function schedulePoiExactNameCompletion(){
       [
         'osm-poi',
         'osm-harbour',
-        'osm-harbour-nearby'
+        'osm-harbour-nearby',
+        'osm-poi-nearby'
       ].includes(result._source)
     ){
       await applyOnlinePoiToForm(result,{showMessage:false});
@@ -985,7 +1480,8 @@ async function completePoiInformation(){
       [
         'osm-poi',
         'osm-harbour',
-        'osm-harbour-nearby'
+        'osm-harbour-nearby',
+        'osm-poi-nearby'
       ].includes(item._source)
     );
 
@@ -1426,7 +1922,7 @@ function renderPoiLiveSuggestions(field){
 
   if(!results.length){
     panel.innerHTML=field==='name'
-      ?'<div class="poi-live-loading">Geen passende online POI’s gevonden.</div>'
+      ?'<div class="poi-live-loading">Geen passende POI’s gevonden. Vergroot de zoekafstand of kies een plaats/GPS.</div>'
       :'<div class="poi-live-loading">Geen passende plaats of adres gevonden.</div>';
     panel.classList.remove('hidden');
     return;
@@ -1437,9 +1933,13 @@ function renderPoiLiveSuggestions(field){
     const online=[
       'osm-poi',
       'osm-harbour',
-      'osm-harbour-nearby'
+      'osm-harbour-nearby',
+      'osm-poi-nearby'
     ].includes(result._source);
-    const nearby=result._source==='osm-harbour-nearby';
+    const nearby=[
+      'osm-harbour-nearby',
+      'osm-poi-nearby'
+    ].includes(result._source);
     const title=result.weergavenaam||result.naam||'Locatie';
     const subtitle=online
       ?result.type||'Online POI'
@@ -1455,11 +1955,11 @@ function renderPoiLiveSuggestions(field){
         class="${saved?'local-poi-suggestion ':''}${online?'online-poi-suggestion ':''}${nearby?'nearby-harbour-suggestion':''}"
         onclick="selectPoiLocationSuggestion('${field}',${index})">
         <span class="poi-suggestion-main">
-          <b>${nearby?'⚓ ':''}${esc(title)}</b>
+          <b>${nearby?'📡 ':''}${esc(title)}</b>
           <span>${esc(subtitle)}</span>
         </span>
         ${online&&result.category
-          ?`<em>${nearby?'Kleine haven':esc(result.category)}</em>`
+          ?`<em>${nearby?'Dichtbij':esc(result.category)}</em>`
           :''}
       </button>
     `;
@@ -1469,12 +1969,13 @@ function renderPoiLiveSuggestions(field){
     [
       'osm-poi',
       'osm-harbour',
-      'osm-harbour-nearby'
+      'osm-harbour-nearby',
+      'osm-poi-nearby'
     ].includes(result._source)
   )){
     panel.innerHTML+=`
       <div class="poi-suggestion-attribution">
-        Adres, GPS en beschikbare voorzieningen worden automatisch ingevuld
+        Kies een resultaat; naam, adres, GPS en beschikbare informatie worden aangevuld
       </div>
     `;
   }
@@ -1535,7 +2036,8 @@ async function selectPoiLocationSuggestion(field,index){
   if([
     'osm-poi',
     'osm-harbour',
-    'osm-harbour-nearby'
+    'osm-harbour-nearby',
+    'osm-poi-nearby'
   ].includes(result._source)){
     await selectHarbourSuggestion(result);
     return;
@@ -1753,6 +2255,7 @@ function clearPoiForm(closePanel=true){
   clearTimeout(poiLocationSuggestionTimer);
   poiLocationSuggestionController?.abort();
   poiHarbourSuggestionController?.abort();
+  poiNearbySearchController?.abort();
   poiLiveSuggestionResults={name:[],place:[],address:[]};
   poiOnlineSuggestionResults=[];
   resetPoiWebPhotoSearch();
@@ -7678,7 +8181,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.2.3';
+const APP_VERSION='5.2.4';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -7755,7 +8258,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5230',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5240',{updateViaCache:'none'});
 
     await registration.update();
 
