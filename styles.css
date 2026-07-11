@@ -1712,3 +1712,146 @@ header{
   font-size:12px;
   line-height:1.55;
 }
+
+/* Cloud 5.1.33 — bedrag en categorie openen volledige kostendetails */
+.cost-title-button{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  min-height:58px;
+  padding:4px 0 10px;
+  border:0;
+  background:transparent;
+  color:#fff;
+  text-align:left;
+}
+.cost-title-main{
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.cost-title-main strong{
+  font-size:21px;
+}
+.cost-title-main span{
+  color:#c8e5ef;
+  font-size:15px;
+  font-weight:800;
+}
+.cost-list-summary{
+  margin-top:-3px;
+}
+.details-chevron{
+  display:inline-flex;
+  color:#67d8fa;
+  font-size:24px;
+  transition:transform .18s ease;
+}
+.details-chevron.open{
+  transform:rotate(90deg);
+}
+.inline-cost-details{
+  margin-top:10px;
+  padding:13px;
+  border:1px solid rgba(93,205,239,.20);
+  border-radius:14px;
+  background:rgba(15,58,77,.55);
+}
+.inline-cost-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.inline-cost-grid>div{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:4px;
+  padding:10px;
+  border-radius:11px;
+  background:rgba(255,255,255,.05);
+}
+.inline-cost-grid span{
+  color:#93b1bd;
+  font-size:11px;
+}
+.inline-cost-grid strong{
+  overflow:hidden;
+  color:#effbff;
+  font-size:13px;
+  text-overflow:ellipsis;
+}
+.inline-cost-notes{
+  margin-top:10px;
+  padding:11px;
+  border-radius:11px;
+  background:rgba(255,255,255,.045);
+  color:#c1d7df;
+  font-size:12px;
+  line-height:1.55;
+}
+.muted-detail{
+  color:#89a6b1;
+}
+.inline-receipt-heading{
+  margin:12px 0 8px;
+  color:#e8f9ff;
+  font-size:13px;
+  font-weight:800;
+}
+.finance-receipt-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.finance-receipt-button{
+  display:flex;
+  min-width:0;
+  min-height:76px;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:7px;
+  border:1px solid rgba(102,205,237,.18);
+  border-radius:11px;
+  background:rgba(255,255,255,.05);
+  color:#dff7ff;
+  font-size:10px;
+  text-decoration:none;
+}
+.finance-receipt-button img{
+  width:100%;
+  height:58px;
+  border-radius:8px;
+  object-fit:cover;
+}
+.finance-receipt-pdf{
+  text-align:center;
+}
+.inline-cost-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+.inline-cost-actions button,
+.inline-open-button{
+  width:auto;
+}
+.finance-detail-card+.finance-detail-card{
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.finance-detail-card .inline-cost-details{
+  margin:0 0 12px;
+}
+@media(max-width:520px){
+  .inline-cost-grid{
+    grid-template-columns:1fr;
+  }
+  .finance-receipt-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}

@@ -1721,18 +1721,37 @@ async function loadCosts(){
   $('costList').innerHTML=costCache.length
     ?costCache.map(cost=>{
       const parsed=splitCostDescription(cost.description);
-      const detailsHtml=parsed.details
-        ?`<details class="cost-details">
-            <summary>🧾 Bekijk bon-details</summary>
-            <div class="cost-details-content">${esc(parsed.details).replace(/\n/g,'<br>')}</div>
-          </details>`
-        :'';
 
-      return `<div class="item cost-item">
-        <h3>€${Number(cost.amount).toFixed(2)} · ${esc(cost.category)}</h3>
-        <div class="small">${esc(cost.expense_date)} · ${esc(parsed.summary||'')}</div>
-        ${detailsHtml}
-        ${renderCostReceipts(cost.id)}
+      return `<div class="item cost-item expandable-cost-card">
+        <button type="button" class="cost-title-button" onclick="toggleInlineDetails(this)">
+          <span class="cost-title-main">
+            <strong>${formatEuro(cost.amount)}</strong>
+            <span>${esc(cost.category)}</span>
+          </span>
+          <span class="details-chevron">›</span>
+        </button>
+
+        <div class="small cost-list-summary">${esc(cost.expense_date)} · ${esc(parsed.summary||'')}</div>
+
+        <div class="inline-cost-details hidden">
+          <div class="inline-cost-grid">
+            <div><span>Datum</span><strong>${esc(cost.expense_date||'-')}</strong></div>
+            <div><span>Categorie</span><strong>${esc(cost.category||'Overig')}</strong></div>
+            <div><span>Bedrag</span><strong>${formatEuro(cost.amount||0)}</strong></div>
+            <div><span>Omschrijving</span><strong>${esc(parsed.summary||'-')}</strong></div>
+          </div>
+
+          ${parsed.details
+            ?`<div class="inline-cost-notes">
+                <b>Details van de bon</b><br>
+                ${esc(parsed.details).replace(/\n/g,'<br>')}
+              </div>`
+            :'<div class="inline-cost-notes muted-detail">Geen extra bon-details opgeslagen.</div>'}
+
+          <div class="inline-receipt-heading">Bonnetjes</div>
+          ${renderReadOnlyCostReceipts(cost.id)}
+        </div>
+
         <div class="cost-item-actions">
           <button class="cost-edit-button" onclick='editCost(
             ${JSON.stringify(cost.id)},
@@ -2102,6 +2121,116 @@ function openFinanceMonth(month){
   },80);
 }
 
+
+function toggleInlineDetails(button){
+  const card=button?.closest('.expandable-cost-card,.finance-detail-card');
+  const details=card?.querySelector('.inline-cost-details');
+  if(!details)return;
+
+  const opening=details.classList.contains('hidden');
+
+  document.querySelectorAll('.inline-cost-details:not(.hidden)').forEach(panel=>{
+    if(panel!==details){
+      panel.classList.add('hidden');
+      panel.closest('.expandable-cost-card,.finance-detail-card')
+        ?.querySelector('.details-chevron')
+        ?.classList.remove('open');
+    }
+  });
+
+  details.classList.toggle('hidden',!opening);
+  card.querySelector('.details-chevron')?.classList.toggle('open',opening);
+
+  if(opening){
+    details.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+
+function renderReadOnlyCostReceipts(costId){
+  const receipts=costReceiptCache[costId]||[];
+  if(!receipts.length)return '<span class="small">Geen bonnetje toegevoegd.</span>';
+
+  return `<div class="finance-receipt-grid">${receipts.map(receipt=>{
+    const isImage=String(receipt.mime_type||'').startsWith('image/');
+
+    if(isImage){
+      return `<button type="button" class="finance-receipt-button"
+        onclick="openLightbox(${JSON.stringify(receipt.url)})">
+        <img src="${esc(receipt.url)}" alt="Bonnetje">
+        <span>Bekijk bon</span>
+      </button>`;
+    }
+
+    return `<a class="finance-receipt-button finance-receipt-pdf"
+      href="${esc(receipt.url)}" target="_blank" rel="noopener">
+      <span>🧾 PDF-bon openen</span>
+    </a>`;
+  }).join('')}</div>`;
+}
+
+function renderFinanceCostExpanded(entry){
+  if(entry.type==='trip'){
+    const trip=tripCache.find(item=>item.id===entry.id);
+
+    if(!trip){
+      return '<span class="small">Deze vaartocht kon niet worden gevonden.</span>';
+    }
+
+    return `
+      <div class="inline-cost-grid">
+        <div><span>Datum</span><strong>${esc(trip.trip_date||'-')}</strong></div>
+        <div><span>Route</span><strong>${esc(trip.departure||'-')} → ${esc(trip.arrival||'-')}</strong></div>
+        <div><span>Afstand</span><strong>${trip.distance_km??'-'} km</strong></div>
+        <div><span>Vaartijd</span><strong>${trip.duration_hours??'-'} uur</strong></div>
+        <div><span>Brandstof</span><strong>${trip.fuel_liters?Number(trip.fuel_liters).toFixed(1)+' l':'-'}</strong></div>
+        <div><span>Kosten</span><strong>${formatEuro(trip.fuel_cost||0)}</strong></div>
+      </div>
+      ${trip.notes?`<div class="inline-cost-notes">${esc(trip.notes).replace(/\n/g,'<br>')}</div>`:''}
+      <button type="button" class="secondary inline-open-button" onclick="captainNavigate('logbook')">
+        Open in Logboek
+      </button>
+    `;
+  }
+
+  const cost=costCache.find(item=>item.id===entry.id);
+
+  if(!cost){
+    return '<span class="small">Deze kostenpost kon niet worden gevonden.</span>';
+  }
+
+  const parsed=splitCostDescription(cost.description);
+
+  return `
+    <div class="inline-cost-grid">
+      <div><span>Datum</span><strong>${esc(cost.expense_date||'-')}</strong></div>
+      <div><span>Categorie</span><strong>${esc(cost.category||'Overig')}</strong></div>
+      <div><span>Bedrag</span><strong>${formatEuro(cost.amount||0)}</strong></div>
+      <div><span>Omschrijving</span><strong>${esc(parsed.summary||'-')}</strong></div>
+    </div>
+
+    ${parsed.details
+      ?`<div class="inline-cost-notes">
+          <b>Details van de bon</b><br>
+          ${esc(parsed.details).replace(/\n/g,'<br>')}
+        </div>`
+      :'<div class="inline-cost-notes muted-detail">Geen extra bon-details opgeslagen.</div>'}
+
+    <div class="inline-receipt-heading">Bonnetjes</div>
+    ${renderReadOnlyCostReceipts(cost.id)}
+
+    <div class="inline-cost-actions">
+      <button type="button" class="secondary" onclick='editCost(
+        ${JSON.stringify(cost.id)},
+        ${JSON.stringify(cost.expense_date)},
+        ${JSON.stringify(cost.amount)},
+        ${JSON.stringify(cost.category)},
+        ${JSON.stringify(cost.description||'')}
+      )'>✏️ Bewerken</button>
+      <button type="button" class="secondary" onclick="captainNavigate('costs')">Open bij Kosten</button>
+    </div>
+  `;
+}
+
 function renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory){
   const container=$('financeDetails');
   const summary=$('financeDetailsSummary');
@@ -2131,15 +2260,19 @@ function renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory){
 
   container.innerHTML=entries.length
     ?entries.map(entry=>`
-      <button type="button" class="finance-detail-row"
-        onclick="${entry.type==='cost'?"captainNavigate('costs')":"captainNavigate('logbook')"}">
-        <span class="finance-detail-main">
-          <b>${esc(entry.category)}</b>
-          <small>${esc(entry.date||'')} · ${esc(entry.description||'')}</small>
-        </span>
-        <strong>${formatEuro(entry.amount)}</strong>
-        <span class="finance-detail-arrow">›</span>
-      </button>
+      <div class="finance-detail-card">
+        <button type="button" class="finance-detail-row" onclick="toggleInlineDetails(this)">
+          <span class="finance-detail-main">
+            <b>${esc(entry.category)}</b>
+            <small>${esc(entry.date||'')} · ${esc(entry.description||'')}</small>
+          </span>
+          <strong>${formatEuro(entry.amount)}</strong>
+          <span class="finance-detail-arrow details-chevron">›</span>
+        </button>
+        <div class="inline-cost-details hidden">
+          ${renderFinanceCostExpanded(entry)}
+        </div>
+      </div>
     `).join('')
     :'<span class="small">Geen kosten binnen dit filter.</span>';
 }
@@ -4184,7 +4317,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.32';
+const APP_VERSION='5.1.33';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
