@@ -3100,7 +3100,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.20';
+const APP_VERSION='5.1.21';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

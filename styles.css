@@ -1161,3 +1161,27 @@ header{
   background:rgba(220,75,91,.15);
   color:#ffe1e5;
 }
+
+/* Cloud 5.1.21 — Waterkaarten-afbeelding als dashboardknop */
+.waterkaarten-image-tile{
+  min-height:0;
+  aspect-ratio:1;
+  padding:0;
+  overflow:hidden;
+  border:0;
+  border-radius:20px;
+  background:transparent;
+  box-shadow:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.waterkaarten-image-tile img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  pointer-events:none;
+}
+.waterkaarten-image-tile:active{
+  transform:scale(.97);
+  background:transparent;
+}
