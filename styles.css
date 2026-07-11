@@ -2183,3 +2183,67 @@ header{
     grid-template-columns:1fr;
   }
 }
+
+/* Cloud 5.1.39 — nieuw MijnSerenity-logo */
+.branded-header-row{
+  align-items:center;
+}
+.app-brand{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:5px;
+}
+.app-brand-logo{
+  display:block;
+  width:min(250px,68vw);
+  max-height:92px;
+  padding:7px 10px;
+  border-radius:14px;
+  background:#fff;
+  object-fit:contain;
+  box-shadow:0 8px 24px rgba(0,0,0,.20);
+}
+.app-brand-edition{
+  padding-left:5px;
+  color:#9eb5c0;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.03em;
+}
+.auth-brand-logo,
+.approval-brand-logo{
+  display:block;
+  width:min(320px,88%);
+  max-height:180px;
+  margin:0 auto 18px;
+  padding:10px;
+  border-radius:18px;
+  background:#fff;
+  object-fit:contain;
+  box-shadow:0 12px 32px rgba(0,0,0,.17);
+}
+.approval-brand-logo{
+  margin-bottom:14px;
+}
+@media(max-width:520px){
+  .app-brand-logo{
+    width:min(215px,65vw);
+    max-height:80px;
+    padding:6px 8px;
+  }
+  .app-brand-edition{
+    font-size:10px;
+  }
+  .connection-status{
+    flex-shrink:0;
+  }
+}
+
+/* Cloud 5.1.40 — cache-busting en directe updatecontrole */
+.app-brand-edition::after{
+  content:" · v5.1.40";
+  color:#6fcfee;
+  font-weight:800;
+}

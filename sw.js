@@ -1,13 +1,14 @@
-const CACHE_NAME='mijnserenity-v5-1-38';
+const CACHE_NAME='mijnserenity-v5-1-40';
 const APP_SHELL=[
   '/',
   '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/waterkaarten-dashboard.png'
+  '/styles.css?v=5140',
+  '/app.js?v=5140',
+  '/manifest.json?v=5140',
+  '/icon-192.png?v=5140',
+  '/icon-512.png?v=5140',
+  '/waterkaarten-dashboard.png?v=5140',
+  '/mijnserenity-logo.png?v=5140'
 ];
 
 self.addEventListener('install',event=>{
@@ -19,7 +20,11 @@ self.addEventListener('install',event=>{
 self.addEventListener('activate',event=>{
   event.waitUntil(
     caches.keys()
-      .then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key))))
+      .then(keys=>Promise.all(
+        keys
+          .filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME)
+          .map(key=>caches.delete(key))
+      ))
       .then(()=>self.clients.claim())
   );
 });

@@ -5718,7 +5718,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.39';
+const APP_VERSION='5.1.40';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -5795,7 +5795,9 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js');
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5140',{updateViaCache:'none'});
+
+    await registration.update();
 
     if(registration.waiting)showAppUpdate(registration);
 
@@ -5814,7 +5816,7 @@ async function registerMijnSerenityServiceWorker(){
       window.location.reload();
     });
 
-    setInterval(()=>registration.update(),30*60*1000);
+    setInterval(()=>registration.update(),5*60*1000);
   }catch(error){
     console.warn('Service worker kon niet worden geregistreerd:',error);
   }

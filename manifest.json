@@ -1,6 +1,6 @@
 {
   "id": "/",
-  "name": "MijnSerenity Cloud",
+  "name": "MijnSerenity",
   "short_name": "MijnSerenity",
   "description": "Logboek, routes, POI's, foto's en kosten van Serenity.",
   "start_url": "/?source=pwa",
@@ -11,13 +11,13 @@
   "background_color": "#061525",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "icon-192.png?v=5140",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "icon-512.png?v=5140",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
