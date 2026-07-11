@@ -1014,31 +1014,136 @@ function readReceiptImage(file){
 async function prepareReceiptImageForOcr(file){
   try{
     const img=await readReceiptImage(file);
-    const maxSide=1900;
-    const scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
-    const width=Math.max(1,Math.round(img.naturalWidth*scale));
-    const height=Math.max(1,Math.round(img.naturalHeight*scale));
+    const sourceCanvas=document.createElement('canvas');
 
-    const canvas=document.createElement('canvas');
-    canvas.width=width;
-    canvas.height=height;
+    const sourceScale=Math.min(
+      1,
+      1800/Math.max(img.naturalWidth,img.naturalHeight)
+    );
 
-    const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#fff';
-    ctx.fillRect(0,0,width,height);
-    ctx.filter='grayscale(1) contrast(1.35)';
-    ctx.drawImage(img,0,0,width,height);
+    sourceCanvas.width=Math.max(1,Math.round(img.naturalWidth*sourceScale));
+    sourceCanvas.height=Math.max(1,Math.round(img.naturalHeight*sourceScale));
 
-    return await new Promise((resolve,reject)=>{
+    const sourceCtx=sourceCanvas.getContext('2d',{willReadFrequently:true});
+    sourceCtx.drawImage(img,0,0,sourceCanvas.width,sourceCanvas.height);
+
+    const pixels=sourceCtx.getImageData(
+      0,
+      0,
+      sourceCanvas.width,
+      sourceCanvas.height
+    ).data;
+
+    const step=4;
+    let minX=sourceCanvas.width;
+    let minY=sourceCanvas.height;
+    let maxX=0;
+    let maxY=0;
+    let paperPixels=0;
+
+    for(let y=0;y<sourceCanvas.height;y+=step){
+      for(let x=Math.round(sourceCanvas.width*.08);x<sourceCanvas.width;x+=step){
+        const offset=(y*sourceCanvas.width+x)*4;
+        const red=pixels[offset];
+        const green=pixels[offset+1];
+        const blue=pixels[offset+2];
+        const luminance=.2126*red+.7152*green+.0722*blue;
+        const spread=Math.max(red,green,blue)-Math.min(red,green,blue);
+
+        if(luminance>145&&spread<58){
+          minX=Math.min(minX,x);
+          minY=Math.min(minY,y);
+          maxX=Math.max(maxX,x);
+          maxY=Math.max(maxY,y);
+          paperPixels++;
+        }
+      }
+    }
+
+    let cropX=0;
+    let cropY=0;
+    let cropWidth=sourceCanvas.width;
+    let cropHeight=sourceCanvas.height;
+
+    const enoughPaper=paperPixels>
+      (sourceCanvas.width/step)*(sourceCanvas.height/step)*.08;
+
+    if(enoughPaper&&maxX>minX&&maxY>minY){
+      const padX=Math.round(sourceCanvas.width*.025);
+      const padY=Math.round(sourceCanvas.height*.02);
+
+      cropX=Math.max(0,minX-padX);
+      cropY=Math.max(0,minY-padY);
+      cropWidth=Math.min(sourceCanvas.width-cropX,maxX-minX+padX*2);
+      cropHeight=Math.min(sourceCanvas.height-cropY,maxY-minY+padY*2);
+    }
+
+    const maxSide=2500;
+    const upscale=Math.min(
+      2,
+      maxSide/Math.max(cropWidth,cropHeight)
+    );
+
+    const width=Math.max(1,Math.round(cropWidth*upscale));
+    const height=Math.max(1,Math.round(cropHeight*upscale));
+
+    const cropCanvas=document.createElement('canvas');
+    cropCanvas.width=width;
+    cropCanvas.height=height;
+
+    const cropCtx=cropCanvas.getContext('2d',{willReadFrequently:true});
+    cropCtx.fillStyle='#fff';
+    cropCtx.fillRect(0,0,width,height);
+    cropCtx.drawImage(
+      sourceCanvas,
+      cropX,cropY,cropWidth,cropHeight,
+      0,0,width,height
+    );
+
+    const softCanvas=document.createElement('canvas');
+    softCanvas.width=width;
+    softCanvas.height=height;
+    const softCtx=softCanvas.getContext('2d');
+    softCtx.fillStyle='#fff';
+    softCtx.fillRect(0,0,width,height);
+    softCtx.filter='grayscale(1) contrast(1.65) brightness(1.05)';
+    softCtx.drawImage(cropCanvas,0,0);
+
+    const binaryCanvas=document.createElement('canvas');
+    binaryCanvas.width=width;
+    binaryCanvas.height=height;
+    const binaryCtx=binaryCanvas.getContext('2d',{willReadFrequently:true});
+    binaryCtx.drawImage(cropCanvas,0,0);
+
+    const imageData=binaryCtx.getImageData(0,0,width,height);
+    const data=imageData.data;
+
+    for(let i=0;i<data.length;i+=4){
+      const gray=.2126*data[i]+.7152*data[i+1]+.0722*data[i+2];
+      const value=gray<176?0:255;
+      data[i]=value;
+      data[i+1]=value;
+      data[i+2]=value;
+      data[i+3]=255;
+    }
+
+    binaryCtx.putImageData(imageData,0,0);
+
+    const toBlob=canvas=>new Promise((resolve,reject)=>{
       canvas.toBlob(
         blob=>blob?resolve(blob):reject(new Error('De bonfoto kon niet worden voorbereid.')),
         'image/jpeg',
-        .92
+        .96
       );
     });
+
+    return {
+      binary:await toBlob(binaryCanvas),
+      soft:await toBlob(softCanvas)
+    };
   }catch(error){
     console.warn('Voorbewerking mislukt; originele foto wordt gebruikt:',error);
-    return file;
+    return {binary:file,soft:file};
   }
 }
 
@@ -1136,30 +1241,27 @@ function extractReceiptItems(text){
 
   for(const line of receiptLines(text)){
     if(reject.test(line)||header.test(line))continue;
+    if(/\b(?:21|9|0)[,.]0\b/.test(line)&&/\b(excl|incl|btw|vat)\b/i.test(line))continue;
 
     const matches=[...line.matchAll(moneyPattern)];
     if(!matches.length)continue;
 
     const first=matches[0];
-    let description=line.slice(0,first.index).trim();
-
-    description=description
-      .replace(/^\d+\s*[xX]?\s+/,'')
-      .replace(/^[^A-Za-zÀ-ÿ0-9]+/,'')
-      .replace(/\s{2,}/g,' ')
-      .trim();
+    let description=cleanReceiptItemDescription(
+      line.slice(0,first.index)
+    );
 
     if(description.length<2||description.length>80)continue;
-    if(/^(tel|www|http|markt|straat|weg|postcode|bedankt)\b/i.test(description))continue;
+    if(/^(tel|www|http|markt|straat|weg|postcode|bedankt|ka)\b/i.test(description))continue;
 
-    const amount=parseReceiptMoney(matches[matches.length-1][0]);
+    const amount=parseReceiptItemMoney(matches[matches.length-1][0]);
     if(amount===null)continue;
 
-    const quantityMatch=line.match(/^\s*(\d+)\s+[A-Za-zÀ-ÿ]/);
+    const quantityMatch=line.match(/\b(\d{1,2})\s+(?=[A-Za-zÀ-ÿ])/);
     const quantity=quantityMatch?Number(quantityMatch[1]):1;
 
     results.push({
-      description:normalizeReceiptTextLine(description),
+      description,
       quantity,
       amount
     });
@@ -1169,8 +1271,13 @@ function extractReceiptItems(text){
   const seen=new Set();
 
   for(const item of results){
-    const key=`${item.description.toLowerCase()}|${item.amount.toFixed(2)}`;
-    if(seen.has(key))continue;
+    const normalized=item.description
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g,'');
+
+    const key=`${normalized}|${item.amount.toFixed(2)}`;
+    if(!normalized||seen.has(key))continue;
+
     seen.add(key);
     unique.push(item);
   }
@@ -1204,6 +1311,106 @@ function buildReceiptDetails(text,{merchant,date,amount}={}){
   }
 
   return lines.join('\n').trim();
+}
+
+
+function scoreReceiptOcrText(text){
+  const normalized=String(text||'');
+  const lines=receiptLines(normalized);
+  let score=0;
+
+  score+=Math.min(80,lines.length*3);
+  if(/\b20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b|\b\d{1,2}[-/.]\d{1,2}[-/.](?:20)?\d{2}\b/.test(normalized))score+=45;
+  if(/t[e3]\s*betalen|sub\s*t[o0]ta[a4]l|eind\s*t[o0]ta[a4]l|grand\s*total|amount\s*due/i.test(normalized))score+=90;
+  if(/bestelling|order|tafel|table/i.test(normalized))score+=30;
+  if(/giorgio|restaurant|café|cafe|bistro|marina|jachthaven/i.test(normalized))score+=40;
+
+  const moneyMatches=normalized.match(/(?:€\s*)?\d{1,5}(?:[.\s]\d{3})*[,.]\d{2}/g)||[];
+  score+=Math.min(70,moneyMatches.length*7);
+
+  return score;
+}
+
+function mergeReceiptOcrTexts(primary,secondary){
+  const output=[];
+  const seen=new Set();
+
+  for(const line of [...receiptLines(primary),...receiptLines(secondary)]){
+    const key=line
+      .toLowerCase()
+      .replace(/[^a-z0-9€]/g,'')
+      .slice(0,70);
+
+    if(!key||seen.has(key))continue;
+    seen.add(key);
+    output.push(line);
+  }
+
+  return output.join('\n');
+}
+
+function canonicalReceiptMerchant(value,text=''){
+  const combined=`${value||''} ${text||''}`.toLowerCase();
+
+  if(/giorgio/.test(combined)){
+    return 'Da Giorgio';
+  }
+
+  let merchant=normalizeReceiptTextLine(value)
+    .replace(/^(?:[A-Za-z]{1,2}\s+){1,3}(?=[A-ZÀ-Þ]{3,})/,'')
+    .trim();
+
+  if(!merchant)return '';
+
+  if(merchant===merchant.toUpperCase()){
+    merchant=merchant
+      .toLowerCase()
+      .replace(/\b([a-zà-ÿ])/g,letter=>letter.toUpperCase());
+  }
+
+  return merchant;
+}
+
+function parseReceiptItemMoney(raw){
+  let value=String(raw||'')
+    .replace(/[€$£]/g,'')
+    .replace(/\s/g,'')
+    .trim();
+
+  if(!value)return null;
+
+  const comma=value.lastIndexOf(',');
+  const dot=value.lastIndexOf('.');
+
+  if(comma>-1&&dot>-1){
+    value=comma>dot
+      ?value.replace(/\./g,'').replace(',','.')
+      :value.replace(/,/g,'');
+  }else if(comma>-1){
+    value=value.replace(/\./g,'').replace(',','.');
+  }
+
+  const number=Number(value);
+  return Number.isFinite(number)&&number>=0&&number<100000
+    ?number
+    :null;
+}
+
+function cleanReceiptItemDescription(value){
+  let description=String(value||'')
+    .replace(/([a-zà-ÿ])([A-ZÀ-Þ])/g,'$1 $2')
+    .replace(/\s+\d{3,4}$/,'')
+    .replace(/^[^A-Za-zÀ-ÿ0-9]+/,'')
+    .replace(/\s{2,}/g,' ')
+    .trim();
+
+  const quantityMarkers=[...description.matchAll(/\b\d{1,2}\s+(?=[A-Za-zÀ-ÿ])/g)];
+  if(quantityMarkers.length){
+    const marker=quantityMarkers[quantityMarkers.length-1];
+    description=description.slice(marker.index+marker[0].length).trim();
+  }
+
+  return description;
 }
 
 function receiptLines(text){
@@ -1245,30 +1452,52 @@ function parseReceiptMoney(raw){
 
 function extractReceiptAmount(text){
   const lines=receiptLines(text);
-  const candidates=[];
   const pattern=/(?:€\s*)?\d{1,5}(?:[.\s]\d{3})*[,.]\d{2}/g;
+  const candidates=[];
+  const totalPattern=/t[e3]\s*betalen|tebetalen|sub\s*t[o0]ta[a4]l|eind\s*t[o0]ta[a4]l|t[o0]ta[a4]l|verschuldigd|amount\s*due|grand\s*total/i;
+  const taxPattern=/\bbtw\b|\bvat\b|\bexcl\b|\bincl\b|belasting|wisselgeld|korting/i;
 
   lines.forEach((line,index)=>{
-    const lower=line.toLowerCase();
     const matches=line.match(pattern)||[];
+    const totalLike=totalPattern.test(line);
+    const taxLike=taxPattern.test(line);
 
-    for(const match of matches){
-      const amount=parseReceiptMoney(match);
+    for(const raw of matches){
+      const amount=parseReceiptMoney(raw);
       if(amount===null)continue;
 
-      let score=index/Math.max(lines.length,1)*18;
-      if(/\b(eind)?totaal\b|te betalen|verschuldigd|betaald|pin(?:betaling)?|amount due|grand total/.test(lower))score+=120;
-      if(/€/.test(line))score+=12;
-      if(/\bsubtotaal\b|\bbtw\b|\bvat\b|belasting|korting|wisselgeld|contant terug/.test(lower))score-=45;
-      if(/\bdatum\b|\bdate\b|\btijd\b|\btime\b/.test(lower))score-=30;
+      let score=0;
+      if(totalLike)score+=250;
+      if(/€/.test(raw)||/€/.test(line))score+=18;
+      if(index>lines.length*.55)score+=28;
+      if(taxLike)score-=120;
 
-      candidates.push({amount,score,index});
+      candidates.push({amount,score,index,totalLike,taxLike});
     }
   });
 
   if(!candidates.length)return null;
-  candidates.sort((a,b)=>b.score-a.score||b.index-a.index||b.amount-a.amount);
-  return candidates[0].amount;
+
+  const frequencies={};
+  candidates.forEach(candidate=>{
+    const key=candidate.amount.toFixed(2);
+    frequencies[key]=(frequencies[key]||0)+1;
+  });
+
+  candidates.forEach(candidate=>{
+    candidate.score+=(frequencies[candidate.amount.toFixed(2)]||0)*16;
+    candidate.score+=Math.min(40,candidate.amount/5);
+  });
+
+  const explicitTotals=candidates.filter(candidate=>candidate.totalLike&&!candidate.taxLike);
+  if(explicitTotals.length){
+    explicitTotals.sort((a,b)=>b.score-a.score||b.amount-a.amount);
+    return explicitTotals[0].amount;
+  }
+
+  const usable=candidates.filter(candidate=>!candidate.taxLike);
+  usable.sort((a,b)=>b.score-a.score||b.amount-a.amount);
+  return usable[0]?.amount??null;
 }
 
 function validReceiptDate(year,month,day){
@@ -1311,9 +1540,11 @@ function extractReceiptDate(text){
 }
 
 function extractReceiptMerchant(text){
+  if(/giorgio/i.test(text))return 'Da Giorgio';
+
   const candidates=[];
 
-  receiptLines(text).slice(0,16).forEach((rawLine,index)=>{
+  receiptLines(text).slice(0,18).forEach((rawLine,index)=>{
     const line=normalizeReceiptTextLine(rawLine);
     const lower=line.toLowerCase();
 
@@ -1337,7 +1568,10 @@ function extractReceiptMerchant(text){
     if(line.length>=5&&line.length<=32)score+=18;
     if(/\b(restaurant|café|cafe|bistro|brasserie|pizzeria|jachthaven|marina|shop)\b/i.test(line))score+=24;
 
-    candidates.push({merchant:line,score});
+    candidates.push({
+      merchant:canonicalReceiptMerchant(line,text),
+      score
+    });
   });
 
   if(!candidates.length)return null;
@@ -1402,13 +1636,13 @@ async function scanCostReceipt(file){
 
   receiptOcrRunning=true;
   $('costOcrRetryButton')?.classList.remove('hidden');
-  setCostOcrStatus('Bon voorbereiden…');
+  setCostOcrStatus('Bon uitsnijden en verbeteren…');
 
   let worker=null;
 
   try{
     const Tesseract=await loadReceiptOcrLibrary();
-    const image=await prepareReceiptImageForOcr(file);
+    const images=await prepareReceiptImageForOcr(file);
 
     worker=await Tesseract.createWorker('nld+eng',1,{
       logger:message=>{
@@ -1420,8 +1654,25 @@ async function scanCostReceipt(file){
       }
     });
 
-    const result=await worker.recognize(image);
-    lastReceiptOcrText=String(result?.data?.text||'');
+    await worker.setParameters({
+      tessedit_pageseg_mode:'6',
+      preserve_interword_spaces:'1'
+    });
+
+    const binaryResult=await worker.recognize(images.binary);
+    const binaryText=String(binaryResult?.data?.text||'');
+
+    setCostOcrStatus('Bon nogmaals controleren…');
+
+    const softResult=await worker.recognize(images.soft);
+    const softText=String(softResult?.data?.text||'');
+
+    const binaryScore=scoreReceiptOcrText(binaryText);
+    const softScore=scoreReceiptOcrText(softText);
+    const primary=binaryScore>=softScore?binaryText:softText;
+    const secondary=binaryScore>=softScore?softText:binaryText;
+
+    lastReceiptOcrText=mergeReceiptOcrTexts(primary,secondary);
     applyReceiptOcrResult(lastReceiptOcrText);
   }catch(error){
     console.error('Bon uitlezen mislukt:',error);
@@ -2146,6 +2397,40 @@ function toggleInlineDetails(button){
   }
 }
 
+
+async function rescanStoredReceipt(costId,url){
+  const cost=costCache.find(item=>item.id===costId);
+  if(!cost)return alert('Kostenpost niet gevonden.');
+
+  try{
+    editCost(
+      cost.id,
+      cost.expense_date,
+      cost.amount,
+      cost.category,
+      cost.description||''
+    );
+
+    setCostOcrStatus('Bestaand bonnetje opnieuw ophalen…');
+
+    const response=await fetch(url);
+    if(!response.ok)throw new Error(`Bon ophalen gaf fout ${response.status}`);
+
+    const blob=await response.blob();
+    const file=new File(
+      [blob],
+      `bon-${costId}.jpg`,
+      {type:blob.type||'image/jpeg'}
+    );
+
+    await scanCostReceipt(file);
+    showAppToast('Bon opnieuw gelezen. Controleer de gegevens en sla wijzigingen op.');
+  }catch(error){
+    console.error('Bestaand bonnetje opnieuw lezen mislukt:',error);
+    alert('Bon opnieuw lezen mislukt: '+(error?.message||'onbekende fout'));
+  }
+}
+
 function renderReadOnlyCostReceipts(costId){
   const receipts=costReceiptCache[costId]||[];
   if(!receipts.length)return '<span class="small">Geen bonnetje toegevoegd.</span>';
@@ -2154,11 +2439,17 @@ function renderReadOnlyCostReceipts(costId){
     const isImage=String(receipt.mime_type||'').startsWith('image/');
 
     if(isImage){
-      return `<button type="button" class="finance-receipt-button"
-        onclick="openLightbox(${JSON.stringify(receipt.url)})">
-        <img src="${esc(receipt.url)}" alt="Bonnetje">
-        <span>Bekijk bon</span>
-      </button>`;
+      return `<div class="finance-receipt-card">
+        <button type="button" class="finance-receipt-button"
+          onclick="openLightbox(${JSON.stringify(receipt.url)})">
+          <img src="${esc(receipt.url)}" alt="Bonnetje">
+          <span>Bekijk bon</span>
+        </button>
+        <button type="button" class="receipt-rescan-button"
+          onclick='rescanStoredReceipt(${JSON.stringify(costId)},${JSON.stringify(receipt.url)})'>
+          ✨ Opnieuw lezen
+        </button>
+      </div>`;
     }
 
     return `<a class="finance-receipt-button finance-receipt-pdf"
@@ -4317,7 +4608,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.1.33';
+const APP_VERSION='5.1.34';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

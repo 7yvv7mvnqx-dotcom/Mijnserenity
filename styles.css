@@ -1855,3 +1855,25 @@ header{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
+
+/* Cloud 5.1.34 — verbeterde bonherkenning en opnieuw uitlezen */
+.finance-receipt-card{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:6px;
+}
+.receipt-rescan-button{
+  width:100%;
+  min-height:34px;
+  padding:7px 8px;
+  border:1px solid rgba(93,205,239,.22);
+  border-radius:9px;
+  background:rgba(62,180,220,.10);
+  color:#dff8ff;
+  font-size:10px;
+  font-weight:800;
+}
+.receipt-rescan-button:active{
+  background:rgba(62,180,220,.20);
+}
