@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.6.1";
+  content:" · v5.6.2";
   color:#6fcfee;
   font-weight:800;
 }
@@ -4547,4 +4547,14 @@ main{
 @keyframes ms-camera-pulse{
   0%,100%{opacity:.35;transform:scale(.85)}
   50%{opacity:1;transform:scale(1.15)}
+}
+
+/* MijnSerenity Cloud 5.6.2 — betrouwbare camera-frameweergave */
+#radarCameraImage,
+#liveRadarCameraImage,
+#radarCameraFullscreenImage{
+  image-rendering:auto;
+}
+.radar-camera-badge.live{
+  white-space:nowrap;
 }
