@@ -1,0 +1,24 @@
+MIJNSERENITY CLOUD 5.1.41 — LOGO EN ONLINESTATUS
+
+AANGEPAST
+- Het MijnSerenity-logo gebruikt nu de volledige breedte van de pagina.
+- De Online-knop is uit de header verwijderd.
+- De Online-knop staat nu in de Sync-ballon naast de synchronisatiestatus.
+- Tikken op Online controleert de verbinding en ververst MijnSerenity.
+- De knop kleurt automatisch groen bij Online en rood bij Offline.
+- Cacheversies zijn verhoogd zodat de wijziging direct zichtbaar wordt.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+De bestaande logo- en iconbestanden blijven ongewijzigd, maar mogen ook
+opnieuw worden geüpload:
+- mijnserenity-logo.png
+- icon-192.png
+- icon-512.png
+
+Geen SQL nodig.

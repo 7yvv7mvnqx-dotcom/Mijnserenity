@@ -1,0 +1,20 @@
+MIJNSERENITY CLOUD 5.1.28 — ALLEEN PLAATSNAMEN IN LIVE TITEL
+
+AANGEPAST
+- Live varen gebruikt voor vertrek en aankomst alleen de woonplaatsnaam.
+- Gemeentenaam en provincienaam worden niet meer in de titel gezet.
+- Een naam als 'Enschede, Overijssel' wordt opgeslagen als 'Enschede'.
+- De titel blijft exact: Vertrekplaats - Aankomstplaats.
+- Ook handmatig ingevoerde plaatsnamen worden vóór opslaan opgeschoond.
+
+VOORBEELD
+Enschede, gemeente Enschede - Deventer, Overijssel
+wordt:
+Enschede - Deventer
+
+UPLOAD NAAR GITHUB
+- index.html
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

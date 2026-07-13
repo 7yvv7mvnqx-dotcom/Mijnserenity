@@ -1,0 +1,30 @@
+MIJNSERENITY CLOUD 5.1.11 — STABIELE HERSTELVERSIE
+
+Deze versie is opnieuw opgebouwd vanaf de volledig werkende Cloud 5.1.4.
+De oorspronkelijke functies voor inloggen, bootlidmaatschap, POI's, logboek,
+bootinstellingen en dashboardfoto zijn ongewijzigd behouden.
+
+HERSTELD EN BEHOUDEN
+- Inloggen en auth-luisteraar
+- Bootlidmaatschap en gedeelde Serenity-data
+- POI's en POI-foto's
+- Logboek, routes en logboekfoto's
+- Bootinstellingen
+- Dashboardfoto laden, uploaden en verwijderen
+- Bonnetjes bij kosten
+
+INDELING
+- Ververs staat op het dashboard naast Sync
+- Versie staat in Sync · v5.1.11
+- Onderste Boot-knop opent Bootinstellingen
+- Boot delen en leden beheren blijft bereikbaar vanuit Bootinstellingen
+- Welkom Michel / Welkom Desi
+- Suggesties bij POI-naam, plaats en adres
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen nieuwe SQL nodig.

@@ -1,0 +1,25 @@
+MIJNSERENITY CLOUD 5.1.35 — POI- EN HAVENSUGGESTIES
+
+OPGELOST
+- Bij het typen van een POI-naam worden niet meer alle opgeslagen POI's getoond.
+- Alleen suggesties die echt overeenkomen met de ingevoerde tekst verschijnen.
+- De tekst 'Eigen POI' is verwijderd.
+- Opgeslagen resultaten tonen alleen categorie en plaats.
+- Online Nederlandse jachthavens en havens worden nu ook gezocht.
+- Zoeken op bijvoorbeeld 'Leeuwarden haven' toont passende havens wanneer
+  deze in OpenStreetMap beschikbaar zijn.
+- Bij het kiezen van een haven worden automatisch ingevuld:
+  • naam
+  • categorie Haven
+  • plaats
+  • adres
+  • GPS-coördinaten
+- De online zoekopdracht is vertraagd en begrensd om onnodige verzoeken te voorkomen.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

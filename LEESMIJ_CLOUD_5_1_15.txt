@@ -1,0 +1,24 @@
+MIJNSERENITY CLOUD 5.1.15
+
+VERVERSEN
+- Controleert eerst of er een nieuwe appversie klaarstaat.
+- Een nieuwe versie wordt automatisch geactiveerd en geopend.
+- Daarna worden instellingen, POI's, kosten en logboek afzonderlijk ververst.
+- Een fout in één onderdeel blokkeert de andere onderdelen niet.
+- Sync toont het tijdstip van de laatste geslaagde verversing.
+- Geen cache, login of bestaande gegevens worden gewist.
+
+KOSTEN
+- Iedere kostenpost heeft nu een knop 'Bewerken'.
+- Datum, bedrag, categorie en omschrijving kunnen worden gewijzigd.
+- Nieuwe bonnetjes kunnen tijdens bewerken worden toegevoegd.
+- De verwijderknop is vervangen door een kleine prullenbakknop.
+- Na wijzigen of verwijderen wordt het financiële overzicht direct bijgewerkt.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

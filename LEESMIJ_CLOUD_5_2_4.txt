@@ -1,0 +1,46 @@
+MIJNSERENITY CLOUD 5.2.4 — ROBUUSTE POI-ZOEKER
+
+PROBLEEM OPGELOST
+De eerdere zoekfunctie was te afhankelijk van een exacte naam. Kleine
+havens en kleine POI’s zijn daardoor vaak niet zichtbaar.
+
+NIEUW
+- Direct zoeken in de kaartendatabase rond:
+  1. de gekozen plaats;
+  2. ingevulde GPS-coördinaten;
+  3. of de huidige positie.
+- Kies een zoekafstand van 5, 15, 30 of 50 km.
+- Nieuwe knop: Alle POI’s dichtbij.
+- Directe categoriezoeker voor:
+  • alle grote en kleine havens
+  • supermarkten
+  • cafetaria’s
+  • tankstations
+  • restaurants
+  • cafés
+- De brede zoekopdracht bevat ook bakker, apotheek, camping,
+  toilet en drinkwaterpunt.
+- Kleine en zelfs naamloze locaties worden getoond.
+- Naamloze locaties krijgen een bruikbare tijdelijke naam met afstand.
+- Zoeken wordt in kleinere blokken uitgevoerd om time-outs te voorkomen.
+- Drie kaartservers worden geprobeerd.
+- Als kaartzoeken te weinig vindt, wordt automatisch een tweede
+  naamzoekmethode gebruikt.
+- Resultaten worden op naam en afstand gesorteerd.
+- Na selectie worden adres, plaats, GPS, voorzieningen en fotozoeker
+  alsnog automatisch aangevuld.
+
+BESTE WERKWIJZE
+1. Vul Plaats in en kies de plaatsuggestie, of gebruik GPS.
+2. Kies 15, 30 of 50 km.
+3. Tik op de gewenste categorie of Alle POI’s dichtbij.
+4. Tik op een resultaat om het volledige formulier te vullen.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen SQL nodig.

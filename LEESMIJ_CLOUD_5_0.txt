@@ -1,0 +1,28 @@
+MIJNSERENITY CLOUD 5.0 — NATIVE APP EDITION
+
+NIEUW
+- Volwaardige webapp voor iPhone en iPad.
+- App-icoon voor het beginscherm.
+- Installatieknop op het dashboard.
+- Online/offline-status.
+- Basisschermen blijven beschikbaar wanneer de verbinding tijdelijk wegvalt.
+- Automatische melding wanneer een nieuwe MijnSerenity-versie klaarstaat.
+- Veilige netwerk-eerst caching zodat nieuwe versies niet blijven hangen.
+- Apple standalone-weergave met veilige schermranden.
+
+UPLOAD AL DEZE BESTANDEN NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- manifest.json
+- sw.js
+- icon-192.png
+- icon-512.png
+
+Geen SQL of Supabase-wijziging nodig.
+
+INSTALLEREN OP IPHONE/IPAD
+1. Open mijnserenity.nl in Safari.
+2. Tik op Deel.
+3. Kies Zet op beginscherm.
+4. Open MijnSerenity daarna via het nieuwe app-icoon.

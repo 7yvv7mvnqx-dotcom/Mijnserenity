@@ -1,0 +1,13 @@
+MIJNSERENITY CLOUD 5.0.1 — LOGSTATUS
+
+NIEUW
+- Logs met een datum in het verleden krijgen een groen kader en label 'Gevaren'.
+- Logs met een datum in de toekomst krijgen een rood kader en label 'Nog te varen'.
+- Logs van vandaag krijgen een blauw kader en label 'Vandaag'.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+
+Geen SQL of Supabase-wijziging nodig.

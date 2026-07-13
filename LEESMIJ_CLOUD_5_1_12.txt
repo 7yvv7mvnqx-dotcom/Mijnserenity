@@ -1,0 +1,19 @@
+MIJNSERENITY CLOUD 5.1.12 — BON AUTOMATISCH UITLEZEN
+
+Na het fotograferen of kiezen van een bonfoto probeert MijnSerenity automatisch:
+- bedrag
+- datum
+- winkel/leverancier als omschrijving
+- categorie
+
+De ingevulde gegevens blijven bewerkbaar.
+Controleer ze altijd vóór opslaan.
+PDF-bonnen worden opgeslagen maar niet automatisch gelezen.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL nodig.

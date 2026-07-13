@@ -1,0 +1,24 @@
+MIJNSERENITY CLOUD 5.1.4 — BONNETJES
+
+NIEUW
+- POI zoeken en filteren is inklapbaar en staat standaard dicht.
+- Waterkaarten-knop heet duidelijk:
+  'Kopieer bestemming en open Waterkaarten'.
+- Bonnetje direct scannen met de camera van iPhone/iPad.
+- Bestaande foto of PDF als bon toevoegen.
+- Maximaal 3 bonnetjes per kostenpost.
+- Voorbeeld bekijken vóór het opslaan.
+- Bonnetjes later openen of afzonderlijk verwijderen.
+- Bij verwijderen van de kostenpost worden de bonnetjes mee verwijderd.
+
+EERST EENMALIG IN SUPABASE UITVOEREN
+- MIJNSERENITY_CLOUD_5_1_4.sql
+
+DAARNA UPLOADEN NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+De scanner maakt een duidelijke foto van het bonnetje en koppelt die aan de
+kostenpost. Bedrag, datum en categorie worden nog handmatig ingevuld.

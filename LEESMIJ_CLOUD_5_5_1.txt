@@ -1,0 +1,31 @@
+MIJNSERENITY CLOUD 5.5.1 — HOME ASSISTANT STATUS HERSTELD
+
+PROBLEEM OPGELOST
+- De knop Controleer verbinding geeft nu altijd direct zichtbare feedback.
+- De knop toont tijdens de controle: Controleren…
+- MijnSerenity gebruikt de reeds ontvangen Home Assistant-data uit
+  technical_state als betrouwbare fallback.
+- De onderste Home Assistant-kaart kan daardoor Verbonden tonen, ook
+  wanneer de losse status-RPC tijdelijk een fout geeft.
+- Laatste synchronisatietijd en aantal ontvangen waarden worden uit het
+  technische dashboard overgenomen.
+- Een RPC-fout wordt voortaan letterlijk met foutcode en melding getoond,
+  in plaats van altijd ten onrechte “Voer eerst SQL uit”.
+- De werkende status bovenaan en de koppelingskaart onderaan gebruiken nu
+  dezelfde bron en kunnen niet meer met elkaar tegenspreken.
+- Een mislukte statuscontrole zet een bestaande verbinding niet meer terug
+  naar Niet gekoppeld.
+
+BELANGRIJK
+De Home Assistant-data was al binnengekomen: de groene status bovenaan
+bewees dat. Deze versie herstelt vooral de statusweergave en controleknop.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen nieuwe SQL nodig.
+De SQL van 5.4.0 en 5.5.0 blijft geldig.

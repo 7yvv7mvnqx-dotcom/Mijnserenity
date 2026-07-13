@@ -1,0 +1,40 @@
+MIJNSERENITY CLOUD 5.4.2 — MOTORUREN AUTOMATISCH BIJWERKEN
+
+NIEUW
+- Na het opslaan van iedere NIEUWE vaartocht wordt duration_hours
+  automatisch bij de motoruren in Techniek opgeteld.
+- Werkt bij:
+  • handmatig opgeslagen vaartochten
+  • geïmporteerde Waterkaarten-routes
+  • automatische live-vaarlogboeken
+  • routes uit de Reisplanner die als logboek worden opgeslagen
+- Een vaartocht wordt per ID bijgehouden en kan dus niet dubbel
+  worden opgeteld.
+- Wordt een reeds verwerkte vaartocht bewerkt, dan verwerkt
+  MijnSerenity alleen het verschil in vaartijd.
+- Wordt een nieuwe, automatisch getelde vaartocht verwijderd, dan
+  worden de bijbehorende motoruren weer afgetrokken.
+- Oude logboeken van vóór 5.4.2 worden bij bewerking als uitgangspunt
+  geregistreerd en niet alsnog dubbel bijgeteld.
+- Iedere automatische wijziging komt in het technische logboek
+  onder categorie Vaartijd.
+- Het technische dashboard toont de laatst automatisch verwerkte vaart.
+
+VOORBEELD
+- Motoruren voor de vaart: 850,0
+- Vaartijd in logboek: 3,5 uur
+- Nieuwe motoruren: 853,5
+
+BEHOUDEN
+- Handmatig aanpassen van motoruren in een technische momentopname
+  blijft mogelijk.
+- De SQL van technisch dashboard 5.4.0 blijft geldig.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen nieuwe SQL nodig.

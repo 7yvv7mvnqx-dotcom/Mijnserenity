@@ -1,0 +1,25 @@
+MIJNSERENITY CLOUD 5.1.22 — LIVE VAREN + WATERKAARTEN
+
+AANGEPAST
+- De knop heet nu 'Start varen + Waterkaarten'.
+- Bij tikken start MijnSerenity eerst:
+  • GPS-opname
+  • tijdregistratie
+  • afstandsregistratie
+  • lokale opslag van de actieve opname
+- Daarna wordt de bestaande Apple-opdracht 'Open Waterkaarten' gestart.
+- Hervatten na pauze opent Waterkaarten niet opnieuw.
+- Op iPad wordt Split View aanbevolen, zodat MijnSerenity zichtbaar blijft.
+
+BELANGRIJK
+Wanneer iPhone/iPad MijnSerenity volledig naar de achtergrond verplaatst,
+kan Safari de GPS-opname pauzeren. De opname wordt daarom eerst veilig lokaal
+opgeslagen voordat Waterkaarten opent.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

@@ -1,0 +1,31 @@
+MIJNSERENITY CLOUD 5.1.17 — VAARROUTE IMPORTEREN
+
+NIEUW
+- Duidelijke knop: 'Importeer vaarroute uit bestand'.
+- Ondersteunt GPX, KML en KMZ.
+- Na kiezen van een bestand vult MijnSerenity zoveel mogelijk automatisch in:
+  • naam van de vaartocht
+  • vertrekpunt
+  • aankomstpunt
+  • datum
+  • afstand in kilometers
+  • vaartijd
+  • beschrijving/notities
+- Afstand wordt berekend uit alle routepunten.
+- Vaartijd wordt berekend als het bestand tijdstempels bevat.
+- Vertrek en aankomst worden uit route- of waypointnamen gehaald wanneer aanwezig.
+- Een statusvak toont welke routegegevens zijn gevonden.
+- De route wordt bij opslaan nog steeds als bestand en kaartlijn bewaard.
+
+LET OP
+Niet ieder GPX-, KML- of KMZ-bestand bevat naam, tijd of plaatsnamen.
+MijnSerenity vult alleen gegevens in die in het bestand staan of betrouwbaar
+uit de routepunten kunnen worden berekend.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

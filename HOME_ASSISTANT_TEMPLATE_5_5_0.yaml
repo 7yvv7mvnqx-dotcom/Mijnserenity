@@ -1,0 +1,29 @@
+# MijnSerenity Cloud 5.5.0 — Home Assistant
+# Gebruik bij voorkeur de configuratie die MijnSerenity zelf genereert.
+# Die bevat automatisch de juiste boot-ID en geheime sleutel.
+
+# secrets.yaml
+mijnserenity_rpc_url: "https://wufslczbtguvtgmfufid.supabase.co/rest/v1/rpc/ingest_home_assistant_technical_data"
+mijnserenity_supabase_key: "VUL_DE_PUBLISHABLE_KEY_IN"
+mijnserenity_authorization: "Bearer VUL_DE_PUBLISHABLE_KEY_IN"
+mijnserenity_secret: "VUL_DE_DOOR_MIJNSERENITY_GEGENEREERDE_SLEUTEL_IN"
+
+# configuration.yaml
+rest_command:
+  mijnserenity_sync:
+    url: !secret mijnserenity_rpc_url
+    method: post
+    content_type: "application/json"
+    headers:
+      apikey: !secret mijnserenity_supabase_key
+      Authorization: !secret mijnserenity_authorization
+      x-mijnserenity-secret: !secret mijnserenity_secret
+    payload: >-
+      {
+        "p_boat_id": "VUL_BOOT_ID_IN",
+        "p_payload": {
+          "house_voltage": {{ (states('sensor.serenity_huishoudaccu_spanning') | float(none)) | to_json }},
+          "start_voltage": {{ (states('sensor.serenity_startaccu_spanning') | float(none)) | to_json }},
+          "solar_power": {{ (states('sensor.serenity_zonnepaneel_vermogen') | float(none)) | to_json }}
+        }
+      }

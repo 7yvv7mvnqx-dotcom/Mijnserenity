@@ -1,0 +1,39 @@
+MIJNSERENITY CLOUD 5.1.36 — INLOGBEVEILIGING EN ACCOUNTBEHEER
+
+INLOGSCHERM
+- Wachtwoord tonen/verbergen.
+- Inloggen met Enter.
+- Algemene, veilige foutmeldingen.
+- Nieuwe wachtwoorden minimaal 10 tekens.
+- Wachtwoord vergeten stuurt een herstelmail.
+- Inlogknop wordt tijdens aanmelden tijdelijk geblokkeerd.
+
+ACCOUNT EN BEVEILIGING
+Onder Boot/Instellingen staat een nieuw inklapbaar onderdeel:
+- e-mailadres en bevestigingsstatus
+- bootrol
+- laatste login
+- profielnaam wijzigen
+- wachtwoordsterkte tonen
+- wachtwoord wijzigen
+- herstelmail sturen
+- andere apparaten uitloggen
+- dit apparaat uitloggen
+- alle apparaten uitloggen
+
+WACHTWOORDHERSTEL
+Na openen van de herstelmail gaat MijnSerenity automatisch naar
+Account en beveiliging om een nieuw wachtwoord te kiezen.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+GEEN SQL NODIG
+De functies gebruiken de bestaande Supabase Auth-accounts.
+
+LET OP
+Voor herstelmails moet https://mijnserenity.nl als toegestane redirect-URL
+in Supabase Authentication staan.

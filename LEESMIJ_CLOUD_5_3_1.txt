@@ -1,0 +1,49 @@
+MIJNSERENITY CLOUD 5.3.1 — AUTOMATISCH VAARLOGBOEK
+
+NIEUW
+- Automatisch opslaan na het stoppen van een GPS-opname.
+- Vertrek en aankomst worden automatisch bepaald.
+- Als internet-geocodering niet lukt, gebruikt MijnSerenity:
+  1. de dichtstbijzijnde opgeslagen POI;
+  2. anders een betrouwbare GPS-aanduiding.
+- Automatische registratie van:
+  • datum
+  • vertrek- en aankomsttijd
+  • vertrek en aankomst
+  • gevaren GPS-route
+  • afstand
+  • vaartijd
+  • gemiddelde en maximale snelheid
+  • geschat brandstofverbruik
+  • geschatte brandstofkosten
+  • actueel weer
+  • toerental en roerstand
+  • POI’s waarlangs de route liep
+  • GPX-bestand
+- Optioneel maximaal 10 foto’s direct aan het automatische logboek toevoegen.
+- Automatische samenvatting voordat de route wordt opgeslagen.
+- Logboekitems krijgen herkenbare technische informatieballonnen.
+
+AFMEERDETECTIE
+- Optioneel automatisch stoppen wanneer Serenity langere tijd stil ligt.
+- Instelbaar op 5, 10, 15, 20 of 30 minuten.
+- Minimale afstand instelbaar op 0,1 tot 1,0 km.
+- De functie start pas nadat daadwerkelijk varen is gedetecteerd.
+- Standaard staat automatisch opslaan AAN.
+- Automatisch stoppen bij afmeren staat standaard UIT om ongewenst
+  stoppen bij bruggen of sluizen te voorkomen.
+
+BETROUWBAARHEID
+- Korte of onbedoelde opnames worden niet automatisch opgeslagen.
+- Bij een uploadfout blijft de GPS-opname lokaal bewaard.
+- Een herstelde opname kan na een herstart worden hervat.
+- Handmatig opslaan blijft beschikbaar.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen SQL nodig.

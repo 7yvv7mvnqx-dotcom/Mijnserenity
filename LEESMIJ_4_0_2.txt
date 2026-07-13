@@ -1,0 +1,20 @@
+MIJNSERENITY CLOUD 4.0.2 — GPX ROUTE EDITION
+
+OPGELOST
+- Zwart vlak bij een GPX-route op iPhone/iPad
+- Leaflet-kaart wordt opnieuw berekend nadat een logboekregel is uitgeklapt
+- Route zoomt automatisch volledig in beeld
+
+NIEUW
+- Startmarker en eindmarker
+- Eigen POI's vlak langs de route zichtbaar
+- Laatste GPX-route op het dashboard
+- Kaart wordt netjes verwijderd en opnieuw opgebouwd bij sluiten/openen
+
+INSTALLATIE
+Upload alleen:
+- index.html
+- styles.css
+- app.js
+
+Supabase hoeft niet aangepast te worden.

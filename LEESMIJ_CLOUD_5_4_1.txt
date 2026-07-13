@@ -1,0 +1,35 @@
+MIJNSERENITY CLOUD 5.4.1 — STRIKTE POI-FOTOMATCH
+
+VERBETERD
+- Algemene foto’s van alleen de plaats of omgeving worden niet meer getoond.
+- Iedere internetfoto wordt beoordeeld op:
+  • exacte POI-naam
+  • herkenbare unieke woorden uit de naam
+  • juiste plaats
+  • herkenbaar adres of straat
+  • afstand tot de opgeslagen GPS-locatie
+  • categorie van de POI
+- GPS-zoekafstand verkleind van 10 km naar 500 meter.
+- Een foto dichtbij de POI wordt alleen getoond wanneer ook naam,
+  adres of categorie overeenkomt.
+- Zoekopdrachten gebruiken altijd de specifieke POI-naam.
+- Resultaten krijgen een zichtbaar label:
+  • Exacte naam + locatie
+  • Exacte POI-naam
+  • Naam + plaats
+  • Naam + adres
+  • Direct bij POI
+- Resultaten worden gesorteerd op betrouwbaarheid en daarna afstand.
+- Bij onvoldoende bewijs toont MijnSerenity liever geen foto dan een
+  onjuiste plaatsfoto.
+- Bron, maker, licentie en type relatie worden bij de POI-notitie bewaard.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen nieuwe SQL nodig.
+De SQL van technisch dashboard 5.4.0 blijft geldig.

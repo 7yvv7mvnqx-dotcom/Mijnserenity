@@ -1,0 +1,21 @@
+MIJNSERENITY CLOUD 4.0.7 — WATERKAARTEN OP IPHONE EN IPAD
+
+NIEUW
+- De Waterkaarten-knop gebruikt op iPhone/iPad de iOS-deelfunctie.
+- De laatste route wordt als GPX aangeboden aan de geïnstalleerde Waterkaarten-app.
+- Bij iedere vaartocht met route staat 'Open in Waterkaarten'.
+- Zonder opgeslagen route wordt de officiële App Store-pagina geopend.
+- Op andere apparaten blijft de Waterkaarten-webomgeving openen.
+
+GEBRUIK OP IPHONE/IPAD
+1. Tik op 'Open in Waterkaarten'.
+2. Kies Waterkaarten in het iOS-deelvenster.
+3. De route wordt in de Waterkaarten-app geïmporteerd.
+
+INSTALLATIE
+Upload naar GitHub:
+- index.html
+- styles.css
+- app.js
+
+Geen SQL of Supabase-wijziging nodig.

@@ -1,0 +1,33 @@
+MIJNSERENITY CLOUD 5.1.25 — DASHBOARD EN FINANCIEEL INZICHT
+
+DASHBOARD
+- Alle knoppen hebben nu dezelfde afmetingen, opbouw en luxe maritieme stijl.
+- Iedere knop heeft:
+  • eigen pictogram
+  • duidelijke titel
+  • korte uitleg of actuele waarde
+  • pijl om aan te geven dat de knop opent
+- De Waterkaarten-afbeelding is nu als pictogram in dezelfde tegel verwerkt.
+- Nieuw overzicht 'Totale uitgaven' op het dashboard.
+- De grootste kostencategorieën en bedragen worden daar direct getoond.
+
+KLIKBARE BEDRAGEN EN CATEGORIEËN
+- Tik op Totale uitgaven om het volledige financiële overzicht te openen.
+- Tik op een categorie op het dashboard om het financiële overzicht direct
+  op die categorie te filteren.
+- Kosten per categorie in Financieel zijn klikbaar.
+- Bedragen per maand in Financieel zijn klikbaar.
+- Onder Financieel staat nu 'Inhoud van het filter' met de afzonderlijke
+  kostenposten en brandstofkosten.
+- Tik op een gewone kostenpost om Kosten te openen.
+- Tik op brandstof van een vaartocht om Logboek te openen.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+waterkaarten-dashboard.png blijft nodig, maar is niet gewijzigd.
+
+Geen SQL of Supabase-wijziging nodig.

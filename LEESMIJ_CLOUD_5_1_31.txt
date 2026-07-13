@@ -1,0 +1,16 @@
+MIJNSERENITY CLOUD 5.1.31 — NIEUW WATERKAARTEN-PICTOGRAM
+
+AANGEPAST
+- De door jou aangeleverde blauwe bootafbeelding staat nu op het dashboard.
+- De afbeelding wordt gebruikt in de tegel Waterkaarten.
+- De tegel blijft Waterkaarten openen via Apple Opdrachten.
+- De afbeelding wordt volledig zichtbaar getoond op een witte achtergrond.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- waterkaarten-dashboard.png
+
+Geen SQL of Supabase-wijziging nodig.

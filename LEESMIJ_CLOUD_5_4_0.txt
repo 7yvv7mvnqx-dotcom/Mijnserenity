@@ -1,0 +1,45 @@
+MIJNSERENITY CLOUD 5.4.0 — TECHNISCH SCHEEPSDASHBOARD
+
+NIEUW
+- Nieuw hoofdonderdeel Techniek.
+- Actueel overzicht van:
+  • motoruren
+  • motortemperatuur
+  • oliedruk en koelvloeistof
+  • huishoud- en startaccu
+  • diesel-, drinkwater- en vuilwatertank
+  • walstroom en zonnepaneel
+  • dieselverwarming
+  • bilgepomp
+- Automatische waarschuwingen voor lage accu’s en tankniveaus,
+  hoge motortemperatuur, lage oliedruk, bilge-alarm en storingen.
+- Onderhoudsplanner met standaardtaken voor motor, romp,
+  elektrische installatie, verwarming en veiligheid.
+- Onderhoud op datum en/of motoruren.
+- Knop Uitgevoerd rekent de volgende onderhoudsdatum en motoruren uit.
+- Zelf onderhoudstaken toevoegen.
+- Technisch logboek voor onderhoud, controles, storingen en reparaties.
+- Integratiestatus voor Victron, Home Assistant en NMEA2000.
+- Nieuwe dashboardtegel, desktop-tab en onderste navigatieknop.
+
+DELEN EN SYNCHRONISATIE
+- Voer SUPABASE_TECHNISCH_DASHBOARD_5_4_0.sql één keer uit.
+- Daarna worden status, onderhoud en technisch logboek gedeeld
+  tussen Michel en Desi.
+- Zonder SQL blijft het dashboard bruikbaar en worden gegevens
+  lokaal op het apparaat bewaard.
+
+VOLGORDE
+1. Voer de SQL uit in Supabase SQL Editor.
+2. Upload de vijf gewijzigde appbestanden naar GitHub.
+3. Open MijnSerenity en vul de eerste technische momentopname in.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+SQL UITVOEREN
+- SUPABASE_TECHNISCH_DASHBOARD_5_4_0.sql

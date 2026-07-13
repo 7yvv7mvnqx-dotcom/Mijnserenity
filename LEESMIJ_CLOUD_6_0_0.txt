@@ -1,0 +1,22 @@
+MIJNSERENITY CLOUD 6.0.0 — FULLSCREEN RESPONSIVE EDITION
+
+VERBETERD
+- Dashboard en alle pagina's staan gecentreerd op MacBook en iPad.
+- De app benut op grotere schermen vrijwel de volledige beschikbare breedte.
+- Maximale inhoudsbreedte is 1500 px voor een rustige, professionele weergave.
+- iPad staand: twee kolommen.
+- iPad liggend en kleinere laptops: drie kolommen.
+- MacBook en grote schermen: vier kolommen.
+- iPhone-layout blijft compact en bruikbaar.
+- Volledige schermhoogte via 100dvh en Safari-correctie.
+- Navigatie blijft na vier seconden automatisch verdwijnen.
+- Navigatie verschijnt opnieuw bij aanraken, scrollen of muisbeweging.
+- Grote iconen en horizontaal vegen blijven behouden.
+- PWA mag nu zowel staand als liggend worden gebruikt.
+
+UPLOAD NAAR GITHUB
+Upload de volledige inhoud van deze ZIP naar dezelfde repository en kies
+bij dubbele bestanden voor vervangen/overschrijven.
+
+Geen nieuwe SQL nodig.
+Geen wijzigingen in Home Assistant nodig.

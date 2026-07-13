@@ -1,0 +1,25 @@
+MIJNSERENITY CLOUD 5.1.13 — FINANCIEEL FILTER
+
+NIEUW
+- Financieel filter staat standaard ingeklapt.
+- Filteren per:
+  • dag
+  • week
+  • maand
+  • jaar
+  • categorie
+- Bovenaan staat het totaal van het ingestelde filter.
+- Ook zichtbaar binnen het filter:
+  • aantal kostenposten
+  • brandstofkosten
+  • kosten per vaaruur
+- Kosten per categorie en per maand volgen automatisch het actieve filter.
+- 'Filter wissen' herstelt alle perioden en alle categorieën.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

@@ -1,0 +1,17 @@
+MIJNSERENITY CLOUD 5.1.42 — HEADER VERWIJDERD
+
+AANGEPAST
+- De volledige MijnSerenity-header bovenaan is verwijderd.
+- De app begint direct met de inhoud.
+- Het logo op het inlogscherm en toestemming-scherm blijft behouden.
+- De Online-knop blijft in de Sync-ballon staan.
+- Cacheversies zijn verhoogd zodat de wijziging direct zichtbaar wordt.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen SQL nodig.

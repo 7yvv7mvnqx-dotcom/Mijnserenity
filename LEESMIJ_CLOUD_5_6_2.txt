@@ -1,0 +1,29 @@
+MIJNSERENITY CLOUD 5.6.2 — CAMERAWEERGAVE HERSTELD
+
+WAAROM 5.6.1 NIET WERKTE
+De Home Assistant-koppeling en tijdelijke cameratoken waren geldig, maar
+de MJPEG-stream werd door deze camera/remote verbinding niet als bruikbare
+afbeeldingsstream aan Safari geleverd.
+
+OPLOSSING
+- MijnSerenity gebruikt nu het officiële signed camera_proxy-beeld.
+- Iedere seconde wordt een nieuw beeld opgevraagd.
+- Geen afhankelijkheid meer van MJPEG, HLS of WebRTC in de externe webapp.
+- De token wordt nog steeds iedere vier minuten automatisch vernieuwd.
+- Bij een korte storing blijft het laatste geldige beeld zichtbaar.
+- MijnSerenity probeert automatisch opnieuw.
+- Fullscreen gebruikt dezelfde betrouwbare beeldverversing.
+
+RESULTAAT
+Een vrijwel live camerabeeld met ongeveer één seconde tussen de beelden.
+Dit is betrouwbaarder op iPhone/iPad en onderweg via Nabu Casa.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen nieuwe SQL nodig.
+Geen wijziging in configuration.yaml of automations.yaml nodig.

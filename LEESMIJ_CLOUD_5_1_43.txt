@@ -1,0 +1,31 @@
+MIJNSERENITY CLOUD 5.1.43 — ALLE POI-INFORMATIE VIA TITEL
+
+AANGEPAST
+- De titel van iedere POI is nu een duidelijke klikbare knop.
+- Tik op de titel om alle opgeslagen informatie te openen.
+- In het detailvenster staan:
+  • naam
+  • categorie
+  • plaats
+  • adres
+  • beoordeling en sterren
+  • favoriet ja/nee
+  • GPS-coördinaten
+  • datum aangemaakt
+  • datum laatst gewijzigd
+  • alle notities
+  • alle foto’s
+- Vanuit het detailvenster kun je:
+  • Waterkaarten openen
+  • kaartlocatie toevoegen of corrigeren
+  • de POI bewerken
+- Zoeken kijkt nu ook naar het adres.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen SQL nodig.

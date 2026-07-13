@@ -1,0 +1,12 @@
+MIJNSERENITY CLOUD 4.0.1 — LOGIN HOTFIX
+
+OPGELOST
+- Inloggen werkt weer
+- Bestaande Supabase-sessie blijft behouden
+- Alle werkende functies uit Cloud 3.2 zijn hersteld
+- Onderste Captain Edition-navigatie blijft aanwezig
+- Na inloggen opent het dashboard
+
+INSTALLATIE
+Upload alleen index.html, styles.css en app.js naar GitHub.
+Supabase hoeft niet aangepast te worden.

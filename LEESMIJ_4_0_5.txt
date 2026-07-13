@@ -1,0 +1,18 @@
+MIJNSERENITY CLOUD 4.0.5 — WATERKAARTEN KMZ
+
+NIEUW
+- KMZ-routes uit Waterkaarten importeren.
+- KML-routes importeren.
+- GPX blijft ondersteund.
+- KMZ wordt in de browser uitgepakt.
+- Zowel KML LineString als gx:Track wordt herkend.
+- De langste route wordt automatisch gekozen.
+- Start- en eindpunt verschijnen op de kaart.
+
+INSTALLATIE
+Upload naar GitHub:
+- index.html
+- styles.css
+- app.js
+
+Geen SQL of Supabase-wijziging nodig.

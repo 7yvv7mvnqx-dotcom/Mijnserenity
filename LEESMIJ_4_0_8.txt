@@ -1,0 +1,20 @@
+MIJNSERENITY CLOUD 4.0.8 — WATERKAARTEN VIA OPDRACHTEN
+
+NIEUW
+- De knop 'Open Waterkaarten' start op iPhone en iPad de Apple-opdracht:
+  Open Waterkaarten
+- Daardoor opent de geïnstalleerde Waterkaarten-app rechtstreeks.
+- Op niet-Apple apparaten opent de Waterkaarten-webomgeving.
+- De knop bij een vaartocht heet nu 'Deel route naar Waterkaarten'.
+
+BELANGRIJK
+De opdracht in Apple Opdrachten moet exact heten:
+Open Waterkaarten
+
+INSTALLATIE
+Upload naar GitHub:
+- index.html
+- styles.css
+- app.js
+
+Geen SQL of Supabase-wijziging nodig.

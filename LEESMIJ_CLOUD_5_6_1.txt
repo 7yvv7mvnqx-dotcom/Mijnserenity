@@ -1,0 +1,18 @@
+MIJNSERENITY CLOUD 5.6.1 — LIVE CAMERA STREAM HERSTEL
+
+OPLOSSING
+- De stream gebruikt nu:
+  /api/camera_proxy_stream/<entity>?interval=1&token=<token>
+- Home Assistant bouwt daarmee zelf een MJPEG-stream uit camerabeelden.
+- Dit werkt ook wanneer de camera-entiteit geen eigen native MJPEG-stream biedt.
+- Het beeld wordt ongeveer één keer per seconde vernieuwd.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen nieuwe SQL nodig.
+Geen wijziging in configuration.yaml of automations.yaml nodig.

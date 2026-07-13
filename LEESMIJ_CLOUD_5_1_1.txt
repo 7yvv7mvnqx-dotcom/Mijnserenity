@@ -1,0 +1,17 @@
+MIJNSERENITY CLOUD 5.1.1 — FAVORIETENKAART
+
+OPGELOST
+- Supabase-coördinaten worden nu altijd correct als getal gelezen.
+- Favorieten verschijnen zichtbaar als grote gouden sterren.
+- Gewone POI's blijven als blauwe kaartpinnen zichtbaar.
+- De knop 'Alleen favorieten' laat duidelijk zien wanneer het filter actief is.
+- De kaart vermeldt hoeveel favorieten zichtbaar zijn.
+- Favorieten zonder coördinaten worden gemeld als 'nog geen kaartlocatie'.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

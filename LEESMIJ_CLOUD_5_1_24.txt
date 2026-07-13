@@ -1,0 +1,27 @@
+MIJNSERENITY CLOUD 5.1.24 — POI-HERSTEL
+
+OPGELOST
+- POI opslaan is robuuster gemaakt.
+- De app controleert eerst login en gekoppelde boot.
+- Duidelijke controle op naam, beoordeling en GPS-coördinaten.
+- Opslaan toont voortgang, foutmelding en bevestiging.
+- Na opslaan worden filters gewist en de POI-lijst direct opnieuw geladen.
+- Bewerken gebruikt ook de boot-id als extra beveiliging.
+
+NIEUW
+- Knop 'Leegmaken' bij een nieuwe POI.
+- Knop 'Annuleren' bij het bewerken van een POI.
+- Leegmaken houdt het formulier geopend.
+- Annuleren sluit het formulier zonder op te slaan.
+- Tijdens typen bij Naam verschijnen bestaande POI-namen.
+- Tijdens typen bij Plaats verschijnen ook bestaande POI-namen,
+  categorie en plaats naast de officiële plaats- en adressuggesties.
+- Kiezen van een bestaande POI neemt plaats, adres en GPS-locatie over.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

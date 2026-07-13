@@ -1,0 +1,14 @@
+MIJNSERENITY CLOUD 4.0.3 — FOTOHERSTEL
+
+OPGELOST
+- De foto van Serenity wordt na opnieuw openen weer uit Supabase geladen.
+- Instellingen opslaan wist de opgeslagen fotolocatie niet meer.
+- Oude tijdelijke foto-URL's worden bij iedere nieuwe sessie vernieuwd.
+
+INSTALLATIE
+Upload naar GitHub:
+- index.html
+- styles.css
+- app.js
+
+Geen SQL en geen wijziging in Supabase nodig.

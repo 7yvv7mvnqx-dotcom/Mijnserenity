@@ -1,0 +1,27 @@
+MIJNSERENITY CLOUD 5.1.14
+
+OPGELOST
+- Verversknop werkt nu zichtbaar en betrouwbaar.
+- Tijdens verversen toont Sync 'Verversen…'.
+- Na verversen toont Sync het tijdstip van de laatste succesvolle verversing.
+- POI-filters worden bij openen van POI altijd gewist.
+- POI's verschijnen direct zonder eerst 'Filter wissen' te gebruiken.
+- POI-lijst gebruikt na laden altijd dezelfde filter- en renderfunctie.
+
+NIEUWE FINANCIËLE CATEGORIEËN
+- Boodschappen
+- Eten & Drinken
+- Materialen
+
+De nieuwe categorieën staan bij:
+- Kosten toevoegen
+- Financieel filter
+- Automatische bonherkenning waar mogelijk
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

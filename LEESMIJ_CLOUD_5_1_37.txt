@@ -1,0 +1,29 @@
+MIJNSERENITY CLOUD 5.1.37 — BEHEERDERSTOESTEMMING
+
+BELANGRIJK: VOLGORDE
+1. Voer eerst SUPABASE_ACCOUNT_GOEDKEURING_5_1_37.sql volledig uit.
+2. Upload daarna index.html, styles.css, app.js en sw.js naar GitHub.
+
+WERKING
+- Nieuwe gebruikers kunnen een account aanvragen.
+- Na bevestiging van het e-mailadres kunnen zij nog niet in MijnSerenity.
+- Zij zien alleen 'Wachten op toestemming'.
+- Michel blijft de enige beheerder.
+- Michel ziet onder Boot > Account en beveiliging alle wachtende accounts.
+- Michel kan een account goedkeuren, weigeren of later toegang intrekken.
+- Bestaande accounts worden tijdens de SQL-installatie automatisch goedgekeurd.
+- Michel (michelvissia@gmail.com) wordt automatisch beheerder.
+- Een beheeraccount kan zichzelf niet blokkeren.
+- Wachtende of geweigerde accounts krijgen geen toegang tot de app-interface.
+
+DASHBOARD
+Als accounts wachten, ziet Michel op het dashboard een duidelijke melding.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+SQL EENMALIG UITVOEREN
+- SUPABASE_ACCOUNT_GOEDKEURING_5_1_37.sql

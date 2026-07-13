@@ -1,0 +1,32 @@
+MIJNSERENITY CLOUD 5.1.40 — UPDATE EN CACHE HERSTEL
+
+WAAROM DE SITE NOG V5.1.38 TOONDE
+De ZIP van 5.1.39 bevatte correct v5.1.39. Wanneer de live site toch
+v5.1.38 toont, is de nieuwe upload/deploy nog niet op de live site
+aangekomen of houdt de browser een oude asset vast.
+
+AANGEPAST
+- Kritieke bestanden hebben nu een versienummer in de URL.
+- De serviceworker wordt zonder browsercache opgehaald.
+- Direct na openen wordt meteen naar een nieuwe serviceworker gezocht.
+- Daarna wordt iedere 5 minuten opnieuw gecontroleerd.
+- Alleen oude MijnSerenity-caches worden verwijderd.
+- De versie staat ook zichtbaar achter Cloud · Captain Edition.
+
+UPLOAD NAAR GITHUB
+Upload AL deze bestanden uit deze versie:
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+- mijnserenity-logo.png
+- icon-192.png
+- icon-512.png
+
+Geen SQL nodig.
+
+CONTROLE
+Na de Netlify-deploy moet in de app staan:
+- Sync · v5.1.40
+- Cloud · Captain Edition · v5.1.40

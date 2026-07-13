@@ -1,0 +1,64 @@
+MIJNSERENITY CLOUD 5.3.0 — REISPLANNER & HAVENBIBLIOTHEEK
+
+GROTE NIEUWE HOOFDVERSIE
+
+REISPLANNER
+- Nieuw hoofdonderdeel Reisplanner.
+- Kies vertrek, bestemming en meerdere tussenstops uit opgeslagen POI’s.
+- Gebruik de actuele GPS-positie als vertrekpunt.
+- Stel gemiddelde snelheid en waterwegfactor in.
+- Automatische berekening van:
+  • geschatte vaarafstand
+  • geschatte vaartijd
+  • brandstofverbruik
+  • brandstofkosten
+- Kaartweergave met vertrek, tussenstops en bestemming.
+- Etappes afzonderlijk openen in Waterkaarten.
+- Volledige route kopiëren en openen in Waterkaarten.
+- Planning delen via het iOS-deelmenu.
+- Conceptplanningen lokaal bewaren.
+- Planning met één knop klaarzetten in het gedeelde logboek.
+
+BELANGRIJK
+De routeafstand is een schatting op basis van rechte lijnen maal een
+instelbare waterwegfactor. Bruggen, sluizen, diepgang en de werkelijk
+bevaarbare route moeten in Waterkaarten worden gecontroleerd.
+
+HAVENBIBLIOTHEEK
+- Eigen bibliotheek van alle opgeslagen POI’s met categorie Haven.
+- Automatische kwaliteitscontrole per haven.
+- Compleetheid gebaseerd op:
+  • naam
+  • plaats
+  • adres
+  • GPS
+  • informatie/notitie
+  • beoordeling
+  • foto
+- Statistieken voor totaal, favorieten, compleet en aandacht nodig.
+- Zoeken en filteren.
+- Direct naar een haven plannen.
+- Havengegevens aanvullen.
+- Nieuwe haven toevoegen.
+- Havens in de omgeving zoeken.
+- Havenbibliotheek gebruikt de bestaande gedeelde Supabase-POI’s en is
+  daardoor beschikbaar voor Michel en Desi.
+
+NAVIGATIE
+- Nieuw tabblad Reisplanner.
+- Nieuwe dashboardtegel.
+- Nieuwe knop Plan in de onderste navigatie.
+
+OPSLAG
+- Havenbibliotheek is gedeeld via de bestaande POI-database.
+- Conceptplanningen worden lokaal op het apparaat bewaard.
+- Via Naar logboek wordt de planning gedeeld met Desi.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen SQL nodig.

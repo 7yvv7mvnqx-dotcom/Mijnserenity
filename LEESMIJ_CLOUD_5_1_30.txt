@@ -1,0 +1,28 @@
+MIJNSERENITY CLOUD 5.1.30 — LIVE GEGEVENS ALS BALLONNEN
+
+AANGEPAST IN HET LOGBOEK
+Na het openen van een live opgenomen vaartocht verschijnen nu aparte
+informatiebollen voor:
+- GPS-punten
+- Max. snelheid
+- Motortoerental, wanneer ingevuld
+- Roerstand
+- Weer, temperatuur, wind en windstoten
+
+Deze staan naast de bestaande ballonnen:
+- Afstand
+- Vaartijd
+- Bemanning
+- Brandstof
+- Kosten
+
+De automatisch gegenereerde technische regels worden niet meer dubbel
+als gewone notitietekst getoond. Zelf geschreven notities blijven wel zichtbaar.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

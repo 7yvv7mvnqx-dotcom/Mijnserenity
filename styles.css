@@ -4687,3 +4687,88 @@ body{
     scroll-snap-type:x mandatory;
   }
 }
+
+/* =========================================================
+   MijnSerenity Cloud 6.0.0 — fullscreen responsive layout
+   ========================================================= */
+html{
+  width:100%;
+  min-height:100%;
+  margin:0;
+  padding:0;
+  overflow-x:hidden;
+  background:var(--dark);
+}
+body{
+  width:100%;
+  min-width:100%;
+  min-height:100vh;
+  min-height:100dvh;
+  margin:0;
+  overflow-x:hidden;
+}
+main{
+  width:min(calc(100% - 32px),1500px);
+  max-width:1500px;
+  min-height:100vh;
+  min-height:100dvh;
+  margin-inline:auto !important;
+  padding-left:0;
+  padding-right:0;
+}
+#authView,
+#approvalView,
+#appView,
+#appView > section{
+  width:100%;
+  min-width:0;
+}
+.dashboard-actions{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.card,
+.dashboard-tile,
+.stat{
+  min-width:0;
+}
+@media(min-width:1600px){
+  main{
+    width:min(calc(100% - 64px),1500px);
+  }
+}
+@media(min-width:900px) and (max-width:1199px){
+  main{
+    width:calc(100% - 40px);
+  }
+  .dashboard-actions{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media(min-width:600px) and (max-width:899px){
+  main{
+    width:calc(100% - 28px);
+  }
+  .dashboard-actions,
+  .grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:599px){
+  main{
+    width:calc(100% - 20px);
+  }
+  .dashboard-actions,
+  .grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@supports(-webkit-touch-callout:none){
+  html,
+  body,
+  main{
+    min-height:-webkit-fill-available;
+  }
+}

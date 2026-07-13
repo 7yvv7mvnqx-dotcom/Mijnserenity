@@ -1,15 +1,15 @@
-MIJNSERENITY CLOUD 2.0
+MIJNSERENITY CLOUD 3.2
 
-NIEUW
-- Interactieve OpenStreetMap-kaart
-- POI's met GPS-coördinaten op de kaart
-- Huidige positie tonen
-- Alleen favorieten tonen
-- Basis digitaal logboek voor vaartochten
-- Logboek realtime gedeeld
+OPGELOST / NIEUW
+- Maandfilter toont nu een echte maandkiezer
+- Weekfilter toont een weekkiezer
+- Jaarfilter toont beschikbare jaren
+- Logboek toont per regel titel en datum
+- Details van een vaartocht zijn uitklapbaar
+- GPX-bestand uit Waterkaarten uploaden bij aanmaken/bewerken
+- GPX-route wordt in het logboek op OpenStreetMap getoond
 
 INSTALLATIE
-1. Voer MIJNSERENITY_CLOUD_2_0.sql uit in Supabase.
+1. Voer MIJNSERENITY_CLOUD_3_2.sql uit in Supabase.
 2. Upload index.html, styles.css en app.js naar GitHub.
 3. Netlify publiceert automatisch.
-4. Open mijnserenity.nl en vernieuw.

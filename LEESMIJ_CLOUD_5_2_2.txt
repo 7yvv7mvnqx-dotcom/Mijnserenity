@@ -1,0 +1,50 @@
+MIJNSERENITY CLOUD 5.2.2 — AUTOMATISCH POI AANVULLEN
+
+NIEUW
+- Kies een naamsuggestie en MijnSerenity vult automatisch in:
+  • volledige naam
+  • categorie
+  • plaats
+  • adres
+  • GPS-coördinaten
+  • telefoon
+  • website
+  • e-mail
+  • openingstijden
+  • beheerder
+  • beschikbare havenvoorzieningen
+- Extra informatie wordt veilig opgeslagen bij Notitie.
+- Bij een exact herkende naam worden ontbrekende gegevens na het verlaten
+  van het naamveld automatisch aangevuld.
+- Nieuwe knop: Vul alle gegevens aan.
+
+KLEINE HAVENS
+- De knop heet nu Alle havens.
+- Naast gewone zoekresultaten wordt een aparte kaartendatabase doorzocht.
+- Zoekt binnen 30 km van:
+  1. de gekozen plaats/GPS;
+  2. of de huidige positie.
+- Zoekt ook naar:
+  • kleine jachthavens
+  • passantenhavens
+  • marina’s
+  • haventerreinen
+  • bootwerven
+  • benoemde aanlegplaatsen
+- Resultaten worden op naamrelevantie en afstand gesorteerd.
+- Kleine havens zijn herkenbaar aan een gouden markering.
+
+WERKWIJZE
+1. Vul bij voorkeur eerst Plaats in en kies de juiste suggestie.
+2. Tik op Alle havens.
+3. Kies een haven.
+4. Adres, GPS en beschikbare informatie worden automatisch ingevuld.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen SQL nodig.

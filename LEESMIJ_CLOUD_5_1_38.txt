@@ -1,0 +1,29 @@
+MIJNSERENITY CLOUD 5.1.38 — ACCOUNTOVERZICHT EN BOOTBEVEILIGING
+
+GEBRUIKERSBEHEER
+- Michel ziet alle accounts met naam en e-mailadres.
+- Per account wordt getoond:
+  • goedgekeurd, wachtend of geweigerd
+  • beheerder of gewone gebruiker
+  • online of offline
+  • laatst actief
+  • gebruikt apparaat, zoals iPad of iPhone
+- Online betekent activiteit binnen de afgelopen twee minuten.
+- Het overzicht wordt automatisch vernieuwd.
+
+BOOT & DELEN
+- Het desktop-tabblad Boot & delen is alleen zichtbaar voor Michel.
+- Direct openen via een link of functie wordt voor andere gebruikers geblokkeerd.
+- De knop Boot delen en leden beheren is alleen zichtbaar voor Michel.
+- De normale onderste knop Boot blijft Instellingen openen.
+
+VOLGORDE
+1. Cloud 5.1.37 SQL moet al zijn uitgevoerd.
+2. Voer SUPABASE_ONLINE_STATUS_5_1_38.sql één keer uit.
+3. Upload index.html, styles.css, app.js en sw.js naar GitHub.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js

@@ -1,0 +1,22 @@
+MIJNSERENITY CLOUD 5.1.3 — KAARTLOCATIES
+
+OPGELOST
+- 'Alle POI's' en 'Alleen favorieten' zijn nu twee vaste filters.
+- Alleen favorieten toont werkelijk uitsluitend favorieten.
+- Nederlandse decimale komma's in coördinaten worden goed gelezen.
+- Waarschijnlijk omgewisselde breedte- en lengtegraad worden automatisch herkend.
+- Favorieten met een verkeerde locatie kunnen direct worden gecorrigeerd.
+
+NIEUW
+- Tik op een favoriet en kies 'Locatie corrigeren'.
+- Tik daarna op de juiste plek of versleep de marker.
+- De gecorrigeerde locatie wordt direct in Supabase opgeslagen.
+- Ook in 'Meer info' staat de knop 'Locatie corrigeren'.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of handmatige Supabase-wijziging nodig.

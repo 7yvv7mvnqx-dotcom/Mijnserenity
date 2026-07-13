@@ -1,0 +1,30 @@
+MIJNSERENITY CLOUD 5.1.19 — ICLOUD DRIVE VAARROUTES
+
+NIEUW
+- Knop 'Controleer iCloud Drive / Vaarroutes'.
+- Op apparaten met een mapkiezer:
+  • kies de map Vaarroutes één keer
+  • MijnSerenity onthoudt de map waar mogelijk
+  • bij openen van Logboek wordt automatisch naar een nieuw bestand gezocht
+- Op iPhone/iPad:
+  • de Bestanden-kiezer opent
+  • ga naar iCloud Drive > Vaarroutes
+  • kies het nieuwste GPX-, KML- of KMZ-bestand
+- MijnSerenity kiest uit meerdere geselecteerde bestanden automatisch het nieuwste.
+- Reeds opgeslagen routes worden lokaal herkend en overgeslagen.
+- Een route geldt pas als geïmporteerd nadat de vaartocht is opgeslagen.
+- Alle bestaande automatische routegegevens blijven werken.
+
+BELANGRIJK
+iPhone en iPad laten een webapp niet stil op de achtergrond een iCloud-map
+bewaken. Daar blijft een tik op de controleknop nodig. Wanneer de browser een
+maphandle ondersteunt en de toestemming bewaart, controleert MijnSerenity de
+map ook automatisch bij het openen van Logboek.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

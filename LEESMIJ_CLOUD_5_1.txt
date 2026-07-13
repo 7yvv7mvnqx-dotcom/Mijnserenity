@@ -1,0 +1,25 @@
+MIJNSERENITY CLOUD 5.1 — LIVE VAARMODUS
+
+NIEUW
+- Live GPS-route tijdens het varen.
+- Actuele snelheid in km/u en knopen.
+- Afstand, vaartijd, gemiddelde snelheid en GPS-nauwkeurigheid.
+- Starten, pauzeren, hervatten en stoppen.
+- Live route op de kaart met startpunt en actuele positie.
+- Scherm blijft waar mogelijk wakker tijdens de opname.
+- Actieve opname wordt lokaal bewaard bij verversen of kort afsluiten.
+- Na stoppen direct opslaan in het bestaande logboek.
+- Route wordt tevens als GPX opgeslagen.
+- Brandstof en kosten worden automatisch berekend met de instellingen.
+
+BELANGRIJK OP IPHONE/IPAD
+Houd MijnSerenity tijdens het varen geopend. iOS kan GPS-opname onderbreken
+wanneer de webapp volledig wordt afgesloten of langdurig op de achtergrond staat.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

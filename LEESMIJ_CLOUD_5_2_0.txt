@@ -1,0 +1,35 @@
+MIJNSERENITY CLOUD 5.2.0 — CAPTAIN COMMAND CENTER
+
+DIT IS EEN GROTE NIEUWE STAP
+Het dashboard is uitgebreid tot een persoonlijk Captain Command Center.
+
+NIEUW
+- Persoonlijke begroeting op basis van het tijdstip.
+- Slim advies dat automatisch verandert op basis van je gegevens.
+- Seizoensoverzicht met:
+  • aantal vaartochten
+  • gevaren kilometers
+  • vaaruren
+  • favoriete POI’s
+  • totale uitgaven
+  • brandstofverbruik
+- Eén zoekveld voor POI’s, vaartochten en kosten.
+- Druk op Enter om het eerste zoekresultaat direct te openen.
+- Recente activiteit uit logboek, POI’s en kosten in één tijdlijn.
+- Vier snelle acties:
+  • Live varen
+  • Nieuwe POI
+  • Nieuwe kosten
+  • Nieuw logboekitem
+- Zoeken en recente activiteit openen direct het juiste onderdeel.
+- Kosten worden kort gemarkeerd wanneer ze vanuit zoeken worden geopend.
+- Volledig responsive voor iPhone en iPad.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen SQL nodig.

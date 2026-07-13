@@ -1,0 +1,35 @@
+MIJNSERENITY CLOUD 5.1.32 — VERBETERDE BONHERKENNING
+
+VERBETERD
+- Betere herkenning van de naam van de zaak of het restaurant.
+- Restaurantbonnen worden herkend als Eten & Drinken.
+- Artikelregels, aantallen en prijzen worden uit de bon gehaald.
+- Adres, datum, bestelling, tafelnummer en totaal worden waar mogelijk toegevoegd.
+- Nieuw bewerkbaar veld 'Details van de bon'.
+- De korte omschrijving en uitgebreide details worden apart getoond.
+- In de kostenlijst kunnen de bon-details worden opengeklapt.
+- Financiële overzichten blijven de korte omschrijving gebruiken.
+- OCR leest Nederlands en Engels.
+
+AANGELEVERDE BON
+Verwachte gegevens:
+- Omschrijving: Da Giorgio
+- Categorie: Eten & Drinken
+- Datum: 10-07-2026
+- Bedrag: €41,00
+- Adres: Markt 18, 7714 JM Coevorden
+- Bestelling: 2
+- Tafel: 202
+- Cola Zero: €3,50
+- La Trappe Blond: €5,50
+- Filetto salsa rosa: €18,50
+- Spaghetti: €0,00
+- Insalata di Parma: €13,50
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

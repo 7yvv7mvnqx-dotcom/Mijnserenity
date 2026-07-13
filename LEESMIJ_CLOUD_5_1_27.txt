@@ -1,0 +1,15 @@
+MIJNSERENITY CLOUD 5.1.27 — SPLIT VIEW INSTRUCTIE
+
+AANGEPAST
+- De instructie bij Live varen vermeldt nu duidelijk:
+  • Start varen opent Waterkaarten
+  • Open MijnSerenity en Waterkaarten naast elkaar in Split View
+  • Laat beide schermen zichtbaar tot de reis is opgeslagen
+- Dezelfde instructie verschijnt opnieuw nadat een live opname is gewist of opgeslagen.
+
+UPLOAD NAAR GITHUB
+- index.html
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

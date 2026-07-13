@@ -1,0 +1,28 @@
+MIJNSERENITY CLOUD 5.1.18 — ONTBREKENDE ROUTEGEGEVENS
+
+NIEUW BIJ ROUTE-IMPORT
+- Ontbrekende vertrek- en aankomstplaats worden opgezocht bij de routepunten.
+- Een generieke bestandsnaam wordt vervangen door 'Vertrek - Aankomst'.
+- Ontbrekende datum wordt uit de bestandsdatum gehaald.
+- Ontbrekende vaartijd wordt geschat:
+  • eerst op basis van jullie eerdere vaartochten
+  • anders met 9 km/u als veilige standaardinschatting
+- Bemanning wordt standaard 'Michel, Desi'.
+- Brandstofliters worden berekend met:
+  • ingestelde liters per uur
+  • of historische vaartochten als instelling ontbreekt
+- Brandstofkosten worden berekend met:
+  • ingestelde dieselprijs
+  • of historische vaartochten als instelling ontbreekt
+- Alle aannames en schattingen worden automatisch in Notities gezet.
+
+LET OP
+Geschatte waarden blijven bewerkbaar en moeten vóór opslaan worden gecontroleerd.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

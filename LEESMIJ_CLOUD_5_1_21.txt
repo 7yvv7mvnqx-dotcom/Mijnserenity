@@ -1,0 +1,17 @@
+MIJNSERENITY CLOUD 5.1.21 — WATERKAARTENKNOP
+
+AANGEPAST
+- De Waterkaarten-tegel op het dashboard gebruikt nu de nieuwe bootafbeelding.
+- De volledige afbeelding is de knop.
+- Tikken start de bestaande Apple-opdracht 'Open Waterkaarten'.
+- Op niet-Apple-apparaten blijft de gewone Waterkaarten-webpagina openen.
+- De afbeelding is opgenomen in de offline app-cache.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- waterkaarten-dashboard.png
+
+Geen SQL of Supabase-wijziging nodig.

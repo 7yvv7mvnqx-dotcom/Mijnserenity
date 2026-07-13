@@ -1,0 +1,50 @@
+MIJNSERENITY CLOUD 5.5.0 — HOME ASSISTANT KOPPELING
+
+DOEL
+Home Assistant Green kan technische sensorwaarden automatisch naar
+MijnSerenity sturen. De waarden verschijnen in het technische dashboard
+en worden gedeeld met Michel en Desi.
+
+ONDERSTEUNDE WAARDEN
+- motoruren
+- huishoudaccuspanning
+- startaccuspanning
+- zonnepaneelvermogen
+- dieseltank %
+- drinkwatertank %
+- vuilwatertank %
+- walstroom
+- motortemperatuur
+- oliedruk
+- dieselverwarming
+- bilgepomp
+
+BEVEILIGING
+- MijnSerenity genereert een willekeurige geheime koppelsleutel.
+- Alleen de hash van die sleutel wordt in Supabase opgeslagen.
+- De webapp bewaart geen Home Assistant-toegangstoken.
+- Home Assistant verstuurt alleen de gekozen sensorwaarden via HTTPS.
+- De sleutel kan worden vernieuwd of direct ongeldig gemaakt.
+
+INSTALLATIE
+1. Voer SUPABASE_TECHNISCH_DASHBOARD_5_4_0.sql uit wanneer dat nog niet
+   gebeurd is.
+2. Voer SUPABASE_HOME_ASSISTANT_5_5_0.sql uit.
+3. Upload de vijf gewijzigde appbestanden naar GitHub.
+4. Open MijnSerenity > Techniek > Home Assistant Green koppelen.
+5. Tik Koppeling aanmaken.
+6. Vul de beschikbare Home Assistant-entiteiten in.
+7. Kopieer de door MijnSerenity gegenereerde configuratie.
+8. Plaats de delen in secrets.yaml, configuration.yaml en automations.yaml.
+9. Controleer de configuratie en herstart Home Assistant.
+10. Voer rest_command.mijnserenity_sync één keer uit.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+SQL
+- SUPABASE_HOME_ASSISTANT_5_5_0.sql

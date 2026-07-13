@@ -1,0 +1,23 @@
+MIJNSERENITY CLOUD 5.6.4 — NAVIGATIEBALK IOS HOTFIX
+
+VERBETERD
+- De actieve navigatieknop wordt nu met nav.scrollTo() gecentreerd.
+- De pagina zelf kan daardoor op iPhone/iPad niet meer onverwacht
+  meeschuiven.
+- Aanraken, muisbeweging en scrollen tonen de balk zonder de horizontale
+  positie telkens opnieuw te centreren.
+- Alleen na het kiezen van een navigatieknop schuift die knop rustig naar
+  het midden.
+- Handmatig zijdelings vegen blijft natuurlijk werken.
+- De balk verdwijnt nog steeds automatisch na 4 seconden.
+- Iconen blijven circa 30 procent groter en in één horizontale rij.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen nieuwe SQL nodig.
+Geen wijzigingen in Home Assistant nodig.

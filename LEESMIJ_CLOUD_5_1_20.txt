@@ -1,0 +1,19 @@
+MIJNSERENITY CLOUD 5.1.20 — NIEUWE VAARTOCHT INGEKLAPT
+
+AANGEPAST
+- Nieuwe vaartocht staat standaard ingeklapt.
+- Bij openen van Logboek blijft het formulier dicht.
+- Na opslaan of annuleren klapt het formulier automatisch in.
+- Bij Bewerken klapt het formulier automatisch open.
+- Na het kiezen of automatisch vinden van een route klapt het formulier open,
+  zodat de ingevulde gegevens gecontroleerd kunnen worden.
+- Alleen het openen van de iCloud-map toont niet langer alvast een leeg formulier.
+
+UPLOAD NAAR GITHUB
+- index.html
+- app.js
+- sw.js
+
+styles.css is niet gewijzigd en hoeft niet opnieuw, maar mag wel mee.
+
+Geen SQL of Supabase-wijziging nodig.

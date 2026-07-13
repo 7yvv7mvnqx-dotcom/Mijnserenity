@@ -1,0 +1,34 @@
+MIJNSERENITY CLOUD 5.5.2 — CAMERA RADARBEUGEL
+
+NIEUW
+- Nieuwe camerakaart in Techniek: Camera radarbeugel.
+- Ondersteunt een directe JPEG/PNG-snapshot-URL.
+- Ondersteunt Home Assistant camera-entiteiten via camera.snapshot.
+- Automatisch verversen iedere 10, 30 of 60 seconden.
+- Handmatig verversen en grootbeeldweergave.
+- Camera-instellingen worden via technical_state gedeeld met Desi.
+- Willekeurige snapshotbestandsnaam om raden van de URL moeilijker te maken.
+- MijnSerenity genereert een los blok voor automations.yaml.
+- Geen Home Assistant-token in MijnSerenity nodig.
+
+HOME ASSISTANT
+1. Open MijnSerenity > Techniek > Camera radarbeugel > Camera instellen.
+2. Vul de camera-entiteit in, bijvoorbeeld camera.radarbeugel.
+3. Vul het externe Home Assistant-adres in.
+4. Kopieer de camera-automatisering naar automations.yaml.
+5. Sla op, controleer de configuratie en herstart Home Assistant.
+6. Voer de automatisering één keer handmatig uit.
+
+LET OP
+Bestanden in /config/www zijn via /local zonder Home Assistant-login opvraagbaar.
+Gebruik daarom de willekeurige bestandsnaam en deel de exacte URL niet.
+Dit is een regelmatig ververste snapshot, geen continue videostream.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen nieuwe SQL nodig.

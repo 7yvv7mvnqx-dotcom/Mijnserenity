@@ -1,0 +1,23 @@
+MIJNSERENITY CLOUD 5.1.33 — KOSTEN OPENEN VIA BEDRAG OF CATEGORIE
+
+AANGEPAST
+- Tik bij Kosten op het bedrag of de categorie om de volledige kostenpost open te klappen.
+- Tik in Financieel op een afzonderlijke kostenpost om de details direct daar te tonen.
+- Getoond worden:
+  • datum
+  • categorie
+  • bedrag
+  • omschrijving
+  • volledige details van de bon
+  • opgeslagen bonfoto's of PDF's
+- Vanuit het detailvenster kun je de kostenpost direct bewerken.
+- Brandstofkosten uit een vaartocht tonen route, afstand, vaartijd, liters en kosten.
+- Er kan steeds één detailvenster tegelijk openstaan voor meer overzicht.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

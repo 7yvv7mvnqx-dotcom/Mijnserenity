@@ -1,0 +1,24 @@
+MIJNSERENITY CLOUD 5.6.3 — AUTOMATISCH VERDWIJNENDE KNOPPENBALK
+
+NIEUW
+- De onderste knoppenbalk verdwijnt automatisch na 4 seconden.
+- Bij aanraken van het scherm komt de balk direct van onderen omhoog.
+- Bij muisbeweging, scrollen, het muiswiel of een toets wordt de balk
+  opnieuw zichtbaar.
+- De balk blijft altijd vast onderaan het zichtbare scherm staan,
+  ongeacht hoe ver de pagina is gescrold.
+- Alle navigatieknoppen staan in één horizontale rij.
+- Zijdelings vegen/scrollen door de navigatie is mogelijk.
+- De actieve knop schuift automatisch naar het midden van de balk.
+- De iconen zijn ongeveer 30 procent groter.
+- Ondersteuning voor de veilige schermrand van iPhone en iPad.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen nieuwe SQL nodig.
+Geen wijzigingen in Home Assistant nodig.

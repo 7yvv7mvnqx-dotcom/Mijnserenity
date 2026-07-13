@@ -1,0 +1,25 @@
+MIJNSERENITY CLOUD 5.1.16
+
+NIEUW
+- Tijdens typen bij Plaats verschijnen automatisch suggesties.
+- Tijdens typen bij Adres verschijnen automatisch suggesties.
+- Suggesties starten vanaf twee tekens.
+- Na kiezen van een suggestie worden voor zover beschikbaar ingevuld:
+  • plaats
+  • volledig adres
+  • breedtegraad
+  • lengtegraad
+- De gevonden coördinaten worden direct als POI-locatie ingevuld.
+- De knop 'Toon suggesties' blijft beschikbaar als handmatige fallback.
+
+TECHNIEK
+De Nederlandse adres- en plaatsgegevens komen uit de openbare PDOK
+Locatieserver.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

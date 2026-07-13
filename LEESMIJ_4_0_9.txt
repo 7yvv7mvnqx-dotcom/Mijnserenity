@@ -1,0 +1,14 @@
+MIJNSERENITY CLOUD 4.0.9 — INKLAPBAAR LOGBOEK ZOEKEN
+
+NIEUW
+- 'Logboek zoeken' is nu inklapbaar.
+- Werkt hetzelfde als 'Nieuwe vaartocht'.
+- Staat standaard dicht voor een rustiger scherm.
+
+INSTALLATIE
+Upload naar GitHub:
+- index.html
+- styles.css
+- app.js
+
+Geen SQL of Supabase-wijziging nodig.

@@ -1,0 +1,23 @@
+MIJNSERENITY CLOUD 5.1.2 — WATERKAARTEN-ROUTE
+
+NIEUW
+- Tik op een favoriet of POI op de kaart.
+- Knop 'Route in Waterkaarten'.
+- De bestemming wordt naar het klembord gekopieerd.
+- De Apple-opdracht 'Open Waterkaarten' opent daarna de Waterkaarten-app.
+- Knop 'Meer info' opent een volledig detailscherm.
+- Detailscherm bevat adres, beoordeling, notitie, foto's en bewerken.
+
+BELANGRIJK
+Waterkaarten heeft geen gedocumenteerde directe koppeling waarmee een andere
+webapp automatisch een bestemming in de routeplanner kan invullen.
+MijnSerenity opent daarom Waterkaarten en kopieert de bestemming, zodat deze
+direct in de zoekbalk van Waterkaarten kan worden geplakt.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

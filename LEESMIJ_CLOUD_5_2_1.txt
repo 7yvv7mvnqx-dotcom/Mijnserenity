@@ -1,0 +1,40 @@
+MIJNSERENITY CLOUD 5.2.1 — POI-SUGGESTIES VERBETERD
+
+AANGEPAST
+- De dubbele iPhone/iPad-datalist is verwijderd; alleen het eigen
+  duidelijke suggestiepaneel blijft over.
+- Plaats- en adressuggesties zijn verbeterd.
+- Bij adreszoeken wordt de ingevulde plaats automatisch meegenomen.
+- Na het kiezen van een plaats worden naamsuggesties opnieuw in die
+  omgeving gezocht.
+- Online zoeken werkt nu voor veel meer POI-soorten, niet alleen havens.
+- Automatische categorieherkenning voor:
+  • alle grote en kleine havens/jachthavens/marina’s
+  • supermarkt
+  • cafetaria/snackbar
+  • restaurant
+  • café
+  • tankstation
+  • bakker
+  • apotheek
+  • winkel
+  • camping
+  • parkeren
+  • toilet
+  • watertappunt
+  • brug en sluis
+- Zes snelle zoekknoppen toegevoegd.
+- Havens worden met meerdere zoekopdrachten gezocht om ook kleine
+  jachthavens en marina’s beter mee te nemen.
+- Een online resultaat vult automatisch naam, categorie, plaats,
+  adres en GPS-coördinaten in.
+- De POI-categoriefilters zijn uitgebreid.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen SQL nodig.

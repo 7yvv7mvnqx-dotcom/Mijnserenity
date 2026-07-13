@@ -1,0 +1,34 @@
+MIJNSERENITY CLOUD 5.2.3 — INTERNETFOTO’S BIJ POI’S
+
+NIEUW
+- Zoek foto’s op internet op basis van:
+  • POI-naam
+  • plaats
+  • adres
+  • categorie
+  • GPS-locatie
+- De zoekfunctie combineert foto’s van de specifieke POI met foto’s
+  uit de directe omgeving.
+- Na het kiezen van een online POI start de fotozoeker automatisch.
+- Maximaal 3 internetfoto’s kunnen worden geselecteerd.
+- Bij Opslaan worden de geselecteerde foto’s naar de bestaande
+  MijnSerenity-foto-opslag gekopieerd.
+- Bron, maker en licentie worden automatisch bij de POI-notitie bewaard.
+- Iedere foto toont een knop Bekijk bron.
+- Bestaande POI’s hebben in het detailvenster de knop
+  Zoek internetfoto’s.
+
+FOTOBRON
+- De geïntegreerde zoekfunctie gebruikt Wikimedia Commons.
+- Alleen bruikbare JPEG-, PNG- en WebP-afbeeldingen worden getoond.
+- Wanneer geen passende foto beschikbaar is, blijven handmatige
+  foto-upload en camera gewoon beschikbaar.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+Geen SQL nodig.

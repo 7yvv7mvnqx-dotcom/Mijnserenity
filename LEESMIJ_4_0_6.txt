@@ -1,0 +1,15 @@
+MIJNSERENITY CLOUD 4.0.6 — WATERKAARTEN OPENEN
+
+NIEUW
+- Waterkaarten-tegel op het dashboard.
+- Knop bij de interactieve kaart.
+- Knop bij het importeren van GPX, KML of KMZ.
+- Waterkaarten opent apart, zodat MijnSerenity open blijft staan.
+
+INSTALLATIE
+Upload naar GitHub:
+- index.html
+- styles.css
+- app.js
+
+Geen SQL of Supabase-wijziging nodig.

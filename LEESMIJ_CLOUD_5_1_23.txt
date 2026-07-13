@@ -1,0 +1,28 @@
+MIJNSERENITY CLOUD 5.1.23 — OPRUIMING DASHBOARD EN FORMULIEREN
+
+AANGEPAST
+- De dashboardknop 'Installeer app' is verwijderd.
+- Formulieren en filters staan standaard ingeklapt:
+  • Nieuwe POI
+  • POI zoeken en filteren
+  • Nieuwe vaartocht
+  • Logboek zoeken
+  • Nieuwe kosten
+  • Financieel filter
+  • Bootinstellingen
+- Bij Bewerken opent het juiste formulier automatisch.
+- Na opslaan of annuleren klapt het formulier weer in.
+- De grote verwijderknop bij POI's is verwijderd; de kleine prullenbak blijft.
+- De grote logboek-verwijderknop is vervangen door een kleine prullenbak.
+- Kosten en foto’s behouden hun bestaande compacte verwijderknoppen.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+waterkaarten-dashboard.png blijft ongewijzigd en hoeft niet opnieuw,
+maar mag wel mee worden geüpload.
+
+Geen SQL of Supabase-wijziging nodig.

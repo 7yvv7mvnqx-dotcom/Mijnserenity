@@ -1,0 +1,15 @@
+MIJNSERENITY CLOUD 4.0.4 — LOG VERWIJDEREN
+
+NIEUW
+- Duidelijke knop 'Log verwijderen' bij iedere vaartocht.
+- Extra bevestiging met de naam van de vaartocht.
+- Verwijdert route, fotoregistraties en gekoppelde foto's.
+- Logboek, dashboard en financiële totalen worden meteen bijgewerkt.
+
+INSTALLATIE
+Upload naar GitHub:
+- index.html
+- styles.css
+- app.js
+
+Geen SQL of Supabase-wijziging nodig.

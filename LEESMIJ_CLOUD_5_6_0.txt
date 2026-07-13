@@ -1,0 +1,44 @@
+MIJNSERENITY CLOUD 5.6.0 — LIVE CAMERA RADARBEUGEL
+
+NIEUW
+- Live camerabeeld in de Live vaarmodus.
+- Live camera start automatisch wanneer Live varen wordt geopend.
+- Start/stopknop om mobiel dataverbruik en accuverbruik te beperken.
+- Schermvullende liveweergave.
+- Liveweergave ook in Techniek.
+- Snapshot blijft als reservebeeld beschikbaar.
+- De camera-token wordt iedere vier minuten vanuit Home Assistant
+  bijgewerkt.
+- Geen langdurig Home Assistant-accounttoken in MijnSerenity.
+- Alleen de kort geldige cameratoegang van de gekozen camera-entiteit
+  wordt gedeeld.
+- Bij verlaten van de Live vaarmodus stopt de stream automatisch.
+
+TECHNIEK
+MijnSerenity gebruikt de Home Assistant camera-proxystream:
+  /api/camera_proxy_stream/<camera-entiteit>?token=<kort-geldige-token>
+
+INSTALLATIE
+1. Voer SUPABASE_LIVE_CAMERA_5_6_0.sql uit.
+2. Upload index.html, styles.css, app.js, sw.js en manifest.json.
+3. Open MijnSerenity > Techniek > Camera radarbeugel > Camera instellen.
+4. Vul de echte camera-entiteit in, bijvoorbeeld camera.radarbeugel_cam.
+5. Vul het externe HTTPS-adres van Home Assistant in.
+6. Tik Camera bewaren.
+7. Kopieer de live-camera configuratie.
+8. Plaats het eerste blok onder de bestaande rest_command: in
+   configuration.yaml.
+9. Plaats het tweede blok onderaan in automations.yaml.
+10. Herstart Home Assistant.
+11. Voer rest_command.mijnserenity_camera_sync één keer handmatig uit.
+12. Open MijnSerenity > Live.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+
+SQL
+- SUPABASE_LIVE_CAMERA_5_6_0.sql

@@ -1,0 +1,33 @@
+MIJNSERENITY CLOUD 5.1.29 — LIVE VAARGEGEVENS
+
+AANGEPAST
+- De snelheidsweergave in knopen is verwijderd.
+- Snelheid wordt alleen nog in km/u getoond.
+- Maximaal gemeten snelheid toegevoegd.
+- Actueel weer via de GPS-locatie:
+  • temperatuur
+  • gevoelstemperatuur
+  • wind
+  • windstoten
+  • neerslag
+  • weersituatie
+- Weer wordt automatisch bij het eerste GPS-punt opgehaald en periodiek ververst.
+- Handmatige invoer voor motortoerental toegevoegd.
+- Handmatige schuifregelaar voor roerstand toegevoegd:
+  • bakboord
+  • midden
+  • stuurboord
+- Max. snelheid, weer, toerental en roerstand worden bij opslaan aan de notities toegevoegd.
+- Live gegevens blijven lokaal bewaard wanneer de opname wordt onderbroken.
+
+BELANGRIJK
+Automatisch motortoerental en roerstand uitlezen vraagt een toekomstige
+NMEA2000-gegevenskoppeling. In deze webversie zijn deze twee waarden handmatig.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.

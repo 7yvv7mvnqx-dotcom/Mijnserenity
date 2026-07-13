@@ -1,0 +1,28 @@
+MIJNSERENITY CLOUD 5.1.39 — NIEUW LOGO
+
+AANGEPAST
+- Het oude ankerlogo en de tekstheader zijn vervangen door het nieuwe
+  luxe MijnSerenity-logo.
+- Het nieuwe logo staat in de vaste app-header.
+- Het logo staat ook op het inlogscherm en het scherm Wachten op toestemming.
+- De app-iconen van 192 en 512 pixels zijn vervangen door het nieuwe beeldmerk.
+- Het Apple beginscherm gebruikt daardoor ook het nieuwe logo.
+- De PWA-manifestnaam is bijgewerkt naar MijnSerenity.
+- De serviceworker bewaart het nieuwe logo offline.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+- manifest.json
+- mijnserenity-logo.png
+- icon-192.png
+- icon-512.png
+
+Geen SQL of Supabase-wijziging nodig.
+
+LET OP IPHONE/IPAD
+Een bestaand beginscherm-icoon kan door iOS worden vastgehouden.
+Verwijder in dat geval de oude snelkoppeling en voeg MijnSerenity opnieuw
+toe aan het beginscherm.

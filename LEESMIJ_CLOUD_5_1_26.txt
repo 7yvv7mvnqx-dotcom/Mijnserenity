@@ -1,0 +1,23 @@
+MIJNSERENITY CLOUD 5.1.26 — LIVE VAREN OPSLAAN MET VERTREK - AANKOMST
+
+AANGEPAST
+- Na Stop opname bepaalt MijnSerenity automatisch:
+  • vertrekplaats via het eerste GPS-punt
+  • aankomstplaats via het laatste GPS-punt
+- De titel wordt automatisch: Vertrek - Aankomst.
+- Het titelveld is niet meer handmatig te wijzigen.
+- Vertrek en aankomst zijn verplicht voordat Opslaan werkt.
+- Wanneer automatisch bepalen niet lukt, moeten beide plaatsen handmatig
+  worden ingevuld.
+- Tijdens handmatig typen wordt de titel direct bijgewerkt.
+- De vaartocht wordt in het logboek opgeslagen met dezelfde titel,
+  vertrekplaats en aankomstplaats.
+- Bemanning staat standaard op Michel, Desi.
+
+UPLOAD NAAR GITHUB
+- index.html
+- styles.css
+- app.js
+- sw.js
+
+Geen SQL of Supabase-wijziging nodig.
