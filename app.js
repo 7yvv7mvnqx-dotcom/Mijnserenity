@@ -2912,7 +2912,7 @@ async function saveAccountProfile(){
     if(error)throw error;
 
     currentUser=data.user||currentUser;
-    $('welcome').textContent='Welkom '+getLoggedInFirstName();
+    $('welcome').textContent='Welkom aan boord, '+getLoggedInFirstName();
     await touchAccountPresence();
     setAccountMsg('Profielnaam opgeslagen ✅');
   }catch(error){
@@ -3085,7 +3085,7 @@ async function initialise(session){
   $('appView').classList.remove('hidden');
   startPresenceHeartbeat();
   applyAdminVisibility();
-  $('welcome').textContent='Welkom '+getLoggedInFirstName();
+  $('welcome').textContent='Welkom aan boord, '+getLoggedInFirstName();
   resetPoiFilters(false);
 
   await loadMembership();
@@ -13941,7 +13941,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.6.4';
+const APP_VERSION='6.1.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

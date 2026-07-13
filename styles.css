@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v5.6.4";
+  content:" · v6.1.0";
   color:#6fcfee;
   font-weight:800;
 }
@@ -4770,5 +4770,39 @@ main{
   body,
   main{
     min-height:-webkit-fill-available;
+  }
+}
+
+
+/* =========================================================
+   MijnSerenity Cloud 6.1.0 — gecentreerde navigatie
+   ========================================================= */
+:root{
+  --nav-height:96px;
+}
+.bottom-nav-item{
+  flex:0 0 86px !important;
+  width:86px;
+  min-width:86px !important;
+  max-width:86px;
+  min-height:72px;
+  padding:7px 5px;
+}
+.bottom-nav-item span{
+  font-size:27px !important;
+}
+.bottom-nav-item small{
+  font-size:11px !important;
+}
+@media (min-width:820px){
+  .bottom-nav{
+    justify-content:center !important;
+    padding-left:max(14px,env(safe-area-inset-left));
+    padding-right:max(14px,env(safe-area-inset-right));
+  }
+}
+@media (max-width:819px){
+  .bottom-nav{
+    justify-content:flex-start !important;
   }
 }
