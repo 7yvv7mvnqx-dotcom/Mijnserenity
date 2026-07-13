@@ -13941,7 +13941,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='5.6.2';
+const APP_VERSION='5.6.4';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14018,7 +14018,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=5620',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=5640',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -15695,4 +15695,222 @@ function closeLightbox(){
   $('lightbox').classList.add('hidden');
   $('lightboxImage').src='';
   document.body.style.overflow='';
+}
+
+
+/* Cloud 5.6.3 — automatisch verbergende onderste navigatie */
+const BOTTOM_NAV_IDLE_MS=4000;
+let bottomNavHideTimer=null;
+let bottomNavActivityFrame=null;
+
+function bottomNavigationElement(){
+  return document.querySelector('.bottom-nav');
+}
+
+function scrollActiveBottomNavigationIntoView(
+  preferredItem=null,
+  smooth=true
+){
+  const nav=bottomNavigationElement();
+  if(!nav)return;
+
+  const item=
+    preferredItem?.classList?.contains('bottom-nav-item')
+      ?preferredItem
+      :nav.querySelector('.bottom-nav-item.active');
+
+  if(!item)return;
+
+  const itemCenter=
+    item.offsetLeft+
+    (item.offsetWidth/2);
+
+  const maxLeft=Math.max(
+    0,
+    nav.scrollWidth-nav.clientWidth
+  );
+
+  const targetLeft=Math.max(
+    0,
+    Math.min(
+      itemCenter-(nav.clientWidth/2),
+      maxLeft
+    )
+  );
+
+  nav.scrollTo({
+    left:targetLeft,
+    top:0,
+    behavior:smooth?'smooth':'auto'
+  });
+}
+
+function hideBottomNavigation(){
+  const nav=bottomNavigationElement();
+  if(!nav)return;
+
+  if(nav.matches(':focus-within')){
+    scheduleBottomNavigationHide();
+    return;
+  }
+
+  nav.classList.add('bottom-nav-auto-hidden');
+  nav.setAttribute('aria-hidden','true');
+}
+
+function scheduleBottomNavigationHide(){
+  clearTimeout(bottomNavHideTimer);
+
+  bottomNavHideTimer=setTimeout(
+    hideBottomNavigation,
+    BOTTOM_NAV_IDLE_MS
+  );
+}
+
+function showBottomNavigation(
+  focusActive=true,
+  smooth=true
+){
+  const nav=bottomNavigationElement();
+  if(!nav)return;
+
+  const wasHidden=nav.classList.contains(
+    'bottom-nav-auto-hidden'
+  );
+
+  nav.classList.remove('bottom-nav-auto-hidden');
+  nav.setAttribute('aria-hidden','false');
+  scheduleBottomNavigationHide();
+
+  if(focusActive){
+    requestAnimationFrame(()=>{
+      scrollActiveBottomNavigationIntoView(
+        null,
+        smooth&&wasHidden
+      );
+    });
+  }
+}
+
+function bottomNavigationActivity(
+  focusActive=true
+){
+  if(bottomNavActivityFrame)return;
+
+  bottomNavActivityFrame=requestAnimationFrame(()=>{
+    bottomNavActivityFrame=null;
+    showBottomNavigation(focusActive,true);
+  });
+}
+
+function initAutoHideBottomNavigation(){
+  const nav=bottomNavigationElement();
+
+  if(!nav||nav.dataset.autoHideReady==='true'){
+    return;
+  }
+
+  nav.dataset.autoHideReady='true';
+
+  const revealWithoutRecentering=()=>{
+    bottomNavigationActivity(false);
+  };
+
+  document.addEventListener(
+    'pointerdown',
+    revealWithoutRecentering,
+    {passive:true,capture:true}
+  );
+
+  document.addEventListener(
+    'touchstart',
+    revealWithoutRecentering,
+    {passive:true,capture:true}
+  );
+
+  document.addEventListener(
+    'mousemove',
+    revealWithoutRecentering,
+    {passive:true}
+  );
+
+  document.addEventListener(
+    'scroll',
+    revealWithoutRecentering,
+    {passive:true,capture:true}
+  );
+
+  document.addEventListener(
+    'wheel',
+    revealWithoutRecentering,
+    {passive:true}
+  );
+
+  document.addEventListener(
+    'keydown',
+    revealWithoutRecentering,
+    {capture:true}
+  );
+
+  nav.addEventListener(
+    'pointerenter',
+    revealWithoutRecentering,
+    {passive:true}
+  );
+
+  nav.addEventListener(
+    'pointermove',
+    revealWithoutRecentering,
+    {passive:true}
+  );
+
+  nav.addEventListener(
+    'scroll',
+    revealWithoutRecentering,
+    {passive:true}
+  );
+
+  nav.addEventListener('focusin',()=>{
+    showBottomNavigation(false,false);
+  });
+
+  nav.addEventListener('focusout',()=>{
+    scheduleBottomNavigationHide();
+  });
+
+  nav.addEventListener('click',event=>{
+    const item=event.target.closest('.bottom-nav-item');
+
+    showBottomNavigation(false,false);
+
+    if(item){
+      requestAnimationFrame(()=>{
+        scrollActiveBottomNavigationIntoView(
+          item,
+          true
+        );
+      });
+    }
+  });
+
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden){
+      clearTimeout(bottomNavHideTimer);
+      return;
+    }
+
+    showBottomNavigation(true,false);
+  });
+
+  showBottomNavigation(true,false);
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener(
+    'DOMContentLoaded',
+    initAutoHideBottomNavigation,
+    {once:true}
+  );
+}else{
+  initAutoHideBottomNavigation();
 }
