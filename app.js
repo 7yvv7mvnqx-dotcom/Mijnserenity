@@ -11031,12 +11031,22 @@ function renderFinanceCostExpanded(entry){
   `;
 }
 
-function renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory){
-  const container=$('financeDetails');
-  const summary=$('financeDetailsSummary');
-  if(!container||!summary)return;
+function financeCategoryIcon(category){
+  const key=String(category||'Overig').toLowerCase();
+  if(key.includes('diesel')||key.includes('brandstof'))return '⛽';
+  if(key.includes('haven')||key.includes('ligplaats'))return '⚓';
+  if(key.includes('onderhoud'))return '🛠️';
+  if(key.includes('onderdeel')||key.includes('materiaal'))return '🔩';
+  if(key.includes('winterstalling'))return '🏠';
+  if(key.includes('boodschap'))return '🛒';
+  if(key.includes('eten')||key.includes('drinken'))return '🍽️';
+  if(key.includes('verzekering'))return '🛡️';
+  if(key.includes('elektr'))return '🔌';
+  return '💳';
+}
 
-  const entries=[
+function financeFilteredEntries(regular,fuelTrips){
+  return [
     ...regular.map(cost=>({
       type:'cost',
       id:cost.id,
@@ -11054,7 +11064,14 @@ function renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory){
       amount:Number(trip.fuel_cost||0)
     }))
   ].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+}
 
+function renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory){
+  const container=$('financeDetails');
+  const summary=$('financeDetailsSummary');
+  if(!container||!summary)return;
+
+  const entries=financeFilteredEntries(regular,fuelTrips);
   const total=entries.reduce((sum,entry)=>sum+entry.amount,0);
   summary.textContent=`${financePeriodLabel(periodType)} · ${selectedCategory||'Alle categorieën'} · ${entries.length} ${entries.length===1?'post':'posten'} · ${formatEuro(total)}`;
 
@@ -11062,6 +11079,7 @@ function renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory){
     ?entries.map(entry=>`
       <div class="finance-detail-card">
         <button type="button" class="finance-detail-row" onclick="toggleInlineDetails(this)">
+          <span class="finance-detail-icon">${financeCategoryIcon(entry.category)}</span>
           <span class="finance-detail-main">
             <b>${esc(entry.category)}</b>
             <small>${esc(entry.date||'')} · ${esc(entry.description||'')}</small>
@@ -11074,7 +11092,107 @@ function renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory){
         </div>
       </div>
     `).join('')
-    :'<span class="small">Geen kosten binnen dit filter.</span>';
+    :'<div class="finance-empty-state"><span>🧾</span><b>Nog geen kosten</b><small>Voeg een kostenpost toe of pas het filter aan.</small></div>';
+}
+
+function financeMonthKey(date){
+  return /^\d{4}-\d{2}/.test(String(date||''))?String(date).slice(0,7):'';
+}
+
+function renderFinanceTrend(entries){
+  const chart=$('financeTrendChart');
+  const totalNode=$('financeTrendTotal');
+  if(!chart||!totalNode)return;
+
+  const now=new Date();
+  const months=[];
+  for(let offset=5;offset>=0;offset--){
+    const date=new Date(now.getFullYear(),now.getMonth()-offset,1);
+    months.push({
+      key:`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`,
+      label:date.toLocaleDateString('nl-NL',{month:'short'}).replace('.',''),
+      value:0
+    });
+  }
+  entries.forEach(entry=>{
+    const month=months.find(item=>item.key===financeMonthKey(entry.date));
+    if(month)month.value+=Number(entry.amount||0);
+  });
+
+  const max=Math.max(1,...months.map(item=>item.value));
+  const total=months.reduce((sum,item)=>sum+item.value,0);
+  totalNode.textContent=formatEuro(total);
+  chart.innerHTML=months.map(item=>`
+    <button type="button" class="finance-trend-column" onclick='openFinanceMonth(${JSON.stringify(item.key)})' title="${esc(item.label)} · ${formatEuro(item.value)}">
+      <span class="finance-trend-value">${item.value?formatEuro(item.value):'–'}</span>
+      <span class="finance-trend-bar-wrap"><i style="height:${Math.max(item.value?8:2,Math.round(item.value/max*100))}%"></i></span>
+      <b>${esc(item.label)}</b>
+    </button>
+  `).join('');
+}
+
+function renderFinanceInsights(entries,matchingTrips,groups,filteredTotal,filteredFuel){
+  const container=$('financeInsights');
+  if(!container)return;
+
+  if(!entries.length){
+    container.innerHTML='<div class="finance-empty-state"><span>✨</span><b>Inzichten verschijnen vanzelf</b><small>Zodra kosten zijn toegevoegd zie je hier trends en aandachtspunten.</small></div>';
+    return;
+  }
+
+  const sortedGroups=Object.entries(groups).sort((a,b)=>b[1]-a[1]);
+  const top=sortedGroups[0]||['Overig',0];
+  const topShare=filteredTotal?Math.round(top[1]/filteredTotal*100):0;
+  const fuelShare=filteredTotal?Math.round(filteredFuel/filteredTotal*100):0;
+  const totalKm=matchingTrips.reduce((sum,trip)=>sum+Number(trip.distance_km||0),0);
+  const totalHours=matchingTrips.reduce((sum,trip)=>sum+Number(trip.duration_hours||0),0);
+  const expenseDays=new Set(entries.map(entry=>entry.date).filter(Boolean)).size;
+
+  const insights=[
+    {icon:financeCategoryIcon(top[0]),title:`${top[0]} is nummer 1`,text:`${formatEuro(top[1])} · ${topShare}% van het geselecteerde totaal.`},
+    {icon:'⛽',title:'Aandeel brandstof',text:filteredFuel?`${formatEuro(filteredFuel)} · ${fuelShare}% van alle kosten.`:'Geen brandstofkosten binnen dit filter.'},
+    {icon:'🧭',title:'Kosten tijdens het varen',text:totalKm?`${formatEuro(filteredTotal/totalKm)} per km over ${totalKm.toFixed(1)} km.`:'Nog geen afstand gekoppeld aan deze periode.'},
+    {icon:'⏱️',title:'Kosten per vaaruur',text:totalHours?`${formatEuro(filteredTotal/totalHours)} per uur over ${totalHours.toFixed(1)} uur.`:'Nog geen vaaruren gekoppeld aan deze periode.'},
+    {icon:'📅',title:'Spreiding',text:`${entries.length} posten verdeeld over ${expenseDays} ${expenseDays===1?'dag':'dagen'}.`}
+  ];
+
+  container.innerHTML=insights.map(item=>`
+    <div class="finance-smart-item">
+      <span>${item.icon}</span>
+      <div><b>${esc(item.title)}</b><small>${esc(item.text)}</small></div>
+    </div>
+  `).join('');
+}
+
+function currentFinanceExportRows(){
+  const periodType=$('financePeriodType')?.value||'all';
+  const selectedCategory=$('financeCategory')?.value||'';
+  const regular=costCache.filter(cost=>financeDateMatches(cost.expense_date,periodType)&&(!selectedCategory||cost.category===selectedCategory));
+  const fuelTrips=tripCache.filter(trip=>financeDateMatches(trip.trip_date,periodType)&&(!selectedCategory||selectedCategory==='Diesel')&&Number(trip.fuel_cost||0)>0);
+  return financeFilteredEntries(regular,fuelTrips);
+}
+
+function exportFinanceCsv(){
+  const entries=currentFinanceExportRows();
+  if(!entries.length){
+    alert('Er zijn geen financiële gegevens binnen het huidige filter.');
+    return;
+  }
+  const rows=[
+    ['Datum','Categorie','Omschrijving','Bedrag EUR'],
+    ...entries.map(entry=>[entry.date||'',entry.category||'',entry.description||'',Number(entry.amount||0).toFixed(2).replace('.',',')])
+  ];
+  const csv='\ufeff'+rows.map(row=>row.map(value=>`"${String(value).replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=`Serenity-financieel-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showAppToast('Financieel overzicht geëxporteerd ✅');
 }
 
 function renderFinance(){
@@ -11092,93 +11210,81 @@ function renderFinance(){
     return periodOk&&categoryOk;
   });
 
-  const matchingTrips=tripCache.filter(trip=>
-    financeDateMatches(trip.trip_date,periodType)
-  );
+  const matchingTrips=tripCache.filter(trip=>financeDateMatches(trip.trip_date,periodType));
+  const fuelTrips=matchingTrips.filter(trip=>(!selectedCategory||selectedCategory==='Diesel')&&Number(trip.fuel_cost||0)>0);
 
-  const fuelTrips=matchingTrips.filter(trip=>
-    (!selectedCategory||selectedCategory==='Diesel')&&
-    Number(trip.fuel_cost||0)>0
-  );
-
-  const regularTotal=regular.reduce(
-    (sum,cost)=>sum+Number(cost.amount||0),
-    0
-  );
-  const filteredFuel=fuelTrips.reduce(
-    (sum,trip)=>sum+Number(trip.fuel_cost||0),
-    0
-  );
-  const filteredTotal=regularTotal+filteredFuel;
-  const filteredHours=matchingTrips.reduce(
-    (sum,trip)=>sum+Number(trip.duration_hours||0),
-    0
-  );
+  const regularTotal=regular.reduce((sum,cost)=>sum+Number(cost.amount||0),0);
+  const tripFuelTotal=fuelTrips.reduce((sum,trip)=>sum+Number(trip.fuel_cost||0),0);
+  const regularDieselTotal=regular
+    .filter(cost=>String(cost.category||'').toLowerCase()==='diesel')
+    .reduce((sum,cost)=>sum+Number(cost.amount||0),0);
+  const filteredFuel=tripFuelTotal+regularDieselTotal;
+  const filteredTotal=regularTotal+tripFuelTotal;
+  const filteredHours=matchingTrips.reduce((sum,trip)=>sum+Number(trip.duration_hours||0),0);
+  const filteredDistance=matchingTrips.reduce((sum,trip)=>sum+Number(trip.distance_km||0),0);
   const itemCount=regular.length+fuelTrips.length;
-
-  $('fTotal').textContent=formatEuro(filteredTotal);
-  $('fCount').textContent=String(itemCount);
-  $('fFuel').textContent=formatEuro(filteredFuel);
-  $('fPerHour').textContent=filteredHours
-    ?formatEuro(filteredTotal/filteredHours)
-    :formatEuro(0);
-
-  const categoryLabel=selectedCategory||'Alle categorieën';
-  $('financeFilterSummary').textContent=
-    `${financePeriodLabel(periodType)} · ${categoryLabel} · ${itemCount} ${itemCount===1?'post':'posten'}`;
+  const entries=financeFilteredEntries(regular,fuelTrips);
 
   const groups={};
   regular.forEach(cost=>{
     const category=cost.category||'Overig';
     groups[category]=(groups[category]||0)+Number(cost.amount||0);
   });
-  if(fuelTrips.length){
-    groups.Diesel=(groups.Diesel||0)+filteredFuel;
-  }
+  if(fuelTrips.length)groups.Diesel=(groups.Diesel||0)+tripFuelTotal;
+
+  const topCategory=Object.entries(groups).sort((a,b)=>b[1]-a[1])[0]||null;
+  const largest=entries.slice().sort((a,b)=>b.amount-a.amount)[0]||null;
+
+  $('fTotal').textContent=formatEuro(filteredTotal);
+  $('fCount').textContent=String(itemCount);
+  $('fFuel').textContent=formatEuro(filteredFuel);
+  $('fPerHour').textContent=filteredHours?formatEuro(filteredTotal/filteredHours):formatEuro(0);
+  $('fPerKm').textContent=filteredDistance?formatEuro(filteredTotal/filteredDistance):formatEuro(0);
+  $('fAverage').textContent=itemCount?formatEuro(filteredTotal/itemCount):formatEuro(0);
+  $('fTopCategory').textContent=topCategory?topCategory[0]:'–';
+  $('fTopCategoryValue').textContent=topCategory?`${formatEuro(topCategory[1])} · ${filteredTotal?Math.round(topCategory[1]/filteredTotal*100):0}%`:'nog geen gegevens';
+  $('fLargest').textContent=largest?formatEuro(largest.amount):formatEuro(0);
+  $('fLargestLabel').textContent=largest?`${largest.category} · ${largest.date||''}`:'nog geen gegevens';
+
+  const categoryLabel=selectedCategory||'Alle categorieën';
+  $('financeFilterSummary').textContent=`${financePeriodLabel(periodType)} · ${categoryLabel} · ${itemCount} ${itemCount===1?'post':'posten'}`;
 
   const max=Math.max(1,...Object.values(groups));
   $('financeBreakdown').innerHTML=Object.entries(groups)
     .sort((a,b)=>b[1]-a[1])
     .map(([category,value])=>`
-      <button type="button" class="finance-row finance-row-button"
-        onclick='openFinanceCategory(${JSON.stringify(category)})'>
-        <div>
+      <button type="button" class="finance-row finance-row-button finance-category-row" onclick='openFinanceCategory(${JSON.stringify(category)})'>
+        <span class="finance-row-icon">${financeCategoryIcon(category)}</span>
+        <div class="finance-row-copy">
           <b>${esc(category)}</b>
-          <div class="finance-bar">
-            <span style="width:${Math.round(value/max*100)}%"></span>
-          </div>
+          <small>${filteredTotal?Math.round(value/filteredTotal*100):0}% van totaal</small>
+          <div class="finance-bar"><span style="width:${Math.round(value/max*100)}%"></span></div>
         </div>
         <div class="finance-row-value">${formatEuro(value)} <span>›</span></div>
       </button>
-    `).join('')||'<span class="small">Geen kosten binnen dit filter.</span>';
+    `).join('')||'<div class="finance-empty-state"><span>🧭</span><b>Geen categorieën</b><small>Voeg een kostenpost toe of pas het filter aan.</small></div>';
 
   const months={};
-  regular.forEach(cost=>{
-    const month=String(cost.expense_date||'').slice(0,7);
-    if(month)months[month]=(months[month]||0)+Number(cost.amount||0);
-  });
-  fuelTrips.forEach(trip=>{
-    const month=String(trip.trip_date||'').slice(0,7);
-    if(month)months[month]=(months[month]||0)+Number(trip.fuel_cost||0);
+  entries.forEach(entry=>{
+    const month=financeMonthKey(entry.date);
+    if(month)months[month]=(months[month]||0)+Number(entry.amount||0);
   });
 
   $('financeMonths').innerHTML=Object.entries(months)
     .sort((a,b)=>b[0].localeCompare(a[0]))
     .map(([month,value])=>{
       const [year,monthNumber]=month.split('-').map(Number);
-      const label=new Date(year,monthNumber-1,1).toLocaleDateString('nl-NL',{
-        month:'long',
-        year:'numeric'
-      });
+      const label=new Date(year,monthNumber-1,1).toLocaleDateString('nl-NL',{month:'long',year:'numeric'});
       return `
-        <button type="button" class="finance-row finance-row-button"
-          onclick='openFinanceMonth(${JSON.stringify(month)})'>
-          <div>${esc(label)}</div>
+        <button type="button" class="finance-row finance-row-button finance-month-row" onclick='openFinanceMonth(${JSON.stringify(month)})'>
+          <span class="finance-row-icon">📅</span>
+          <div class="finance-row-copy"><b>${esc(label)}</b><small>Open maanddetails</small></div>
           <div class="finance-row-value">${formatEuro(value)} <span>›</span></div>
-        </button>
-      `;
-    }).join('')||'<span class="small">Geen maandgegevens binnen dit filter.</span>';
+        </button>`;
+    }).join('')||'<div class="finance-empty-state"><span>📅</span><b>Geen maandgegevens</b><small>Er zijn geen posten binnen dit filter.</small></div>';
 
+  renderFinanceTrend(entries);
+  renderFinanceInsights(entries,matchingTrips,groups,filteredTotal,filteredFuel);
   renderFinanceDetails(regular,fuelTrips,periodType,selectedCategory);
   updateDashboardFinanceSummary();
 }
@@ -13759,6 +13865,12 @@ function renderLiveInstruments(){
   $('liveEngineRpm').textContent=Math.round(rpm).toLocaleString('nl-NL');
   $('liveRudderDisplay').textContent=rudderText;
 
+  const rpmDial=document.querySelector('.live-rpm-dial');
+  if(rpmDial){
+    rpmDial.classList.remove('rpm-green','rpm-yellow','rpm-red');
+    rpmDial.classList.add(rpm<=1800?'rpm-green':rpm<=2300?'rpm-yellow':'rpm-red');
+  }
+
   const rpmNeedle=$('liveRpmNeedle');
   if(rpmNeedle){
     const rpmAngle=-120+(Math.min(5000,rpm)/5000)*240;
@@ -14198,7 +14310,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.2.1';
+const APP_VERSION='6.3.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

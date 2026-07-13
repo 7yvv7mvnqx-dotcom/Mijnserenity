@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="6.2.1">
-<link rel="apple-touch-icon" href="icon-192.png?v=6210">
+<meta name="mijnserenity-build" content="6.3.0">
+<link rel="apple-touch-icon" href="icon-192.png?v=6300">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=6210">
+<link rel="manifest" href="manifest.json?v=6300">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=6210">
+<link rel="stylesheet" href="styles.css?v=6300">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6210" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6300" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6210" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6300" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -238,7 +238,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=6210" alt="">
+          <img src="waterkaarten-dashboard.png?v=6300" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -332,7 +332,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v6.2.1</div>
+          <div class="label">Sync · v6.3.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -587,10 +587,8 @@
       </div>
 
       <div class="card live-helm-card" aria-label="Grafische roerstand">
-        <div class="live-helm-copy">
+        <div class="live-helm-heading">
           <span>Schipper aan het roer</span>
-          <strong id="liveRudderDisplay">Midden</strong>
-          <small id="liveHelmSideText">Serenity vaart rechtuit</small>
         </div>
         <svg class="live-helm-svg" viewBox="0 0 360 220" role="img" aria-label="Schipper aan het roer">
           <defs>
@@ -634,6 +632,11 @@
           <text x="119" y="214" fill="#8fdff4" font-size="10">BB</text>
           <text x="234" y="214" fill="#8fdff4" font-size="10">SB</text>
         </svg>
+        <div class="live-helm-copy">
+          <span>Roerstand</span>
+          <strong id="liveRudderDisplay">Midden</strong>
+          <small id="liveHelmSideText">Serenity vaart rechtuit</small>
+        </div>
       </div>
     </div>
 
@@ -736,7 +739,7 @@
             en zet de planning daarna klaar in het gedeelde logboek.
           </p>
         </div>
-        <span class="planner-version-badge">6.2.1</span>
+        <span class="planner-version-badge">6.3.0</span>
       </div>
       <div class="planner-warning">
         Afstand is een schatting op basis van rechte lijnen en een instelbare
@@ -1997,7 +2000,7 @@
         <div><label>Bedrag €</label><input id="costAmount" type="number" inputmode="decimal" step="0.01"></div>
       </div>
       <div class="row">
-        <div><label>Categorie</label><select id="costCategory"><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Boodschappen</option><option>Eten &amp; Drinken</option><option>Materialen</option><option>Overig</option></select></div>
+        <div><label>Categorie</label><select id="costCategory"><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Boodschappen</option><option>Eten &amp; Drinken</option><option>Materialen</option><option>Verzekering</option><option>Ligplaats</option><option>Overig</option></select></div>
         <div><label>Omschrijving</label><input id="costDescription" placeholder="Bijv. Da Giorgio"></div>
       </div>
 
@@ -2043,32 +2046,58 @@
   </section>
 
 <section id="finance" class="hidden">
-    <div class="card hero">
-      <h2>Financieel overzicht</h2>
-      <div id="financeFilterSummary" class="finance-filter-summary">Alle perioden · Alle categorieën</div>
-      <div class="grid">
-        <div class="stat">
-          <div class="label">Totaal filter</div>
-          <div class="value" id="fTotal">€0</div>
+    <div class="card hero finance-command-hero">
+      <div class="finance-hero-head">
+        <div>
+          <span class="eyebrow">FINANCIEEL COMMAND CENTER</span>
+          <h2>Grip op alle kosten van Serenity</h2>
+          <div id="financeFilterSummary" class="finance-filter-summary">Alle perioden · Alle categorieën</div>
         </div>
-        <div class="stat">
-          <div class="label">Aantal posten</div>
-          <div class="value" id="fCount">0</div>
+        <div class="finance-hero-actions">
+          <button type="button" onclick="captainNavigate('costs')">＋ Kosten</button>
+          <button type="button" class="secondary" onclick="exportFinanceCsv()">⇩ CSV</button>
         </div>
-        <div class="stat">
-          <div class="label">Brandstof filter</div>
-          <div class="value" id="fFuel">€0</div>
+      </div>
+
+      <div class="finance-kpi-grid">
+        <div class="finance-kpi finance-kpi-total">
+          <span class="finance-kpi-icon">💶</span>
+          <div><span>Totaal filter</span><strong id="fTotal">€0</strong><small>alle geselecteerde kosten</small></div>
         </div>
-        <div class="stat">
-          <div class="label">Per vaaruur filter</div>
-          <div class="value" id="fPerHour">€0</div>
+        <div class="finance-kpi">
+          <span class="finance-kpi-icon">🧾</span>
+          <div><span>Aantal posten</span><strong id="fCount">0</strong><small>bonnen en vaarten</small></div>
+        </div>
+        <div class="finance-kpi">
+          <span class="finance-kpi-icon">⛽</span>
+          <div><span>Brandstof</span><strong id="fFuel">€0</strong><small>diesel binnen filter</small></div>
+        </div>
+        <div class="finance-kpi">
+          <span class="finance-kpi-icon">⏱️</span>
+          <div><span>Per vaaruur</span><strong id="fPerHour">€0</strong><small>kosten per motoruur</small></div>
+        </div>
+        <div class="finance-kpi">
+          <span class="finance-kpi-icon">🗺️</span>
+          <div><span>Per kilometer</span><strong id="fPerKm">€0</strong><small>kosten per gevaren km</small></div>
+        </div>
+        <div class="finance-kpi">
+          <span class="finance-kpi-icon">📊</span>
+          <div><span>Gemiddelde post</span><strong id="fAverage">€0</strong><small>gemiddeld bedrag</small></div>
+        </div>
+        <div class="finance-kpi">
+          <span class="finance-kpi-icon">🏷️</span>
+          <div><span>Grootste categorie</span><strong id="fTopCategory">–</strong><small id="fTopCategoryValue">nog geen gegevens</small></div>
+        </div>
+        <div class="finance-kpi">
+          <span class="finance-kpi-icon">🚨</span>
+          <div><span>Duurste post</span><strong id="fLargest">€0</strong><small id="fLargestLabel">nog geen gegevens</small></div>
         </div>
       </div>
     </div>
 
-    <div class="card collapsible-card">
+    <div class="card collapsible-card finance-filter-card">
       <button id="financeFilterToggle" class="section-toggle" type="button" onclick="toggleSection('financeFilterWrap',this)">
-        <span>Financieel filter</span><span class="chevron">⌄</span>
+        <span>🔎 Financieel filter</span><span class="chevron">⌄</span>
       </button>
       <div id="financeFilterWrap" class="collapsible-content hidden">
         <div class="row">
@@ -2091,52 +2120,70 @@
               <option>Onderhoud</option>
               <option>Onderdelen</option>
               <option>Winterstalling</option>
-              <option>Boodschappen</option><option>Eten &amp; Drinken</option><option>Materialen</option><option>Overig</option>
+              <option>Boodschappen</option>
+              <option>Eten &amp; Drinken</option>
+              <option>Materialen</option>
+              <option>Verzekering</option>
+              <option>Ligplaats</option>
+              <option>Overig</option>
             </select>
           </div>
         </div>
 
         <div id="financeDayWrap" class="finance-period-input hidden">
-          <label>Dag</label>
-          <input id="financeDay" type="date" onchange="renderFinance()">
+          <label>Dag</label><input id="financeDay" type="date" onchange="renderFinance()">
         </div>
-
         <div id="financeWeekWrap" class="finance-period-input hidden">
-          <label>Week</label>
-          <input id="financeWeek" type="week" onchange="renderFinance()">
+          <label>Week</label><input id="financeWeek" type="week" onchange="renderFinance()">
         </div>
-
         <div id="financeMonthWrap" class="finance-period-input hidden">
-          <label>Maand</label>
-          <input id="financeMonth" type="month" onchange="renderFinance()">
+          <label>Maand</label><input id="financeMonth" type="month" onchange="renderFinance()">
         </div>
-
         <div id="financeYearWrap" class="finance-period-input hidden">
-          <label>Jaar</label>
-          <select id="financeYear" onchange="renderFinance()"></select>
+          <label>Jaar</label><select id="financeYear" onchange="renderFinance()"></select>
         </div>
 
-        <button type="button" class="secondary" onclick="resetFinanceFilters()">Filter wissen</button>
+        <div class="actions finance-filter-actions">
+          <button type="button" class="secondary" onclick="resetFinanceFilters()">↺ Filter wissen</button>
+          <button type="button" onclick="captainNavigate('costs')">🧾 Nieuwe kostenpost</button>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <h2>Kosten per categorie</h2>
-      <div id="financeBreakdown"></div>
+    <div class="finance-insight-grid">
+      <div class="card finance-insight-card">
+        <div class="finance-card-heading"><div><span class="eyebrow">VERDELING</span><h2>Kosten per categorie</h2></div><span>🧭</span></div>
+        <div id="financeBreakdown"></div>
+      </div>
+      <div class="card finance-insight-card">
+        <div class="finance-card-heading"><div><span class="eyebrow">TIJDLIJN</span><h2>Kosten per maand</h2></div><span>📅</span></div>
+        <div id="financeMonths"></div>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Kosten per maand binnen filter</h2>
-      <div id="financeMonths"></div>
+    <div class="card finance-trend-card">
+      <div class="finance-card-heading">
+        <div><span class="eyebrow">LAATSTE 6 MAANDEN</span><h2>Uitgavenontwikkeling</h2></div>
+        <span id="financeTrendTotal" class="finance-trend-total">€0</span>
+      </div>
+      <div id="financeTrendChart" class="finance-trend-chart"></div>
     </div>
 
-    <div id="financeDetailsCard" class="card">
+    <div class="card finance-smart-card">
+      <div class="finance-card-heading">
+        <div><span class="eyebrow">SLIMME INZICHTEN</span><h2>Wat valt op?</h2></div><span>✨</span>
+      </div>
+      <div id="financeInsights" class="finance-smart-grid"></div>
+    </div>
+
+    <div id="financeDetailsCard" class="card finance-details-card">
       <div class="finance-details-head">
         <div>
+          <span class="eyebrow">TRANSACTIES</span>
           <h2>Inhoud van het filter</h2>
           <p id="financeDetailsSummary" class="small">Alle kostenposten</p>
         </div>
-        <button type="button" class="secondary finance-details-cost-button" onclick="captainNavigate('costs')">Open kosten</button>
+        <button type="button" class="secondary finance-details-cost-button" onclick="captainNavigate('costs')">🧾 Open kosten</button>
       </div>
       <div id="financeDetails"></div>
     </div>
@@ -2368,6 +2415,6 @@
   </div>
 </div>
 
-<script src="app.js?v=6210"></script>
+<script src="app.js?v=6300"></script>
 </body>
 </html>
