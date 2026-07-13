@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.1.0";
+  content:" · v6.1.1";
   color:#6fcfee;
   font-weight:800;
 }
@@ -4775,7 +4775,7 @@ main{
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.1.0 — gecentreerde navigatie
+   MijnSerenity Cloud 6.1.1 — gecentreerde navigatie
    ========================================================= */
 :root{
   --nav-height:96px;

@@ -12385,6 +12385,13 @@ function captainNavigate(id, sourceButton=null){
       loadAccountManagement();
     }
   }
+
+  // Iedere pagina begint standaard bovenaan, ook op iPad/Safari.
+  requestAnimationFrame(()=>{
+    window.scrollTo({top:0,left:0,behavior:'auto'});
+    document.documentElement.scrollTop=0;
+    document.body.scrollTop=0;
+  });
 }
 
 (async()=>{const {data:{session}}=await sb.auth.getSession();await initialise(session)})();
@@ -12406,6 +12413,8 @@ let liveWakeLock=null;
 let liveStateRestored=false;
 let liveAutoSaveRunning=false;
 let liveAutoStopTimer=null;
+let liveLastReliableSpeedAt=0;
+let liveSmoothedSpeedKmh=0;
 
 function createEmptyLiveState(){
   return {
@@ -13253,6 +13262,8 @@ function startLiveNavigation(){
   clearLiveAutoStopTimer();
   liveAutoSaveRunning=false;
   liveNavState=createEmptyLiveState();
+  liveLastReliableSpeedAt=0;
+  liveSmoothedSpeedKmh=0;
   liveNavState.status='active';
   liveNavState.startedAt=Date.now();
   liveNavState.segmentStartedAt=Date.now();
@@ -13627,14 +13638,38 @@ function handleLivePosition(position){
       return;
     }
 
-    liveNavState.speedKmh=Number.isFinite(point.speed)?point.speed:calculatedSpeed;
+    // iPad/Safari geeft soms afwisselend een geldige snelheid en 0 km/u door.
+    // Gebruik daarom GPS-snelheid én verplaatsing, met lichte demping en een korte hold.
+    const gpsSpeed=Number.isFinite(point.speed)?point.speed:null;
+    const candidateSpeed=Math.max(
+      Number.isFinite(gpsSpeed)?gpsSpeed:0,
+      Number.isFinite(calculatedSpeed)?calculatedSpeed:0
+    );
+    const now=Date.now();
+
+    if(candidateSpeed>=0.6){
+      liveLastReliableSpeedAt=now;
+      liveSmoothedSpeedKmh=liveSmoothedSpeedKmh>0
+        ?(liveSmoothedSpeedKmh*0.65)+(candidateSpeed*0.35)
+        :candidateSpeed;
+      liveNavState.speedKmh=liveSmoothedSpeedKmh;
+    }else if(now-liveLastReliableSpeedAt<=5000&&liveSmoothedSpeedKmh>=0.6){
+      // Houd de laatste betrouwbare snelheid maximaal 5 seconden vast.
+      liveNavState.speedKmh=liveSmoothedSpeedKmh;
+    }else{
+      liveSmoothedSpeedKmh=0;
+      liveNavState.speedKmh=0;
+    }
+
     liveNavState.maxSpeedKmh=Math.max(
       Number(liveNavState.maxSpeedKmh)||0,
       Number(liveNavState.speedKmh)||0
     );
 
-    // Voorkomt GPS-dwarrelen wanneer Serenity vrijwel stil ligt.
-    if(segmentKm<0.004&&seconds<12){
+    // Alleen stilstand registreren als zowel GPS-snelheid als verplaatsing laag blijven.
+    const trulyStationary=(candidateSpeed<0.6&&segmentKm<0.001&&seconds>=3);
+    if(trulyStationary){
+      liveSmoothedSpeedKmh=0;
       liveNavState.speedKmh=0;
       $('liveGpsStatus').textContent=`GPS actief · nauwkeurigheid ${Math.round(point.accuracy||0)} m`;
       updateLiveAutoStopDetection(point);
@@ -13645,7 +13680,12 @@ function handleLivePosition(position){
 
     liveNavState.distanceKm+=segmentKm;
   }else{
-    liveNavState.speedKmh=Number.isFinite(point.speed)?point.speed:0;
+    const initialSpeed=Number.isFinite(point.speed)?point.speed:0;
+    if(initialSpeed>=0.6){
+      liveLastReliableSpeedAt=Date.now();
+      liveSmoothedSpeedKmh=initialSpeed;
+    }
+    liveNavState.speedKmh=liveSmoothedSpeedKmh;
     liveNavState.maxSpeedKmh=Math.max(
       Number(liveNavState.maxSpeedKmh)||0,
       Number(liveNavState.speedKmh)||0
@@ -13941,7 +13981,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.1.0';
+const APP_VERSION='6.1.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

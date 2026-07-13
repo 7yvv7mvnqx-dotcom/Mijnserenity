@@ -1,4 +1,9 @@
 # Wijzigingen
+## 6.1.1
+- Iedere pagina opent standaard bovenaan.
+- Live snelheid blijft stabiel zichtbaar en springt niet meer elke seconde naar nul.
+- GPS-snelheid wordt licht afgevlakt en korte nulmetingen van Safari worden genegeerd.
+
 
 ## 6.1.0
 - Onderste navigatie gecentreerd op iPad, MacBook en grotere schermen.
