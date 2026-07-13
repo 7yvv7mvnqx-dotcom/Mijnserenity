@@ -2234,6 +2234,9 @@ function showTab(id,b){
   if(id!=='live'&&radarCameraLiveActive){
     stopRadarLiveStream(false);
   }
+  if(id!=='live'){
+    stopLiveTechnicalSync();
+  }
 
   document.querySelectorAll('#appView > section')
     .forEach(section=>section.classList.add('hidden'));
@@ -9637,6 +9640,9 @@ function renderTechnicalDashboard(){
   renderTechnicalMaintenance();
   renderTechnicalIntegrations();
   renderTechnicalEvents();
+  if(typeof renderLiveTechnicalStrip==='function'){
+    renderLiveTechnicalStrip();
+  }
 }
 
 function fillTechnicalSnapshotForm(){
@@ -12415,6 +12421,8 @@ let liveAutoSaveRunning=false;
 let liveAutoStopTimer=null;
 let liveLastReliableSpeedAt=0;
 let liveSmoothedSpeedKmh=0;
+let liveSmoothedHeadingDeg=null;
+let liveTechnicalSyncTimer=null;
 
 function createEmptyLiveState(){
   return {
@@ -12427,6 +12435,8 @@ function createEmptyLiveState(){
     distanceKm:0,
     speedKmh:0,
     maxSpeedKmh:0,
+    headingDeg:null,
+    headingSource:'',
     accuracy:null,
     engineRpm:0,
     rudderAngle:0,
@@ -12474,6 +12484,7 @@ function restoreLiveState(){
       maxSpeedKmh:Number(saved.maxSpeedKmh)||0,
       engineRpm:Number(saved.engineRpm)||0,
       rudderAngle:Number(saved.rudderAngle)||0,
+      headingDeg:(saved.headingDeg!==null&&saved.headingDeg!==''&&Number.isFinite(Number(saved.headingDeg)))?Number(saved.headingDeg):null,
       points:saved.points.filter(point=>
         Number.isFinite(Number(point.lat))&&
         Number.isFinite(Number(point.lon))&&
@@ -12486,6 +12497,10 @@ function restoreLiveState(){
       liveNavState.segmentStartedAt=null;
       $('liveGpsStatus').textContent='Opname hersteld. Tik op Hervat om GPS weer te starten.';
     }
+
+    liveSmoothedHeadingDeg=Number.isFinite(Number(liveNavState.headingDeg))
+      ?Number(liveNavState.headingDeg)
+      :null;
 
     fillLiveTripDefaults(false);
     loadLiveAutomationSettings();
@@ -12902,9 +12917,11 @@ async function initLiveMode(){
   }
 
   await loadTechnicalDashboard(false);
+  startLiveTechnicalSync();
 
   ensureLiveMap();
   renderLiveState();
+  renderLiveTechnicalStrip();
   renderLiveAutoSummary();
   renderLiveRadarCamera();
 
@@ -13182,6 +13199,121 @@ function formatDecimal(value,digits=1){
   });
 }
 
+function normaliseLiveHeading(value){
+  const heading=Number(value);
+  if(!Number.isFinite(heading))return null;
+  return ((heading%360)+360)%360;
+}
+
+function smoothLiveHeading(current,target,factor=.3){
+  const next=normaliseLiveHeading(target);
+  if(!Number.isFinite(next))return current;
+  if(!Number.isFinite(current))return next;
+
+  const difference=((next-current+540)%360)-180;
+  return normaliseLiveHeading(current+difference*factor);
+}
+
+function liveBearingDegrees(a,b){
+  const lat1=Number(a?.lat)*Math.PI/180;
+  const lat2=Number(b?.lat)*Math.PI/180;
+  const dLon=(Number(b?.lon)-Number(a?.lon))*Math.PI/180;
+  if(![lat1,lat2,dLon].every(Number.isFinite))return null;
+
+  const y=Math.sin(dLon)*Math.cos(lat2);
+  const x=Math.cos(lat1)*Math.sin(lat2)-
+    Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
+  return normaliseLiveHeading(Math.atan2(y,x)*180/Math.PI);
+}
+
+function liveHeadingCardinal(value){
+  const heading=normaliseLiveHeading(value);
+  if(!Number.isFinite(heading))return '–';
+  const directions=['N','NO','O','ZO','Z','ZW','W','NW'];
+  return directions[Math.round(heading/45)%8];
+}
+
+function renderLiveHeading(){
+  const heading=normaliseLiveHeading(liveNavState.headingDeg);
+  const text=$('liveHeadingText');
+  const degrees=$('liveHeadingDegrees');
+  const needle=$('liveHeadingNeedle');
+
+  if(!Number.isFinite(heading)){
+    if(text)text.textContent='–';
+    if(degrees)degrees.textContent='Koers wordt via GPS bepaald';
+    if(needle)needle.style.transform='translate(-50%,-82%) rotate(0deg)';
+    return;
+  }
+
+  if(text)text.textContent=liveHeadingCardinal(heading);
+  if(degrees){
+    degrees.textContent=`${Math.round(heading).toString().padStart(3,'0')}° · ${liveNavState.headingSource||'GPS'}`;
+  }
+  if(needle){
+    needle.style.transform=`translate(-50%,-82%) rotate(${heading}deg)`;
+  }
+}
+
+function liveTechnicalNumber(value,digits=1,suffix=''){
+  if(value===null||value===undefined||value==='')return `–${suffix}`;
+  const number=Number(value);
+  return Number.isFinite(number)
+    ?`${number.toLocaleString('nl-NL',{maximumFractionDigits:digits})}${suffix}`
+    :`–${suffix}`;
+}
+
+function renderLiveTechnicalStrip(){
+  const state=normaliseTechnicalState(
+    technicalStateCache||readTechnicalLocalState()
+  );
+  const setText=(id,value)=>{if($(id))$(id).textContent=value;};
+
+  setText('liveHouseVoltage',liveTechnicalNumber(state.houseVoltage,2,' V'));
+  setText('liveStartVoltage',liveTechnicalNumber(state.startVoltage,2,' V'));
+  setText('liveFuelPct',(state.fuelPct!==null&&state.fuelPct!==''&&Number.isFinite(Number(state.fuelPct)))?`${Math.round(state.fuelPct)}%`:'–%');
+  setText('liveWaterPct',(state.waterPct!==null&&state.waterPct!==''&&Number.isFinite(Number(state.waterPct)))?`${Math.round(state.waterPct)}%`:'–%');
+  setText('liveSolarPower',liveTechnicalNumber(state.solarPower,0,' W'));
+  setText('liveShorePower',state.shorePower?'Aan':'Uit');
+  setText('liveEngineTemp',liveTechnicalNumber(state.engineTemp,1,' °C'));
+  setText('liveOilPressure',liveTechnicalNumber(state.oilPressure,1,' bar'));
+  setText('liveBilge',({ok:'In orde',active:'Actief',alarm:'ALARM',unknown:'Onbekend'})[state.bilge]||'Onbekend');
+
+  const updated=$('liveTechnicalUpdated');
+  if(updated){
+    updated.textContent=state.updatedAt
+      ?`Bijgewerkt ${new Date(state.updatedAt).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`
+      :'Lokale boorddata';
+    updated.classList.toggle('live',Boolean(state.updatedAt));
+  }
+}
+
+async function refreshLiveTechnicalData(showFeedback=false){
+  if(showFeedback)showAppToast('Boorddata vernieuwen…');
+  await loadTechnicalDashboard(true);
+  renderLiveTechnicalStrip();
+  if(showFeedback)showAppToast('Boorddata bijgewerkt');
+}
+
+function startLiveTechnicalSync(){
+  stopLiveTechnicalSync();
+  liveTechnicalSyncTimer=setInterval(()=>{
+    if(
+      !document.hidden&&
+      !$('live')?.classList.contains('hidden')
+    ){
+      refreshLiveTechnicalData(false);
+    }
+  },30000);
+}
+
+function stopLiveTechnicalSync(){
+  if(liveTechnicalSyncTimer){
+    clearInterval(liveTechnicalSyncTimer);
+    liveTechnicalSyncTimer=null;
+  }
+}
+
 function renderLiveState(){
   const elapsedMs=getLiveElapsedMs();
   const elapsedHours=elapsedMs/3600000;
@@ -13197,6 +13329,19 @@ function renderLiveState(){
     ?`${Math.round(liveNavState.accuracy)} m`
     :'–';
 
+  const signal=$('liveSpeedSignal');
+  if(signal){
+    signal.className='live-signal-dot '+(
+      status==='active'&&Number(liveNavState.speedKmh)>=.6
+        ?'moving'
+        :status==='active'
+          ?'active'
+          :'idle'
+    );
+  }
+
+  renderLiveHeading();
+  renderLiveTechnicalStrip();
   renderLiveWeather();
   renderLiveInstruments();
   updateLiveAutoLogUi();
@@ -13264,6 +13409,7 @@ function startLiveNavigation(){
   liveNavState=createEmptyLiveState();
   liveLastReliableSpeedAt=0;
   liveSmoothedSpeedKmh=0;
+  liveSmoothedHeadingDeg=null;
   liveNavState.status='active';
   liveNavState.startedAt=Date.now();
   liveNavState.segmentStartedAt=Date.now();
@@ -13613,7 +13759,8 @@ function handleLivePosition(position){
     lon:Number(coords.longitude),
     time:Number(position.timestamp)||Date.now(),
     accuracy:Number(coords.accuracy)||null,
-    speed:Number.isFinite(coords.speed)?Math.max(0,coords.speed*3.6):null
+    speed:Number.isFinite(coords.speed)?Math.max(0,coords.speed*3.6):null,
+    heading:Number.isFinite(coords.heading)?normaliseLiveHeading(coords.heading):null
   };
 
   if(!Number.isFinite(point.lat)||!Number.isFinite(point.lon))return;
@@ -13636,6 +13783,28 @@ function handleLivePosition(position){
       $('liveGpsStatus').textContent='Onwaarschijnlijke GPS-sprong overgeslagen.';
       renderLiveState();
       return;
+    }
+
+    const movementHeading=(segmentKm>=0.0015&&calculatedSpeed>=0.8)
+      ?liveBearingDegrees(previous,point)
+      :null;
+    const gpsHeading=(Number.isFinite(point.heading)&&Number(point.speed)>=0.8)
+      ?point.heading
+      :null;
+    const headingCandidate=Number.isFinite(gpsHeading)
+      ?gpsHeading
+      :movementHeading;
+
+    if(Number.isFinite(headingCandidate)){
+      liveSmoothedHeadingDeg=smoothLiveHeading(
+        liveSmoothedHeadingDeg,
+        headingCandidate,
+        .32
+      );
+      liveNavState.headingDeg=liveSmoothedHeadingDeg;
+      liveNavState.headingSource=Number.isFinite(gpsHeading)
+        ?'GPS-kompas'
+        :'GPS-route';
     }
 
     // iPad/Safari geeft soms afwisselend een geldige snelheid en 0 km/u door.
@@ -13680,6 +13849,11 @@ function handleLivePosition(position){
 
     liveNavState.distanceKm+=segmentKm;
   }else{
+    if(Number.isFinite(point.heading)){
+      liveSmoothedHeadingDeg=point.heading;
+      liveNavState.headingDeg=point.heading;
+      liveNavState.headingSource='GPS-kompas';
+    }
     const initialSpeed=Number.isFinite(point.speed)?point.speed:0;
     if(initialSpeed>=0.6){
       liveLastReliableSpeedAt=Date.now();
@@ -13981,7 +14155,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.1.1';
+const APP_VERSION='6.2.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

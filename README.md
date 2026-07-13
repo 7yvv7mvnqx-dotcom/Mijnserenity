@@ -1,19 +1,19 @@
-# MijnSerenity Cloud 6.1.1
+# MijnSerenity Cloud 6.2.0
 
 MijnSerenity is het digitale dashboard en logboek voor de Serenity.
 
 ## Belangrijkste onderdelen
-- Dashboard en live varen
-- Kaart, reisplanner en vaarroutes
-- Technisch dashboard en Home Assistant
-- Logboek, POI’s, kosten en financieel overzicht
-- Boot- en gebruikersbeheer
+- Dashboard en Live Varen 2.0
+- Grote, stabiele live snelheid en GPS-koers
+- Kaart en radarbeugelcamera naast elkaar op iPad en MacBook
+- Live boordstatus uit Home Assistant
+- Reisplanner, vaarroutes, logboek, POI’s en financiën
+- Technisch dashboard en boot-/gebruikersbeheer
 
 ## Publiceren
 Upload alle bestanden en mappen uit deze release naar de hoofdmap van de GitHub-repository. Overschrijf de bestaande bestanden en laat Netlify opnieuw publiceren.
 
 Zie `docs/INSTALLATIE.md` voor de stappen.
 
-
-### 6.1.1
-Pagina’s starten bovenaan en de live vaarsnelheid blijft stabiel zichtbaar.
+### 6.2.0
+Live Varen is omgebouwd tot Captain Cockpit met grote snelheid, koers, kaart, camera en boorddata in één vaarweergave.

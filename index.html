@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="6.1.1">
-<link rel="apple-touch-icon" href="icon-192.png?v=6000">
+<meta name="mijnserenity-build" content="6.2.0">
+<link rel="apple-touch-icon" href="icon-192.png?v=6200">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=6000">
+<link rel="manifest" href="manifest.json?v=6200">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=6000">
+<link rel="stylesheet" href="styles.css?v=6200">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6000" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6200" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6000" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6200" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -238,7 +238,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=6000" alt="">
+          <img src="waterkaarten-dashboard.png?v=6200" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -332,7 +332,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v6.1.1</div>
+          <div class="label">Sync · v6.2.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -353,7 +353,7 @@
     <div class="card hero live-hero">
       <div class="live-heading">
         <div>
-          <span class="eyebrow">LIVE VAARMODUS</span>
+          <span class="eyebrow">LIVE VAARMODUS 2.0</span>
           <h2>Serenity onderweg</h2>
           <p class="small">Leg snelheid, afstand, vaartijd en de gevaren route automatisch vast.</p>
         </div>
@@ -366,6 +366,51 @@
         <button id="liveStopButton" class="danger-button hidden" onclick="stopLiveNavigation()">⏹ Stop opname</button>
       </div>
       <div id="liveGpsStatus" class="status small">Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten. Open beide schermen op de iPad in Split View en laat beide schermen open totdat de reis is opgeslagen.</div>
+    </div>
+
+    <div class="card live-cockpit-card">
+      <div class="live-cockpit-head">
+        <div>
+          <span class="eyebrow">CAPTAIN COCKPIT · LIVE 2.0</span>
+          <h2>Vaarinstrumenten</h2>
+        </div>
+        <button type="button" class="secondary live-board-refresh" onclick="refreshLiveTechnicalData(true)">↻ Boorddata</button>
+      </div>
+
+      <div class="live-cockpit-main">
+        <div class="live-speed-dial" aria-label="Actuele snelheid">
+          <span>Snelheid</span>
+          <strong id="liveSpeedKmh">0,0</strong>
+          <small>km/u</small>
+          <i id="liveSpeedSignal" class="live-signal-dot idle"></i>
+        </div>
+
+        <div class="live-heading-dial" aria-label="Actuele koers">
+          <span>Koers</span>
+          <div class="live-compass">
+            <div class="live-compass-ring">
+              <b class="north">N</b><b class="east">O</b><b class="south">Z</b><b class="west">W</b>
+              <i id="liveHeadingNeedle"></i>
+            </div>
+          </div>
+          <strong id="liveHeadingText">–</strong>
+          <small id="liveHeadingDegrees">Koers wordt via GPS bepaald</small>
+        </div>
+      </div>
+
+      <div class="live-cockpit-stats">
+        <div><span>Afstand</span><strong id="liveDistance">0,00</strong><small>km</small></div>
+        <div><span>Vaartijd</span><strong id="liveDuration">00:00:00</strong><small>uur:min:sec</small></div>
+        <div><span>Gemiddeld</span><strong id="liveAverage">0,0</strong><small>km/u</small></div>
+        <div><span>Maximaal</span><strong id="liveMaxSpeed">0,0</strong><small>km/u</small></div>
+        <div><span>GPS</span><strong id="liveAccuracy">–</strong><small>nauwkeurigheid</small></div>
+      </div>
+    </div>
+
+    <div class="live-navigation-grid">
+    <div class="card live-map-card">
+      <div id="liveMapCanvas"></div>
+      <button class="live-follow-button" onclick="centerLiveMap()">◎ Volg Serenity</button>
     </div>
 
     <div class="card live-radar-camera-card">
@@ -426,6 +471,29 @@
 
       <div id="liveRadarCameraMessage"
         class="status small hidden"></div>
+    </div>
+
+    </div>
+
+    <div class="card live-technical-strip-card">
+      <div class="live-technical-strip-head">
+        <div>
+          <span class="eyebrow">HOME ASSISTANT · BOORDSTATUS</span>
+          <h2>Serenity technisch live</h2>
+        </div>
+        <span id="liveTechnicalUpdated" class="live-technical-updated">Lokale boorddata</span>
+      </div>
+      <div class="live-technical-strip">
+        <div><span>Huishoudaccu</span><strong id="liveHouseVoltage">– V</strong></div>
+        <div><span>Startaccu</span><strong id="liveStartVoltage">– V</strong></div>
+        <div><span>Brandstof</span><strong id="liveFuelPct">–%</strong></div>
+        <div><span>Water</span><strong id="liveWaterPct">–%</strong></div>
+        <div><span>Zonnepaneel</span><strong id="liveSolarPower">– W</strong></div>
+        <div><span>Walstroom</span><strong id="liveShorePower">Uit</strong></div>
+        <div><span>Motortemp.</span><strong id="liveEngineTemp">– °C</strong></div>
+        <div><span>Oliedruk</span><strong id="liveOilPressure">– bar</strong></div>
+        <div><span>Bilge</span><strong id="liveBilge">Onbekend</strong></div>
+      </div>
     </div>
 
     <div class="card live-auto-log-card">
@@ -492,13 +560,7 @@
       </div>
     </div>
 
-    <div class="live-metrics">
-      <div class="card live-metric"><span>Snelheid</span><strong id="liveSpeedKmh">0,0</strong><small>km/u</small></div>
-      <div class="card live-metric live-metric-highlight"><span>Max. snelheid</span><strong id="liveMaxSpeed">0,0</strong><small>km/u</small></div>
-      <div class="card live-metric"><span>Afstand</span><strong id="liveDistance">0,00</strong><small>km</small></div>
-      <div class="card live-metric"><span>Vaartijd</span><strong id="liveDuration">00:00:00</strong><small>uur:min:sec</small></div>
-      <div class="card live-metric"><span>Gemiddeld</span><strong id="liveAverage">0,0</strong><small>km/u</small></div>
-      <div class="card live-metric"><span>GPS</span><strong id="liveAccuracy">–</strong><small>nauwkeurigheid</small></div>
+    <div class="live-detail-metrics">
       <div class="card live-metric live-weather-metric">
         <span>Weer</span><strong id="liveWeatherTemp">–</strong><small id="liveWeatherShort">Wachten op GPS</small>
       </div>
@@ -548,12 +610,7 @@
       <p class="small live-nmea-note">Automatisch toerental en roerstand uitlezen kan later via een geschikte NMEA2000-gegevenskoppeling.</p>
     </div>
 
-    <div class="card live-map-card">
-      <div id="liveMapCanvas"></div>
-      <button class="live-follow-button" onclick="centerLiveMap()">◎ Volg Serenity</button>
-    </div>
-
-    <div class="card">
+    <div class="card live-save-card">
       <h2>Vaartocht opslaan</h2>
       <div class="row">
         <div>
@@ -610,7 +667,7 @@
             en zet de planning daarna klaar in het gedeelde logboek.
           </p>
         </div>
-        <span class="planner-version-badge">6.1.1</span>
+        <span class="planner-version-badge">6.2.0</span>
       </div>
       <div class="planner-warning">
         Afstand is een schatting op basis van rechte lijnen en een instelbare
@@ -2242,6 +2299,6 @@
   </div>
 </div>
 
-<script src="app.js?v=6000"></script>
+<script src="app.js?v=6200"></script>
 </body>
 </html>
