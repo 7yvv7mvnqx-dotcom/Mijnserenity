@@ -1,0 +1,276 @@
+/* =========================================================
+   MIJNSERENITY CLOUD 6.0 — RESPONSIVE FULLSCREEN UPDATE
+   Plak/importeer dit NA de bestaande stylesheet.
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #020d16;
+  overflow-x: hidden;
+}
+
+body {
+  width: 100%;
+  min-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: #020d16;
+}
+
+#root,
+#app,
+.app,
+.app-shell,
+.page,
+.page-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+}
+
+/* Gecentreerde hoofdinhoud */
+main,
+.main,
+.main-content,
+.dashboard,
+.dashboard-container,
+.content,
+.content-wrapper,
+.container {
+  width: min(calc(100% - 32px), 1500px);
+  max-width: 1500px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+}
+
+main,
+.main,
+.main-content,
+.dashboard,
+.dashboard-container {
+  padding-top: 16px;
+  padding-bottom: 130px;
+}
+
+header,
+.header,
+.hero,
+.welcome-card,
+.command-center,
+.recent-activity {
+  width: 100%;
+  max-width: none;
+}
+
+.stats-grid,
+.statistics-grid,
+.dashboard-stats,
+.summary-grid,
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.quick-actions,
+.action-grid,
+.command-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.card,
+.stat-card,
+.action-card,
+.dashboard-card {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Onderste navigatie */
+.bottom-nav,
+.bottom-navigation,
+.mobile-nav,
+nav.bottom {
+  position: fixed;
+  z-index: 9999;
+  left: 50%;
+  right: auto;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: min(calc(100% - 20px), 1500px);
+  max-width: 1500px;
+  margin: 0;
+  padding:
+    10px
+    max(12px, env(safe-area-inset-right))
+    max(10px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  transition: transform .35s ease, opacity .35s ease;
+  will-change: transform, opacity;
+}
+
+.bottom-nav::-webkit-scrollbar,
+.bottom-navigation::-webkit-scrollbar,
+.mobile-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.bottom-nav-inner,
+.bottom-nav ul,
+.bottom-navigation ul,
+.mobile-nav ul {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-width: max-content;
+  margin: 0;
+  padding: 0;
+}
+
+.bottom-nav a,
+.bottom-nav button,
+.bottom-navigation a,
+.bottom-navigation button,
+.mobile-nav a,
+.mobile-nav button {
+  flex: 0 0 auto;
+  min-width: 78px;
+  min-height: 72px;
+  padding: 8px 10px;
+}
+
+.bottom-nav svg,
+.bottom-nav img,
+.bottom-navigation svg,
+.bottom-navigation img,
+.mobile-nav svg,
+.mobile-nav img {
+  width: 32px;
+  height: 32px;
+  font-size: 32px;
+}
+
+/* Auto-hide toestand */
+body.serenity-nav-hidden .bottom-nav,
+body.serenity-nav-hidden .bottom-navigation,
+body.serenity-nav-hidden .mobile-nav,
+body.serenity-nav-hidden nav.bottom {
+  transform: translate(-50%, calc(100% + 24px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (min-width: 1600px) {
+  main,
+  .main,
+  .main-content,
+  .dashboard,
+  .dashboard-container,
+  .content,
+  .content-wrapper,
+  .container {
+    width: min(calc(100% - 64px), 1500px);
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  main,
+  .main,
+  .main-content,
+  .dashboard,
+  .dashboard-container,
+  .content,
+  .content-wrapper,
+  .container {
+    width: calc(100% - 40px);
+    max-width: 1180px;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  main,
+  .main,
+  .main-content,
+  .dashboard,
+  .dashboard-container,
+  .content,
+  .content-wrapper,
+  .container {
+    width: calc(100% - 28px);
+  }
+
+  .stats-grid,
+  .statistics-grid,
+  .dashboard-stats,
+  .summary-grid,
+  .cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quick-actions,
+  .action-grid,
+  .command-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 599px) {
+  main,
+  .main,
+  .main-content,
+  .dashboard,
+  .dashboard-container,
+  .content,
+  .content-wrapper,
+  .container {
+    width: calc(100% - 20px);
+  }
+
+  .stats-grid,
+  .statistics-grid,
+  .dashboard-stats,
+  .summary-grid,
+  .cards-grid,
+  .quick-actions,
+  .action-grid,
+  .command-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  body,
+  #root,
+  #app,
+  .app,
+  .app-shell {
+    min-height: -webkit-fill-available;
+  }
+}
