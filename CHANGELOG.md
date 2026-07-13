@@ -1,5 +1,5 @@
 # Wijzigingen
-## 6.2.0
+## 6.2.1
 - Nieuw Captain Cockpit Live Varen 2.0.
 - Actuele snelheid extra groot en stabiel zichtbaar.
 - GPS-koers met kompas, graden en windrichtingsnotatie.

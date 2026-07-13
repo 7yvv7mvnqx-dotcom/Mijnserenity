@@ -1,4 +1,4 @@
-# MijnSerenity Cloud 6.2.0
+# MijnSerenity Cloud 6.2.1
 
 MijnSerenity is het digitale dashboard en logboek voor de Serenity.
 
@@ -15,5 +15,5 @@ Upload alle bestanden en mappen uit deze release naar de hoofdmap van de GitHub-
 
 Zie `docs/INSTALLATIE.md` voor de stappen.
 
-### 6.2.0
+### 6.2.1
 Live Varen is omgebouwd tot Captain Cockpit met grote snelheid, koers, kaart, camera en boorddata in één vaarweergave.

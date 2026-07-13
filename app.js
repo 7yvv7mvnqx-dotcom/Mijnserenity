@@ -12765,7 +12765,7 @@ function buildAutomaticLiveNotes(){
       ?`POI’s onderweg: ${nearbyPois.join(' · ')}`
       :'',
     liveNavState.weather
-      ?`Weer: ${weatherCodeDescription(liveNavState.weather.weatherCode)} · ${Number(liveNavState.weather.temperature).toFixed(1)} °C · wind ${Number(liveNavState.weather.windSpeed).toFixed(1)} km/u · windstoten ${Number(liveNavState.weather.windGusts).toFixed(1)} km/u`
+      ?`Weer: ${weatherCodeDescription(liveNavState.weather.weatherCode)} · ${Number(liveNavState.weather.temperature).toFixed(1)} °C · wind ${formatWindBeaufort(liveNavState.weather.windSpeed,true)} · windstoten ${formatWindBeaufort(liveNavState.weather.windGusts,true)}`
       :''
   ].filter(Boolean).join('\n');
 }
@@ -13566,11 +13566,29 @@ function weatherCodeDescription(code){
   return 'Onbekend';
 }
 
+function windKmhToBeaufort(kmh){
+  const speed=Math.max(0,Number(kmh)||0);
+  const limits=[1,6,12,20,29,39,50,62,75,89,103,118];
+  for(let bft=0;bft<limits.length;bft+=1){
+    if(speed<limits[bft])return bft;
+  }
+  return 12;
+}
+
+function formatWindBeaufort(kmh,includeKmh=true){
+  if(!Number.isFinite(Number(kmh)))return '–';
+  const speed=Math.max(0,Number(kmh));
+  const bft=windKmhToBeaufort(speed);
+  return includeKmh
+    ?`${bft} Bft · ${speed.toFixed(1)} km/u`
+    :`${bft} Bft`;
+}
+
 function weatherSummary(weather){
   if(!weather)return 'Wachten op GPS';
   const description=weatherCodeDescription(weather.weatherCode);
   const wind=Number.isFinite(Number(weather.windSpeed))
-    ?`${Number(weather.windSpeed).toFixed(0)} km/u wind`
+    ?formatWindBeaufort(weather.windSpeed,false)
     :'';
   return [description,wind].filter(Boolean).join(' · ');
 }
@@ -13602,10 +13620,10 @@ function renderLiveWeather(){
     ?`${Number(weather.apparentTemperature).toFixed(1)} °C`
     :'–';
   $('liveWeatherWind').textContent=weather&&Number.isFinite(Number(weather.windSpeed))
-    ?`${Number(weather.windSpeed).toFixed(1)} km/u`
+    ?formatWindBeaufort(weather.windSpeed,true)
     :'–';
   $('liveWeatherGusts').textContent=weather&&Number.isFinite(Number(weather.windGusts))
-    ?`${Number(weather.windGusts).toFixed(1)} km/u`
+    ?formatWindBeaufort(weather.windGusts,true)
     :'–';
   $('liveWeatherRain').textContent=weather&&Number.isFinite(Number(weather.precipitation))
     ?`${Number(weather.precipitation).toFixed(1)} mm`
@@ -13735,11 +13753,36 @@ function updateLiveRudderAngle(value){
 
 function renderLiveInstruments(){
   const rpm=Math.max(0,Number(liveNavState.engineRpm)||0);
-  const rudder=Number(liveNavState.rudderAngle)||0;
+  const rudder=Math.max(-35,Math.min(35,Number(liveNavState.rudderAngle)||0));
   const rudderText=formatRudderAngle(rudder);
 
   $('liveEngineRpm').textContent=Math.round(rpm).toLocaleString('nl-NL');
   $('liveRudderDisplay').textContent=rudderText;
+
+  const rpmNeedle=$('liveRpmNeedle');
+  if(rpmNeedle){
+    const rpmAngle=-120+(Math.min(5000,rpm)/5000)*240;
+    rpmNeedle.style.transform=`translate(-50%,-90%) rotate(${rpmAngle}deg)`;
+  }
+
+  const helmWheel=$('liveHelmWheel');
+  if(helmWheel){
+    helmWheel.setAttribute('transform',`rotate(${rudder*2.2} 180 143)`);
+  }
+
+  const helmRudder=$('liveHelmRudderIndicator');
+  if(helmRudder){
+    helmRudder.setAttribute('transform',`rotate(${rudder} 180 202)`);
+  }
+
+  const helmText=$('liveHelmSideText');
+  if(helmText){
+    helmText.textContent=Math.abs(rudder)<1
+      ?'Serenity vaart rechtuit'
+      :rudder<0
+        ?`Koerscorrectie naar bakboord · ${Math.abs(rudder).toFixed(0)}°`
+        :`Koerscorrectie naar stuurboord · ${rudder.toFixed(0)}°`;
+  }
 
   if($('liveEngineRpmInput')&&document.activeElement!==$('liveEngineRpmInput')){
     $('liveEngineRpmInput').value=String(Math.round(rpm));
@@ -14155,7 +14198,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.2.0';
+const APP_VERSION='6.2.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 

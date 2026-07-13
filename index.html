@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="6.2.0">
-<link rel="apple-touch-icon" href="icon-192.png?v=6200">
+<meta name="mijnserenity-build" content="6.2.1">
+<link rel="apple-touch-icon" href="icon-192.png?v=6210">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=6200">
+<link rel="manifest" href="manifest.json?v=6210">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=6200">
+<link rel="stylesheet" href="styles.css?v=6210">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6200" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6210" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6200" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6210" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -238,7 +238,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=6200" alt="">
+          <img src="waterkaarten-dashboard.png?v=6210" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -332,7 +332,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v6.2.0</div>
+          <div class="label">Sync · v6.2.1</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -395,6 +395,21 @@
           </div>
           <strong id="liveHeadingText">–</strong>
           <small id="liveHeadingDegrees">Koers wordt via GPS bepaald</small>
+        </div>
+
+        <div class="live-rpm-dial" aria-label="Actueel motortoerental">
+          <span>Motortoerental</span>
+          <div class="live-rpm-gauge" aria-hidden="true">
+            <div class="live-rpm-ring">
+              <b class="rpm-zero">0</b>
+              <b class="rpm-mid">2500</b>
+              <b class="rpm-max">5000</b>
+              <i id="liveRpmNeedle"></i>
+              <em>RPM</em>
+            </div>
+          </div>
+          <strong id="liveEngineRpm">0</strong>
+          <small>toeren/min</small>
         </div>
       </div>
 
@@ -511,7 +526,12 @@
         </span>
       </div>
 
-      <div class="live-auto-log-settings">
+      <details class="live-auto-log-details">
+        <summary>
+          <span>⚙️ Instellingen automatisch vaarlogboek</span>
+          <small>Tik om te openen</small>
+        </summary>
+        <div class="live-auto-log-settings">
         <label class="live-auto-setting">
           <input id="liveAutoSave" type="checkbox" checked
             onchange="saveLiveAutomationSettings()">
@@ -553,7 +573,8 @@
             </select>
           </div>
         </div>
-      </div>
+        </div>
+      </details>
 
       <div id="liveAutoLogStatus" class="live-auto-log-status">
         Klaar om de volgende vaartocht automatisch vast te leggen.
@@ -564,8 +585,56 @@
       <div class="card live-metric live-weather-metric">
         <span>Weer</span><strong id="liveWeatherTemp">–</strong><small id="liveWeatherShort">Wachten op GPS</small>
       </div>
-      <div class="card live-metric"><span>Motor</span><strong id="liveEngineRpm">0</strong><small>toeren/min</small></div>
-      <div class="card live-metric"><span>Roerstand</span><strong id="liveRudderDisplay">Midden</strong><small>graden</small></div>
+
+      <div class="card live-helm-card" aria-label="Grafische roerstand">
+        <div class="live-helm-copy">
+          <span>Schipper aan het roer</span>
+          <strong id="liveRudderDisplay">Midden</strong>
+          <small id="liveHelmSideText">Serenity vaart rechtuit</small>
+        </div>
+        <svg class="live-helm-svg" viewBox="0 0 360 220" role="img" aria-label="Schipper aan het roer">
+          <defs>
+            <linearGradient id="helmSea" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#0b3b52"/>
+              <stop offset="1" stop-color="#061e2c"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="360" height="220" rx="24" fill="url(#helmSea)"/>
+          <path d="M0 180 C55 166 100 193 155 180 C210 167 258 194 360 176 L360 220 L0 220 Z" fill="#0d5670" opacity=".75"/>
+          <path d="M0 193 C65 181 109 205 170 192 C235 178 281 205 360 190" fill="none" stroke="#4fd6f5" stroke-opacity=".32" stroke-width="4"/>
+
+          <g class="live-helm-captain">
+            <circle cx="180" cy="57" r="24" fill="#f0c7a2"/>
+            <path d="M154 54 Q180 23 206 54 L202 41 Q180 28 158 41 Z" fill="#eaf8ff"/>
+            <path d="M160 37 Q180 24 200 37" fill="none" stroke="#67d7f4" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="171" cy="58" r="2.5" fill="#17303b"/>
+            <circle cx="189" cy="58" r="2.5" fill="#17303b"/>
+            <path d="M172 70 Q180 76 188 70" fill="none" stroke="#8f5d4c" stroke-width="2" stroke-linecap="round"/>
+            <path d="M145 142 Q147 87 180 84 Q213 87 215 142" fill="#1787a9"/>
+            <path d="M153 104 L124 137" fill="none" stroke="#f0c7a2" stroke-width="12" stroke-linecap="round"/>
+            <path d="M207 104 L236 137" fill="none" stroke="#f0c7a2" stroke-width="12" stroke-linecap="round"/>
+          </g>
+
+          <g id="liveHelmWheel" transform="rotate(0 180 143)">
+            <circle cx="180" cy="143" r="48" fill="none" stroke="#d6a856" stroke-width="7"/>
+            <circle cx="180" cy="143" r="9" fill="#d6a856"/>
+            <g stroke="#d6a856" stroke-width="5" stroke-linecap="round">
+              <line x1="180" y1="91" x2="180" y2="195"/>
+              <line x1="128" y1="143" x2="232" y2="143"/>
+              <line x1="143" y1="106" x2="217" y2="180"/>
+              <line x1="217" y1="106" x2="143" y2="180"/>
+            </g>
+          </g>
+
+          <g id="liveHelmRudderIndicator" transform="rotate(0 180 202)">
+            <path d="M180 202 L180 176" stroke="#ffcc67" stroke-width="5" stroke-linecap="round"/>
+            <path d="M180 170 L172 181 L188 181 Z" fill="#ffcc67"/>
+          </g>
+          <path d="M123 203 A62 62 0 0 1 237 203" fill="none" stroke="#8fdff4" stroke-opacity=".38" stroke-width="3"/>
+          <text x="119" y="214" fill="#8fdff4" font-size="10">BB</text>
+          <text x="234" y="214" fill="#8fdff4" font-size="10">SB</text>
+        </svg>
+      </div>
     </div>
 
     <div class="card live-instruments-card">
@@ -580,7 +649,7 @@
       <div id="liveWeatherDetails" class="live-weather-details">
         <div><span>Temperatuur</span><strong id="liveWeatherTemperature">–</strong></div>
         <div><span>Gevoel</span><strong id="liveWeatherFeels">–</strong></div>
-        <div><span>Wind</span><strong id="liveWeatherWind">–</strong></div>
+        <div><span>Windkracht</span><strong id="liveWeatherWind">–</strong></div>
         <div><span>Windstoten</span><strong id="liveWeatherGusts">–</strong></div>
         <div><span>Neerslag</span><strong id="liveWeatherRain">–</strong></div>
         <div><span>Situatie</span><strong id="liveWeatherDescription">Wachten op GPS</strong></div>
@@ -667,7 +736,7 @@
             en zet de planning daarna klaar in het gedeelde logboek.
           </p>
         </div>
-        <span class="planner-version-badge">6.2.0</span>
+        <span class="planner-version-badge">6.2.1</span>
       </div>
       <div class="planner-warning">
         Afstand is een schatting op basis van rechte lijnen en een instelbare
@@ -2299,6 +2368,6 @@
   </div>
 </div>
 
-<script src="app.js?v=6200"></script>
+<script src="app.js?v=6210"></script>
 </body>
 </html>
