@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="6.8.1">
-<link rel="apple-touch-icon" href="icon-192.png?v=6810">
+<meta name="mijnserenity-build" content="6.9.0">
+<link rel="apple-touch-icon" href="icon-192.png?v=6900">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=6810">
+<link rel="manifest" href="manifest.json?v=6900">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=6810">
+<link rel="stylesheet" href="styles.css?v=6900">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6810" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6900" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6810" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6900" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -174,6 +174,98 @@
         </div>
       </div>
 
+      <div class="card ms690-intelligence-card">
+        <div class="ms690-intelligence-head">
+          <div>
+            <span class="eyebrow">CAPTAIN INTELLIGENCE · 6.9</span>
+            <h2>Serenity denkt met je mee</h2>
+            <p class="small">
+              Analyse van techniek, brandstof, onderhoud, vaarhistorie en
+              actuele routegegevens. Alles wordt lokaal uit MijnSerenity
+              berekend.
+            </p>
+          </div>
+          <div id="ms690HealthRing" class="ms690-health-ring">
+            <strong id="ms690HealthScore">–</strong>
+            <small>bootscore</small>
+          </div>
+        </div>
+
+        <div class="ms690-intelligence-grid">
+          <button type="button" onclick="captainNavigate('technical')">
+            <span>Technische status</span>
+            <strong id="ms690TechnicalStatus">Controleren…</strong>
+            <small id="ms690TechnicalDetail">Boorddata verzamelen</small>
+          </button>
+          <button type="button" onclick="captainNavigate('live')">
+            <span>Geschat bereik</span>
+            <strong id="ms690FuelRange">– km</strong>
+            <small id="ms690FuelRangeDetail">Tank- en verbruiksdata nodig</small>
+          </button>
+          <button type="button" onclick="captainNavigate('technical')">
+            <span>Volgend onderhoud</span>
+            <strong id="ms690Maintenance">Nog bepalen</strong>
+            <small id="ms690MaintenanceDetail">Onderhoudsplan controleren</small>
+          </button>
+          <button type="button" onclick="captainNavigate('logbook')">
+            <span>Vaarprestaties</span>
+            <strong id="ms690SeasonScore">–</strong>
+            <small id="ms690SeasonDetail">Nog geen analyse</small>
+          </button>
+        </div>
+
+        <div class="ms690-advice-layout">
+          <div>
+            <div class="ms690-subhead">
+              <div>
+                <span class="eyebrow">SLIMME AANBEVELINGEN</span>
+                <strong>Wat verdient nu aandacht?</strong>
+              </div>
+              <button type="button" class="secondary"
+                onclick="ms690RefreshIntelligence()">↻</button>
+            </div>
+            <div id="ms690AdviceList" class="ms690-advice-list">
+              <span class="small">Analyse wordt opgebouwd…</span>
+            </div>
+          </div>
+
+          <div class="ms690-captain-box">
+            <div class="ms690-captain-title">
+              <span>⚓</span>
+              <div>
+                <strong>Vraag het Captain</strong>
+                <small>Antwoorden uit je eigen Serenity-data</small>
+              </div>
+            </div>
+            <div class="ms690-question-row">
+              <input id="ms690Question" type="search"
+                placeholder="Bijv. hoe ver kan ik nog varen?"
+                onkeydown="ms690QuestionKey(event)">
+              <button type="button"
+                onclick="ms690AskCaptain()">Vraag</button>
+            </div>
+            <div class="ms690-question-chips">
+              <button type="button" onclick="ms690AskCaptain('Hoe is de boot?')">
+                Bootstatus
+              </button>
+              <button type="button" onclick="ms690AskCaptain('Hoe ver kan ik varen?')">
+                Bereik
+              </button>
+              <button type="button" onclick="ms690AskCaptain('Welk onderhoud komt eraan?')">
+                Onderhoud
+              </button>
+              <button type="button" onclick="ms690AskCaptain('Analyseer mijn laatste vaart')">
+                Laatste vaart
+              </button>
+            </div>
+            <div id="ms690CaptainAnswer"
+              class="ms690-captain-answer">
+              Stel een vraag over Serenity.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="captain-season-grid">
         <button type="button" class="card captain-metric"
           onclick="captainNavigate('logbook')">
@@ -238,7 +330,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=6810" alt="">
+          <img src="waterkaarten-dashboard.png?v=6900" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -332,7 +424,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v6.8.1</div>
+          <div class="label">Sync · v6.9.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -605,6 +697,46 @@
         <div><span>Oliedruk</span><strong id="liveOilPressure">– bar</strong></div>
         <div><span>Diepte</span><strong id="liveDepth">– m</strong></div>
         <div><span>Bilge</span><strong id="liveBilge">Onbekend</strong></div>
+      </div>
+    </div>
+
+    <div class="card ms690-live-advisor-card">
+      <div class="ms690-live-advisor-head">
+        <div>
+          <span class="eyebrow">LIVE VAARADVISEUR</span>
+          <h2>Actueel advies voor Serenity</h2>
+        </div>
+        <span id="ms690LiveAdvisorBadge"
+          class="ms690-advisor-badge idle">Gereed</span>
+      </div>
+
+      <div class="ms690-live-advisor-grid">
+        <div>
+          <span>Vaargedrag</span>
+          <strong id="ms690LiveEconomy">Wachten op vaargegevens</strong>
+          <small id="ms690LiveEconomyDetail">
+            Snelheid en toerental worden live beoordeeld.
+          </small>
+        </div>
+        <div>
+          <span>Route</span>
+          <strong id="ms690LiveRoute">Nog geen actieve route</strong>
+          <small id="ms690LiveRouteDetail">
+            Kies een planning voor ETA en resterende afstand.
+          </small>
+        </div>
+        <div>
+          <span>Techniek</span>
+          <strong id="ms690LiveTechnical">Controleren…</strong>
+          <small id="ms690LiveTechnicalDetail">
+            Accu, motor, bilge en tanks worden bewaakt.
+          </small>
+        </div>
+      </div>
+
+      <div id="ms690LiveAdvice"
+        class="ms690-live-advice">
+        Start een vaartocht om live advies te ontvangen.
       </div>
     </div>
 
@@ -975,7 +1107,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">6.8.1</span>
+        <span class="planner-version-badge">6.9.0</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -2124,6 +2256,41 @@
       </div>
     </div>
 
+    <div class="card ms690-predictive-card">
+      <div class="technical-card-heading">
+        <div>
+          <span class="eyebrow">BOAT INTELLIGENCE</span>
+          <h3>Voorspellend onderhoud & energie</h3>
+          <p class="small">
+            MijnSerenity combineert motoruren, onderhoudsintervallen,
+            vaarhistorie, accu, zonnepanelen en tankstanden.
+          </p>
+        </div>
+        <span id="ms690PredictiveBadge"
+          class="ms690-predictive-badge">Analyseren</span>
+      </div>
+
+      <div class="ms690-predictive-grid">
+        <div class="ms690-predictive-panel">
+          <div class="ms690-subhead">
+            <strong>Onderhoudsprognose</strong>
+            <span id="ms690MaintenanceCount">0 taken</span>
+          </div>
+          <div id="ms690MaintenanceForecast"
+            class="ms690-forecast-list"></div>
+        </div>
+
+        <div class="ms690-predictive-panel">
+          <div class="ms690-subhead">
+            <strong>Energie & voorraad</strong>
+            <span id="ms690EnergyBadge">Actueel</span>
+          </div>
+          <div id="ms690EnergyForecast"
+            class="ms690-energy-list"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="card technical-log-card">
       <div class="technical-card-heading">
         <div>
@@ -2874,6 +3041,6 @@
   </div>
 </div>
 
-<script src="app.js?v=6810"></script>
+<script src="app.js?v=6900"></script>
 </body>
 </html>

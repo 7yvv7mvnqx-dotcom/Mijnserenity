@@ -14083,7 +14083,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 6.8.1"
+<gpx version="1.1" creator="MijnSerenity 6.9.0"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14335,7 +14335,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.8.1';
+const APP_VERSION='6.9.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16325,7 +16325,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.8.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.9.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16714,7 +16714,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.1
+   MijnSerenity Cloud 6.9.0
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17651,7 +17651,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.8.1"
+ creator="MijnSerenity 6.9.0"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17677,7 +17677,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.8.1 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.9.0 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17715,7 +17715,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.1 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.9.0 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18689,7 +18689,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.1 — Smart Route
+   MijnSerenity Cloud 6.9.0 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -19999,7 +19999,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.8.1 Smart Route"
+ creator="MijnSerenity 6.9.0 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -20028,7 +20028,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.8.1 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 6.9.0 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20095,7 +20095,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.1 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 6.9.0 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -21014,7 +21014,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.1 — Auto Logbook
+   MijnSerenity Cloud 6.9.0 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22222,7 +22222,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.1 — Routefoto’s met GPS en omschrijving
+   MijnSerenity Cloud 6.9.0 — Routefoto’s met GPS en omschrijving
    ============================================================ */
 
 let ms681PendingPhotos=[];
@@ -23047,4 +23047,1304 @@ initLiveMode=async function(){
   ms681RenderLivePhotoMarkers();
   return result;
 };
+
+
+
+/* ============================================================
+   MijnSerenity Cloud 6.9.0 — Boat Intelligence
+   ============================================================ */
+
+function ms690Clamp(value,min=0,max=100){
+  return Math.max(min,Math.min(max,Number(value)||0));
+}
+
+function ms690SetText(id,value){
+  const element=$(id);
+  if(element)element.textContent=value;
+}
+
+function ms690Average(values){
+  const numbers=(values||[])
+    .map(Number)
+    .filter(Number.isFinite);
+
+  return numbers.length
+    ?numbers.reduce((sum,value)=>sum+value,0)/numbers.length
+    :null;
+}
+
+function ms690Median(values){
+  const numbers=(values||[])
+    .map(Number)
+    .filter(Number.isFinite)
+    .sort((a,b)=>a-b);
+
+  if(!numbers.length)return null;
+
+  const middle=Math.floor(numbers.length/2);
+
+  return numbers.length%2
+    ?numbers[middle]
+    :(numbers[middle-1]+numbers[middle])/2;
+}
+
+function ms690SeasonTrips(){
+  const year=new Date().getFullYear();
+
+  return (tripCache||[]).filter(trip=>
+    String(trip.trip_date||'').startsWith(String(year))
+  );
+}
+
+function ms690TechnicalSnapshot(){
+  return normaliseTechnicalState(
+    technicalStateCache||
+    readTechnicalLocalState()
+  );
+}
+
+function ms690FuelRangeEstimate(){
+  const state=ms690TechnicalSnapshot();
+  const fuelPct=Number(state.fuelPct);
+  const capacity=Number(
+    state.fuelCapacity||
+    settingsCache?.tank_capacity
+  );
+  const consumption=Number(
+    settingsCache?.fuel_per_hour
+  );
+
+  const historicSpeeds=(tripCache||[])
+    .map(trip=>{
+      const distance=Number(trip.distance_km);
+      const hours=Number(trip.duration_hours);
+
+      return (
+        distance>0&&hours>0
+          ?distance/hours
+          :null
+      );
+    })
+    .filter(Number.isFinite);
+
+  const speed=
+    ms690Median(historicSpeeds)||
+    9;
+
+  if(
+    !Number.isFinite(fuelPct)||
+    !Number.isFinite(capacity)||
+    capacity<=0||
+    !Number.isFinite(consumption)||
+    consumption<=0
+  ){
+    return null;
+  }
+
+  const reservePct=15;
+  const usableLitres=
+    capacity*
+    Math.max(0,fuelPct-reservePct)/
+    100;
+  const hours=usableLitres/consumption;
+
+  return {
+    km:hours*speed,
+    hours,
+    usableLitres,
+    speed,
+    consumption,
+    reservePct
+  };
+}
+
+function ms690NextMaintenance(){
+  const state=ms690TechnicalSnapshot();
+  const tasks=(state.maintenance||[])
+    .map(task=>({
+      task,
+      status:technicalTaskStatus(task)
+    }));
+
+  const rank={
+    critical:0,
+    warning:1,
+    good:2
+  };
+
+  return tasks.sort((a,b)=>{
+    const levelDifference=
+      (rank[a.status.level]??3)-
+      (rank[b.status.level]??3);
+
+    if(levelDifference)return levelDifference;
+
+    const aHours=Number.isFinite(a.status.hoursLeft)
+      ?a.status.hoursLeft
+      :999999;
+    const bHours=Number.isFinite(b.status.hoursLeft)
+      ?b.status.hoursLeft
+      :999999;
+
+    const aDays=Number.isFinite(a.status.daysLeft)
+      ?a.status.daysLeft
+      :999999;
+    const bDays=Number.isFinite(b.status.daysLeft)
+      ?b.status.daysLeft
+      :999999;
+
+    return Math.min(aHours,aDays)-
+      Math.min(bHours,bDays);
+  })[0]||null;
+}
+
+function ms690BoatHealth(){
+  const warnings=technicalWarnings();
+  const state=ms690TechnicalSnapshot();
+  let score=100;
+
+  warnings.forEach(item=>{
+    score-=item.level==='critical'
+      ?22
+      :item.level==='warning'
+        ?9
+        :3;
+  });
+
+  const required=[
+    state.houseVoltage,
+    state.startVoltage,
+    state.fuelPct,
+    state.engineHours
+  ];
+
+  score-=required.filter(value=>
+    value===null||
+    value===''||
+    !Number.isFinite(Number(value))
+  ).length*4;
+
+  if(!state.lastSnapshotAt){
+    score-=7;
+  }
+
+  score=ms690Clamp(score);
+
+  return {
+    score,
+    level:
+      score>=85?'good':
+      score>=65?'warning':
+      'critical',
+    warnings
+  };
+}
+
+function ms690TripAnalysis(trip){
+  const photos=(
+    window.tripPhotoCache?.[trip.id]||
+    []
+  );
+  const metrics=parseLiveTripNoteMetrics(
+    trip.notes
+  );
+  const distance=Number(trip.distance_km);
+  const hours=Number(trip.duration_hours);
+  const fuel=Number(trip.fuel_liters);
+  const averageSpeed=
+    distance>0&&hours>0
+      ?distance/hours
+      :null;
+  const litresPerKm=
+    fuel>0&&distance>0
+      ?fuel/distance
+      :null;
+
+  const historicEfficiency=(tripCache||[])
+    .filter(item=>
+      String(item.id)!==String(trip.id)
+    )
+    .map(item=>{
+      const itemFuel=Number(item.fuel_liters);
+      const itemDistance=Number(item.distance_km);
+
+      return (
+        itemFuel>0&&itemDistance>0
+          ?itemFuel/itemDistance
+          :null
+      );
+    })
+    .filter(Number.isFinite);
+
+  const baseline=
+    ms690Median(historicEfficiency);
+
+  let score=58;
+  const strengths=[];
+  const attention=[];
+
+  if(normaliseRouteGeojson(trip.route_geojson)){
+    score+=12;
+    strengths.push('volledige route opgeslagen');
+  }else{
+    score-=8;
+    attention.push('geen routekaart beschikbaar');
+  }
+
+  if(trip.departure&&trip.arrival){
+    score+=5;
+  }
+
+  if(metrics.automatic){
+    score+=5;
+    strengths.push('automatisch logboek gebruikt');
+  }
+
+  if(photos.length){
+    score+=Math.min(10,photos.length*2);
+    strengths.push(
+      `${photos.length} routefoto${photos.length===1?'':'’s'}`
+    );
+  }else{
+    attention.push('geen foto’s toegevoegd');
+  }
+
+  if(fuel>0){
+    score+=5;
+  }else{
+    attention.push('brandstofverbruik ontbreekt');
+  }
+
+  if(averageSpeed&&averageSpeed>=4&&averageSpeed<=14){
+    score+=5;
+    strengths.push('rustige gemiddelde vaarsnelheid');
+  }
+
+  if(
+    litresPerKm&&
+    baseline&&
+    litresPerKm<=baseline*.9
+  ){
+    score+=8;
+    strengths.push('zuiniger dan je eigen gemiddelde');
+  }else if(
+    litresPerKm&&
+    baseline&&
+    litresPerKm>=baseline*1.2
+  ){
+    score-=7;
+    attention.push('hoger verbruik dan je eigen gemiddelde');
+  }
+
+  if(metrics.maxSpeed&&metrics.averageSpeed){
+    const maxValue=Number(
+      String(metrics.maxSpeed).replace(',','.')
+        .match(/\d+(?:\.\d+)?/)?.[0]
+    );
+    const avgValue=Number(
+      String(metrics.averageSpeed).replace(',','.')
+        .match(/\d+(?:\.\d+)?/)?.[0]
+    );
+
+    if(
+      Number.isFinite(maxValue)&&
+      Number.isFinite(avgValue)&&
+      avgValue>0&&
+      maxValue>avgValue*1.8
+    ){
+      score-=4;
+      attention.push('grote snelheidsverschillen onderweg');
+    }
+  }
+
+  score=ms690Clamp(score);
+
+  const label=
+    score>=90?'Uitstekend':
+    score>=78?'Sterk':
+    score>=65?'Goed':
+    score>=50?'Redelijk':
+    'Onvolledig';
+
+  const efficiencyText=
+    litresPerKm
+      ?`${litresPerKm.toLocaleString('nl-NL',{
+          maximumFractionDigits:2
+        })} l/km`
+      :'Nog niet berekend';
+
+  return {
+    score,
+    label,
+    photos:photos.length,
+    distance,
+    hours,
+    fuel,
+    averageSpeed,
+    litresPerKm,
+    efficiencyText,
+    strengths,
+    attention,
+    metrics
+  };
+}
+
+function ms690SeasonPerformance(){
+  const trips=ms690SeasonTrips();
+
+  if(!trips.length){
+    return {
+      score:null,
+      detail:'Nog geen vaartochten dit seizoen'
+    };
+  }
+
+  const analyses=trips.map(
+    ms690TripAnalysis
+  );
+  const score=Math.round(
+    ms690Average(
+      analyses.map(item=>item.score)
+    )||0
+  );
+
+  return {
+    score,
+    detail:
+      `${trips.length} ${
+        trips.length===1
+          ?'tocht'
+          :'tochten'
+      } geanalyseerd`
+  };
+}
+
+function ms690Advice(){
+  const health=ms690BoatHealth();
+  const state=ms690TechnicalSnapshot();
+  const range=ms690FuelRangeEstimate();
+  const nextMaintenance=ms690NextMaintenance();
+  const trips=ms690SeasonTrips();
+  const advice=[];
+
+  health.warnings
+    .slice(0,3)
+    .forEach(item=>{
+      advice.push({
+        level:item.level,
+        icon:item.icon||'⚠️',
+        title:item.title,
+        text:item.text,
+        action:'technical'
+      });
+    });
+
+  if(
+    Number.isFinite(Number(state.fuelPct))&&
+    Number(state.fuelPct)<=30
+  ){
+    advice.push({
+      level:Number(state.fuelPct)<=15
+        ?'critical'
+        :'warning',
+      icon:'⛽',
+      title:'Plan een tankstop',
+      text:
+        range
+          ?`Geschat bruikbaar bereik ${Math.round(range.km)} km met 15% reserve.`
+          :`Brandstoftank staat op ${Math.round(Number(state.fuelPct))}%.`,
+      action:'planner'
+    });
+  }
+
+  if(
+    nextMaintenance&&
+    ['critical','warning'].includes(
+      nextMaintenance.status.level
+    )
+  ){
+    advice.push({
+      level:nextMaintenance.status.level,
+      icon:'🔧',
+      title:nextMaintenance.task.title,
+      text:
+        `${nextMaintenance.status.label} · `+
+        `${nextMaintenance.status.detail}`,
+      action:'technical'
+    });
+  }
+
+  if(!trips.length){
+    advice.push({
+      level:'info',
+      icon:'📖',
+      title:'Start je eerste automatische logboek',
+      text:
+        'Gebruik Wacht op vertrek zodat route, tijdlijn en foto’s automatisch worden vastgelegd.',
+      action:'live'
+    });
+  }else{
+    const latest=trips[0];
+    const analysis=ms690TripAnalysis(latest);
+
+    if(analysis.attention.length){
+      advice.push({
+        level:'info',
+        icon:'📊',
+        title:'Maak je volgende log nog completer',
+        text:analysis.attention[0],
+        action:'logbook'
+      });
+    }
+  }
+
+  if(
+    Number.isFinite(Number(state.solarPower))&&
+    Number(state.solarPower)<10&&
+    !state.shorePower
+  ){
+    advice.push({
+      level:'info',
+      icon:'☀️',
+      title:'Weinig zonne-opbrengst',
+      text:
+        `${technicalNumber(state.solarPower,0)} W gemeten zonder walstroom. Controleer schaduw en paneelstatus wanneer dit onverwacht is.`,
+      action:'technical'
+    });
+  }
+
+  if(!advice.length){
+    advice.push({
+      level:'good',
+      icon:'✓',
+      title:'Serenity is vaarklaar',
+      text:
+        'Geen directe technische of onderhoudswaarschuwingen gevonden.',
+      action:'live'
+    });
+  }
+
+  return advice.slice(0,6);
+}
+
+function ms690RenderDashboard(){
+  if(!$('ms690HealthScore'))return;
+
+  const health=ms690BoatHealth();
+  const technical=technicalHealth();
+  const range=ms690FuelRangeEstimate();
+  const maintenance=ms690NextMaintenance();
+  const season=ms690SeasonPerformance();
+  const ring=$('ms690HealthRing');
+
+  ms690SetText(
+    'ms690HealthScore',
+    Math.round(health.score)
+  );
+
+  if(ring){
+    ring.className=
+      `ms690-health-ring ${health.level}`;
+    ring.style.setProperty(
+      '--score',
+      `${health.score*3.6}deg`
+    );
+  }
+
+  ms690SetText(
+    'ms690TechnicalStatus',
+    technical.label
+  );
+  ms690SetText(
+    'ms690TechnicalDetail',
+    technical.dashboard
+  );
+
+  ms690SetText(
+    'ms690FuelRange',
+    range
+      ?`${Math.round(range.km)} km`
+      :'– km'
+  );
+  ms690SetText(
+    'ms690FuelRangeDetail',
+    range
+      ?`${technicalNumber(range.usableLitres,0)} liter bruikbaar · circa ${technicalNumber(range.hours,1)} uur`
+      :'Vul tankinhoud, tankpercentage en verbruik in'
+  );
+
+  ms690SetText(
+    'ms690Maintenance',
+    maintenance
+      ?maintenance.task.title
+      :'Geen taken'
+  );
+  ms690SetText(
+    'ms690MaintenanceDetail',
+    maintenance
+      ?`${maintenance.status.label} · ${maintenance.status.detail}`
+      :'Onderhoudsplan is leeg'
+  );
+
+  ms690SetText(
+    'ms690SeasonScore',
+    season.score===null
+      ?'–'
+      :`${season.score}/100`
+  );
+  ms690SetText(
+    'ms690SeasonDetail',
+    season.detail
+  );
+
+  const list=$('ms690AdviceList');
+
+  if(list){
+    list.innerHTML=ms690Advice()
+      .map(item=>`
+        <button type="button"
+          class="ms690-advice-item ${item.level}"
+          onclick="captainNavigate('${item.action}')">
+          <span>${item.icon}</span>
+          <span>
+            <strong>${esc(item.title)}</strong>
+            <small>${esc(item.text)}</small>
+          </span>
+          <b>›</b>
+        </button>
+      `).join('');
+  }
+}
+
+function ms690QuestionKey(event){
+  if(event.key==='Enter'){
+    event.preventDefault();
+    ms690AskCaptain();
+  }
+}
+
+function ms690LatestTrip(){
+  return [...(tripCache||[])]
+    .sort((a,b)=>
+      String(b.trip_date||'')
+        .localeCompare(
+          String(a.trip_date||'')
+        )
+    )[0]||null;
+}
+
+function ms690CaptainAnswer(question){
+  const query=String(question||'')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'');
+
+  const health=ms690BoatHealth();
+  const state=ms690TechnicalSnapshot();
+  const range=ms690FuelRangeEstimate();
+  const maintenance=ms690NextMaintenance();
+  const seasonTrips=ms690SeasonTrips();
+  const seasonDistance=seasonTrips.reduce(
+    (sum,trip)=>sum+Number(trip.distance_km||0),
+    0
+  );
+  const seasonHours=seasonTrips.reduce(
+    (sum,trip)=>sum+Number(trip.duration_hours||0),
+    0
+  );
+  const seasonFuel=seasonTrips.reduce(
+    (sum,trip)=>sum+Number(trip.fuel_liters||0),
+    0
+  );
+  const seasonCosts=captainSeasonCosts().reduce(
+    (sum,cost)=>sum+Number(cost.amount||0),
+    0
+  );
+
+  if(
+    /hoe is de boot|bootstatus|status|vaarklaar|techniek/.test(query)
+  ){
+    const warning=health.warnings[0];
+
+    return warning
+      ?`Bootscore ${Math.round(health.score)}/100. Belangrijkste aandachtspunt: ${warning.title}. ${warning.text}`
+      :`Bootscore ${Math.round(health.score)}/100. Er zijn geen directe technische waarschuwingen gevonden.`;
+  }
+
+  if(/bereik|hoe ver|brandstof|diesel/.test(query)){
+    return range
+      ?`Met de huidige tankstand is het geschatte bruikbare bereik ongeveer ${Math.round(range.km)} km, of ${technicalNumber(range.hours,1)} vaaruur. Hierbij blijft 15% reserve staan.`
+      :'Ik kan het bereik nog niet berekenen. Vul tankinhoud, tankpercentage en gemiddeld verbruik per uur in.';
+  }
+
+  if(/onderhoud|service|beurt|impeller|olie/.test(query)){
+    return maintenance
+      ?`Het eerstvolgende aandachtspunt is ${maintenance.task.title}: ${maintenance.status.label.toLowerCase()}. ${maintenance.status.detail}.`
+      :'Er staan nog geen onderhoudstaken in het technische dashboard.';
+  }
+
+  if(/accu|energie|zonne|walstroom/.test(query)){
+    const house=technicalBatteryStatus(
+      state.houseVoltage,
+      state.batteryType
+    );
+
+    return [
+      Number.isFinite(Number(state.houseVoltage))
+        ?`Huishoudaccu ${technicalNumber(state.houseVoltage,2)} V (${house.label.toLowerCase()}).`
+        :'Huishoudaccuspanning is nog niet gemeten.',
+      Number.isFinite(Number(state.solarPower))
+        ?`Zonne-opbrengst ${technicalNumber(state.solarPower,0)} W.`
+        :'Zonne-opbrengst ontbreekt.',
+      state.shorePower
+        ?'Walstroom is aangesloten.'
+        :'Walstroom is niet actief.'
+    ].join(' ');
+  }
+
+  if(/water|vuilwater|tank/.test(query)){
+    return [
+      Number.isFinite(Number(state.waterPct))
+        ?`Drinkwater ${Math.round(Number(state.waterPct))}%.`
+        :'Drinkwaterstand onbekend.',
+      Number.isFinite(Number(state.wastePct))
+        ?`Vuilwatertank ${Math.round(Number(state.wastePct))}%.`
+        :'Vuilwaterstand onbekend.',
+      Number.isFinite(Number(state.fuelPct))
+        ?`Diesel ${Math.round(Number(state.fuelPct))}%.`
+        :'Dieselstand onbekend.'
+    ].join(' ');
+  }
+
+  if(/laatste vaart|laatste tocht|analyseer/.test(query)){
+    const trip=ms690LatestTrip();
+
+    if(!trip){
+      return 'Er staat nog geen vaartocht in het logboek.';
+    }
+
+    const analysis=ms690TripAnalysis(trip);
+
+    return `${trip.title||'De laatste vaartocht'} scoort ${analysis.score}/100 (${analysis.label.toLowerCase()}). ${
+      analysis.strengths.length
+        ?`Sterk: ${analysis.strengths.slice(0,2).join(' en ')}.`
+        :''
+    } ${
+      analysis.attention.length
+        ?`Verbeterpunt: ${analysis.attention[0]}.`
+        :'Geen direct verbeterpunt gevonden.'
+    }`;
+  }
+
+  if(/seizoen|hoeveel gevaren|vaaruren|afstand/.test(query)){
+    return `Dit seizoen staan ${seasonTrips.length} vaartochten geregistreerd: ${technicalNumber(seasonDistance,1)} km, ${technicalNumber(seasonHours,1)} vaaruur en ${technicalNumber(seasonFuel,1)} liter brandstof.`;
+  }
+
+  if(/kosten|uitgaven|geld/.test(query)){
+    return `De geregistreerde uitgaven van dit seizoen zijn ${formatEuro(seasonCosts)}. Open Financieel voor de verdeling per categorie.`;
+  }
+
+  if(/route|bestemming|aankomst|eta/.test(query)){
+    const navigation=
+      typeof ms660NavigationEstimate==='function'
+        ?ms660NavigationEstimate()
+        :null;
+
+    return (
+      navigation&&
+      Number.isFinite(navigation.remainingKm)
+    )
+      ?`Naar ${navigation.destination} resteert ongeveer ${technicalNumber(navigation.remainingKm,1)} km. De actuele ETA staat in de live cockpit.`
+      :'Er is nog geen actieve route met een actuele GPS-positie.';
+  }
+
+  return 'Ik kan vragen beantwoorden over bootstatus, bereik, onderhoud, accu, tanks, kosten, seizoen, route en de laatste vaartocht.';
+}
+
+function ms690AskCaptain(question=''){
+  const input=$('ms690Question');
+  const value=String(
+    question||
+    input?.value||
+    ''
+  ).trim();
+
+  if(!value){
+    input?.focus();
+    return;
+  }
+
+  if(input)input.value=value;
+
+  const answer=$('ms690CaptainAnswer');
+
+  if(answer){
+    answer.classList.add('thinking');
+    answer.textContent='Captain analyseert Serenity…';
+
+    setTimeout(()=>{
+      answer.textContent=
+        ms690CaptainAnswer(value);
+      answer.classList.remove('thinking');
+    },220);
+  }
+}
+
+function ms690RefreshIntelligence(){
+  ms690RenderDashboard();
+  renderTechnicalDashboard();
+  renderLiveState();
+  showAppToast(
+    'Captain Intelligence bijgewerkt'
+  );
+}
+
+function ms690MaintenanceForecast(){
+  const state=ms690TechnicalSnapshot();
+  const averageTripHours=
+    ms690Average(
+      (tripCache||[])
+        .map(trip=>Number(trip.duration_hours))
+        .filter(value=>value>0)
+    )||3;
+
+  return (state.maintenance||[])
+    .map(task=>{
+      const status=technicalTaskStatus(task);
+      let forecast='';
+
+      if(Number.isFinite(status.hoursLeft)){
+        const trips=Math.max(
+          0,
+          Math.ceil(
+            status.hoursLeft/
+            averageTripHours
+          )
+        );
+
+        forecast=status.hoursLeft<=0
+          ?'Nu uitvoeren'
+          :`ongeveer ${trips} ${
+              trips===1?'vaart':'vaarten'
+            } resterend`;
+      }else if(Number.isFinite(status.daysLeft)){
+        forecast=status.daysLeft<=0
+          ?'Nu uitvoeren'
+          :`over ${status.daysLeft} dagen`;
+      }else{
+        forecast='Interval aanvullen';
+      }
+
+      return {
+        task,
+        status,
+        forecast
+      };
+    })
+    .sort((a,b)=>{
+      const rank={
+        critical:0,
+        warning:1,
+        good:2
+      };
+
+      return (
+        (rank[a.status.level]??3)-
+        (rank[b.status.level]??3)
+      );
+    })
+    .slice(0,6);
+}
+
+function ms690EnergyForecast(){
+  const state=ms690TechnicalSnapshot();
+  const range=ms690FuelRangeEstimate();
+  const house=technicalBatteryStatus(
+    state.houseVoltage,
+    state.batteryType
+  );
+  const start=technicalBatteryStatus(
+    state.startVoltage,
+    'lead'
+  );
+
+  return [
+    {
+      icon:'🔋',
+      title:'Huishoudaccu',
+      value:Number.isFinite(Number(state.houseVoltage))
+        ?`${technicalNumber(state.houseVoltage,2)} V`
+        :'–',
+      detail:house.label,
+      level:house.level
+    },
+    {
+      icon:'🔌',
+      title:'Startaccu',
+      value:Number.isFinite(Number(state.startVoltage))
+        ?`${technicalNumber(state.startVoltage,2)} V`
+        :'–',
+      detail:start.label,
+      level:start.level
+    },
+    {
+      icon:'☀️',
+      title:'Zonnepaneel',
+      value:Number.isFinite(Number(state.solarPower))
+        ?`${technicalNumber(state.solarPower,0)} W`
+        :'–',
+      detail:state.shorePower
+        ?'Walstroom actief'
+        :'Zonder walstroom',
+      level:'info'
+    },
+    {
+      icon:'⛽',
+      title:'Dieselbereik',
+      value:range
+        ?`${Math.round(range.km)} km`
+        :'–',
+      detail:range
+        ?`${technicalNumber(range.usableLitres,0)} l bruikbaar`
+        :'Gegevens aanvullen',
+      level:
+        Number(state.fuelPct)<=15
+          ?'critical'
+          :Number(state.fuelPct)<=30
+            ?'warning'
+            :'good'
+    },
+    {
+      icon:'💧',
+      title:'Drinkwater',
+      value:Number.isFinite(Number(state.waterPct))
+        ?`${Math.round(Number(state.waterPct))}%`
+        :'–',
+      detail:
+        Number(state.waterPct)<=20
+          ?'Bijvullen plannen'
+          :'Voorraad',
+      level:
+        Number(state.waterPct)<=20
+          ?'warning'
+          :'good'
+    },
+    {
+      icon:'🚽',
+      title:'Vuilwater',
+      value:Number.isFinite(Number(state.wastePct))
+        ?`${Math.round(Number(state.wastePct))}%`
+        :'–',
+      detail:
+        Number(state.wastePct)>=75
+          ?'Legen plannen'
+          :'Capaciteit beschikbaar',
+      level:
+        Number(state.wastePct)>=90
+          ?'critical'
+          :Number(state.wastePct)>=75
+            ?'warning'
+            :'good'
+    }
+  ];
+}
+
+function ms690RenderPredictive(){
+  const maintenanceContainer=$(
+    'ms690MaintenanceForecast'
+  );
+  const energyContainer=$(
+    'ms690EnergyForecast'
+  );
+
+  if(
+    !maintenanceContainer||
+    !energyContainer
+  ){
+    return;
+  }
+
+  const forecast=ms690MaintenanceForecast();
+  const badge=$('ms690PredictiveBadge');
+  const urgent=forecast.filter(item=>
+    ['critical','warning'].includes(
+      item.status.level
+    )
+  );
+
+  ms690SetText(
+    'ms690MaintenanceCount',
+    `${urgent.length} ${
+      urgent.length===1
+        ?'aandachtspunt'
+        :'aandachtspunten'
+    }`
+  );
+
+  if(badge){
+    badge.className=
+      `ms690-predictive-badge ${
+        urgent.some(item=>
+          item.status.level==='critical'
+        )
+          ?'critical'
+          :urgent.length
+            ?'warning'
+            :'good'
+      }`;
+
+    badge.textContent=
+      urgent.some(item=>
+        item.status.level==='critical'
+      )
+        ?'Actie nodig'
+        :urgent.length
+          ?'Binnenkort'
+          :'Op schema';
+  }
+
+  maintenanceContainer.innerHTML=
+    forecast.length
+      ?forecast.map(item=>`
+        <article class="ms690-forecast-item ${item.status.level}">
+          <span>${
+            item.status.level==='critical'
+              ?'⛔'
+              :item.status.level==='warning'
+                ?'🔧'
+                :'✓'
+          }</span>
+          <div>
+            <strong>${esc(item.task.title)}</strong>
+            <small>
+              ${esc(item.status.detail)} · ${esc(item.forecast)}
+            </small>
+          </div>
+        </article>
+      `).join('')
+      :'<span class="small">Geen onderhoudstaken gevonden.</span>';
+
+  energyContainer.innerHTML=
+    ms690EnergyForecast()
+      .map(item=>`
+        <article class="ms690-energy-item ${item.level}">
+          <span>${item.icon}</span>
+          <div>
+            <strong>${esc(item.title)}</strong>
+            <small>${esc(item.detail)}</small>
+          </div>
+          <b>${esc(item.value)}</b>
+        </article>
+      `).join('');
+}
+
+function ms690LiveAdvisor(){
+  const rpm=Number(liveNavState.engineRpm||0);
+  const speed=Number(liveNavState.speedKmh||0);
+  const health=ms690BoatHealth();
+  const navigation=
+    typeof ms660NavigationEstimate==='function'
+      ?ms660NavigationEstimate()
+      :null;
+
+  let economyTitle='Wachten op vaargegevens';
+  let economyDetail=
+    'Snelheid en toerental worden live beoordeeld.';
+  let economyLevel='idle';
+
+  if(liveNavState.status==='active'){
+    if(rpm>2300){
+      economyTitle='Hoog toerental';
+      economyDetail=
+        `${Math.round(rpm)} rpm · controleer of de extra snelheid het hogere verbruik waard is.`;
+      economyLevel='warning';
+    }else if(rpm>=1500&&rpm<=1800){
+      economyTitle='Rustige economische zone';
+      economyDetail=
+        `${Math.round(rpm)} rpm · actuele snelheid ${technicalNumber(speed,1)} km/u.`;
+      economyLevel='good';
+    }else if(rpm>1800){
+      economyTitle='Normale vaarbelasting';
+      economyDetail=
+        `${Math.round(rpm)} rpm · houd verbruik en motortemperatuur in de gaten.`;
+      economyLevel='info';
+    }else if(speed>=2){
+      economyTitle='Varen zonder toerentaldata';
+      economyDetail=
+        `${technicalNumber(speed,1)} km/u · koppel RPM via Home Assistant of NMEA.`;
+      economyLevel='info';
+    }
+  }
+
+  ms690SetText(
+    'ms690LiveEconomy',
+    economyTitle
+  );
+  ms690SetText(
+    'ms690LiveEconomyDetail',
+    economyDetail
+  );
+
+  if(
+    navigation&&
+    Number.isFinite(navigation.remainingKm)
+  ){
+    ms690SetText(
+      'ms690LiveRoute',
+      `${technicalNumber(navigation.remainingKm,1)} km naar ${navigation.destination}`
+    );
+    ms690SetText(
+      'ms690LiveRouteDetail',
+      navigation.mode==='route'
+        ?'Berekend over de actieve waterwegroute'
+        :'Hemelsbrede indicatie'
+    );
+  }else{
+    ms690SetText(
+      'ms690LiveRoute',
+      'Nog geen actieve route'
+    );
+    ms690SetText(
+      'ms690LiveRouteDetail',
+      'Kies een planning voor ETA en resterende afstand.'
+    );
+  }
+
+  ms690SetText(
+    'ms690LiveTechnical',
+    health.warnings.length
+      ?health.warnings[0].title
+      :'Alles rustig aan boord'
+  );
+  ms690SetText(
+    'ms690LiveTechnicalDetail',
+    health.warnings.length
+      ?health.warnings[0].text
+      :'Geen directe technische waarschuwing.'
+  );
+
+  const advice=$('ms690LiveAdvice');
+  const badge=$('ms690LiveAdvisorBadge');
+
+  if(advice){
+    advice.className=
+      `ms690-live-advice ${economyLevel}`;
+
+    advice.textContent=
+      liveNavState.status==='active'
+        ?health.warnings.length
+          ?`${health.warnings[0].icon||'⚠️'} ${health.warnings[0].title}: ${health.warnings[0].text}`
+          :economyDetail
+        :'Start een vaartocht om live advies te ontvangen.';
+  }
+
+  if(badge){
+    badge.className=
+      `ms690-advisor-badge ${economyLevel}`;
+    badge.textContent=
+      liveNavState.status==='active'
+        ?economyLevel==='warning'
+          ?'Aandacht'
+          :'● Live'
+        :'Gereed';
+  }
+}
+
+function ms690TripAnalysisHtml(trip){
+  const analysis=ms690TripAnalysis(trip);
+  const strengths=analysis.strengths
+    .slice(0,3)
+    .map(item=>`<li>✓ ${esc(item)}</li>`)
+    .join('');
+  const attention=analysis.attention
+    .slice(0,3)
+    .map(item=>`<li>→ ${esc(item)}</li>`)
+    .join('');
+
+  return `
+    <div class="ms690-trip-analysis"
+      data-ms690-trip-analysis="${esc(trip.id)}">
+      <div class="ms690-trip-score ${
+        analysis.score>=78
+          ?'good'
+          :analysis.score>=55
+            ?'warning'
+            :'critical'
+      }">
+        <strong>${analysis.score}</strong>
+        <small>/100</small>
+      </div>
+      <div class="ms690-trip-analysis-copy">
+        <span class="eyebrow">CAPTAIN VAARANALYSE</span>
+        <strong>${esc(analysis.label)}</strong>
+        <small>
+          ${
+            analysis.averageSpeed
+              ?`Gemiddeld ${technicalNumber(analysis.averageSpeed,1)} km/u`
+              :'Gemiddelde snelheid onbekend'
+          }
+          · ${esc(analysis.efficiencyText)}
+          · ${analysis.photos} routefoto${analysis.photos===1?'':'’s'}
+        </small>
+        ${
+          strengths||attention
+            ?`<ul>${strengths}${attention}</ul>`
+            :''
+        }
+      </div>
+      <button type="button" class="secondary"
+        onclick="ms690ShareTripAnalysis('${esc(trip.id)}')">
+        ↗ Deel analyse
+      </button>
+    </div>
+  `;
+}
+
+function ms690DecorateTripAnalyses(){
+  document.querySelectorAll(
+    '.trip-row[data-trip-id]'
+  ).forEach(details=>{
+    const tripId=details.dataset.tripId;
+    const body=details.querySelector(
+      '.trip-row-body'
+    );
+    const summary=body?.querySelector(
+      '.trip-summary'
+    );
+
+    if(
+      !body||
+      !summary||
+      body.querySelector(
+        '[data-ms690-trip-analysis]'
+      )
+    ){
+      return;
+    }
+
+    const trip=tripCache.find(item=>
+      String(item.id)===String(tripId)
+    );
+
+    if(!trip)return;
+
+    summary.insertAdjacentHTML(
+      'afterend',
+      ms690TripAnalysisHtml(trip)
+    );
+  });
+}
+
+async function ms690ShareTripAnalysis(tripId){
+  const trip=tripCache.find(item=>
+    String(item.id)===String(tripId)
+  );
+
+  if(!trip)return;
+
+  const analysis=ms690TripAnalysis(trip);
+  const text=[
+    `${trip.title||'Vaartocht'} · Captain Vaaranalyse`,
+    `Score: ${analysis.score}/100 (${analysis.label})`,
+    analysis.averageSpeed
+      ?`Gemiddelde snelheid: ${technicalNumber(analysis.averageSpeed,1)} km/u`
+      :'',
+    analysis.fuel
+      ?`Brandstof: ${technicalNumber(analysis.fuel,1)} liter`
+      :'',
+    analysis.strengths.length
+      ?`Sterk: ${analysis.strengths.join(', ')}`
+      :'',
+    analysis.attention.length
+      ?`Aandacht: ${analysis.attention.join(', ')}`
+      :''
+  ].filter(Boolean).join('\n');
+
+  try{
+    if(navigator.share){
+      await navigator.share({
+        title:
+          `${trip.title||'Vaartocht'} · MijnSerenity`,
+        text
+      });
+      return;
+    }
+  }catch(error){
+    if(error?.name==='AbortError')return;
+  }
+
+  try{
+    await navigator.clipboard.writeText(text);
+    showAppToast(
+      'Vaaranalyse gekopieerd'
+    );
+  }catch{
+    alert(text);
+  }
+}
+
+/* Bestaande renders uitbreiden zonder databronnen te vervangen. */
+const ms690OriginalRenderCaptainCommandCenter=
+  renderCaptainCommandCenter;
+
+renderCaptainCommandCenter=function(){
+  const result=
+    ms690OriginalRenderCaptainCommandCenter();
+
+  ms690RenderDashboard();
+  return result;
+};
+
+const ms690OriginalRenderTechnicalDashboard=
+  renderTechnicalDashboard;
+
+renderTechnicalDashboard=function(){
+  const result=
+    ms690OriginalRenderTechnicalDashboard();
+
+  ms690RenderPredictive();
+  ms690RenderDashboard();
+  return result;
+};
+
+const ms690OriginalRenderLiveState=
+  renderLiveState;
+
+renderLiveState=function(){
+  const result=
+    ms690OriginalRenderLiveState();
+
+  ms690LiveAdvisor();
+  ms690RenderDashboard();
+  return result;
+};
+
+const ms690OriginalRenderTripList=
+  renderTripList;
+
+renderTripList=function(){
+  const result=
+    ms690OriginalRenderTripList();
+
+  ms690DecorateTripAnalyses();
+  ms690RenderDashboard();
+  return result;
+};
+
+window.addEventListener(
+  'online',
+  ms690RenderDashboard,
+  {passive:true}
+);
+
+document.addEventListener(
+  'visibilitychange',
+  ()=>{
+    if(!document.hidden){
+      ms690RenderDashboard();
+      ms690RenderPredictive();
+      ms690LiveAdvisor();
+    }
+  }
+);
 
