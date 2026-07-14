@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.8.0";
+  content:" · v6.8.1";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 6.8.0 — Finance Command Center + cockpit
+   MijnSerenity Cloud 6.8.1 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5664,7 +5664,7 @@ main{
 }
 
 
-/* MijnSerenity 6.8.0 — Waterkaarten Bridge en gedeelde live vaarkaart */
+/* MijnSerenity 6.8.1 — Waterkaarten Bridge en gedeelde live vaarkaart */
 .live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
 .live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
 .live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
@@ -5677,7 +5677,7 @@ main{
 @media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
 
 
-/* MijnSerenity 6.8.0 — waterwegrouter, nautische laag en route-POI's */
+/* MijnSerenity 6.8.1 — waterwegrouter, nautische laag en route-POI's */
 .planner-fallback-settings{
   margin:10px 0 14px;
   padding:10px 12px;
@@ -5813,7 +5813,7 @@ main{
 }
 
 
-/* MijnSerenity 6.8.0 — iPad/Safari vaste onderbalk */
+/* MijnSerenity 6.8.1 — iPad/Safari vaste onderbalk */
 html,
 body{
   transform:none !important;
@@ -5873,7 +5873,7 @@ body > .bottom-nav:not(.bottom-nav-auto-hidden),
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.8.0 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.8.1 — Next Level Live Cockpit
    ========================================================= */
 
 .ms660-cockpit-actions{
@@ -6243,7 +6243,7 @@ body.ms660-night-mode
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.8.0 — Smart Route
+   MijnSerenity Cloud 6.8.1 — Smart Route
    ========================================================= */
 
 .ms670-profile-card{
@@ -6567,7 +6567,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 6.8.0 — iOS delen en route-POI's */
+/* MijnSerenity 6.8.1 — iOS delen en route-POI's */
 .ms672-share-note{
   display:grid;
   grid-template-columns:38px minmax(0,1fr);
@@ -6603,7 +6603,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 6.8.0 — fullscreen kaart en alternatieve route */
+/* MijnSerenity 6.8.1 — fullscreen kaart en alternatieve route */
 .planner-map-shell{
   position:relative;
   overflow:hidden;
@@ -6825,7 +6825,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.8.0 — Auto Logbook
+   MijnSerenity Cloud 6.8.1 — Auto Logbook
    ========================================================= */
 
 .ms680-auto-center{
@@ -7078,5 +7078,250 @@ body.planner-map-fullscreen-open{
 
   .ms680-detection-fields{
     grid-template-columns:1fr;
+  }
+}
+
+
+/* =========================================================
+   MijnSerenity Cloud 6.8.1 — Routefoto’s
+   ========================================================= */
+
+.ms681-photo-composer{
+  margin-top:13px;
+  padding:13px;
+  border-radius:16px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(69,200,255,.09),
+      rgba(255,255,255,.025)
+    );
+  border:1px solid rgba(69,200,255,.17);
+}
+
+.ms681-photo-composer-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.ms681-photo-composer-head strong,
+.ms681-photo-composer-head small{
+  display:block;
+}
+
+.ms681-photo-composer-head small{
+  margin-top:3px;
+  color:var(--muted);
+  line-height:1.35;
+}
+
+.ms681-photo-composer-head > span{
+  flex:0 0 auto;
+  color:#c8edf8;
+  font-size:11px;
+  font-weight:850;
+}
+
+.ms681-pending-photos{
+  display:grid;
+  gap:9px;
+}
+
+.ms681-pending-photo{
+  display:grid;
+  grid-template-columns:104px minmax(0,1fr) 34px;
+  align-items:start;
+  gap:10px;
+  padding:10px;
+  border-radius:14px;
+  background:rgba(255,255,255,.042);
+  border:1px solid rgba(255,255,255,.075);
+}
+
+.ms681-photo-preview{
+  position:relative;
+  width:104px;
+  min-width:104px;
+  height:82px;
+  min-height:82px;
+  padding:0;
+  overflow:hidden;
+  border-radius:12px;
+  background:#07151e;
+  border:0;
+}
+
+.ms681-photo-preview img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.ms681-photo-preview span{
+  position:absolute;
+  left:6px;
+  bottom:6px;
+  padding:4px 6px;
+  border-radius:999px;
+  color:#fff;
+  background:rgba(0,0,0,.66);
+  font-size:9px;
+  font-weight:850;
+}
+
+.ms681-photo-copy label{
+  margin:0 0 4px;
+}
+
+.ms681-photo-copy textarea{
+  min-height:62px;
+  margin:0;
+  resize:vertical;
+}
+
+.ms681-photo-copy small{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:10px;
+}
+
+.ms681-photo-remove{
+  width:32px;
+  min-width:32px;
+  height:32px;
+  min-height:32px;
+  padding:0;
+  border-radius:50%;
+  color:#fff;
+  background:rgba(255,78,78,.18);
+  border:1px solid rgba(255,78,78,.30);
+  font-size:21px;
+}
+
+.ms681-photo-marker{
+  background:transparent;
+  border:0;
+}
+
+.ms681-photo-marker > span{
+  position:relative;
+  display:block;
+  width:46px;
+  height:46px;
+  padding:3px;
+  border-radius:14px 14px 14px 3px;
+  background:#fff;
+  box-shadow:0 5px 17px rgba(0,0,0,.45);
+  transform:rotate(-2deg);
+}
+
+.ms681-photo-marker > span::after{
+  content:"";
+  position:absolute;
+  left:5px;
+  bottom:-7px;
+  border:7px solid transparent;
+  border-top-color:#fff;
+  border-left-color:#fff;
+}
+
+.ms681-photo-marker img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:10px 10px 10px 2px;
+}
+
+.ms681-map-photo-popup{
+  min-width:190px;
+}
+
+.ms681-map-photo-popup img{
+  display:block;
+  width:100%;
+  max-height:170px;
+  object-fit:cover;
+  border-radius:10px;
+  margin-bottom:8px;
+}
+
+.ms681-map-photo-popup strong,
+.ms681-map-photo-popup small{
+  display:block;
+}
+
+.ms681-map-photo-popup small{
+  margin-top:4px;
+  color:#63727a;
+}
+
+.ms681-saved-photo{
+  display:flex;
+  flex-direction:column;
+}
+
+.ms681-photo-location-badge{
+  position:absolute;
+  left:7px;
+  top:7px;
+  padding:4px 7px;
+  border-radius:999px;
+  color:#fff;
+  background:rgba(0,0,0,.64);
+  font-size:9px;
+  font-weight:850;
+}
+
+.ms681-saved-photo-caption{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 30px;
+  align-items:center;
+  gap:5px;
+  width:100%;
+  padding:7px;
+  background:rgba(3,18,27,.94);
+}
+
+.ms681-saved-photo-caption span{
+  overflow:hidden;
+  color:#d8edf4;
+  font-size:11px;
+  line-height:1.3;
+  text-overflow:ellipsis;
+}
+
+.ms681-saved-photo-caption button{
+  width:28px;
+  min-width:28px;
+  height:28px;
+  min-height:28px;
+  padding:0;
+  border-radius:9px;
+  font-size:12px;
+}
+
+@media(max-width:620px){
+  .ms681-photo-composer-head{
+    flex-direction:column;
+  }
+
+  .ms681-pending-photo{
+    grid-template-columns:86px minmax(0,1fr);
+  }
+
+  .ms681-photo-preview{
+    width:86px;
+    min-width:86px;
+    height:76px;
+    min-height:76px;
+  }
+
+  .ms681-photo-remove{
+    grid-column:2;
+    justify-self:end;
   }
 }

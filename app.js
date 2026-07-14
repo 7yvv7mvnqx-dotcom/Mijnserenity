@@ -14059,15 +14059,34 @@ function haversineKm(a,b){
 
 function createLiveGpxFile(title){
   const points=liveNavState.points.map(point=>
-    `<trkpt lat="${point.lat.toFixed(7)}" lon="${point.lon.toFixed(7)}">`+
+    `<trkpt lat="${Number(point.lat).toFixed(7)}" lon="${Number(point.lon).toFixed(7)}">`+
     `<time>${new Date(point.time).toISOString()}</time></trkpt>`
   ).join('');
 
-  const safeTitle=esc(title||'Live vaartocht');
+  const photoWaypoints=(
+    typeof ms681PendingPhotoUploads==='function'
+      ?ms681PendingPhotoUploads()
+      :[]
+  )
+    .filter(photo=>
+      Number.isFinite(Number(photo.latitude))&&
+      Number.isFinite(Number(photo.longitude))
+    )
+    .map((photo,index)=>
+      `<wpt lat="${Number(photo.latitude).toFixed(7)}" `+
+      `lon="${Number(photo.longitude).toFixed(7)}">`+
+      `<name>${xmlEscape(photo.description||`Routefoto ${index+1}`)}</name>`+
+      `<desc>${xmlEscape(photo.description||'Foto onderweg')}</desc>`+
+      `<time>${new Date(photo.capturedAt||Date.now()).toISOString()}</time>`+
+      `<type>Routefoto</type></wpt>`
+    ).join('');
+
+  const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity"
+<gpx version="1.1" creator="MijnSerenity 6.8.1"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
+ ${photoWaypoints}
  <trk><name>${safeTitle}</name><trkseg>${points}</trkseg></trk>
 </gpx>`;
 
@@ -14078,7 +14097,11 @@ function createLiveGpxFile(title){
     .replace(/^-+|-+$/g,'')
     .slice(0,60)||'live-vaartocht';
 
-  return new File([gpx],`${filename}.gpx`,{type:'application/gpx+xml'});
+  return new File(
+    [gpx],
+    `${filename}.gpx`,
+    {type:'application/gpx+xml'}
+  );
 }
 
 async function saveLiveTrip(options={}){
@@ -14194,7 +14217,7 @@ async function saveLiveTrip(options={}){
       );
     }
 
-    const photoFiles=[...($('livePhotos')?.files||[])].slice(0,10);
+    const photoFiles=ms681PendingPhotoUploads();
 
     if(photoFiles.length){
       saveStatus.textContent=
@@ -14312,7 +14335,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.8.0';
+const APP_VERSION='6.8.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -15970,9 +15993,24 @@ function renderTripList(){
   const photos=window.tripPhotoCache||{};
   $('tripList').innerHTML=filtered.length?filtered.map(t=>{
     const photoHtml=(photos[t.id]||[]).map(ph=>`
-      <div class="trip-photo-wrap">
-        <img src="${esc(ph.url)}" alt="Foto van ${esc(t.title||'vaarttocht')}" onclick="openLightbox(${JSON.stringify(ph.url)})">
-        <button class="trip-photo-delete" onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button>
+      <div class="trip-photo-wrap ms681-saved-photo">
+        <img src="${esc(ph.url)}"
+          alt="Foto van ${esc(t.title||'vaarttocht')}"
+          onclick="openLightbox(${JSON.stringify(ph.url)})">
+        ${Number.isFinite(Number(ph.latitude))&&Number.isFinite(Number(ph.longitude))
+          ?'<span class="ms681-photo-location-badge">📍 Routefoto</span>'
+          :''}
+        <button class="trip-photo-delete"
+          onclick="deleteTripPhoto('${ph.id}','${esc(ph.storage_path)}')">×</button>
+        <div class="ms681-saved-photo-caption">
+          <span>${esc(ph.description||'Foto onderweg')}</span>
+          <button type="button" class="secondary"
+            onclick='ms681EditSavedPhotoDescription(
+              ${JSON.stringify(ph.id)},
+              ${JSON.stringify(ph.description||'')},
+              ${JSON.stringify(t.id)}
+            )'>✏️</button>
+        </div>
       </div>`).join('');
 
     const mapId=`tripRouteMap-${t.id}`;
@@ -16287,7 +16325,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.8.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.8.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16676,7 +16714,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.0
+   MijnSerenity Cloud 6.8.1
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17613,7 +17651,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.8.0"
+ creator="MijnSerenity 6.8.1"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17639,7 +17677,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.8.0 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.8.1 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17677,7 +17715,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.0 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.8.1 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18651,7 +18689,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.0 — Smart Route
+   MijnSerenity Cloud 6.8.1 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -19961,7 +19999,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.8.0 Smart Route"
+ creator="MijnSerenity 6.8.1 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -19990,7 +20028,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.8.0 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 6.8.1 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20057,7 +20095,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.0 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 6.8.1 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -20976,7 +21014,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.8.0 — Auto Logbook
+   MijnSerenity Cloud 6.8.1 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22180,4 +22218,833 @@ document.addEventListener(
     }
   }
 );
+
+
+
+/* ============================================================
+   MijnSerenity Cloud 6.8.1 — Routefoto’s met GPS en omschrijving
+   ============================================================ */
+
+let ms681PendingPhotos=[];
+let ms681LivePhotoLayer=null;
+let ms681PhotoSchemaWarningShown=false;
+
+function ms681PhotoFingerprint(file){
+  return [
+    file?.name||'foto',
+    Number(file?.size||0),
+    Number(file?.lastModified||0)
+  ].join(':');
+}
+
+function ms681CurrentRoutePoint(){
+  const point=liveNavState?.points?.at(-1);
+
+  if(
+    point&&
+    Number.isFinite(Number(point.lat))&&
+    Number.isFinite(Number(point.lon))
+  ){
+    return {
+      lat:Number(point.lat),
+      lon:Number(point.lon),
+      time:Number(point.time)||Date.now(),
+      accuracy:Number(liveNavState.accuracy)||null
+    };
+  }
+
+  return null;
+}
+
+function ms681GetCurrentPosition(){
+  const routePoint=ms681CurrentRoutePoint();
+
+  if(
+    routePoint&&
+    Date.now()-routePoint.time<120000
+  ){
+    return Promise.resolve(routePoint);
+  }
+
+  if(!navigator.geolocation){
+    return Promise.resolve(routePoint);
+  }
+
+  return new Promise(resolve=>{
+    navigator.geolocation.getCurrentPosition(
+      position=>resolve({
+        lat:Number(position.coords.latitude),
+        lon:Number(position.coords.longitude),
+        time:Number(position.timestamp)||Date.now(),
+        accuracy:Number(position.coords.accuracy)||null
+      }),
+      ()=>resolve(routePoint),
+      {
+        enableHighAccuracy:true,
+        maximumAge:15000,
+        timeout:10000
+      }
+    );
+  });
+}
+
+function ms681SyncLivePhotoInput(){
+  const input=$('livePhotos');
+  if(!input)return;
+
+  try{
+    const transfer=new DataTransfer();
+
+    ms681PendingPhotos
+      .slice(0,10)
+      .forEach(photo=>transfer.items.add(photo.file));
+
+    input.files=transfer.files;
+  }catch(error){
+    console.warn(
+      'Bestandslijst kon niet worden bijgewerkt:',
+      error
+    );
+  }
+}
+
+function ms681PendingPhotoUploads(){
+  const records=[...ms681PendingPhotos];
+  const inputFiles=[
+    ...($('livePhotos')?.files||[])
+  ];
+
+  const fingerprints=new Set(
+    records.map(record=>
+      ms681PhotoFingerprint(record.file)
+    )
+  );
+
+  inputFiles.forEach(file=>{
+    const fingerprint=
+      ms681PhotoFingerprint(file);
+
+    if(!fingerprints.has(fingerprint)){
+      const point=ms681CurrentRoutePoint();
+
+      records.push({
+        id:
+          crypto.randomUUID?.()||
+          `photo-${Date.now()}-${Math.random()}`,
+        file,
+        fingerprint,
+        objectUrl:'',
+        description:'',
+        latitude:point?.lat??null,
+        longitude:point?.lon??null,
+        accuracy:point?.accuracy??null,
+        capturedAt:
+          Number(file.lastModified)||
+          Date.now()
+      });
+
+      fingerprints.add(fingerprint);
+    }
+  });
+
+  return records.slice(0,10);
+}
+
+async function ms681CaptureRoutePhotos(
+  fileList,
+  quickCapture=false
+){
+  const files=[...(fileList||[])];
+
+  if(!files.length)return;
+
+  const remaining=Math.max(
+    0,
+    10-ms681PendingPhotos.length
+  );
+
+  if(!remaining){
+    showAppToast(
+      'Maximaal 10 routefoto’s per vaartocht.'
+    );
+    return;
+  }
+
+  const point=await ms681GetCurrentPosition();
+  const existing=new Set(
+    ms681PendingPhotos.map(photo=>
+      photo.fingerprint
+    )
+  );
+  const added=[];
+
+  files.slice(0,remaining).forEach(file=>{
+    const fingerprint=
+      ms681PhotoFingerprint(file);
+
+    if(existing.has(fingerprint))return;
+
+    const photo={
+      id:
+        crypto.randomUUID?.()||
+        `photo-${Date.now()}-${Math.random()}`,
+      file,
+      fingerprint,
+      objectUrl:URL.createObjectURL(file),
+      description:'',
+      latitude:point?.lat??null,
+      longitude:point?.lon??null,
+      accuracy:point?.accuracy??null,
+      capturedAt:
+        Number(file.lastModified)||
+        Date.now(),
+      quickCapture:Boolean(quickCapture)
+    };
+
+    ms681PendingPhotos.push(photo);
+    added.push(photo);
+    existing.add(fingerprint);
+  });
+
+  ms681SyncLivePhotoInput();
+  ms681RenderPhotoComposer();
+  ms681RenderLivePhotoMarkers();
+
+  added.forEach((photo,index)=>{
+    ms680AddEvent?.(
+      'photo',
+      Number.isFinite(photo.latitude)
+        ?'GPS-positie aan foto gekoppeld'
+        :'Foto toegevoegd zonder GPS-positie',
+      Number.isFinite(photo.latitude)
+        ?{
+            lat:photo.latitude,
+            lon:photo.longitude
+          }
+        :liveNavState.points.at(-1),
+      {
+        title:'Routefoto toegevoegd',
+        dedupe:false,
+        time:photo.capturedAt
+      }
+    );
+  });
+
+  if(added.length){
+    showAppToast(
+      `${added.length} routefoto${added.length===1?'':'’s'} toegevoegd`
+    );
+
+    setTimeout(()=>{
+      document.querySelector(
+        `.ms681-pending-photo[data-photo-id="${added[0].id}"] textarea`
+      )?.focus();
+    },120);
+  }
+
+  const quickInput=$('ms680QuickPhoto');
+  if(quickInput)quickInput.value='';
+}
+
+function ms681ImportLivePhotos(fileList){
+  return ms681CaptureRoutePhotos(
+    fileList,
+    false
+  );
+}
+
+function ms681UpdatePhotoDescription(
+  id,
+  value
+){
+  const photo=ms681PendingPhotos.find(
+    item=>item.id===id
+  );
+
+  if(!photo)return;
+
+  photo.description=String(value||'')
+    .slice(0,500);
+
+  ms681RenderLivePhotoMarkers();
+}
+
+function ms681RemovePendingPhoto(id){
+  const index=ms681PendingPhotos.findIndex(
+    item=>item.id===id
+  );
+
+  if(index<0)return;
+
+  const [photo]=ms681PendingPhotos.splice(
+    index,
+    1
+  );
+
+  if(photo?.objectUrl){
+    URL.revokeObjectURL(photo.objectUrl);
+  }
+
+  ms681SyncLivePhotoInput();
+  ms681RenderPhotoComposer();
+  ms681RenderLivePhotoMarkers();
+}
+
+function ms681FocusPhotoOnMap(id){
+  const photo=ms681PendingPhotos.find(
+    item=>item.id===id
+  );
+
+  if(
+    !photo||
+    !Number.isFinite(photo.latitude)||
+    !Number.isFinite(photo.longitude)||
+    !liveMap
+  ){
+    return;
+  }
+
+  liveMap.setView(
+    [photo.latitude,photo.longitude],
+    Math.max(16,liveMap.getZoom()),
+    {animate:true}
+  );
+
+  document.querySelector(
+    '.live-map-card'
+  )?.scrollIntoView({
+    behavior:'smooth',
+    block:'center'
+  });
+}
+
+function ms681RenderPhotoComposer(){
+  const panel=$('ms681PhotoComposer');
+  const container=$('ms681PendingPhotos');
+  const count=$('ms681PhotoCount');
+
+  if(!panel||!container||!count)return;
+
+  count.textContent=
+    `${ms681PendingPhotos.length} ${
+      ms681PendingPhotos.length===1
+        ?'foto'
+        :'foto’s'
+    }`;
+
+  panel.classList.toggle(
+    'hidden',
+    !ms681PendingPhotos.length
+  );
+
+  if(!ms681PendingPhotos.length){
+    container.innerHTML='';
+    return;
+  }
+
+  container.innerHTML=
+    ms681PendingPhotos.map((photo,index)=>`
+      <article class="ms681-pending-photo"
+        data-photo-id="${photo.id}">
+        <button type="button"
+          class="ms681-photo-preview"
+          onclick="ms681FocusPhotoOnMap('${photo.id}')">
+          <img src="${esc(photo.objectUrl)}"
+            alt="Routefoto ${index+1}">
+          <span>
+            ${
+              Number.isFinite(photo.latitude)
+                ?'📍 Op route'
+                :'⚠ Geen GPS'
+            }
+          </span>
+        </button>
+        <div class="ms681-photo-copy">
+          <label for="ms681Caption-${photo.id}">
+            Omschrijving
+          </label>
+          <textarea id="ms681Caption-${photo.id}"
+            rows="2"
+            maxlength="500"
+            placeholder="Bijv. wachten voor de sluis, mooie ligplaats…"
+            oninput="ms681UpdatePhotoDescription(
+              '${photo.id}',
+              this.value
+            )">${esc(photo.description||'')}</textarea>
+          <small>
+            ${
+              Number.isFinite(photo.latitude)
+                ?`${Number(photo.latitude).toFixed(5)}, ${Number(photo.longitude).toFixed(5)}`
+                :'GPS-positie kon nog niet worden bepaald'
+            }
+            · ${new Date(photo.capturedAt).toLocaleTimeString(
+              'nl-NL',
+              {
+                hour:'2-digit',
+                minute:'2-digit'
+              }
+            )}
+          </small>
+        </div>
+        <button type="button"
+          class="ms681-photo-remove"
+          aria-label="Routefoto verwijderen"
+          onclick="ms681RemovePendingPhoto('${photo.id}')">×</button>
+      </article>
+    `).join('');
+}
+
+function ms681PhotoMarkerIcon(photo){
+  const image=photo.objectUrl||photo.url||'';
+
+  return L.divIcon({
+    className:'ms681-photo-marker',
+    html:`
+      <span>
+        <img src="${esc(image)}" alt="">
+      </span>
+    `,
+    iconSize:[46,46],
+    iconAnchor:[23,42],
+    popupAnchor:[0,-40]
+  });
+}
+
+function ms681PhotoPopup(photo){
+  const image=photo.objectUrl||photo.url||'';
+  const description=
+    photo.description||
+    'Foto onderweg';
+
+  return `
+    <div class="ms681-map-photo-popup">
+      <img src="${esc(image)}" alt="Routefoto">
+      <strong>${esc(description)}</strong>
+      <small>
+        ${photo.capturedAt||photo.captured_at
+          ?new Date(photo.capturedAt||photo.captured_at)
+            .toLocaleString('nl-NL',{
+              day:'numeric',
+              month:'short',
+              hour:'2-digit',
+              minute:'2-digit'
+            })
+          :''}
+      </small>
+    </div>
+  `;
+}
+
+function ms681RenderLivePhotoMarkers(){
+  if(!liveMap)return;
+
+  if(!ms681LivePhotoLayer){
+    ms681LivePhotoLayer=
+      L.layerGroup().addTo(liveMap);
+  }
+
+  ms681LivePhotoLayer.clearLayers();
+
+  ms681PendingPhotos.forEach(photo=>{
+    if(
+      !Number.isFinite(Number(photo.latitude))||
+      !Number.isFinite(Number(photo.longitude))
+    ){
+      return;
+    }
+
+    L.marker(
+      [
+        Number(photo.latitude),
+        Number(photo.longitude)
+      ],
+      {
+        icon:ms681PhotoMarkerIcon(photo),
+        zIndexOffset:800
+      }
+    )
+      .addTo(ms681LivePhotoLayer)
+      .bindPopup(
+        ms681PhotoPopup(photo),
+        {
+          maxWidth:250,
+          className:'ms681-photo-popup-shell'
+        }
+      );
+  });
+}
+
+function ms681TripPhotosForMap(
+  containerId
+){
+  const photos=window.tripPhotoCache||{};
+
+  if(containerId==='latestRouteMap'){
+    const latest=tripCache.find(
+      trip=>normaliseRouteGeojson(
+        trip.route_geojson
+      )
+    );
+
+    return latest
+      ?photos[latest.id]||[]
+      :[];
+  }
+
+  const match=String(containerId)
+    .match(/^tripRouteMap-(.+)$/);
+
+  return match
+    ?photos[match[1]]||[]
+    :[];
+}
+
+function ms681AddTripPhotoMarkers(
+  containerId
+){
+  const map=tripRouteMaps[containerId];
+  if(!map)return;
+
+  if(map.ms681PhotoLayer){
+    map.ms681PhotoLayer.clearLayers();
+  }else{
+    map.ms681PhotoLayer=
+      L.layerGroup().addTo(map);
+  }
+
+  ms681TripPhotosForMap(containerId)
+    .filter(photo=>
+      Number.isFinite(Number(photo.latitude))&&
+      Number.isFinite(Number(photo.longitude))
+    )
+    .forEach(photo=>{
+      L.marker(
+        [
+          Number(photo.latitude),
+          Number(photo.longitude)
+        ],
+        {
+          icon:ms681PhotoMarkerIcon(photo),
+          zIndexOffset:800
+        }
+      )
+        .addTo(map.ms681PhotoLayer)
+        .bindPopup(
+          ms681PhotoPopup(photo),
+          {
+            maxWidth:250,
+            className:'ms681-photo-popup-shell'
+          }
+        );
+    });
+}
+
+async function ms681EditSavedPhotoDescription(
+  photoId,
+  currentDescription,
+  tripId
+){
+  const description=prompt(
+    'Omschrijving van deze routefoto:',
+    currentDescription||''
+  );
+
+  if(description===null)return;
+
+  const clean=String(description)
+    .trim()
+    .slice(0,500);
+
+  const {error}=await sb
+    .from('trip_photos')
+    .update({
+      description:clean||null
+    })
+    .eq('id',photoId)
+    .eq('boat_id',currentBoat.id);
+
+  if(error){
+    alert(
+      'Omschrijving opslaan mislukt: '+
+      error.message
+    );
+    return;
+  }
+
+  const photo=(
+    window.tripPhotoCache?.[tripId]||[]
+  ).find(item=>
+    String(item.id)===String(photoId)
+  );
+
+  if(photo)photo.description=clean;
+
+  renderTripList();
+  showAppToast(
+    'Foto-omschrijving opgeslagen ✅'
+  );
+}
+
+function ms681IsMissingPhotoColumns(error){
+  const message=String(
+    error?.message||
+    error?.details||
+    ''
+  ).toLowerCase();
+
+  return (
+    message.includes('description')||
+    message.includes('latitude')||
+    message.includes('longitude')||
+    message.includes('captured_at')||
+    message.includes('schema cache')
+  );
+}
+
+const ms681OriginalUploadTripPhotos=
+  uploadTripPhotos;
+
+uploadTripPhotos=async function(
+  tripId,
+  items
+){
+  const normalised=[...(items||[])]
+    .slice(0,10)
+    .map(item=>{
+      if(item instanceof File){
+        return {
+          file:item,
+          description:'',
+          latitude:null,
+          longitude:null,
+          capturedAt:
+            Number(item.lastModified)||
+            Date.now()
+        };
+      }
+
+      return {
+        ...item,
+        file:item.file
+      };
+    })
+    .filter(item=>item.file instanceof File);
+
+  for(let index=0;index<normalised.length;index++){
+    const photo=normalised[index];
+    const file=photo.file;
+
+    setTripProgress(
+      `Routefoto ${index+1} van ${normalised.length} uploaden…`
+    );
+
+    const safeExt=(
+      file.name.split('.').pop()||
+      'jpg'
+    )
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g,'')||
+      'jpg';
+
+    const path=
+      `${currentBoat.id}/${tripId}/`+
+      `${crypto.randomUUID()}.${safeExt}`;
+
+    const {error:uploadError}=await sb.storage
+      .from(TRIP_PHOTO_BUCKET)
+      .upload(path,file,{
+        cacheControl:'3600',
+        upsert:false,
+        contentType:
+          file.type||
+          'image/jpeg'
+      });
+
+    if(uploadError){
+      alert(
+        'Foto uploaden mislukt: '+
+        uploadError.message
+      );
+      continue;
+    }
+
+    const metadata={
+      trip_id:tripId,
+      boat_id:currentBoat.id,
+      created_by:currentUser.id,
+      storage_path:path,
+      original_name:file.name,
+      description:
+        String(photo.description||'')
+          .trim()
+          .slice(0,500)||
+        null,
+      latitude:
+        Number.isFinite(Number(photo.latitude))
+          ?Number(photo.latitude)
+          :null,
+      longitude:
+        Number.isFinite(Number(photo.longitude))
+          ?Number(photo.longitude)
+          :null,
+      captured_at:new Date(
+        photo.capturedAt||
+        file.lastModified||
+        Date.now()
+      ).toISOString()
+    };
+
+    let {error:metaError}=await sb
+      .from('trip_photos')
+      .insert(metadata);
+
+    if(
+      metaError&&
+      ms681IsMissingPhotoColumns(metaError)
+    ){
+      if(!ms681PhotoSchemaWarningShown){
+        ms681PhotoSchemaWarningShown=true;
+        alert(
+          'De routefoto wordt opgeslagen, maar voer eerst '+
+          'SUPABASE_ROUTEFOTOS_6_8_1.sql uit om locatie en '+
+          'omschrijving in het logboek te bewaren.'
+        );
+      }
+
+      const fallback={
+        trip_id:tripId,
+        boat_id:currentBoat.id,
+        created_by:currentUser.id,
+        storage_path:path,
+        original_name:file.name
+      };
+
+      const result=await sb
+        .from('trip_photos')
+        .insert(fallback);
+
+      metaError=result.error;
+    }
+
+    if(metaError){
+      await sb.storage
+        .from(TRIP_PHOTO_BUCKET)
+        .remove([path]);
+
+      alert(
+        'Foto registreren mislukt: '+
+        metaError.message
+      );
+    }
+  }
+};
+
+/* Foto’s ook na het openen van een opgeslagen logboek op de routekaart. */
+const ms681OriginalHandleTripToggle=
+  handleTripToggle;
+
+handleTripToggle=function(
+  details,
+  mapId,
+  tripId
+){
+  ms681OriginalHandleTripToggle(
+    details,
+    mapId,
+    tripId
+  );
+
+  if(details.open){
+    [180,450,900].forEach(delay=>{
+      setTimeout(
+        ()=>ms681AddTripPhotoMarkers(mapId),
+        delay
+      );
+    });
+  }
+};
+
+const ms681OriginalUpdateLatestRouteDashboard=
+  updateLatestRouteDashboard;
+
+updateLatestRouteDashboard=function(){
+  const result=
+    ms681OriginalUpdateLatestRouteDashboard();
+
+  [220,500,950].forEach(delay=>{
+    setTimeout(
+      ()=>ms681AddTripPhotoMarkers(
+        'latestRouteMap'
+      ),
+      delay
+    );
+  });
+
+  return result;
+};
+
+const ms681OriginalEnsureLiveMap=
+  ensureLiveMap;
+
+ensureLiveMap=function(){
+  const result=
+    ms681OriginalEnsureLiveMap();
+
+  ms681RenderLivePhotoMarkers();
+  return result;
+};
+
+const ms681OriginalRenderLiveRoute=
+  renderLiveRoute;
+
+renderLiveRoute=function(){
+  const result=
+    ms681OriginalRenderLiveRoute();
+
+  ms681RenderLivePhotoMarkers();
+  return result;
+};
+
+/* Bestaande snelle fotoknop gebruikt nu GPS-routefoto’s. */
+ms680AddQuickPhotos=function(fileList){
+  return ms681CaptureRoutePhotos(
+    fileList,
+    true
+  );
+};
+
+/* Na opslaan of wissen object-URL’s en routefotostatus opruimen. */
+const ms681OriginalClearLiveTrip=
+  clearLiveTrip;
+
+clearLiveTrip=function(options={}){
+  ms681PendingPhotos.forEach(photo=>{
+    if(photo.objectUrl){
+      URL.revokeObjectURL(
+        photo.objectUrl
+      );
+    }
+  });
+
+  ms681PendingPhotos=[];
+  ms681LivePhotoLayer?.clearLayers();
+
+  const result=
+    ms681OriginalClearLiveTrip(options);
+
+  ms681RenderPhotoComposer();
+  return result;
+};
+
+const ms681OriginalInitLiveMode=
+  initLiveMode;
+
+initLiveMode=async function(){
+  const result=
+    await ms681OriginalInitLiveMode();
+
+  ms681RenderPhotoComposer();
+  ms681RenderLivePhotoMarkers();
+  return result;
+};
 
