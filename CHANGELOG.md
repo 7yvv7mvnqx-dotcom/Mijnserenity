@@ -1,3 +1,8 @@
+## 6.5.1
+- Onderste navigatie naar body-root verplaatst.
+- iPad Safari/Split View fixed-position hotfix.
+- Balk blijft altijd onderaan de zichtbare viewport.
+
 ## 6.5.0
 - Echte waterwegroute via Netlify Function en BRouter-waterprofielen.
 - Nautische OpenSeaMap-laag in de Reisplanner.

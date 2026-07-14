@@ -14310,7 +14310,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.5.0';
+const APP_VERSION='6.5.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16285,7 +16285,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.5.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.5.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16636,7 +16636,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.5.0
+   MijnSerenity Cloud 6.5.1
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17417,7 +17417,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.5.0"
+ creator="MijnSerenity 6.5.1"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17441,3 +17441,40 @@ ms640PlannerGpx=function(plan){
   );
 };
 
+
+
+/* MijnSerenity 6.5.1 — navigatie altijd aan de viewport vastzetten */
+function mountBottomNavigationToViewport(){
+  const nav=document.querySelector('.bottom-nav');
+  if(!nav)return;
+
+  if(nav.parentElement!==document.body){
+    document.body.appendChild(nav);
+  }
+
+  nav.classList.add('bottom-nav-viewport-fixed');
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener(
+    'DOMContentLoaded',
+    mountBottomNavigationToViewport,
+    {once:true}
+  );
+}else{
+  mountBottomNavigationToViewport();
+}
+
+window.addEventListener(
+  'pageshow',
+  mountBottomNavigationToViewport,
+  {passive:true}
+);
+
+window.addEventListener(
+  'orientationchange',
+  ()=>{
+    setTimeout(mountBottomNavigationToViewport,120);
+  },
+  {passive:true}
+);

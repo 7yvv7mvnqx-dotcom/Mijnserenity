@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.5.0";
+  content:" · v6.5.1";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 6.5.0 — Finance Command Center + cockpit
+   MijnSerenity Cloud 6.5.1 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5664,7 +5664,7 @@ main{
 }
 
 
-/* MijnSerenity 6.5.0 — Waterkaarten Bridge en gedeelde live vaarkaart */
+/* MijnSerenity 6.5.1 — Waterkaarten Bridge en gedeelde live vaarkaart */
 .live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
 .live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
 .live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
@@ -5677,7 +5677,7 @@ main{
 @media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
 
 
-/* MijnSerenity 6.5.0 — waterwegrouter, nautische laag en route-POI's */
+/* MijnSerenity 6.5.1 — waterwegrouter, nautische laag en route-POI's */
 .planner-fallback-settings{
   margin:10px 0 14px;
   padding:10px 12px;
@@ -5809,5 +5809,64 @@ main{
   .planner-route-poi-item button{
     grid-column:2;
     justify-self:start;
+  }
+}
+
+
+/* MijnSerenity 6.5.1 — iPad/Safari vaste onderbalk */
+html,
+body{
+  transform:none !important;
+  perspective:none !important;
+  filter:none !important;
+}
+
+body > .bottom-nav,
+.bottom-nav.bottom-nav-viewport-fixed{
+  position:fixed !important;
+  inset:auto 0 0 0 !important;
+  left:0 !important;
+  right:0 !important;
+  top:auto !important;
+  bottom:0 !important;
+
+  width:100vw !important;
+  max-width:100vw !important;
+  margin:0 !important;
+
+  contain:none !important;
+  transform:none !important;
+  translate:none !important;
+
+  z-index:2147483000 !important;
+  isolation:isolate;
+
+  box-sizing:border-box;
+}
+
+body > .bottom-nav.bottom-nav-auto-hidden,
+.bottom-nav.bottom-nav-viewport-fixed.bottom-nav-auto-hidden{
+  transform:
+    translate3d(
+      0,
+      calc(100% + env(safe-area-inset-bottom) + 14px),
+      0
+    ) !important;
+  opacity:0;
+  pointer-events:none;
+}
+
+body > .bottom-nav:not(.bottom-nav-auto-hidden),
+.bottom-nav.bottom-nav-viewport-fixed:not(.bottom-nav-auto-hidden){
+  transform:none !important;
+  opacity:1;
+}
+
+/* Voorkom dat de paginabreedte door 100vw op iPad verspringt. */
+@supports(width:100dvw){
+  body > .bottom-nav,
+  .bottom-nav.bottom-nav-viewport-fixed{
+    width:100dvw !important;
+    max-width:100dvw !important;
   }
 }
