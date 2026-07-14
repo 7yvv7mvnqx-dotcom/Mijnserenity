@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.6.0";
+  content:" · v6.7.0";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 6.6.0 — Finance Command Center + cockpit
+   MijnSerenity Cloud 6.7.0 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5664,7 +5664,7 @@ main{
 }
 
 
-/* MijnSerenity 6.6.0 — Waterkaarten Bridge en gedeelde live vaarkaart */
+/* MijnSerenity 6.7.0 — Waterkaarten Bridge en gedeelde live vaarkaart */
 .live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
 .live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
 .live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
@@ -5677,7 +5677,7 @@ main{
 @media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
 
 
-/* MijnSerenity 6.6.0 — waterwegrouter, nautische laag en route-POI's */
+/* MijnSerenity 6.7.0 — waterwegrouter, nautische laag en route-POI's */
 .planner-fallback-settings{
   margin:10px 0 14px;
   padding:10px 12px;
@@ -5813,7 +5813,7 @@ main{
 }
 
 
-/* MijnSerenity 6.6.0 — iPad/Safari vaste onderbalk */
+/* MijnSerenity 6.7.0 — iPad/Safari vaste onderbalk */
 html,
 body{
   transform:none !important;
@@ -5873,7 +5873,7 @@ body > .bottom-nav:not(.bottom-nav-auto-hidden),
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.6.0 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.7.0 — Next Level Live Cockpit
    ========================================================= */
 
 .ms660-cockpit-actions{
@@ -6238,5 +6238,330 @@ body.ms660-night-mode
 @media(max-width:430px){
   .ms660-command-grid{
     grid-template-columns:1fr;
+  }
+}
+
+
+/* =========================================================
+   MijnSerenity Cloud 6.7.0 — Smart Route
+   ========================================================= */
+
+.ms670-profile-card{
+  margin:13px 0 15px;
+  padding:14px;
+  border-radius:17px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(41,137,172,.15),
+      rgba(75,211,143,.07)
+    );
+  border:1px solid rgba(88,206,241,.18);
+}
+
+.ms670-profile-head,
+.ms670-smart-head,
+.ms670-subhead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.ms670-profile-head strong,
+.ms670-profile-head span{
+  display:block;
+}
+
+.ms670-profile-badge,
+.ms670-route-badge{
+  flex:0 0 auto;
+  padding:6px 9px;
+  border-radius:999px;
+  color:#cbeaf5;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.11);
+  font-size:11px;
+  font-weight:900;
+}
+
+.ms670-profile-badge.saved{
+  color:#d9ffea;
+  background:rgba(75,211,143,.13);
+  border-color:rgba(75,211,143,.25);
+}
+
+.ms670-profile-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  gap:9px;
+  margin-top:12px;
+}
+
+.ms670-profile-grid label,
+.ms670-delay-grid label{
+  display:block;
+  margin:0;
+  padding:10px;
+  border-radius:13px;
+  color:#a9c4ce;
+  background:rgba(255,255,255,.04);
+  font-size:11px;
+}
+
+.ms670-profile-grid label > span{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin-top:5px;
+  color:#a9c4ce;
+}
+
+.ms670-profile-grid input,
+.ms670-delay-grid select{
+  min-width:0;
+  margin:0;
+}
+
+.ms670-profile-grid input{
+  flex:1;
+}
+
+.ms670-delay-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:9px;
+}
+
+.ms670-smart-route{
+  margin:14px 0;
+  padding:15px;
+  border-radius:18px;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      rgba(67,200,239,.14),
+      transparent 35%
+    ),
+    rgba(4,25,37,.76);
+  border:1px solid rgba(88,206,241,.18);
+}
+
+.ms670-route-badge.critical{
+  color:#ffd3d3;
+  background:rgba(255,80,80,.16);
+  border-color:rgba(255,80,80,.34);
+}
+
+.ms670-route-badge.warning{
+  color:#ffe9b6;
+  background:rgba(255,190,75,.14);
+  border-color:rgba(255,190,75,.30);
+}
+
+.ms670-route-badge.incomplete{
+  color:#d7eff8;
+  background:rgba(69,200,255,.11);
+  border-color:rgba(69,200,255,.22);
+}
+
+.ms670-route-checks{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:13px;
+}
+
+.ms670-route-check{
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr);
+  gap:9px;
+  min-width:0;
+  padding:10px;
+  border-radius:13px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);
+}
+
+.ms670-route-check > span{
+  font-size:20px;
+}
+
+.ms670-route-check strong,
+.ms670-route-check small{
+  display:block;
+}
+
+.ms670-route-check small{
+  margin-top:3px;
+  color:#9fb8c2;
+  line-height:1.35;
+}
+
+.ms670-route-check.critical{
+  background:rgba(255,75,75,.11);
+  border-color:rgba(255,75,75,.25);
+}
+
+.ms670-route-check.warning{
+  background:rgba(255,190,75,.09);
+  border-color:rgba(255,190,75,.20);
+}
+
+.ms670-route-check.good,
+.ms670-route-check.info{
+  background:rgba(75,211,143,.07);
+  border-color:rgba(75,211,143,.16);
+}
+
+.ms670-smart-columns{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:13px;
+  margin-top:14px;
+}
+
+.ms670-subhead{
+  align-items:center;
+  margin-bottom:8px;
+}
+
+.ms670-subhead span{
+  color:#8faab5;
+  font-size:11px;
+}
+
+.ms670-route-timeline,
+.ms670-day-plan{
+  display:grid;
+  gap:7px;
+  max-height:430px;
+  overflow:auto;
+  padding-right:3px;
+}
+
+.ms670-timeline-item,
+.ms670-day-row{
+  display:grid;
+  align-items:center;
+  gap:9px;
+  padding:9px 10px;
+  border-radius:13px;
+  background:rgba(255,255,255,.04);
+}
+
+.ms670-timeline-item{
+  grid-template-columns:34px minmax(0,1fr) auto;
+}
+
+.ms670-day-row{
+  grid-template-columns:34px minmax(0,1fr) auto;
+}
+
+.ms670-timeline-icon,
+.ms670-day-number{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  border-radius:11px;
+  background:rgba(69,200,255,.12);
+  font-size:17px;
+  font-weight:900;
+}
+
+.ms670-timeline-item strong,
+.ms670-timeline-item small,
+.ms670-day-row strong,
+.ms670-day-row small{
+  display:block;
+}
+
+.ms670-timeline-item small,
+.ms670-day-row small{
+  margin-top:2px;
+  color:#91aeb9;
+  line-height:1.3;
+}
+
+.ms670-object-category{
+  padding:4px 7px;
+  border-radius:999px;
+  color:#c5e8f4;
+  background:rgba(69,200,255,.10);
+  font-size:10px;
+  font-weight:850;
+}
+
+.ms670-disclaimer{
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:13px;
+  color:#d3c18f;
+  background:rgba(255,190,75,.075);
+  border:1px solid rgba(255,190,75,.16);
+  font-size:12px;
+  line-height:1.4;
+}
+
+.ms670-empty{
+  padding:12px;
+  border-radius:12px;
+  color:#91aeb9;
+  background:rgba(255,255,255,.035);
+}
+
+.ms670-map-object{
+  background:transparent;
+  border:0;
+}
+
+.ms670-map-object span{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:#0b2637;
+  border:2px solid rgba(255,255,255,.92);
+  box-shadow:0 3px 12px rgba(0,0,0,.38);
+  font-size:17px;
+}
+
+@media(max-width:900px){
+  .ms670-profile-grid{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+  }
+
+  .ms670-smart-columns{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:620px){
+  .ms670-profile-head,
+  .ms670-smart-head{
+    flex-direction:column;
+  }
+
+  .ms670-profile-grid,
+  .ms670-delay-grid,
+  .ms670-route-checks{
+    grid-template-columns:1fr;
+  }
+
+  .ms670-timeline-item{
+    grid-template-columns:34px minmax(0,1fr);
+  }
+
+  .ms670-object-category{
+    grid-column:2;
+    justify-self:start;
   }
 }

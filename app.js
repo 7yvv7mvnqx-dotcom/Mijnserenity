@@ -14312,7 +14312,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.6.0';
+const APP_VERSION='6.7.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16287,7 +16287,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.6.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.7.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16638,7 +16638,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.6.0
+   MijnSerenity Cloud 6.7.0
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17419,7 +17419,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.6.0"
+ creator="MijnSerenity 6.7.0"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17445,7 +17445,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.6.0 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.7.0 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17483,7 +17483,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.6.0 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.7.0 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18453,4 +18453,1292 @@ document.addEventListener(
     }
   }
 );
+
+
+
+/* ============================================================
+   MijnSerenity Cloud 6.7.0 — Smart Route
+   ============================================================ */
+
+const MS670_OVERPASS_ENDPOINTS=[
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter'
+];
+
+let ms670InfrastructureController=null;
+let ms670ProfileTimer=null;
+
+function ms670ProfileKey(){
+  return `mijnserenity-smart-route-profile-${currentBoat?.id||'serenity'}`;
+}
+
+function ms670Number(value){
+  const number=Number(value);
+  return Number.isFinite(number)&&number>0
+    ?number
+    :null;
+}
+
+function ms670BoatProfile(){
+  return {
+    length:ms670Number($('ms670BoatLength')?.value),
+    width:ms670Number($('ms670BoatWidth')?.value),
+    draft:ms670Number($('ms670BoatDraft')?.value),
+    airDraft:ms670Number($('ms670BoatAirDraft')?.value),
+    dailyHours:
+      ms670Number($('ms670DailyHours')?.value)||6,
+    startTime:
+      String($('ms670StartTime')?.value||'09:00'),
+    bridgeDelayMinutes:
+      Number($('ms670BridgeDelay')?.value||15),
+    lockDelayMinutes:
+      Number($('ms670LockDelay')?.value||30)
+  };
+}
+
+function ms670SaveProfile(){
+  const profile=ms670BoatProfile();
+
+  try{
+    localStorage.setItem(
+      ms670ProfileKey(),
+      JSON.stringify(profile)
+    );
+  }catch(error){
+    console.warn(
+      'Smart Route-profiel bewaren mislukt:',
+      error
+    );
+  }
+
+  const badge=$('ms670ProfileBadge');
+
+  if(badge){
+    badge.textContent='Opgeslagen';
+    badge.classList.add('saved');
+  }
+
+  return profile;
+}
+
+function ms670LoadProfile(){
+  let saved=null;
+
+  try{
+    saved=JSON.parse(
+      localStorage.getItem(ms670ProfileKey())||'null'
+    );
+  }catch{}
+
+  const values={
+    ms670BoatLength:saved?.length||11.2,
+    ms670BoatWidth:saved?.width||'',
+    ms670BoatDraft:saved?.draft||'',
+    ms670BoatAirDraft:saved?.airDraft||'',
+    ms670DailyHours:saved?.dailyHours||6,
+    ms670StartTime:saved?.startTime||'09:00',
+    ms670BridgeDelay:saved?.bridgeDelayMinutes||15,
+    ms670LockDelay:saved?.lockDelayMinutes||30
+  };
+
+  Object.entries(values).forEach(([id,value])=>{
+    const element=$(id);
+    if(element)element.value=String(value);
+  });
+
+  const badge=$('ms670ProfileBadge');
+
+  if(badge){
+    badge.textContent=saved
+      ?'Profiel geladen'
+      :'Vul maten aan';
+    badge.classList.toggle('saved',Boolean(saved));
+  }
+}
+
+function ms670PlannerProfileChanged(){
+  const badge=$('ms670ProfileBadge');
+
+  if(badge){
+    badge.textContent='Wordt opgeslagen…';
+    badge.classList.remove('saved');
+  }
+
+  clearTimeout(ms670ProfileTimer);
+
+  ms670ProfileTimer=setTimeout(()=>{
+    ms670SaveProfile();
+
+    if(plannerCurrentPlan){
+      plannerCurrentPlan.boatProfile=
+        ms670BoatProfile();
+      plannerCurrentPlan.smartAnalysis=
+        ms670AnalysePlan(plannerCurrentPlan);
+      ms670RenderSmartRoute(plannerCurrentPlan);
+    }
+  },350);
+}
+
+function ms670ParseMeasurement(value){
+  const text=String(value??'')
+    .trim()
+    .replace(',','.');
+
+  if(!text)return null;
+
+  const feetInches=text.match(
+    /(\d+(?:\.\d+)?)\s*'\s*(\d+(?:\.\d+)?)?\s*"?/
+  );
+
+  if(feetInches){
+    return (
+      Number(feetInches[1])*0.3048+
+      Number(feetInches[2]||0)*0.0254
+    );
+  }
+
+  const number=Number(
+    text.match(/-?\d+(?:\.\d+)?/)?.[0]
+  );
+
+  if(!Number.isFinite(number))return null;
+
+  if(/\b(cm|centimeter)\b/i.test(text)){
+    return number/100;
+  }
+
+  if(/\b(mm|millimeter)\b/i.test(text)){
+    return number/1000;
+  }
+
+  return number;
+}
+
+function ms670ElementPosition(element){
+  const lat=Number(
+    element?.lat??
+    element?.center?.lat??
+    (
+      element?.bounds
+        ?(
+          Number(element.bounds.minlat)+
+          Number(element.bounds.maxlat)
+        )/2
+        :NaN
+    )
+  );
+  const lon=Number(
+    element?.lon??
+    element?.center?.lon??
+    (
+      element?.bounds
+        ?(
+          Number(element.bounds.minlon)+
+          Number(element.bounds.maxlon)
+        )/2
+        :NaN
+    )
+  );
+
+  return {
+    lat,
+    lon,
+    valid:
+      Number.isFinite(lat)&&
+      Number.isFinite(lon)
+  };
+}
+
+function ms670ObjectCategory(tags={}){
+  if(
+    tags.waterway==='lock_gate'||
+    tags.waterway==='lock'||
+    tags.lock==='yes'||
+    tags.lock==='sluice'
+  )return 'Sluis';
+
+  if(
+    tags.bridge==='movable'||
+    tags['seamark:type']==='bridge'||
+    tags['bridge:movable']||
+    tags.maxheight||
+    tags['maxheight:physical']||
+    tags['seamark:bridge:clearance_height_closed']
+  )return 'Brug';
+
+  if(
+    tags.leisure==='marina'||
+    tags.harbour==='yes'||
+    tags['seamark:type']==='harbour'
+  )return 'Haven';
+
+  if(tags.amenity==='fuel')return 'Tankstation';
+
+  return 'Vaarobject';
+}
+
+function ms670ObjectName(tags,category){
+  return String(
+    tags.name||
+    tags['seamark:name']||
+    tags.ref||
+    {
+      Sluis:'Naamloze sluis',
+      Brug:'Naamloze brug',
+      Haven:'Jachthaven',
+      Tankstation:'Brandstofpunt'
+    }[category]||
+    'Vaarobject'
+  );
+}
+
+function ms670RouteBounds(coordinates){
+  const points=(Array.isArray(coordinates)?coordinates:[])
+    .map(ms650Coordinate)
+    .filter(ms650ValidCoordinate);
+
+  if(!points.length)return null;
+
+  const lats=points.map(point=>point.lat);
+  const lons=points.map(point=>point.lon);
+  const margin=.035;
+
+  return {
+    south:Math.min(...lats)-margin,
+    west:Math.min(...lons)-margin,
+    north:Math.max(...lats)+margin,
+    east:Math.max(...lons)+margin
+  };
+}
+
+function ms670InfrastructureQuery(bounds){
+  const box=[
+    bounds.south,
+    bounds.west,
+    bounds.north,
+    bounds.east
+  ].map(value=>Number(value).toFixed(6)).join(',');
+
+  return `[out:json][timeout:28];
+(
+  nwr["waterway"="lock_gate"](${box});
+  nwr["waterway"="lock"](${box});
+  nwr["lock"="yes"](${box});
+  nwr["bridge"="movable"](${box});
+  nwr["seamark:type"="bridge"](${box});
+  nwr["bridge"]["maxheight"](${box});
+  nwr["bridge"]["maxheight:physical"](${box});
+  nwr["leisure"="marina"](${box});
+  nwr["harbour"="yes"](${box});
+  nwr["seamark:type"="harbour"](${box});
+  nwr["amenity"="fuel"](${box});
+);
+out center tags;`;
+}
+
+async function ms670FetchOverpass(query){
+  let lastError=null;
+
+  if(ms670InfrastructureController){
+    try{
+      ms670InfrastructureController.abort();
+    }catch{}
+  }
+
+  ms670InfrastructureController=
+    new AbortController();
+
+  for(const endpoint of MS670_OVERPASS_ENDPOINTS){
+    const controller=ms670InfrastructureController;
+    const timeout=setTimeout(
+      ()=>controller.abort(),
+      30000
+    );
+
+    try{
+      const response=await fetch(endpoint,{
+        method:'POST',
+        headers:{
+          'content-type':
+            'application/x-www-form-urlencoded;charset=UTF-8'
+        },
+        body:new URLSearchParams({data:query}),
+        signal:controller.signal
+      });
+
+      if(!response.ok){
+        throw new Error(
+          `Kaartdienst gaf HTTP ${response.status}.`
+        );
+      }
+
+      const data=await response.json();
+
+      return Array.isArray(data?.elements)
+        ?data.elements
+        :[];
+    }catch(error){
+      lastError=error;
+      console.warn(
+        'Smart Route kaartdienst niet bereikbaar:',
+        endpoint,
+        error
+      );
+    }finally{
+      clearTimeout(timeout);
+    }
+  }
+
+  throw lastError||
+    new Error('Geen kaartdienst bereikbaar.');
+}
+
+function ms670ObjectClearance(tags={}){
+  const candidates=[
+    tags['seamark:bridge:clearance_height_closed'],
+    tags['seamark:bridge:clearance_height'],
+    tags['bridge:clearance'],
+    tags['maxheight:physical'],
+    tags.maxheight
+  ];
+
+  for(const candidate of candidates){
+    const value=ms670ParseMeasurement(candidate);
+    if(Number.isFinite(value))return value;
+  }
+
+  return null;
+}
+
+function ms670ObjectWidth(tags={}){
+  for(const candidate of [
+    tags.maxwidth,
+    tags['maxwidth:physical'],
+    tags['seamark:bridge:clearance_width']
+  ]){
+    const value=ms670ParseMeasurement(candidate);
+    if(Number.isFinite(value))return value;
+  }
+
+  return null;
+}
+
+function ms670ObjectDepth(tags={}){
+  for(const candidate of [
+    tags.maxdraft,
+    tags.maxdraught,
+    tags.maxdepth,
+    tags.depth,
+    tags['seamark:depth']
+  ]){
+    const value=ms670ParseMeasurement(candidate);
+    if(Number.isFinite(value))return value;
+  }
+
+  return null;
+}
+
+function ms670IsMovableBridge(tags={}){
+  return (
+    tags.bridge==='movable'||
+    Boolean(tags['bridge:movable'])||
+    /bascule|swing|lift|drawbridge|opening/i.test(
+      String(
+        tags['seamark:bridge:category']||
+        tags.bridge||
+        tags.description||
+        ''
+      )
+    )
+  );
+}
+
+function ms670ProcessObjects(
+  elements,
+  routeCoordinates
+){
+  const seen=new Set();
+  const objects=[];
+
+  (elements||[]).forEach(element=>{
+    const position=ms670ElementPosition(element);
+    if(!position.valid)return;
+
+    const tags=element.tags||{};
+    const category=ms670ObjectCategory(tags);
+    const nearest=ms650NearestRoutePosition(
+      position,
+      routeCoordinates
+    );
+    const maxDistance=
+      category==='Haven'||category==='Tankstation'
+        ?3
+        :.7;
+
+    if(nearest.distanceKm>maxDistance)return;
+
+    const key=
+      `${category}:${element.type}:${element.id}`;
+
+    if(seen.has(key))return;
+    seen.add(key);
+
+    objects.push({
+      id:key,
+      osmType:element.type,
+      osmId:element.id,
+      category,
+      label:ms670ObjectName(tags,category),
+      lat:position.lat,
+      lon:position.lon,
+      tags,
+      alongRouteKm:nearest.alongKm,
+      distanceFromRouteKm:nearest.distanceKm,
+      clearanceHeight:ms670ObjectClearance(tags),
+      clearanceWidth:ms670ObjectWidth(tags),
+      maxDepth:ms670ObjectDepth(tags),
+      movable:
+        category==='Brug'&&
+        ms670IsMovableBridge(tags),
+      openingHours:
+        tags.opening_hours||
+        tags.service_times||
+        tags['seamark:bridge:opening_hours']||
+        '',
+      phone:
+        tags.phone||
+        tags['contact:phone']||
+        '',
+      vhf:
+        tags.vhf||
+        tags['seamark:radio_station:channel']||
+        ''
+    });
+  });
+
+  return objects.sort(
+    (a,b)=>
+      a.alongRouteKm-b.alongRouteKm||
+      a.category.localeCompare(b.category,'nl')
+  );
+}
+
+async function ms670LoadInfrastructure(plan){
+  if(
+    !Array.isArray(plan?.routeCoordinates)||
+    plan.routeCoordinates.length<2
+  ){
+    return [];
+  }
+
+  const bounds=ms670RouteBounds(
+    plan.routeCoordinates
+  );
+
+  if(!bounds)return [];
+
+  const elements=await ms670FetchOverpass(
+    ms670InfrastructureQuery(bounds)
+  );
+
+  return ms670ProcessObjects(
+    elements,
+    plan.routeCoordinates
+  );
+}
+
+function ms670CheckResult(
+  level,
+  title,
+  text,
+  object=null
+){
+  return {
+    level,
+    title,
+    text,
+    object
+  };
+}
+
+function ms670AnalysePlan(plan){
+  const profile=
+    plan.boatProfile||
+    ms670BoatProfile();
+  const objects=
+    Array.isArray(plan.routeObjects)
+      ?plan.routeObjects
+      :[];
+  const checks=[];
+  const bridges=objects.filter(
+    object=>object.category==='Brug'
+  );
+  const locks=objects.filter(
+    object=>object.category==='Sluis'
+  );
+
+  if(!profile.width){
+    checks.push(ms670CheckResult(
+      'unknown',
+      'Breedte Serenity ontbreekt',
+      'Vul de maximale breedte in voor een betere routecheck.'
+    ));
+  }
+
+  if(!profile.draft){
+    checks.push(ms670CheckResult(
+      'unknown',
+      'Diepgang Serenity ontbreekt',
+      'Vul de maximale diepgang in voor een betere routecheck.'
+    ));
+  }
+
+  if(!profile.airDraft){
+    checks.push(ms670CheckResult(
+      'unknown',
+      'Doorvaarthoogte Serenity ontbreekt',
+      'Vul de werkelijke hoogte boven de waterlijn in.'
+    ));
+  }
+
+  bridges.forEach(object=>{
+    if(
+      profile.airDraft&&
+      Number.isFinite(object.clearanceHeight)
+    ){
+      const margin=
+        object.clearanceHeight-
+        profile.airDraft;
+
+      if(margin<0){
+        checks.push(ms670CheckResult(
+          'critical',
+          `${object.label} mogelijk te laag`,
+          `Bekende hoogte ${plannerNumber(object.clearanceHeight)} m · Serenity ${plannerNumber(profile.airDraft)} m.`,
+          object
+        ));
+      }else if(margin<.35){
+        checks.push(ms670CheckResult(
+          'warning',
+          `Weinig hoogtemarge bij ${object.label}`,
+          `Slechts ${plannerNumber(margin,2)} m bekende marge. Waterstand en meetmethode kunnen verschillen.`,
+          object
+        ));
+      }
+    }
+
+    if(
+      profile.width&&
+      Number.isFinite(object.clearanceWidth)
+    ){
+      const margin=
+        object.clearanceWidth-
+        profile.width;
+
+      if(margin<0){
+        checks.push(ms670CheckResult(
+          'critical',
+          `${object.label} mogelijk te smal`,
+          `Bekende breedte ${plannerNumber(object.clearanceWidth)} m · Serenity ${plannerNumber(profile.width)} m.`,
+          object
+        ));
+      }else if(margin<.6){
+        checks.push(ms670CheckResult(
+          'warning',
+          `Weinig breedtemarge bij ${object.label}`,
+          `Ongeveer ${plannerNumber(margin,2)} m bekende totale marge.`,
+          object
+        ));
+      }
+    }
+  });
+
+  objects.forEach(object=>{
+    if(
+      profile.draft&&
+      Number.isFinite(object.maxDepth)
+    ){
+      const margin=
+        object.maxDepth-
+        profile.draft;
+
+      if(margin<0){
+        checks.push(ms670CheckResult(
+          'critical',
+          `${object.label}: bekende diepte onvoldoende`,
+          `Bekende diepte ${plannerNumber(object.maxDepth)} m · Serenity ${plannerNumber(profile.draft)} m.`,
+          object
+        ));
+      }else if(margin<.4){
+        checks.push(ms670CheckResult(
+          'warning',
+          `Weinig dieptemarge bij ${object.label}`,
+          `Ongeveer ${plannerNumber(margin,2)} m bekende marge.`,
+          object
+        ));
+      }
+    }
+  });
+
+  const unknownHeights=bridges.filter(
+    object=>!Number.isFinite(object.clearanceHeight)
+  ).length;
+
+  if(unknownHeights){
+    checks.push(ms670CheckResult(
+      'unknown',
+      `${unknownHeights} bruggen zonder bruikbare hoogte`,
+      'Controleer deze bruggen handmatig in Waterkaarten en bij de beheerder.'
+    ));
+  }
+
+  if(locks.length){
+    checks.push(ms670CheckResult(
+      'info',
+      `${locks.length} sluizen gevonden`,
+      `Voor de reistijd is ${profile.lockDelayMinutes} minuten buffer per sluis toegevoegd.`
+    ));
+  }
+
+  if(bridges.some(object=>object.movable)){
+    const count=bridges.filter(
+      object=>object.movable
+    ).length;
+
+    checks.push(ms670CheckResult(
+      'info',
+      `${count} beweegbare bruggen gevonden`,
+      `Voor de reistijd is ${profile.bridgeDelayMinutes} minuten buffer per beweegbare brug toegevoegd.`
+    ));
+  }
+
+  if(!objects.length){
+    checks.push(ms670CheckResult(
+      'unknown',
+      'Nog geen routeobjecten beschikbaar',
+      'De openbare kaartdienst gaf geen bruggen, sluizen of havens terug.'
+    ));
+  }
+
+  const critical=checks.filter(
+    check=>check.level==='critical'
+  ).length;
+  const warnings=checks.filter(
+    check=>check.level==='warning'
+  ).length;
+
+  const delayHours=
+    locks.length*
+    profile.lockDelayMinutes/60+
+    bridges.filter(object=>object.movable).length*
+    profile.bridgeDelayMinutes/60;
+
+  return {
+    checks,
+    critical,
+    warnings,
+    lockCount:locks.length,
+    bridgeCount:bridges.length,
+    movableBridgeCount:
+      bridges.filter(object=>object.movable).length,
+    delayHours,
+    adjustedDurationHours:
+      Number(plan.durationHours||0)+
+      delayHours,
+    status:critical
+      ?'critical'
+      :warnings
+        ?'warning'
+        :'incomplete'
+  };
+}
+
+function ms670HarbourCandidates(plan){
+  const online=(plan.routeObjects||[])
+    .filter(object=>object.category==='Haven')
+    .map(object=>({
+      ...object,
+      source:'OpenStreetMap'
+    }));
+
+  const saved=(plan.routePois||[])
+    .filter(object=>
+      String(object.category||'')
+        .toLowerCase()
+        .includes('haven')
+    )
+    .map(object=>({
+      ...object,
+      source:'MijnSerenity'
+    }));
+
+  return [...saved,...online]
+    .filter(object=>
+      Number.isFinite(Number(object.alongRouteKm))
+    )
+    .sort(
+      (a,b)=>
+        Number(a.alongRouteKm)-
+        Number(b.alongRouteKm)
+    );
+}
+
+function ms670BuildDayPlan(plan){
+  const profile=
+    plan.boatProfile||
+    ms670BoatProfile();
+  const analysis=
+    plan.smartAnalysis||
+    ms670AnalysePlan(plan);
+  const speed=Math.max(
+    1,
+    Number(plan.speed||9)
+  );
+  const dailyHours=Math.max(
+    1,
+    Number(profile.dailyHours||6)
+  );
+  const totalHours=Math.max(
+    .01,
+    Number(analysis.adjustedDurationHours||
+      plan.durationHours||
+      0)
+  );
+  const days=Math.max(
+    1,
+    Math.ceil(totalHours/dailyHours)
+  );
+  const distance=Number(plan.distanceKm||0);
+  const candidates=ms670HarbourCandidates(plan);
+  const rows=[];
+
+  for(let day=1;day<=days;day++){
+    const hours=Math.min(
+      dailyHours,
+      Math.max(
+        0,
+        totalHours-
+        (day-1)*dailyHours
+      )
+    );
+    const targetFraction=Math.min(
+      1,
+      day*dailyHours/totalHours
+    );
+    const targetKm=distance*targetFraction;
+
+    const harbour=day<days
+      ?candidates
+        .map(candidate=>({
+          ...candidate,
+          targetDifference:
+            Math.abs(
+              Number(candidate.alongRouteKm)-
+              targetKm
+            )
+        }))
+        .filter(candidate=>
+          candidate.targetDifference<=
+          Math.max(12,speed*1.5)
+        )
+        .sort(
+          (a,b)=>
+            a.targetDifference-
+            b.targetDifference
+        )[0]||null
+      :null;
+
+    rows.push({
+      day,
+      hours,
+      estimatedKm:
+        Math.min(
+          distance,
+          speed*hours
+        ),
+      targetKm,
+      harbour,
+      final:day===days
+    });
+  }
+
+  const [hour,minute]=String(
+    profile.startTime||'09:00'
+  ).split(':').map(Number);
+  const routeDate=new Date(
+    `${plan.date||plannerDefaultDate()}T00:00:00`
+  );
+  const lastDay=rows.at(-1);
+  const finalDate=new Date(routeDate);
+  finalDate.setDate(
+    finalDate.getDate()+days-1
+  );
+  finalDate.setHours(
+    Number.isFinite(hour)?hour:9,
+    Number.isFinite(minute)?minute:0,
+    0,
+    0
+  );
+  finalDate.setTime(
+    finalDate.getTime()+
+    Number(lastDay?.hours||0)*3600000
+  );
+
+  return {
+    days,
+    rows,
+    finalDate,
+    totalHours,
+    dailyHours
+  };
+}
+
+function ms670Icon(category){
+  return {
+    Brug:'🌉',
+    Sluis:'🚧',
+    Haven:'⚓',
+    Tankstation:'⛽'
+  }[category]||'📍';
+}
+
+function ms670CheckIcon(level){
+  return {
+    critical:'⛔',
+    warning:'⚠️',
+    unknown:'❓',
+    info:'ℹ️',
+    good:'✅'
+  }[level]||'ℹ️';
+}
+
+function ms670ObjectDetail(object){
+  const details=[];
+
+  if(Number.isFinite(object.clearanceHeight)){
+    details.push(
+      `hoogte ${plannerNumber(object.clearanceHeight)} m`
+    );
+  }
+
+  if(Number.isFinite(object.clearanceWidth)){
+    details.push(
+      `breedte ${plannerNumber(object.clearanceWidth)} m`
+    );
+  }
+
+  if(Number.isFinite(object.maxDepth)){
+    details.push(
+      `diepte ${plannerNumber(object.maxDepth)} m`
+    );
+  }
+
+  if(object.movable){
+    details.push('beweegbaar');
+  }
+
+  if(object.openingHours){
+    details.push(object.openingHours);
+  }
+
+  if(object.vhf){
+    details.push(`VHF ${object.vhf}`);
+  }
+
+  return details.join(' · ')||
+    'Geen aanvullende gegevens';
+}
+
+function ms670RenderSmartRoute(plan){
+  const panel=$('ms670SmartRoute');
+  if(!panel||!plan)return;
+
+  const analysis=
+    plan.smartAnalysis||
+    ms670AnalysePlan(plan);
+  const dayPlan=
+    plan.dayPlan||
+    ms670BuildDayPlan(plan);
+  const objects=
+    Array.isArray(plan.routeObjects)
+      ?plan.routeObjects
+      :[];
+  const badge=$('ms670RouteBadge');
+
+  panel.classList.remove('hidden');
+
+  if(badge){
+    badge.className=
+      `ms670-route-badge ${analysis.status}`;
+    badge.textContent=analysis.critical
+      ?`${analysis.critical} blokkade${analysis.critical===1?'':'s'}`
+      :analysis.warnings
+        ?`${analysis.warnings} aandachtspunt${analysis.warnings===1?'':'en'}`
+        :'Onvolledig gecontroleerd';
+  }
+
+  $('ms670RouteChecks').innerHTML=
+    analysis.checks.length
+      ?analysis.checks.slice(0,12).map(check=>`
+        <article class="ms670-route-check ${check.level}">
+          <span>${ms670CheckIcon(check.level)}</span>
+          <div>
+            <strong>${esc(check.title)}</strong>
+            <small>${esc(check.text)}</small>
+          </div>
+        </article>
+      `).join('')
+      :`
+        <article class="ms670-route-check good">
+          <span>✅</span>
+          <div>
+            <strong>Geen bekende maatbeperking gevonden</strong>
+            <small>
+              Dit is geen garantie: veel vaarweggegevens zijn niet volledig.
+            </small>
+          </div>
+        </article>
+      `;
+
+  ms670SetTextSafe(
+    'ms670ObjectCount',
+    `${objects.length} gevonden`
+  );
+
+  $('ms670RouteTimeline').innerHTML=
+    objects.length
+      ?objects.slice(0,40).map(object=>`
+        <article class="ms670-timeline-item">
+          <span class="ms670-timeline-icon">
+            ${ms670Icon(object.category)}
+          </span>
+          <div>
+            <strong>${esc(object.label)}</strong>
+            <small>
+              ${plannerNumber(object.alongRouteKm)} km vanaf vertrek
+              · ${esc(ms670ObjectDetail(object))}
+            </small>
+          </div>
+          <span class="ms670-object-category">
+            ${esc(object.category)}
+          </span>
+        </article>
+      `).join('')
+      :`
+        <div class="ms670-empty">
+          Nog geen bruggen, sluizen, havens of tankpunten ontvangen.
+        </div>
+      `;
+
+  ms670SetTextSafe(
+    'ms670TripDays',
+    `${dayPlan.days} ${dayPlan.days===1?'dag':'dagen'}`
+  );
+
+  $('ms670DayPlan').innerHTML=
+    dayPlan.rows.map(row=>`
+      <article class="ms670-day-row">
+        <div class="ms670-day-number">
+          ${row.day}
+        </div>
+        <div>
+          <strong>
+            ${row.final
+              ?'Aankomstdag'
+              :row.harbour
+                ?esc(row.harbour.label)
+                :'Overnachtingshaven zoeken'}
+          </strong>
+          <small>
+            ${plannerNumber(row.hours,1)} uur varen
+            · ongeveer ${plannerNumber(row.estimatedKm,1)} km
+            ${row.harbour
+              ?`· ${plannerNumber(row.harbour.alongRouteKm)} km vanaf vertrek`
+              :''}
+          </small>
+        </div>
+        <span>
+          ${row.final
+            ?dayPlan.finalDate.toLocaleString(
+              'nl-NL',
+              {
+                weekday:'short',
+                day:'numeric',
+                month:'short',
+                hour:'2-digit',
+                minute:'2-digit'
+              }
+            )
+            :row.harbour
+              ?'⚓'
+              :'🔎'}
+        </span>
+      </article>
+    `).join('');
+
+  const disclaimer=$('ms670RouteDisclaimer');
+
+  if(disclaimer){
+    disclaimer.textContent=
+      `Geschatte extra wachttijd: `+
+      `${plannerDurationText(analysis.delayHours)}. `+
+      `Verwachte totale vaartijd inclusief buffers: `+
+      `${plannerDurationText(analysis.adjustedDurationHours)}. `+
+      `Ontbrekende gegevens betekenen niet dat de route geschikt is.`;
+  }
+}
+
+function ms670SetTextSafe(id,text){
+  const element=$(id);
+  if(element)element.textContent=text;
+}
+
+function ms670MapObjectIcon(object){
+  return L.divIcon({
+    className:
+      `ms670-map-object ms670-map-${String(object.category).toLowerCase()}`,
+    html:`<span>${ms670Icon(object.category)}</span>`,
+    iconSize:[32,32],
+    iconAnchor:[16,16]
+  });
+}
+
+const ms670OriginalRenderPlannerMap=
+  renderPlannerMap;
+
+renderPlannerMap=function(plan){
+  ms670OriginalRenderPlannerMap(plan);
+
+  if(!plannerMapLayer)return;
+
+  (plan?.routeObjects||[]).forEach(object=>{
+    if(
+      !Number.isFinite(Number(object.lat))||
+      !Number.isFinite(Number(object.lon))
+    )return;
+
+    L.marker(
+      [Number(object.lat),Number(object.lon)],
+      {
+        icon:ms670MapObjectIcon(object)
+      }
+    )
+      .addTo(plannerMapLayer)
+      .bindPopup(`
+        <b>${esc(object.label)}</b><br>
+        ${esc(object.category)}
+        · ${plannerNumber(object.alongRouteKm)} km vanaf vertrek
+        <br>${esc(ms670ObjectDetail(object))}
+      `);
+  });
+};
+
+const ms670OriginalRenderPlannerSummary=
+  renderPlannerSummary;
+
+renderPlannerSummary=function(plan){
+  const result=
+    ms670OriginalRenderPlannerSummary(plan);
+
+  if(plan){
+    ms670RenderSmartRoute(plan);
+  }
+
+  return result;
+};
+
+const ms670OriginalCalculatePlannerRoute=
+  calculatePlannerRoute;
+
+calculatePlannerRoute=async function(options={}){
+  const profile=ms670SaveProfile();
+  const plan=await ms670OriginalCalculatePlannerRoute(
+    options
+  );
+
+  if(!plan)return null;
+
+  plan.boatProfile=profile;
+
+  if(
+    plan.routingMode==='waterway'&&
+    Array.isArray(plan.routeCoordinates)&&
+    plan.routeCoordinates.length>=2
+  ){
+    setPlannerStatus(
+      'Waterwegroute gevonden. Bruggen, sluizen en havens controleren…'
+    );
+
+    try{
+      plan.routeObjects=
+        await ms670LoadInfrastructure(plan);
+      plan.smartDataStatus='online';
+    }catch(error){
+      console.warn(
+        'Smart Route-objecten konden niet worden geladen:',
+        error
+      );
+      plan.routeObjects=
+        Array.isArray(plan.routeObjects)
+          ?plan.routeObjects
+          :[];
+      plan.smartDataStatus='unavailable';
+      plan.smartDataError=
+        error?.message||
+        'Openbare kaartdienst niet bereikbaar.';
+    }
+  }else{
+    plan.routeObjects=[];
+    plan.smartDataStatus='estimate';
+  }
+
+  plan.smartAnalysis=
+    ms670AnalysePlan(plan);
+  plan.dayPlan=
+    ms670BuildDayPlan(plan);
+  plan.updatedAt=
+    new Date().toISOString();
+
+  plannerCurrentPlan=plan;
+  renderPlannerSummary(plan);
+
+  const analysis=plan.smartAnalysis;
+  const message=analysis.critical
+    ?`Route berekend, maar ${analysis.critical} mogelijke blokkade(s) gevonden.`
+    :analysis.warnings
+      ?`Route berekend met ${analysis.warnings} aandachtspunt(en).`
+      :plan.smartDataStatus==='online'
+        ?`Smart Route gereed: ${plan.routeObjects.length} routeobjecten gecontroleerd.`
+        :`Route gereed. Smart Route-objecten waren niet volledig beschikbaar.`;
+
+  setPlannerStatus(
+    message,
+    analysis.critical
+      ?'error'
+      :analysis.warnings
+        ?'warning'
+        :'success'
+  );
+
+  return plan;
+};
+
+const ms670OriginalInitPlanner=
+  initPlanner;
+
+initPlanner=function(){
+  const result=
+    ms670OriginalInitPlanner();
+
+  ms670LoadProfile();
+
+  if(plannerCurrentPlan){
+    ms670RenderSmartRoute(
+      plannerCurrentPlan
+    );
+  }
+
+  return result;
+};
+
+const ms670PreviousPlannerGpx=
+  ms640PlannerGpx;
+
+ms640PlannerGpx=function(plan){
+  const baseObjects=[
+    ...(Array.isArray(plan?.routeObjects)
+      ?plan.routeObjects
+      :[]),
+    ...(Array.isArray(plan?.routePois)
+      ?plan.routePois
+      :[])
+  ].filter(object=>
+    Number.isFinite(Number(object?.lat))&&
+    Number.isFinite(Number(object?.lon))
+  );
+
+  const anchors=(Array.isArray(plan?.points)
+    ?plan.points
+    :[]
+  ).filter(ms650ValidCoordinate);
+
+  const track=(Array.isArray(plan?.routeCoordinates)&&
+    plan.routeCoordinates.length>1
+      ?plan.routeCoordinates
+      :anchors
+  ).map(ms650Coordinate).filter(ms650ValidCoordinate);
+
+  if(track.length<2){
+    return ms670PreviousPlannerGpx(plan);
+  }
+
+  const title=
+    plan?.title||
+    'Serenity Smart Route';
+
+  const waypoints=[
+    ...anchors,
+    ...baseObjects
+  ].map(point=>`
+<wpt lat="${Number(point.lat).toFixed(7)}"
+ lon="${Number(point.lon).toFixed(7)}">
+ <name>${ms640Xml(
+   point.label||
+   point.name||
+   point.category||
+   'Routeobject'
+ )}</name>
+ <type>${ms640Xml(
+   point.category||
+   'Routepunt'
+ )}</type>
+ <desc>${ms640Xml(
+   point.tags
+     ?ms670ObjectDetail(point)
+     :[
+       point.place||'',
+       point.address||''
+     ].filter(Boolean).join(' · ')
+ )}</desc>
+</wpt>`).join('');
+
+  const trackPoints=track.map(point=>`
+<trkpt lat="${point.lat.toFixed(7)}"
+ lon="${point.lon.toFixed(7)}"></trkpt>`
+  ).join('');
+
+  const routePoints=anchors.map(point=>`
+<rtept lat="${Number(point.lat).toFixed(7)}"
+ lon="${Number(point.lon).toFixed(7)}">
+ <name>${ms640Xml(point.label||'Routepunt')}</name>
+</rtept>`).join('');
+
+  const gpx=`<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1"
+ creator="MijnSerenity 6.7.0 Smart Route"
+ xmlns="http://www.topografix.com/GPX/1/1">
+ <metadata>
+  <name>${ms640Xml(title)}</name>
+  <desc>
+   Waterwegroute met bruggen, sluizen, havens en POI's.
+   Controleer actuele vaarinformatie altijd in Waterkaarten.
+  </desc>
+ </metadata>
+ ${waypoints}
+ <rte>
+  <name>${ms640Xml(title)} · hoofdpunten</name>
+  ${routePoints}
+ </rte>
+ <trk>
+  <name>${ms640Xml(title)} · waterweg</name>
+  <trkseg>${trackPoints}</trkseg>
+ </trk>
+</gpx>`;
+
+  return new File(
+    [gpx],
+    `${ms640FileName(title)}-smart-route.gpx`,
+    {type:'application/gpx+xml'}
+  );
+};
 
