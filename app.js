@@ -14310,7 +14310,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.4.0';
+const APP_VERSION='6.5.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16285,7 +16285,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.4.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.5.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16633,3 +16633,811 @@ ms640InitTimer=setInterval(async()=>{
     ms640InitTimer=null;
   }
 },1200);
+
+
+/* ============================================================
+   MijnSerenity Cloud 6.5.0
+   Echte waterwegroute + POI's + GPX-track voor Waterkaarten
+   ============================================================ */
+
+let ms650SeaMarkLayer=null;
+let ms650RoutingRequest=null;
+
+function ms650Coordinate(point){
+  if(Array.isArray(point)){
+    return {
+      lon:Number(point[0]),
+      lat:Number(point[1])
+    };
+  }
+
+  return {
+    lat:Number(point?.lat),
+    lon:Number(point?.lon)
+  };
+}
+
+function ms650ValidCoordinate(point){
+  const coordinate=ms650Coordinate(point);
+
+  return (
+    Number.isFinite(coordinate.lat)&&
+    Number.isFinite(coordinate.lon)
+  );
+}
+
+function ms650RouteDistanceKm(coordinates){
+  let total=0;
+  const valid=(Array.isArray(coordinates)?coordinates:[])
+    .map(ms650Coordinate)
+    .filter(ms650ValidCoordinate);
+
+  for(let index=1;index<valid.length;index++){
+    total+=haversineKm(
+      valid[index-1],
+      valid[index]
+    );
+  }
+
+  return total;
+}
+
+function ms650CumulativeDistances(coordinates){
+  const valid=(Array.isArray(coordinates)?coordinates:[])
+    .map(ms650Coordinate)
+    .filter(ms650ValidCoordinate);
+  const cumulative=[0];
+
+  for(let index=1;index<valid.length;index++){
+    cumulative[index]=
+      cumulative[index-1]+
+      haversineKm(valid[index-1],valid[index]);
+  }
+
+  return {
+    coordinates:valid,
+    cumulative
+  };
+}
+
+function ms650NearestRoutePosition(point,routeCoordinates){
+  const route=ms650CumulativeDistances(routeCoordinates);
+
+  if(!route.coordinates.length){
+    return {
+      distanceKm:Infinity,
+      routeIndex:-1,
+      alongKm:0
+    };
+  }
+
+  let best={
+    distanceKm:Infinity,
+    routeIndex:0,
+    alongKm:0
+  };
+
+  route.coordinates.forEach((routePoint,index)=>{
+    const distance=haversineKm(point,routePoint);
+
+    if(distance<best.distanceKm){
+      best={
+        distanceKm:distance,
+        routeIndex:index,
+        alongKm:route.cumulative[index]||0
+      };
+    }
+  });
+
+  return best;
+}
+
+function ms650CollectRoutePois(
+  routeCoordinates,
+  anchorPoints
+){
+  const radius=Math.max(
+    .2,
+    Number($('plannerPoiRadius')?.value||1)
+  );
+
+  const anchorIds=new Set(
+    (Array.isArray(anchorPoints)?anchorPoints:[])
+      .map(point=>String(point?.poiId||''))
+      .filter(Boolean)
+  );
+
+  return poiCache
+    .map(poi=>{
+      const point=plannerPointFromPoi(poi);
+      if(!point)return null;
+      if(anchorIds.has(String(point.poiId)))return null;
+
+      const routeInfo=ms650NearestRoutePosition(
+        point,
+        routeCoordinates
+      );
+
+      if(routeInfo.distanceKm>radius)return null;
+
+      return {
+        ...point,
+        distanceFromRouteKm:routeInfo.distanceKm,
+        alongRouteKm:routeInfo.alongKm,
+        favorite:isFavoritePoi(poi)
+      };
+    })
+    .filter(Boolean)
+    .sort((a,b)=>
+      a.alongRouteKm-b.alongRouteKm||
+      a.distanceFromRouteKm-b.distanceFromRouteKm
+    )
+    .slice(0,80);
+}
+
+function ms650SplitRouteByAnchors(
+  routeCoordinates,
+  anchors
+){
+  const route=(Array.isArray(routeCoordinates)
+    ?routeCoordinates
+    :[]
+  ).map(ms650Coordinate).filter(ms650ValidCoordinate);
+
+  if(route.length<2||anchors.length<2){
+    return plannerCreateSegments(
+      anchors,
+      Number($('plannerRouteFactor')?.value||1.3)
+    );
+  }
+
+  const indices=[0];
+  let searchStart=0;
+
+  for(let anchorIndex=1;anchorIndex<anchors.length-1;anchorIndex++){
+    const anchor=anchors[anchorIndex];
+    let nearestIndex=searchStart;
+    let nearestDistance=Infinity;
+
+    for(let routeIndex=searchStart;routeIndex<route.length;routeIndex++){
+      const distance=haversineKm(anchor,route[routeIndex]);
+
+      if(distance<nearestDistance){
+        nearestDistance=distance;
+        nearestIndex=routeIndex;
+      }
+    }
+
+    indices.push(nearestIndex);
+    searchStart=nearestIndex;
+  }
+
+  indices.push(route.length-1);
+
+  return anchors.slice(1).map((to,index)=>{
+    const from=anchors[index];
+    const startIndex=indices[index];
+    const endIndex=Math.max(
+      startIndex+1,
+      indices[index+1]
+    );
+    const legCoordinates=route.slice(
+      startIndex,
+      endIndex+1
+    );
+    const distanceKm=ms650RouteDistanceKm(
+      legCoordinates
+    );
+
+    return {
+      index,
+      from,
+      to,
+      directKm:haversineKm(from,to),
+      estimatedKm:distanceKm,
+      distanceKm,
+      routeCoordinates:legCoordinates
+    };
+  });
+}
+
+async function ms650RequestWaterwayRoute(points){
+  if(ms650RoutingRequest){
+    try{
+      ms650RoutingRequest.abort();
+    }catch{}
+  }
+
+  ms650RoutingRequest=new AbortController();
+  const timeout=setTimeout(
+    ()=>ms650RoutingRequest?.abort(),
+    24000
+  );
+
+  try{
+    const response=await fetch(
+      '/.netlify/functions/waterway-route',
+      {
+        method:'POST',
+        headers:{
+          'content-type':'application/json'
+        },
+        body:JSON.stringify({
+          points:points.map(point=>({
+            lat:Number(point.lat),
+            lon:Number(point.lon),
+            label:point.label||''
+          }))
+        }),
+        signal:ms650RoutingRequest.signal
+      }
+    );
+
+    const data=await response.json().catch(()=>({}));
+
+    if(!response.ok||!data?.ok){
+      throw new Error(
+        data?.error||
+        `Waterwegrouter gaf HTTP ${response.status}.`
+      );
+    }
+
+    const coordinates=(Array.isArray(data.coordinates)
+      ?data.coordinates
+      :[]
+    ).map(ms650Coordinate).filter(ms650ValidCoordinate);
+
+    if(coordinates.length<2){
+      throw new Error(
+        'De waterwegrouter gaf geen bruikbare route terug.'
+      );
+    }
+
+    return {
+      ...data,
+      coordinates
+    };
+  }finally{
+    clearTimeout(timeout);
+    ms650RoutingRequest=null;
+  }
+}
+
+function ms650PoiIcon(category){
+  const value=String(category||'').toLowerCase();
+
+  if(value.includes('haven'))return '⚓';
+  if(value.includes('tank'))return '⛽';
+  if(value.includes('sluis'))return '🚧';
+  if(value.includes('brug'))return '🌉';
+  if(value.includes('anker'))return '⚓';
+  if(value.includes('restaurant'))return '🍽️';
+  if(value.includes('café')||value.includes('cafe'))return '☕';
+  if(value.includes('supermarkt'))return '🛒';
+  return '📍';
+}
+
+function ms650AddRoutePoiStop(reference){
+  if(!reference)return;
+
+  if(plannerStops.includes(reference)){
+    showAppToast(
+      'Deze POI staat al als tussenstop in de route.'
+    );
+    return;
+  }
+
+  plannerStops.push(reference);
+  renderPlannerStops();
+  plannerFormChanged();
+
+  showAppToast(
+    'POI als tussenstop toegevoegd. Bereken de route opnieuw.'
+  );
+}
+
+const ms650OriginalEnsurePlannerMap=ensurePlannerMap;
+ensurePlannerMap=function(){
+  ms650OriginalEnsurePlannerMap();
+
+  if(
+    plannerMap&&
+    !ms650SeaMarkLayer
+  ){
+    ms650SeaMarkLayer=L.tileLayer(
+      'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png',
+      {
+        maxZoom:18,
+        opacity:.9,
+        attribution:
+          'Nautische objecten © OpenSeaMap-bijdragers'
+      }
+    ).addTo(plannerMap);
+  }
+};
+
+const ms650OriginalRenderPlannerMap=renderPlannerMap;
+renderPlannerMap=function(plan){
+  const routeCoordinates=(Array.isArray(plan?.routeCoordinates)
+    ?plan.routeCoordinates
+    :[]
+  ).map(ms650Coordinate).filter(ms650ValidCoordinate);
+
+  if(routeCoordinates.length<2){
+    ms650OriginalRenderPlannerMap(plan);
+    return;
+  }
+
+  ensurePlannerMap();
+
+  if(!plannerMap||!plannerMapLayer)return;
+
+  plannerMapLayer.clearLayers();
+
+  const latLngs=routeCoordinates.map(point=>[
+    point.lat,
+    point.lon
+  ]);
+
+  L.polyline(latLngs,{
+    weight:6,
+    opacity:.95,
+    lineJoin:'round',
+    lineCap:'round'
+  }).addTo(plannerMapLayer);
+
+  (plan.points||[]).forEach((point,index)=>{
+    const role=index===0
+      ?'Vertrek'
+      :index===plan.points.length-1
+        ?'Bestemming'
+        :`Tussenstop ${index}`;
+
+    L.marker([point.lat,point.lon])
+      .addTo(plannerMapLayer)
+      .bindPopup(`
+        <b>${esc(role)}</b><br>
+        ${esc(point.label)}
+        ${point.place?`<br>${esc(point.place)}`:''}
+      `);
+  });
+
+  (plan.routePois||[]).forEach(point=>{
+    const icon=L.divIcon({
+      className:'planner-route-poi-marker',
+      html:`<span>${ms650PoiIcon(point.category)}</span>`,
+      iconSize:[30,30],
+      iconAnchor:[15,15]
+    });
+
+    L.marker(
+      [point.lat,point.lon],
+      {icon}
+    )
+      .addTo(plannerMapLayer)
+      .bindPopup(`
+        <b>${esc(point.label)}</b><br>
+        ${esc(point.category||'POI')}
+        ${point.place?`<br>${esc(point.place)}`:''}
+        <br>
+        ${plannerNumber(point.alongRouteKm)} km vanaf vertrek
+      `);
+  });
+
+  plannerMap.fitBounds(
+    L.latLngBounds(latLngs),
+    {
+      padding:[32,32],
+      maxZoom:14
+    }
+  );
+
+  setTimeout(
+    ()=>plannerMap.invalidateSize({pan:false}),
+    120
+  );
+};
+
+const ms650OriginalCalculatePlannerRoute=
+  calculatePlannerRoute;
+
+calculatePlannerRoute=async function({
+  silent=false
+}={}){
+  const routingMode=
+    String($('plannerRoutingMode')?.value||'waterway');
+
+  if(routingMode==='estimate'){
+    const fallback=await ms650OriginalCalculatePlannerRoute({
+      silent
+    });
+
+    if(fallback){
+      fallback.routingMode='estimate';
+      fallback.routeSource='Noodschatting';
+      fallback.routeCoordinates=fallback.points||[];
+      fallback.routePois=ms650CollectRoutePois(
+        fallback.routeCoordinates,
+        fallback.points||[]
+      );
+      renderPlannerSummary(fallback);
+    }
+
+    return fallback;
+  }
+
+  const fromRef=String($('plannerFrom')?.value||'');
+  const toRef=String($('plannerTo')?.value||'');
+
+  if(!fromRef||!toRef){
+    setPlannerStatus(
+      'Kies eerst een vertrekpunt en bestemming.',
+      'warning'
+    );
+    return null;
+  }
+
+  if(fromRef===toRef&&!plannerStops.length){
+    setPlannerStatus(
+      'Vertrekpunt en bestemming mogen niet hetzelfde zijn.',
+      'warning'
+    );
+    return null;
+  }
+
+  const speed=Number($('plannerSpeed')?.value||0);
+  const factor=Number(
+    $('plannerRouteFactor')?.value||1.3
+  );
+  const fuelPerHour=Number(
+    $('plannerFuelPerHour')?.value||
+    settingsCache?.fuel_per_hour||
+    0
+  );
+  const fuelPrice=Number(
+    $('plannerFuelPrice')?.value||
+    settingsCache?.fuel_price||
+    0
+  );
+
+  if(!Number.isFinite(speed)||speed<=0){
+    setPlannerStatus(
+      'Vul een geldige gemiddelde snelheid in.',
+      'warning'
+    );
+    return null;
+  }
+
+  if(!silent){
+    setPlannerStatus(
+      'Waterwegen zoeken en routepunten ophalen…'
+    );
+  }
+
+  try{
+    const refs=[
+      fromRef,
+      ...plannerStops.filter(
+        ref=>ref!==fromRef&&ref!==toRef
+      ),
+      toRef
+    ];
+
+    const points=[];
+
+    for(const reference of refs){
+      points.push(
+        await resolvePlannerPoint(reference)
+      );
+    }
+
+    const routed=await ms650RequestWaterwayRoute(
+      points
+    );
+    const routeCoordinates=routed.coordinates;
+    const segments=ms650SplitRouteByAnchors(
+      routeCoordinates,
+      points
+    );
+    const distanceKm=
+      Number(routed.distanceKm)||
+      ms650RouteDistanceKm(routeCoordinates);
+    const durationHours=distanceKm/speed;
+    const fuelLiters=durationHours*fuelPerHour;
+    const fuelCost=fuelLiters*fuelPrice;
+    const routePois=ms650CollectRoutePois(
+      routeCoordinates,
+      points
+    );
+
+    plannerCurrentPlan={
+      id:plannerCurrentPlan?.id||
+        crypto.randomUUID(),
+      createdAt:plannerCurrentPlan?.createdAt||
+        new Date().toISOString(),
+      updatedAt:new Date().toISOString(),
+      date:$('plannerDate')?.value||
+        plannerDefaultDate(),
+      title:plannerBuildTitle(points),
+      fromRef,
+      toRef,
+      stopRefs:[...plannerStops],
+      speed,
+      factor,
+      fuelPerHour,
+      fuelPrice,
+      notes:String(
+        $('plannerNotes')?.value||''
+      ).trim(),
+      points,
+      segments,
+      routeCoordinates,
+      routePois,
+      routingMode:'waterway',
+      routeSource:
+        `Waterwegrouter · ${routed.profile||'motorboot'}`,
+      routeWarning:routed.warning||'',
+      distanceKm,
+      durationHours,
+      fuelLiters,
+      fuelCost
+    };
+
+    renderPlannerSummary(plannerCurrentPlan);
+
+    setPlannerStatus(
+      `Waterwegroute gevonden: `+
+      `${plannerNumber(distanceKm)} km, `+
+      `${plannerDurationText(durationHours)} en `+
+      `${routePois.length} POI’s langs de route.`,
+      'success'
+    );
+
+    return plannerCurrentPlan;
+  }catch(error){
+    console.warn(
+      'Waterwegrouter niet beschikbaar, noodschatting wordt gebruikt:',
+      error
+    );
+
+    const fallback=await ms650OriginalCalculatePlannerRoute({
+      silent:true
+    });
+
+    if(!fallback)return null;
+
+    fallback.routingMode='estimate';
+    fallback.routeSource='Noodschatting';
+    fallback.routeWarning=
+      error?.message||
+      'De waterwegrouter was niet bereikbaar.';
+    fallback.routeCoordinates=fallback.points||[];
+    fallback.routePois=ms650CollectRoutePois(
+      fallback.routeCoordinates,
+      fallback.points||[]
+    );
+
+    renderPlannerSummary(fallback);
+    setPlannerStatus(
+      `${fallback.routeWarning} `+
+      'Er wordt tijdelijk een schatting getoond; '+
+      'controleer de route in Waterkaarten.',
+      'warning'
+    );
+
+    return fallback;
+  }
+};
+
+function ms650RenderRoutePois(plan){
+  const container=$('plannerRoutePois');
+  const pois=Array.isArray(plan?.routePois)
+    ?plan.routePois
+    :[];
+
+  if(!container)return;
+
+  if(!pois.length){
+    container.classList.remove('hidden');
+    container.innerHTML=`
+      <div class="planner-route-poi-heading">
+        <b>POI’s langs de route</b>
+        <span>Geen opgeslagen POI’s binnen de gekozen afstand.</span>
+      </div>
+    `;
+    return;
+  }
+
+  container.classList.remove('hidden');
+  container.innerHTML=`
+    <div class="planner-route-poi-heading">
+      <b>${pois.length} POI’s langs de route</b>
+      <span>
+        Havens, tankplaatsen en andere opgeslagen plekken
+        in routevolgorde.
+      </span>
+    </div>
+    <div class="planner-route-poi-list">
+      ${pois.slice(0,24).map(point=>`
+        <article class="planner-route-poi-item">
+          <span class="planner-route-poi-icon">
+            ${ms650PoiIcon(point.category)}
+          </span>
+          <span>
+            <strong>${esc(point.label)}</strong>
+            <small>
+              ${esc(point.category||'POI')}
+              · ${plannerNumber(point.alongRouteKm)} km vanaf vertrek
+              · ${plannerNumber(point.distanceFromRouteKm,2)} km van de route
+            </small>
+          </span>
+          <button type="button" class="secondary"
+            onclick="ms650AddRoutePoiStop('${esc(point.ref)}')">
+            + Stop
+          </button>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
+const ms650OriginalRenderPlannerSummary=
+  renderPlannerSummary;
+
+renderPlannerSummary=function(plan){
+  ms650OriginalRenderPlannerSummary(plan);
+
+  if(!plan)return;
+
+  const routed=
+    plan.routingMode==='waterway'&&
+    Array.isArray(plan.routeCoordinates)&&
+    plan.routeCoordinates.length>1;
+
+  if($('plannerSummaryBadge')){
+    $('plannerSummaryBadge').textContent=routed
+      ?'Waterwegroute'
+      :'Noodschatting';
+    $('plannerSummaryBadge').classList.toggle(
+      'warning',
+      !routed
+    );
+  }
+
+  const info=$('plannerRouteInfo');
+
+  if(info){
+    info.classList.remove('hidden');
+    info.innerHTML=`
+      <div>
+        <b>
+          ${routed?'🛥 Waterwegen gevolgd':'⚠️ Rechte-lijnschatting'}
+        </b>
+        <span>${esc(plan.routeSource||'MijnSerenity')}</span>
+      </div>
+      <small>
+        ${routed
+          ?'De kaart en het GPX-bestand gebruiken de volledige waterweg-geometrie.'
+          :'De externe waterwegrouter was niet bereikbaar. Deze lijn is alleen een indicatie.'}
+        ${plan.routeWarning?` ${esc(plan.routeWarning)}`:''}
+      </small>
+    `;
+  }
+
+  if(routed&&$('plannerSegments')){
+    $('plannerSegments').innerHTML=(plan.segments||[])
+      .map((segment,index)=>`
+        <div class="planner-segment">
+          <div class="planner-segment-number">
+            ${index+1}
+          </div>
+          <div class="planner-segment-copy">
+            <strong>
+              ${esc(segment.from.label)}
+              →
+              ${esc(segment.to.label)}
+            </strong>
+            <small>
+              ${plannerNumber(segment.distanceKm)} km over water
+              · ${plannerDurationText(
+                segment.distanceKm/
+                Math.max(1,Number(plan.speed||9))
+              )}
+            </small>
+          </div>
+          <button type="button" class="secondary"
+            onclick="openPlannerSegmentInWaterkaarten(${index})">
+            🧭
+          </button>
+        </div>
+      `).join('');
+  }
+
+  ms650RenderRoutePois(plan);
+};
+
+function ms650GpxWaypoint(point){
+  return `
+<wpt lat="${Number(point.lat).toFixed(7)}"
+ lon="${Number(point.lon).toFixed(7)}">
+ <name>${ms640Xml(point.label||point.name||'POI')}</name>
+ <type>${ms640Xml(point.category||'POI')}</type>
+ <desc>${ms640Xml(
+   [
+     point.place||'',
+     point.address||''
+   ].filter(Boolean).join(' · ')
+ )}</desc>
+</wpt>`;
+}
+
+ms640PlannerGpx=function(plan){
+  const anchors=(Array.isArray(plan?.points)
+    ?plan.points
+    :[]
+  ).filter(ms650ValidCoordinate);
+
+  const track=(Array.isArray(plan?.routeCoordinates)&&
+    plan.routeCoordinates.length>1
+      ?plan.routeCoordinates
+      :anchors
+  ).map(ms650Coordinate).filter(ms650ValidCoordinate);
+
+  if(track.length<2){
+    throw new Error(
+      'Bereken eerst een route met een vertrekpunt en bestemming.'
+    );
+  }
+
+  const title=plan?.title||'Serenity vaarroute';
+  const pois=[
+    ...anchors,
+    ...(Array.isArray(plan?.routePois)
+      ?plan.routePois
+      :[]
+    )
+  ];
+
+  const waypoints=pois
+    .filter(ms650ValidCoordinate)
+    .map(ms650GpxWaypoint)
+    .join('');
+
+  const trackPoints=track.map(point=>`
+<trkpt lat="${point.lat.toFixed(7)}"
+ lon="${point.lon.toFixed(7)}"></trkpt>`
+  ).join('');
+
+  const routePoints=anchors.map(point=>`
+<rtept lat="${Number(point.lat).toFixed(7)}"
+ lon="${Number(point.lon).toFixed(7)}">
+ <name>${ms640Xml(point.label||'Routepunt')}</name>
+</rtept>`
+  ).join('');
+
+  const gpx=`<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1"
+ creator="MijnSerenity 6.5.0"
+ xmlns="http://www.topografix.com/GPX/1/1">
+ <metadata>
+  <name>${ms640Xml(title)}</name>
+  <desc>Waterwegroute met POI's uit MijnSerenity</desc>
+ </metadata>
+ ${waypoints}
+ <rte>
+  <name>${ms640Xml(title)} · hoofdpunten</name>
+  ${routePoints}
+ </rte>
+ <trk>
+  <name>${ms640Xml(title)} · waterweg</name>
+  <trkseg>${trackPoints}</trkseg>
+ </trk>
+</gpx>`;
+
+  return new File(
+    [gpx],
+    `${ms640FileName(title)}-waterweg.gpx`,
+    {type:'application/gpx+xml'}
+  );
+};
+

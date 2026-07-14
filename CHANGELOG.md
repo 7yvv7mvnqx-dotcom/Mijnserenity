@@ -1,3 +1,9 @@
+## 6.5.0
+- Echte waterwegroute via Netlify Function en BRouter-waterprofielen.
+- Nautische OpenSeaMap-laag in de Reisplanner.
+- Automatische POI's langs de route.
+- GPX-track volgt de waterweg en bevat POI-waypoints.
+
 # Wijzigingen
 ## 6.3.0
 - Roerstand en koerscorrectie staan nu onder de grafische schipper aan het roer.

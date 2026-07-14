@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="6.4.0">
-<link rel="apple-touch-icon" href="icon-192.png?v=6400">
+<meta name="mijnserenity-build" content="6.5.0">
+<link rel="apple-touch-icon" href="icon-192.png?v=6500">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=6400">
+<link rel="manifest" href="manifest.json?v=6500">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=6400">
+<link rel="stylesheet" href="styles.css?v=6500">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6400" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6500" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6400" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6500" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -238,7 +238,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=6400" alt="">
+          <img src="waterkaarten-dashboard.png?v=6500" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -332,7 +332,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v6.4.0</div>
+          <div class="label">Sync · v6.5.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -750,7 +750,7 @@
             en zet de planning daarna klaar in het gedeelde logboek.
           </p>
         </div>
-        <span class="planner-version-badge">6.4.0</span>
+        <span class="planner-version-badge">6.5.0</span>
       </div>
       <div class="planner-warning">
         Afstand is een schatting op basis van rechte lijnen en een instelbare
@@ -813,21 +813,49 @@
 
         <div class="row">
           <div>
-            <label for="plannerRouteFactor">Waterwegfactor</label>
-            <select id="plannerRouteFactor">
-              <option value="1.10">1,10 · vrij directe route</option>
-              <option value="1.20">1,20 · licht omvaren</option>
-              <option value="1.30" selected>1,30 · normale vaarroute</option>
-              <option value="1.45">1,45 · veel bochten/omvaren</option>
-              <option value="1.60">1,60 · complexe route</option>
+            <label for="plannerRoutingMode">Routeberekening</label>
+            <select id="plannerRoutingMode"
+              onchange="plannerFormChanged()">
+              <option value="waterway" selected>
+                🛥 Waterwegen volgen
+              </option>
+              <option value="estimate">
+                📏 Alleen noodschatting
+              </option>
             </select>
           </div>
           <div>
-            <label for="plannerFuelPerHour">Verbruik liter/uur</label>
-            <input id="plannerFuelPerHour" type="number" min="0"
-              step="0.1" placeholder="Uit instellingen">
+            <label for="plannerPoiRadius">POI’s langs de route</label>
+            <select id="plannerPoiRadius"
+              onchange="plannerFormChanged()">
+              <option value="0.5">Binnen 500 meter</option>
+              <option value="1" selected>Binnen 1 kilometer</option>
+              <option value="2">Binnen 2 kilometer</option>
+              <option value="3">Binnen 3 kilometer</option>
+            </select>
           </div>
         </div>
+
+        <details class="planner-fallback-settings">
+          <summary>Noodinstellingen wanneer waterwegrouter niet bereikbaar is</summary>
+          <div class="row">
+            <div>
+              <label for="plannerRouteFactor">Waterwegfactor</label>
+              <select id="plannerRouteFactor">
+                <option value="1.10">1,10 · vrij direct</option>
+                <option value="1.20">1,20 · licht omvaren</option>
+                <option value="1.30" selected>1,30 · normale vaarroute</option>
+                <option value="1.45">1,45 · veel omvaren</option>
+                <option value="1.60">1,60 · complexe route</option>
+              </select>
+            </div>
+            <div>
+              <label for="plannerFuelPerHour">Verbruik liter/uur</label>
+              <input id="plannerFuelPerHour" type="number" min="0"
+                step="0.1" placeholder="Uit instellingen">
+            </div>
+          </div>
+        </details>
 
         <div class="row">
           <div>
@@ -885,11 +913,17 @@
 
           <div id="plannerMap" class="planner-map"></div>
 
+          <div id="plannerRouteInfo"
+            class="planner-route-info hidden"></div>
+
+          <div id="plannerRoutePois"
+            class="planner-route-pois hidden"></div>
+
           <div class="planner-segment-heading">
             <b>Etappes</b>
             <button type="button" class="secondary"
               onclick="openFullPlannerRouteInWaterkaarten()">
-              🧭 Deel GPX met Waterkaarten
+              🧭 Stuur waterwegroute naar Waterkaarten
             </button>
           </div>
           <div id="plannerSegments" class="planner-segments"></div>
@@ -2433,6 +2467,6 @@
   </div>
 </div>
 
-<script src="app.js?v=6400"></script>
+<script src="app.js?v=6500"></script>
 </body>
 </html>
