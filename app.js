@@ -13769,7 +13769,8 @@ async function fetchLiveWeather(lat,lon,force=false){
         'precipitation',
         'weather_code',
         'wind_speed_10m',
-        'wind_gusts_10m'
+        'wind_gusts_10m',
+        'wind_direction_10m'
       ].join(','),
       wind_speed_unit:'kmh',
       timezone:'auto'
@@ -13797,7 +13798,8 @@ async function fetchLiveWeather(lat,lon,force=false){
       precipitation:Number(current.precipitation),
       weatherCode:Number(current.weather_code),
       windSpeed:Number(current.wind_speed_10m),
-      windGusts:Number(current.wind_gusts_10m)
+      windGusts:Number(current.wind_gusts_10m),
+      windDirection:Number(current.wind_direction_10m)
     };
     liveNavState.weatherUpdatedAt=Date.now();
     liveNavState.lastWeatherLat=Number(lat);
@@ -14310,7 +14312,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.5.1';
+const APP_VERSION='6.6.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16285,7 +16287,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.5.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.6.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16636,7 +16638,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.5.1
+   MijnSerenity Cloud 6.6.0
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17417,7 +17419,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.5.1"
+ creator="MijnSerenity 6.6.0"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17443,7 +17445,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.5.1 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.6.0 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17478,3 +17480,977 @@ window.addEventListener(
   },
   {passive:true}
 );
+
+
+/* ============================================================
+   MijnSerenity Cloud 6.6.0 — Next Level Live Cockpit
+   ============================================================ */
+
+let ms660FocusMode=false;
+let ms660NightMode=false;
+let ms660LastAlertKey='';
+
+function ms660SetText(id,value){
+  const element=$(id);
+  if(element)element.textContent=value;
+}
+
+function ms660Number(value,digits=1){
+  const number=Number(value);
+  if(!Number.isFinite(number))return null;
+
+  return number.toLocaleString('nl-NL',{
+    minimumFractionDigits:0,
+    maximumFractionDigits:digits
+  });
+}
+
+function ms660NormalizeText(value){
+  return String(value||'')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+
+function ms660LatestPoint(){
+  const point=liveNavState?.points?.at(-1);
+  return point&&
+    Number.isFinite(Number(point.lat))&&
+    Number.isFinite(Number(point.lon))
+      ?{
+          lat:Number(point.lat),
+          lon:Number(point.lon)
+        }
+      :null;
+}
+
+function ms660CumulativeRoute(coordinates){
+  const points=(Array.isArray(coordinates)?coordinates:[])
+    .map(point=>Array.isArray(point)
+      ?{
+          lon:Number(point[0]),
+          lat:Number(point[1])
+        }
+      :{
+          lat:Number(point?.lat),
+          lon:Number(point?.lon)
+        }
+    )
+    .filter(point=>
+      Number.isFinite(point.lat)&&
+      Number.isFinite(point.lon)
+    );
+
+  const cumulative=[0];
+
+  for(let index=1;index<points.length;index++){
+    cumulative[index]=
+      cumulative[index-1]+
+      haversineKm(
+        points[index-1],
+        points[index]
+      );
+  }
+
+  return {
+    points,
+    cumulative,
+    total:cumulative.at(-1)||0
+  };
+}
+
+function ms660PlanDestination(plan){
+  return String(
+    plan?.points?.at(-1)?.label||
+    plan?.points?.at(-1)?.place||
+    plan?.title||
+    ''
+  ).trim();
+}
+
+function ms660NavigationPlan(){
+  const destination=ms660NormalizeText(
+    $('liveTo')?.value
+  );
+
+  const candidates=[
+    plannerCurrentPlan,
+    ...(
+      typeof readPlannerDrafts==='function'
+        ?readPlannerDrafts()
+        :[]
+    )
+  ].filter(plan=>
+    Array.isArray(plan?.routeCoordinates)&&
+    plan.routeCoordinates.length>=2
+  );
+
+  if(!candidates.length)return null;
+
+  if(destination){
+    const matching=candidates.find(plan=>{
+      const planDestination=ms660NormalizeText(
+        ms660PlanDestination(plan)
+      );
+      const title=ms660NormalizeText(plan?.title);
+
+      return (
+        planDestination===destination||
+        planDestination.includes(destination)||
+        destination.includes(planDestination)||
+        title.includes(destination)
+      );
+    });
+
+    if(matching)return matching;
+  }
+
+  return candidates
+    .sort((a,b)=>
+      new Date(b.updatedAt||b.createdAt||0)-
+      new Date(a.updatedAt||a.createdAt||0)
+    )[0];
+}
+
+function ms660RouteProgress(plan,current){
+  if(!plan||!current)return null;
+
+  const route=ms660CumulativeRoute(
+    plan.routeCoordinates
+  );
+
+  if(route.points.length<2)return null;
+
+  let nearestIndex=0;
+  let nearestDistance=Infinity;
+
+  route.points.forEach((point,index)=>{
+    const distance=haversineKm(current,point);
+
+    if(distance<nearestDistance){
+      nearestDistance=distance;
+      nearestIndex=index;
+    }
+  });
+
+  const along=route.cumulative[nearestIndex]||0;
+
+  return {
+    route,
+    nearestIndex,
+    nearestDistance,
+    along,
+    remaining:Math.max(0,route.total-along)
+  };
+}
+
+function ms660DestinationPoi(){
+  const destination=ms660NormalizeText(
+    $('liveTo')?.value
+  );
+
+  if(!destination)return null;
+
+  let best=null;
+  let score=0;
+
+  poiCache.forEach(poi=>{
+    const texts=[
+      poi.name,
+      poi.place,
+      poi.address
+    ].map(ms660NormalizeText).filter(Boolean);
+
+    let candidateScore=0;
+
+    texts.forEach(text=>{
+      if(text===destination){
+        candidateScore=Math.max(candidateScore,100);
+      }else if(
+        text.includes(destination)||
+        destination.includes(text)
+      ){
+        candidateScore=Math.max(candidateScore,70);
+      }
+    });
+
+    if(candidateScore>score){
+      const position=getPoiMapPosition(poi);
+
+      if(position?.valid){
+        score=candidateScore;
+        best={
+          poi,
+          lat:Number(position.lat),
+          lon:Number(position.lon)
+        };
+      }
+    }
+  });
+
+  return best;
+}
+
+function ms660NavigationEstimate(){
+  const current=ms660LatestPoint();
+  const plan=ms660NavigationPlan();
+  const destinationText=String(
+    $('liveTo')?.value||
+    ms660PlanDestination(plan)||
+    ''
+  ).trim();
+
+  if(plan&&current){
+    const progress=ms660RouteProgress(
+      plan,
+      current
+    );
+
+    if(progress){
+      const nextPoi=(plan.routePois||[])
+        .filter(poi=>
+          Number.isFinite(Number(poi.alongRouteKm))&&
+          Number(poi.alongRouteKm)>progress.along+.05
+        )
+        .sort((a,b)=>
+          Number(a.alongRouteKm)-
+          Number(b.alongRouteKm)
+        )[0]||null;
+
+      return {
+        destination:
+          destinationText||
+          ms660PlanDestination(plan)||
+          'Waterwegroute',
+        source:'Actieve waterwegroute',
+        remainingKm:progress.remaining,
+        routeTotalKm:progress.route.total,
+        currentAlongKm:progress.along,
+        nextPoi,
+        nextPoiKm:nextPoi
+          ?Math.max(
+              0,
+              Number(nextPoi.alongRouteKm)-
+              progress.along
+            )
+          :null,
+        offRouteKm:progress.nearestDistance,
+        mode:'route'
+      };
+    }
+  }
+
+  const destinationPoi=ms660DestinationPoi();
+
+  if(current&&destinationPoi){
+    return {
+      destination:
+        destinationText||
+        destinationPoi.poi.name||
+        'Bestemming',
+      source:'Hemelsbreed naar opgeslagen POI',
+      remainingKm:haversineKm(
+        current,
+        destinationPoi
+      ),
+      nextPoi:null,
+      nextPoiKm:null,
+      mode:'direct'
+    };
+  }
+
+  return {
+    destination:
+      destinationText||
+      'Nog niet gekozen',
+    source:plan
+      ?'Wachten op GPS voor actieve waterwegroute'
+      :'Kies een planning of vul aankomst in',
+    remainingKm:null,
+    nextPoi:null,
+    nextPoiKm:null,
+    mode:'none'
+  };
+}
+
+function ms660CruiseSpeed(){
+  const current=Number(liveNavState?.speedKmh);
+  const average=typeof liveAverageSpeed==='function'
+    ?Number(liveAverageSpeed())
+    :0;
+  const plan=ms660NavigationPlan();
+  const planned=Number(plan?.speed);
+  const preferred=Number(
+    settingsCache?.cruise_speed||
+    settingsCache?.average_speed||
+    9
+  );
+
+  if(current>=1.5)return current;
+  if(average>=1.5)return average;
+  if(planned>=1)return planned;
+  return preferred>=1?preferred:9;
+}
+
+function ms660WindDirectionText(value){
+  const degrees=Number(value);
+  if(!Number.isFinite(degrees))return '';
+
+  const directions=[
+    'N','NO','O','ZO',
+    'Z','ZW','W','NW'
+  ];
+
+  return directions[
+    Math.round(
+      ((degrees%360)+360)%360/45
+    )%8
+  ];
+}
+
+function ms660TechnicalDepth(state){
+  const candidates=[
+    state?.depthM,
+    state?.depth,
+    state?.waterDepth,
+    state?.water_depth,
+    state?.nmea?.depth,
+    state?.homeAssistant?.depth
+  ];
+
+  return candidates
+    .map(Number)
+    .find(value=>
+      Number.isFinite(value)&&
+      value>=0
+    );
+}
+
+function ms660FuelRange(state){
+  const fuelPct=Number(state?.fuelPct);
+  const capacity=Number(
+    state?.fuelCapacity||
+    settingsCache?.tank_capacity
+  );
+  const consumption=Number(
+    settingsCache?.fuel_per_hour||
+    settingsCache?.fuelPerHour
+  );
+  const speed=ms660CruiseSpeed();
+
+  if(
+    !Number.isFinite(fuelPct)||
+    !Number.isFinite(capacity)||
+    capacity<=0||
+    !Number.isFinite(consumption)||
+    consumption<=0||
+    speed<=0
+  ){
+    return null;
+  }
+
+  const usableLiters=
+    capacity*
+    Math.max(0,fuelPct-15)/
+    100;
+  const hours=usableLiters/consumption;
+
+  return {
+    km:hours*speed,
+    liters:usableLiters,
+    reservePct:15,
+    speed,
+    consumption
+  };
+}
+
+function ms660ConnectionState(){
+  const online=navigator.onLine;
+  const viewer=Boolean(
+    globalThis.ms640Viewing||
+    (
+      typeof ms640Viewing!=='undefined'&&
+      ms640Viewing
+    )
+  );
+  const controller=typeof ms640IsController==='function'
+    ?ms640IsController()
+    :true;
+
+  return {
+    online,
+    viewer,
+    controller
+  };
+}
+
+function ms660Alerts(){
+  const state=normaliseTechnicalState(
+    technicalStateCache||
+    readTechnicalLocalState()
+  );
+  const alerts=[];
+  const add=(level,title,text)=>{
+    alerts.push({level,title,text});
+  };
+
+  const house=Number(state.houseVoltage);
+  const start=Number(state.startVoltage);
+  const fuel=Number(state.fuelPct);
+  const water=Number(state.waterPct);
+  const temp=Number(state.engineTemp);
+  const pressure=Number(state.oilPressure);
+  const accuracy=Number(liveNavState.accuracy);
+  const gusts=Number(liveNavState.weather?.windGusts);
+  const gustBft=Number.isFinite(gusts)
+    ?windKmhToBeaufort(gusts)
+    :null;
+
+  if(state.bilge==='alarm'){
+    add(
+      'critical',
+      'Bilge-alarm actief',
+      'Controleer direct of er water binnenkomt.'
+    );
+  }else if(state.bilge==='active'){
+    add(
+      'warning',
+      'Bilgepomp draait',
+      'Controleer of dit verwacht gedrag is.'
+    );
+  }
+
+  if(Number.isFinite(temp)&&temp>=95){
+    add(
+      'critical',
+      'Motortemperatuur hoog',
+      `${ms660Number(temp,1)} °C · verminder belasting en controleer koeling.`
+    );
+  }else if(Number.isFinite(temp)&&temp>=88){
+    add(
+      'warning',
+      'Motor wordt warm',
+      `${ms660Number(temp,1)} °C · houd de temperatuur in de gaten.`
+    );
+  }
+
+  if(
+    Number(liveNavState.engineRpm)>=700&&
+    Number.isFinite(pressure)&&
+    pressure>0&&
+    pressure<1
+  ){
+    add(
+      'critical',
+      'Oliedruk te laag',
+      `${ms660Number(pressure,1)} bar bij draaiende motor.`
+    );
+  }
+
+  if(Number.isFinite(house)&&house>0&&house<11.9){
+    add(
+      'critical',
+      'Huishoudaccu kritiek laag',
+      `${ms660Number(house,2)} V`
+    );
+  }else if(Number.isFinite(house)&&house>0&&house<12.2){
+    add(
+      'warning',
+      'Huishoudaccu laag',
+      `${ms660Number(house,2)} V`
+    );
+  }
+
+  if(Number.isFinite(start)&&start>0&&start<11.9){
+    add(
+      'critical',
+      'Startaccu kritiek laag',
+      `${ms660Number(start,2)} V`
+    );
+  }else if(Number.isFinite(start)&&start>0&&start<12.2){
+    add(
+      'warning',
+      'Startaccu laag',
+      `${ms660Number(start,2)} V`
+    );
+  }
+
+  if(Number.isFinite(fuel)&&fuel<=15){
+    add(
+      'critical',
+      'Brandstofreserve bereikt',
+      `${Math.round(fuel)}% resterend`
+    );
+  }else if(Number.isFinite(fuel)&&fuel<=25){
+    add(
+      'warning',
+      'Brandstof wordt laag',
+      `${Math.round(fuel)}% resterend`
+    );
+  }
+
+  if(Number.isFinite(water)&&water<=12){
+    add(
+      'warning',
+      'Drinkwater bijna leeg',
+      `${Math.round(water)}% resterend`
+    );
+  }
+
+  if(Number.isFinite(accuracy)&&accuracy>80){
+    add(
+      'critical',
+      'GPS-signaal zeer zwak',
+      `Nauwkeurigheid ongeveer ${Math.round(accuracy)} meter`
+    );
+  }else if(Number.isFinite(accuracy)&&accuracy>35){
+    add(
+      'warning',
+      'GPS-signaal minder nauwkeurig',
+      `Nauwkeurigheid ongeveer ${Math.round(accuracy)} meter`
+    );
+  }
+
+  if(Number.isFinite(gustBft)&&gustBft>=9){
+    add(
+      'critical',
+      'Zware windstoten',
+      `${gustBft} Bft · beoordeel of doorvaren verstandig is.`
+    );
+  }else if(Number.isFinite(gustBft)&&gustBft>=7){
+    add(
+      'warning',
+      'Stevige windstoten',
+      `${gustBft} Bft · extra aandacht bij manoeuvreren.`
+    );
+  }
+
+  if(!navigator.onLine){
+    add(
+      'warning',
+      'Offline modus',
+      'GPS-opname blijft lokaal werken en synchroniseert later.'
+    );
+  }
+
+  const levelOrder={
+    critical:3,
+    warning:2,
+    info:1
+  };
+
+  return alerts.sort(
+    (a,b)=>
+      levelOrder[b.level]-
+      levelOrder[a.level]
+  );
+}
+
+function ms660RenderAlerts(){
+  const panel=$('ms660AlertPanel');
+  const alerts=ms660Alerts();
+  const alert=alerts[0];
+
+  if(!panel)return;
+
+  if(!alert){
+    panel.className='ms660-alert-panel good';
+    ms660SetText('ms660AlertIcon','✓');
+    ms660SetText(
+      'ms660AlertTitle',
+      'Alles rustig aan boord'
+    );
+    ms660SetText(
+      'ms660AlertText',
+      'GPS, techniek, brandstof, bilge en weer geven geen directe waarschuwing.'
+    );
+    return;
+  }
+
+  panel.className=
+    `ms660-alert-panel ${alert.level}`;
+  ms660SetText(
+    'ms660AlertIcon',
+    alert.level==='critical'?'!':'⚠'
+  );
+  ms660SetText(
+    'ms660AlertTitle',
+    alert.title
+  );
+  ms660SetText(
+    'ms660AlertText',
+    alerts.length>1
+      ?`${alert.text} · daarnaast ${alerts.length-1} andere melding(en).`
+      :alert.text
+  );
+
+  const key=`${alert.level}:${alert.title}`;
+
+  if(
+    key!==ms660LastAlertKey&&
+    liveNavState.status==='active'&&
+    alert.level==='critical'
+  ){
+    ms660LastAlertKey=key;
+    showAppToast(
+      `⚠️ ${alert.title}: ${alert.text}`
+    );
+  }
+}
+
+function ms660RenderCommandCenter(){
+  const navigation=ms660NavigationEstimate();
+  const speed=ms660CruiseSpeed();
+  const state=normaliseTechnicalState(
+    technicalStateCache||
+    readTechnicalLocalState()
+  );
+  const weather=liveNavState.weather||{};
+  const connection=ms660ConnectionState();
+
+  ms660SetText(
+    'ms660Destination',
+    navigation.destination
+  );
+  ms660SetText(
+    'ms660RouteSource',
+    navigation.source
+  );
+
+  if(Number.isFinite(navigation.remainingKm)){
+    ms660SetText(
+      'ms660Remaining',
+      `${ms660Number(navigation.remainingKm,1)} km`
+    );
+    ms660SetText(
+      'ms660RemainingDetail',
+      navigation.mode==='route'
+        ?navigation.offRouteKm>.5
+          ?`${ms660Number(navigation.offRouteKm,1)} km van de geplande route`
+          :'Berekend over de geplande waterweg'
+        :'Hemelsbrede indicatie'
+    );
+
+    const hours=navigation.remainingKm/
+      Math.max(1,speed);
+    const eta=new Date(
+      Date.now()+hours*3600000
+    );
+
+    ms660SetText(
+      'ms660Eta',
+      eta.toLocaleTimeString(
+        'nl-NL',
+        {
+          hour:'2-digit',
+          minute:'2-digit'
+        }
+      )
+    );
+    ms660SetText(
+      'ms660EtaSpeed',
+      `op basis van ${ms660Number(speed,1)} km/u`
+    );
+  }else{
+    ms660SetText('ms660Remaining','– km');
+    ms660SetText(
+      'ms660RemainingDetail',
+      'Wachten op bestemming en GPS'
+    );
+    ms660SetText('ms660Eta','–');
+    ms660SetText(
+      'ms660EtaSpeed',
+      'Nog geen routeberekening'
+    );
+  }
+
+  if(navigation.nextPoi){
+    ms660SetText(
+      'ms660NextPoi',
+      navigation.nextPoi.label||
+      navigation.nextPoi.name||
+      'Route-POI'
+    );
+    ms660SetText(
+      'ms660NextPoiDistance',
+      `${ms660Number(navigation.nextPoiKm,1)} km verderop`
+    );
+  }else{
+    ms660SetText('ms660NextPoi','–');
+    ms660SetText(
+      'ms660NextPoiDistance',
+      navigation.mode==='route'
+        ?'Geen volgende POI op deze route'
+        :'Open een waterwegplanning met POI’s'
+    );
+  }
+
+  const wind=Number(weather.windSpeed);
+  const gusts=Number(weather.windGusts);
+  const direction=ms660WindDirectionText(
+    weather.windDirection
+  );
+
+  if(Number.isFinite(wind)){
+    ms660SetText(
+      'ms660Wind',
+      `${windKmhToBeaufort(wind)} Bft${direction?` ${direction}`:''}`
+    );
+    ms660SetText(
+      'ms660WindDetail',
+      Number.isFinite(gusts)
+        ?`windstoten ${windKmhToBeaufort(gusts)} Bft`
+        :`${ms660Number(wind,1)} km/u`
+    );
+  }else{
+    ms660SetText('ms660Wind','–');
+    ms660SetText(
+      'ms660WindDetail',
+      'Wachten op actueel weer'
+    );
+  }
+
+  const depth=ms660TechnicalDepth(state);
+
+  ms660SetText(
+    'ms660Depth',
+    Number.isFinite(depth)
+      ?`${ms660Number(depth,1)} m`
+      :'– m'
+  );
+  ms660SetText(
+    'liveDepth',
+    Number.isFinite(depth)
+      ?`${ms660Number(depth,1)} m`
+      :'– m'
+  );
+  ms660SetText(
+    'ms660DepthDetail',
+    Number.isFinite(depth)
+      ?'Live sensorwaarde'
+      :'NMEA/HA-dieptesensor nog niet gekoppeld'
+  );
+
+  const range=ms660FuelRange(state);
+
+  if(range){
+    ms660SetText(
+      'ms660FuelRange',
+      `${Math.round(range.km)} km`
+    );
+    ms660SetText(
+      'ms660FuelRangeDetail',
+      `${ms660Number(range.liters,0)} liter bruikbaar · 15% reserve`
+    );
+  }else{
+    ms660SetText('ms660FuelRange','– km');
+    ms660SetText(
+      'ms660FuelRangeDetail',
+      'Tankinhoud en verbruik per uur instellen'
+    );
+  }
+
+  ms660SetText(
+    'ms660Connection',
+    connection.online
+      ?connection.viewer
+        ?'Live meekijken'
+        :'Online'
+      :'Offline'
+  );
+  ms660SetText(
+    'ms660ConnectionDetail',
+    connection.viewer
+      ?'Een ander apparaat bestuurt de opname'
+      :connection.online
+        ?'Cloudsync en GPS-opname beschikbaar'
+        :'Route blijft veilig lokaal opgeslagen'
+  );
+
+  const role=$('ms660ControlRole');
+
+  if(role){
+    role.className=
+      `ms660-role-badge ${
+        connection.viewer?'viewer':'controller'
+      }`;
+    role.textContent=connection.viewer
+      ?'Meekijken'
+      :liveNavState.status==='active'
+        ?'● Besturing actief'
+        :'Besturing';
+  }
+
+  ms660RenderAlerts();
+}
+
+function toggleLiveCockpitFocus(force){
+  ms660FocusMode=typeof force==='boolean'
+    ?force
+    :!ms660FocusMode;
+
+  document.body.classList.toggle(
+    'ms660-cockpit-focus',
+    ms660FocusMode
+  );
+
+  const button=$('ms660FocusButton');
+
+  if(button){
+    button.textContent=ms660FocusMode
+      ?'✕ Sluit focus'
+      :'⛶ Focus';
+  }
+
+  try{
+    localStorage.setItem(
+      'mijnserenity-cockpit-focus',
+      ms660FocusMode?'1':'0'
+    );
+  }catch{}
+
+  if(ms660FocusMode){
+    requestLiveWakeLock?.();
+    setTimeout(()=>{
+      $('live')?.scrollIntoView({
+        block:'start',
+        behavior:'smooth'
+      });
+      liveMap?.invalidateSize({pan:false});
+      if(
+        typeof hideBottomNavigation==='function'
+      ){
+        setTimeout(hideBottomNavigation,900);
+      }
+    },80);
+  }else{
+    setTimeout(()=>{
+      liveMap?.invalidateSize({pan:false});
+    },80);
+  }
+}
+
+function toggleLiveNightMode(force){
+  ms660NightMode=typeof force==='boolean'
+    ?force
+    :!ms660NightMode;
+
+  document.body.classList.toggle(
+    'ms660-night-mode',
+    ms660NightMode
+  );
+
+  const button=$('ms660NightButton');
+
+  if(button){
+    button.textContent=ms660NightMode
+      ?'☀️ Dag'
+      :'🌙 Nacht';
+  }
+
+  try{
+    localStorage.setItem(
+      'mijnserenity-night-mode',
+      ms660NightMode?'1':'0'
+    );
+  }catch{}
+}
+
+function ms660RestoreCockpitMode(){
+  try{
+    const focus=
+      localStorage.getItem(
+        'mijnserenity-cockpit-focus'
+      )==='1';
+    const night=
+      localStorage.getItem(
+        'mijnserenity-night-mode'
+      )==='1';
+
+    toggleLiveNightMode(night);
+
+    if(focus){
+      toggleLiveCockpitFocus(true);
+    }
+  }catch{}
+}
+
+function ms660ShowLivePanel(type){
+  const target=type==='camera'
+    ?document.querySelector(
+        '.live-radar-camera-card'
+      )
+    :document.querySelector(
+        '.live-map-card'
+      );
+
+  target?.scrollIntoView({
+    behavior:'smooth',
+    block:'center'
+  });
+
+  if(type==='map'){
+    setTimeout(()=>{
+      liveMap?.invalidateSize({pan:false});
+      centerLiveMap();
+    },300);
+  }
+}
+
+const ms660OriginalRenderLiveState=
+  renderLiveState;
+
+renderLiveState=function(){
+  const result=
+    ms660OriginalRenderLiveState();
+
+  ms660RenderCommandCenter();
+  return result;
+};
+
+const ms660OriginalRenderLiveTechnicalStrip=
+  renderLiveTechnicalStrip;
+
+renderLiveTechnicalStrip=function(){
+  const result=
+    ms660OriginalRenderLiveTechnicalStrip();
+
+  ms660RenderCommandCenter();
+  return result;
+};
+
+const ms660OriginalInitLiveMode=
+  initLiveMode;
+
+initLiveMode=async function(){
+  const result=
+    await ms660OriginalInitLiveMode();
+
+  ms660RestoreCockpitMode();
+  ms660RenderCommandCenter();
+  return result;
+};
+
+window.addEventListener(
+  'online',
+  ms660RenderCommandCenter,
+  {passive:true}
+);
+
+window.addEventListener(
+  'offline',
+  ms660RenderCommandCenter,
+  {passive:true}
+);
+
+document.addEventListener(
+  'visibilitychange',
+  ()=>{
+    if(!document.hidden){
+      ms660RenderCommandCenter();
+    }
+  }
+);
+

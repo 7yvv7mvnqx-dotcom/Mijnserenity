@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.5.1";
+  content:" · v6.6.0";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 6.5.1 — Finance Command Center + cockpit
+   MijnSerenity Cloud 6.6.0 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5664,7 +5664,7 @@ main{
 }
 
 
-/* MijnSerenity 6.5.1 — Waterkaarten Bridge en gedeelde live vaarkaart */
+/* MijnSerenity 6.6.0 — Waterkaarten Bridge en gedeelde live vaarkaart */
 .live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
 .live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
 .live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
@@ -5677,7 +5677,7 @@ main{
 @media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
 
 
-/* MijnSerenity 6.5.1 — waterwegrouter, nautische laag en route-POI's */
+/* MijnSerenity 6.6.0 — waterwegrouter, nautische laag en route-POI's */
 .planner-fallback-settings{
   margin:10px 0 14px;
   padding:10px 12px;
@@ -5813,7 +5813,7 @@ main{
 }
 
 
-/* MijnSerenity 6.5.1 — iPad/Safari vaste onderbalk */
+/* MijnSerenity 6.6.0 — iPad/Safari vaste onderbalk */
 html,
 body{
   transform:none !important;
@@ -5868,5 +5868,375 @@ body > .bottom-nav:not(.bottom-nav-auto-hidden),
   .bottom-nav.bottom-nav-viewport-fixed{
     width:100dvw !important;
     max-width:100dvw !important;
+  }
+}
+
+
+/* =========================================================
+   MijnSerenity Cloud 6.6.0 — Next Level Live Cockpit
+   ========================================================= */
+
+.ms660-cockpit-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.ms660-cockpit-actions button{
+  width:auto;
+  white-space:nowrap;
+}
+
+.ms660-command-card{
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(86,213,247,.24);
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      rgba(67,200,239,.17),
+      transparent 38%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(13,49,67,.98),
+      rgba(6,27,40,.98)
+    );
+}
+
+.ms660-command-card::after{
+  content:"";
+  position:absolute;
+  inset:auto -60px -80px auto;
+  width:190px;
+  height:190px;
+  border-radius:50%;
+  background:rgba(64,205,244,.06);
+  pointer-events:none;
+}
+
+.ms660-command-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:14px;
+}
+
+.ms660-command-head h2{
+  margin-bottom:2px;
+}
+
+.ms660-role-badge{
+  flex:0 0 auto;
+  padding:7px 10px;
+  border-radius:999px;
+  color:#dff8ff;
+  background:rgba(69,200,255,.13);
+  border:1px solid rgba(69,200,255,.24);
+  font-size:12px;
+  font-weight:900;
+}
+
+.ms660-role-badge.controller{
+  color:#d9ffea;
+  background:rgba(75,211,143,.14);
+  border-color:rgba(75,211,143,.28);
+}
+
+.ms660-role-badge.viewer{
+  color:#ffeab8;
+  background:rgba(255,190,75,.14);
+  border-color:rgba(255,190,75,.28);
+}
+
+.ms660-command-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(4,minmax(0,1fr));
+  gap:9px;
+}
+
+.ms660-command-metric{
+  position:relative;
+  z-index:1;
+  min-width:0;
+  min-height:100px;
+  padding:12px;
+  border-radius:15px;
+  background:rgba(255,255,255,.052);
+  border:1px solid rgba(135,220,247,.11);
+}
+
+.ms660-command-metric span,
+.ms660-command-metric strong,
+.ms660-command-metric small{
+  display:block;
+}
+
+.ms660-command-metric span{
+  color:#9ebdca;
+  font-size:11px;
+  font-weight:750;
+}
+
+.ms660-command-metric strong{
+  overflow:hidden;
+  margin:7px 0 5px;
+  color:#f2fcff;
+  font-size:20px;
+  line-height:1.06;
+  text-overflow:ellipsis;
+}
+
+.ms660-command-metric small{
+  color:#91aeba;
+  font-size:11px;
+  line-height:1.3;
+}
+
+.ms660-alert-panel{
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  align-items:center;
+  gap:11px;
+  margin-top:12px;
+  padding:11px 13px;
+  border-radius:15px;
+  border:1px solid rgba(76,211,143,.22);
+  background:rgba(76,211,143,.09);
+}
+
+.ms660-alert-panel > span{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  color:#d8ffea;
+  background:rgba(76,211,143,.16);
+  font-size:24px;
+  font-weight:950;
+}
+
+.ms660-alert-panel strong,
+.ms660-alert-panel small{
+  display:block;
+}
+
+.ms660-alert-panel small{
+  margin-top:3px;
+  color:#afd0bc;
+  line-height:1.35;
+}
+
+.ms660-alert-panel.warning{
+  border-color:rgba(255,190,75,.30);
+  background:rgba(255,190,75,.10);
+}
+
+.ms660-alert-panel.warning > span{
+  color:#fff0c8;
+  background:rgba(255,190,75,.17);
+}
+
+.ms660-alert-panel.warning small{
+  color:#dbc9a0;
+}
+
+.ms660-alert-panel.critical{
+  border-color:rgba(255,93,93,.42);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,74,74,.18),
+      rgba(130,28,28,.16)
+    );
+  animation:ms660-alert-pulse 1.35s infinite;
+}
+
+.ms660-alert-panel.critical > span{
+  color:#fff;
+  background:rgba(255,79,79,.28);
+}
+
+.ms660-alert-panel.critical small{
+  color:#ffd0d0;
+}
+
+.ms660-quick-actions{
+  position:relative;
+  z-index:1;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+
+.ms660-quick-actions button{
+  flex:1 1 150px;
+}
+
+@keyframes ms660-alert-pulse{
+  0%,100%{
+    box-shadow:
+      0 0 0 0 rgba(255,81,81,0);
+  }
+  50%{
+    box-shadow:
+      0 0 0 7px rgba(255,81,81,.07);
+  }
+}
+
+/* Focusmodus: alleen wat tijdens het varen telt. */
+body.ms660-cockpit-focus{
+  overflow-x:hidden;
+  background:#02080d;
+}
+
+body.ms660-cockpit-focus main{
+  width:100% !important;
+  max-width:none !important;
+  padding:0 10px
+    calc(
+      var(--nav-height) +
+      env(safe-area-inset-bottom) +
+      8px
+    );
+}
+
+body.ms660-cockpit-focus #live{
+  width:100%;
+  max-width:1900px;
+  margin:0 auto;
+}
+
+body.ms660-cockpit-focus #live > 
+.live-auto-log-card,
+body.ms660-cockpit-focus #live >
+.live-detail-metrics,
+body.ms660-cockpit-focus #live >
+.live-instruments-card,
+body.ms660-cockpit-focus #live >
+.live-save-card{
+  display:none !important;
+}
+
+body.ms660-cockpit-focus .live-hero{
+  margin-top:6px;
+  padding:11px 13px;
+}
+
+body.ms660-cockpit-focus
+.live-hero .live-heading p,
+body.ms660-cockpit-focus
+.live-hero .live-cloud-strip small{
+  display:none;
+}
+
+body.ms660-cockpit-focus
+.live-cockpit-card,
+body.ms660-cockpit-focus
+.ms660-command-card,
+body.ms660-cockpit-focus
+.live-map-card,
+body.ms660-cockpit-focus
+.live-radar-camera-card,
+body.ms660-cockpit-focus
+.live-technical-strip-card{
+  margin-block:9px;
+}
+
+body.ms660-cockpit-focus
+.live-cockpit-main{
+  min-height:250px;
+}
+
+body.ms660-cockpit-focus
+.live-speed-dial strong{
+  font-size:clamp(70px,9vw,135px);
+}
+
+body.ms660-cockpit-focus
+.live-navigation-grid{
+  min-height:48vh;
+}
+
+body.ms660-cockpit-focus
+#liveMapCanvas,
+body.ms660-cockpit-focus
+.live-radar-camera-viewport{
+  min-height:42vh;
+}
+
+/* Nachtmodus met minder verblinding. */
+body.ms660-night-mode{
+  background:#010407;
+}
+
+body.ms660-night-mode #live{
+  filter:
+    brightness(.72)
+    saturate(.72);
+}
+
+body.ms660-night-mode
+.live-recording-badge.active,
+body.ms660-night-mode
+.live-cloud-badge.live,
+body.ms660-night-mode
+.ms660-role-badge.controller{
+  color:#ffb3a7;
+  background:rgba(155,37,25,.22);
+  border-color:rgba(255,111,92,.26);
+}
+
+body.ms660-night-mode
+.live-map-card,
+body.ms660-night-mode
+.live-radar-camera-card{
+  filter:brightness(.78);
+}
+
+@media(max-width:1100px){
+  .ms660-command-grid{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:700px){
+  .live-cockpit-head,
+  .ms660-command-head{
+    flex-direction:column;
+  }
+
+  .ms660-cockpit-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+
+  .ms660-command-grid{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+  }
+
+  .ms660-command-metric{
+    min-height:91px;
+  }
+
+  .ms660-command-metric strong{
+    font-size:17px;
+  }
+}
+
+@media(max-width:430px){
+  .ms660-command-grid{
+    grid-template-columns:1fr;
   }
 }
