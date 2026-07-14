@@ -14312,7 +14312,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.7.1';
+const APP_VERSION='6.7.2';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16287,7 +16287,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.7.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.7.2 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16601,15 +16601,53 @@ function ms640PlannerGpx(plan){
 }
 
 async function ms640ShareFile(file,title){
+  const shareData={
+    title,
+    text:
+      'GPX-route uit MijnSerenity. Deel via AirDrop, Berichten, Mail, '+
+      'Bewaar in Bestanden of een app die GPX ondersteunt.',
+    files:[file]
+  };
+
   try{
-    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){
-      await navigator.share({title,text:'Route uit MijnSerenity. Kies Waterkaarten om het GPX-bestand te importeren.',files:[file]});
-      return;
+    if(
+      navigator.share&&
+      (
+        !navigator.canShare||
+        navigator.canShare(shareData)
+      )
+    ){
+      await navigator.share(shareData);
+      return true;
     }
-  }catch(error){if(error?.name==='AbortError')return;}
-  const url=URL.createObjectURL(file),link=document.createElement('a');
-  link.href=url;link.download=file.name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),15000);
-  showAppToast('GPX gedownload. Open of deel het bestand daarna met Waterkaarten.');
+  }catch(error){
+    if(error?.name==='AbortError')return false;
+
+    console.warn(
+      'iOS-deelvenster kon niet worden geopend:',
+      error
+    );
+  }
+
+  const url=URL.createObjectURL(file);
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=file.name;
+  link.rel='noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(
+    ()=>URL.revokeObjectURL(url),
+    30000
+  );
+
+  showAppToast(
+    'GPX gedownload. Open Bestanden en tik op Deel om het iOS-deelvenster te openen.'
+  );
+
+  return true;
 }
 
 async function shareLiveRouteWithWaterkaarten(){
@@ -16638,7 +16676,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.1
+   MijnSerenity Cloud 6.7.2
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17575,7 +17613,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.7.1"
+ creator="MijnSerenity 6.7.2"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17601,7 +17639,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.7.1 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.7.2 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17639,7 +17677,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.1 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.7.2 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18613,10 +18651,12 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.1 — Smart Route
+   MijnSerenity Cloud 6.7.2 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
+  '/api/overpass',
+  '/api/overpass-backup',
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter'
 ];
@@ -18829,6 +18869,14 @@ function ms670ObjectCategory(tags={}){
   )return 'Haven';
 
   if(tags.amenity==='fuel')return 'Tankstation';
+  if(tags.amenity==='restaurant')return 'Restaurant';
+  if(tags.amenity==='cafe')return 'Café';
+  if(tags.shop==='supermarket')return 'Supermarkt';
+  if(tags.amenity==='toilets')return 'Toilet';
+  if(tags.amenity==='drinking_water')return 'Drinkwater';
+  if(tags.leisure==='slipway')return 'Trailerhelling';
+  if(tags.mooring)return 'Aanlegplaats';
+  if(tags.tourism==='attraction')return 'Bezienswaardigheid';
 
   return 'Vaarobject';
 }
@@ -18842,7 +18890,15 @@ function ms670ObjectName(tags,category){
       Sluis:'Naamloze sluis',
       Brug:'Naamloze brug',
       Haven:'Jachthaven',
-      Tankstation:'Brandstofpunt'
+      Tankstation:'Brandstofpunt',
+      Restaurant:'Restaurant',
+      Café:'Café',
+      Supermarkt:'Supermarkt',
+      Toilet:'Openbaar toilet',
+      Drinkwater:'Drinkwaterpunt',
+      Trailerhelling:'Trailerhelling',
+      Aanlegplaats:'Aanlegplaats',
+      Bezienswaardigheid:'Bezienswaardigheid'
     }[category]||
     'Vaarobject'
   );
@@ -18875,7 +18931,7 @@ function ms670InfrastructureQuery(bounds){
     bounds.east
   ].map(value=>Number(value).toFixed(6)).join(',');
 
-  return `[out:json][timeout:28];
+  return `[out:json][timeout:32];
 (
   nwr["waterway"="lock_gate"](${box});
   nwr["waterway"="lock"](${box});
@@ -18888,6 +18944,14 @@ function ms670InfrastructureQuery(bounds){
   nwr["harbour"="yes"](${box});
   nwr["seamark:type"="harbour"](${box});
   nwr["amenity"="fuel"](${box});
+  nwr["amenity"="restaurant"](${box});
+  nwr["amenity"="cafe"](${box});
+  nwr["shop"="supermarket"](${box});
+  nwr["amenity"="toilets"](${box});
+  nwr["amenity"="drinking_water"](${box});
+  nwr["leisure"="slipway"](${box});
+  nwr["mooring"](${box});
+  nwr["tourism"="attraction"](${box});
 );
 out center tags;`;
 }
@@ -18901,25 +18965,29 @@ async function ms670FetchOverpass(query){
     }catch{}
   }
 
-  ms670InfrastructureController=
-    new AbortController();
-
   for(const endpoint of MS670_OVERPASS_ENDPOINTS){
-    const controller=ms670InfrastructureController;
+    const controller=new AbortController();
+    ms670InfrastructureController=controller;
     const timeout=setTimeout(
       ()=>controller.abort(),
-      30000
+      32000
     );
 
     try{
-      const response=await fetch(endpoint,{
+      const target=endpoint.startsWith('http')
+        ?endpoint
+        :new URL(endpoint,location.origin).toString();
+
+      const response=await fetch(target,{
         method:'POST',
         headers:{
           'content-type':
-            'application/x-www-form-urlencoded;charset=UTF-8'
+            'application/x-www-form-urlencoded;charset=UTF-8',
+          accept:'application/json'
         },
-        body:new URLSearchParams({data:query}),
-        signal:controller.signal
+        body:new URLSearchParams({data:query}).toString(),
+        signal:controller.signal,
+        cache:'no-store'
       });
 
       if(!response.ok){
@@ -18930,9 +18998,13 @@ async function ms670FetchOverpass(query){
 
       const data=await response.json();
 
-      return Array.isArray(data?.elements)
-        ?data.elements
-        :[];
+      if(!Array.isArray(data?.elements)){
+        throw new Error(
+          'Kaartdienst gaf geen geldige objectenlijst terug.'
+        );
+      }
+
+      return data.elements;
     }catch(error){
       lastError=error;
       console.warn(
@@ -19026,10 +19098,20 @@ function ms670ProcessObjects(
       position,
       routeCoordinates
     );
-    const maxDistance=
-      category==='Haven'||category==='Tankstation'
-        ?3
-        :.7;
+    const maxDistance={
+      Haven:3,
+      Tankstation:3,
+      Restaurant:1.5,
+      'Café':1.5,
+      Supermarkt:2,
+      Toilet:1,
+      Drinkwater:1,
+      Trailerhelling:1.5,
+      Aanlegplaats:1,
+      Bezienswaardigheid:2.5,
+      Brug:.8,
+      Sluis:.8
+    }[category]||.8;
 
     if(nearest.distanceKm>maxDistance)return;
 
@@ -19271,8 +19353,8 @@ function ms670AnalysePlan(plan){
   if(!objects.length){
     checks.push(ms670CheckResult(
       'unknown',
-      'Nog geen routeobjecten beschikbaar',
-      'De openbare kaartdienst gaf geen bruggen, sluizen of havens terug.'
+      'Nog geen bruggen of route-POI’s ontvangen',
+      'De openbare kaartdienst gaf nog geen bruggen, sluizen, havens of andere POI’s terug.'
     ));
   }
 
@@ -19454,7 +19536,15 @@ function ms670Icon(category){
     Brug:'🌉',
     Sluis:'🚧',
     Haven:'⚓',
-    Tankstation:'⛽'
+    Tankstation:'⛽',
+    Restaurant:'🍽️',
+    Café:'☕',
+    Supermarkt:'🛒',
+    Toilet:'🚻',
+    Drinkwater:'🚰',
+    Trailerhelling:'🛥️',
+    Aanlegplaats:'🪢',
+    Bezienswaardigheid:'⭐'
   }[category]||'📍';
 }
 
@@ -19871,7 +19961,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.7.1 Smart Route"
+ creator="MijnSerenity 6.7.2 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -19896,5 +19986,71 @@ ms640PlannerGpx=function(plan){
     `${ms640FileName(title)}-smart-route.gpx`,
     {type:'application/gpx+xml'}
   );
+};
+
+
+
+/* MijnSerenity 6.7.2 — OSM-routeobjecten ook als POI tonen */
+const ms672OriginalRenderRoutePois=
+  ms650RenderRoutePois;
+
+ms650RenderRoutePois=function(plan){
+  if(plan){
+    const infrastructurePois=(plan.routeObjects||[])
+      .filter(object=>
+        [
+          'Haven',
+          'Tankstation',
+          'Restaurant',
+          'Café',
+          'Supermarkt',
+          'Toilet',
+          'Drinkwater',
+          'Trailerhelling',
+          'Aanlegplaats',
+          'Bezienswaardigheid'
+        ].includes(object.category)
+      )
+      .map(object=>({
+        ...object,
+        ref:`osm:${object.osmType}:${object.osmId}`,
+        favorite:false,
+        distanceFromRouteKm:
+          Number(object.distanceFromRouteKm)||0
+      }));
+
+    const existing=Array.isArray(plan.routePois)
+      ?[...plan.routePois]
+      :[];
+
+    const seen=new Set(
+      existing
+        .filter(item=>
+          Number.isFinite(Number(item.lat))&&
+          Number.isFinite(Number(item.lon))
+        )
+        .map(item=>
+          `${Number(item.lat).toFixed(6)}:${Number(item.lon).toFixed(6)}`
+        )
+    );
+
+    infrastructurePois.forEach(item=>{
+      const key=
+        `${Number(item.lat).toFixed(6)}:${Number(item.lon).toFixed(6)}`;
+
+      if(!seen.has(key)){
+        existing.push(item);
+        seen.add(key);
+      }
+    });
+
+    plan.routePois=existing.sort(
+      (a,b)=>
+        Number(a.alongRouteKm||0)-
+        Number(b.alongRouteKm||0)
+    );
+  }
+
+  return ms672OriginalRenderRoutePois(plan);
 };
 
