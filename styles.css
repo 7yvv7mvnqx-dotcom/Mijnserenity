@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.7.3";
+  content:" · v6.8.0";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 6.7.3 — Finance Command Center + cockpit
+   MijnSerenity Cloud 6.8.0 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5664,7 +5664,7 @@ main{
 }
 
 
-/* MijnSerenity 6.7.3 — Waterkaarten Bridge en gedeelde live vaarkaart */
+/* MijnSerenity 6.8.0 — Waterkaarten Bridge en gedeelde live vaarkaart */
 .live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
 .live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
 .live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
@@ -5677,7 +5677,7 @@ main{
 @media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
 
 
-/* MijnSerenity 6.7.3 — waterwegrouter, nautische laag en route-POI's */
+/* MijnSerenity 6.8.0 — waterwegrouter, nautische laag en route-POI's */
 .planner-fallback-settings{
   margin:10px 0 14px;
   padding:10px 12px;
@@ -5813,7 +5813,7 @@ main{
 }
 
 
-/* MijnSerenity 6.7.3 — iPad/Safari vaste onderbalk */
+/* MijnSerenity 6.8.0 — iPad/Safari vaste onderbalk */
 html,
 body{
   transform:none !important;
@@ -5873,7 +5873,7 @@ body > .bottom-nav:not(.bottom-nav-auto-hidden),
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.7.3 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.8.0 — Next Level Live Cockpit
    ========================================================= */
 
 .ms660-cockpit-actions{
@@ -6243,7 +6243,7 @@ body.ms660-night-mode
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.7.3 — Smart Route
+   MijnSerenity Cloud 6.8.0 — Smart Route
    ========================================================= */
 
 .ms670-profile-card{
@@ -6567,7 +6567,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 6.7.3 — iOS delen en route-POI's */
+/* MijnSerenity 6.8.0 — iOS delen en route-POI's */
 .ms672-share-note{
   display:grid;
   grid-template-columns:38px minmax(0,1fr);
@@ -6603,7 +6603,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 6.7.3 — fullscreen kaart en alternatieve route */
+/* MijnSerenity 6.8.0 — fullscreen kaart en alternatieve route */
 .planner-map-shell{
   position:relative;
   overflow:hidden;
@@ -6820,5 +6820,263 @@ body.planner-map-fullscreen-open{
   }
   .ms673-alternative-actions button{
     flex:1 1 170px;
+  }
+}
+
+
+/* =========================================================
+   MijnSerenity Cloud 6.8.0 — Auto Logbook
+   ========================================================= */
+
+.ms680-auto-center{
+  margin:14px 0;
+  padding:13px;
+  border-radius:17px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(69,200,255,.11),
+      rgba(75,211,143,.055)
+    );
+  border:1px solid rgba(91,211,244,.17);
+}
+
+.ms680-auto-state{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) auto;
+  align-items:center;
+  gap:11px;
+}
+
+.ms680-auto-state > span:first-child{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  background:rgba(69,200,255,.14);
+  font-size:22px;
+}
+
+.ms680-auto-state strong,
+.ms680-auto-state small{
+  display:block;
+}
+
+.ms680-auto-state small{
+  margin-top:3px;
+  color:var(--muted);
+  line-height:1.35;
+}
+
+.ms680-auto-badge{
+  padding:6px 9px;
+  border-radius:999px;
+  color:#ccecf7;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  font-size:11px;
+  font-weight:900;
+}
+
+.ms680-auto-badge.armed{
+  color:#ffe9b7;
+  background:rgba(255,190,75,.13);
+  border-color:rgba(255,190,75,.25);
+  animation:ms680-wait-pulse 1.8s infinite;
+}
+
+.ms680-auto-badge.moving,
+.ms680-auto-badge.active{
+  color:#d9ffea;
+  background:rgba(75,211,143,.14);
+  border-color:rgba(75,211,143,.28);
+}
+
+.ms680-auto-badge.stopped{
+  color:#d8f4ff;
+  background:rgba(69,200,255,.14);
+  border-color:rgba(69,200,255,.25);
+}
+
+.ms680-auto-badge.error{
+  color:#ffd2d2;
+  background:rgba(255,82,82,.14);
+  border-color:rgba(255,82,82,.28);
+}
+
+.ms680-arrival-countdown{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:12px;
+  padding:11px 12px;
+  border-radius:14px;
+  color:#ffeec2;
+  background:rgba(255,190,75,.10);
+  border:1px solid rgba(255,190,75,.22);
+}
+
+.ms680-arrival-countdown strong,
+.ms680-arrival-countdown small{
+  display:block;
+}
+
+.ms680-arrival-countdown small{
+  margin-top:3px;
+  color:#d7c49a;
+  line-height:1.35;
+}
+
+.ms680-arrival-countdown button{
+  width:auto;
+  flex:0 0 auto;
+}
+
+.ms680-auto-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+
+.ms680-auto-actions button{
+  flex:1 1 175px;
+}
+
+.ms680-trip-timeline-wrap{
+  margin-top:13px;
+  padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+
+.ms680-timeline-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:9px;
+}
+
+.ms680-timeline-head strong,
+.ms680-timeline-head span{
+  display:block;
+}
+
+.ms680-timeline-head > span{
+  color:var(--muted);
+  font-size:11px;
+}
+
+.ms680-trip-timeline{
+  display:grid;
+  gap:7px;
+  max-height:300px;
+  overflow:auto;
+  padding-right:3px;
+}
+
+.ms680-timeline-item{
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+  padding:9px 10px;
+  border-radius:13px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);
+}
+
+.ms680-timeline-item strong,
+.ms680-timeline-item small{
+  display:block;
+}
+
+.ms680-timeline-item small{
+  margin-top:2px;
+  color:#92aeb9;
+  line-height:1.3;
+}
+
+.ms680-timeline-item.departure,
+.ms680-timeline-item.moving,
+.ms680-timeline-item.resume{
+  border-color:rgba(75,211,143,.16);
+  background:rgba(75,211,143,.055);
+}
+
+.ms680-timeline-item.stop{
+  border-color:rgba(255,190,75,.17);
+  background:rgba(255,190,75,.055);
+}
+
+.ms680-timeline-item.arrival,
+.ms680-timeline-item.saved{
+  border-color:rgba(69,200,255,.18);
+  background:rgba(69,200,255,.06);
+}
+
+.ms680-timeline-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  border-radius:11px;
+  background:rgba(69,200,255,.12);
+  font-size:18px;
+}
+
+.ms680-empty-timeline{
+  padding:11px;
+  border-radius:12px;
+  color:var(--muted);
+  background:rgba(255,255,255,.03);
+  font-size:12px;
+  line-height:1.4;
+}
+
+.ms680-detection-fields{
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  margin-bottom:9px;
+}
+
+@keyframes ms680-wait-pulse{
+  0%,100%{
+    box-shadow:0 0 0 0 rgba(255,190,75,0);
+  }
+  50%{
+    box-shadow:0 0 0 7px rgba(255,190,75,.07);
+  }
+}
+
+@media(max-width:760px){
+  .ms680-auto-state{
+    grid-template-columns:42px minmax(0,1fr);
+  }
+
+  .ms680-auto-badge{
+    grid-column:2;
+    justify-self:start;
+  }
+
+  .ms680-arrival-countdown{
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .ms680-arrival-countdown button{
+    width:100%;
+  }
+
+  .ms680-timeline-head{
+    flex-direction:column;
+  }
+
+  .ms680-detection-fields{
+    grid-template-columns:1fr;
   }
 }

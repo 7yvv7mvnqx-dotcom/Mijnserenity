@@ -14312,7 +14312,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.7.3';
+const APP_VERSION='6.8.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16287,7 +16287,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.7.3 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.8.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16676,7 +16676,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.3
+   MijnSerenity Cloud 6.8.0
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17613,7 +17613,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.7.3"
+ creator="MijnSerenity 6.8.0"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17639,7 +17639,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.7.3 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.8.0 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17677,7 +17677,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.3 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.8.0 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18651,7 +18651,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.3 — Smart Route
+   MijnSerenity Cloud 6.8.0 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -19961,7 +19961,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.7.3 Smart Route"
+ creator="MijnSerenity 6.8.0 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -19990,7 +19990,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.7.3 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 6.8.0 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20057,7 +20057,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.3 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 6.8.0 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -20972,4 +20972,1212 @@ initPlanner=function(){
 
   return result;
 };
+
+
+
+/* ============================================================
+   MijnSerenity Cloud 6.8.0 — Auto Logbook
+   ============================================================ */
+
+let ms680DepartureWatchId=null;
+let ms680DepartureArmed=false;
+let ms680DepartureBaseline=null;
+let ms680MovementCandidateAt=null;
+let ms680LastWatchPoint=null;
+let ms680SuppressWaterkaarten=false;
+let ms680StopCandidateAt=null;
+let ms680StopEventOpen=false;
+let ms680QuickPhotoFiles=[];
+let ms680AutoStartInProgress=false;
+let ms680PlaceLookupBusy=false;
+
+function ms680EventIcon(type){
+  return {
+    armed:'⚓',
+    departure:'▶',
+    moving:'🛥️',
+    stop:'⏸',
+    resume:'▶',
+    arrival:'🏁',
+    photo:'📷',
+    saved:'✅',
+    cancelled:'↩'
+  }[type]||'•';
+}
+
+function ms680EventTitle(type){
+  return {
+    armed:'Wacht op vertrek',
+    departure:'Vertrek gedetecteerd',
+    moving:'Serenity vaart',
+    stop:'Tussenstop gedetecteerd',
+    resume:'Vaart hervat',
+    arrival:'Aankomst gedetecteerd',
+    photo:'Foto toegevoegd',
+    saved:'Logboek opgeslagen',
+    cancelled:'Aankomstdetectie geannuleerd'
+  }[type]||'Gebeurtenis';
+}
+
+function ms680EnsureState(){
+  if(!Array.isArray(liveNavState.autoEvents)){
+    liveNavState.autoEvents=[];
+  }
+
+  if(!Array.isArray(liveNavState.stopEvents)){
+    liveNavState.stopEvents=[];
+  }
+
+  if(
+    typeof liveNavState.arrivalIgnoredUntilMove!=='boolean'
+  ){
+    liveNavState.arrivalIgnoredUntilMove=false;
+  }
+
+  return liveNavState;
+}
+
+function ms680AddEvent(
+  type,
+  details='',
+  point=null,
+  options={}
+){
+  ms680EnsureState();
+
+  const now=Number(options.time)||Date.now();
+  const last=liveNavState.autoEvents.at(-1);
+
+  if(
+    options.dedupe!==false&&
+    last?.type===type&&
+    now-Number(last.time||0)<30000
+  ){
+    return last;
+  }
+
+  const event={
+    id:
+      globalThis.crypto?.randomUUID?.()||
+      `event-${now}-${Math.random().toString(16).slice(2)}`,
+    type,
+    title:
+      options.title||
+      ms680EventTitle(type),
+    details:String(details||''),
+    time:now,
+    lat:Number.isFinite(Number(point?.lat))
+      ?Number(point.lat)
+      :null,
+    lon:Number.isFinite(Number(point?.lon))
+      ?Number(point.lon)
+      :null,
+    place:String(options.place||'')
+  };
+
+  liveNavState.autoEvents.push(event);
+
+  if(liveNavState.autoEvents.length>80){
+    liveNavState.autoEvents=
+      liveNavState.autoEvents.slice(-80);
+  }
+
+  persistLiveState();
+  ms680RenderTimeline();
+
+  if(
+    event.lat!==null&&
+    event.lon!==null&&
+    !event.place
+  ){
+    ms680ResolveEventPlace(event);
+  }
+
+  return event;
+}
+
+async function ms680ResolveEventPlace(event){
+  if(!event||event.place)return;
+
+  try{
+    const place=await reverseLivePlaceName([
+      event.lon,
+      event.lat
+    ]);
+
+    if(place){
+      event.place=place;
+      persistLiveState();
+      ms680RenderTimeline();
+    }
+  }catch(error){
+    console.warn(
+      'Plaats bij automatische gebeurtenis bepalen mislukt:',
+      error
+    );
+  }
+}
+
+function ms680FormatEventTime(value){
+  if(!value)return '–';
+
+  return new Date(value).toLocaleTimeString(
+    'nl-NL',
+    {
+      hour:'2-digit',
+      minute:'2-digit'
+    }
+  );
+}
+
+function ms680RenderTimeline(){
+  const container=$('ms680TripTimeline');
+  const count=$('ms680TimelineCount');
+
+  if(!container||!count)return;
+
+  const events=Array.isArray(liveNavState.autoEvents)
+    ?liveNavState.autoEvents
+    :[];
+
+  count.textContent=
+    `${events.length} ${
+      events.length===1
+        ?'gebeurtenis'
+        :'gebeurtenissen'
+    }`;
+
+  if(!events.length){
+    container.innerHTML=`
+      <div class="ms680-empty-timeline">
+        Vertrek, varen, stilstand en aankomst verschijnen hier
+        automatisch.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML=events
+    .slice()
+    .reverse()
+    .map(event=>`
+      <article class="ms680-timeline-item ${esc(event.type)}">
+        <span class="ms680-timeline-icon">
+          ${ms680EventIcon(event.type)}
+        </span>
+        <div>
+          <strong>${esc(event.title||ms680EventTitle(event.type))}</strong>
+          <small>
+            ${ms680FormatEventTime(event.time)}
+            ${event.place?` · ${esc(event.place)}`:''}
+            ${event.details?` · ${esc(event.details)}`:''}
+          </small>
+        </div>
+      </article>
+    `).join('');
+}
+
+function ms680SetAutoUi(
+  title,
+  text,
+  state='idle',
+  icon='⚓'
+){
+  const badge=$('ms680AutoBadge');
+
+  ms660SetText?.('ms680AutoTitle',title);
+  ms660SetText?.('ms680AutoText',text);
+  ms660SetText?.('ms680AutoIcon',icon);
+
+  if(badge){
+    badge.className=`ms680-auto-badge ${state}`;
+    badge.textContent={
+      idle:'Gereed',
+      armed:'Wachten',
+      moving:'Vertrek',
+      active:'● Opname',
+      stopped:'Aankomst',
+      error:'Storing'
+    }[state]||'Gereed';
+  }
+
+  $('ms680ArmButton')?.classList.toggle(
+    'hidden',
+    ms680DepartureArmed||
+    liveNavState.status!=='idle'
+  );
+  $('ms680DisarmButton')?.classList.toggle(
+    'hidden',
+    !ms680DepartureArmed
+  );
+  $('ms680FinishButton')?.classList.toggle(
+    'hidden',
+    !['active','paused'].includes(
+      liveNavState.status
+    )
+  );
+}
+
+function ms680AutomationSettings(){
+  const stored=readLiveAutomationSettings();
+
+  return {
+    ...stored,
+    autoStart:
+      stored.autoStart!==false,
+    startSpeedKmh:
+      Number(stored.startSpeedKmh||2),
+    startConfirmSeconds:
+      Number(stored.startConfirmSeconds||15),
+    stopEventMinutes:
+      Number(stored.stopEventMinutes||3)
+  };
+}
+
+function ms680CurrentWatchSpeed(position){
+  const point={
+    lat:Number(position?.coords?.latitude),
+    lon:Number(position?.coords?.longitude),
+    time:Number(position?.timestamp)||Date.now(),
+    speed:Number.isFinite(position?.coords?.speed)
+      ?Math.max(0,position.coords.speed*3.6)
+      :null
+  };
+
+  if(
+    !Number.isFinite(point.lat)||
+    !Number.isFinite(point.lon)
+  ){
+    return null;
+  }
+
+  let calculated=0;
+
+  if(ms680LastWatchPoint){
+    const seconds=Math.max(
+      1,
+      (point.time-ms680LastWatchPoint.time)/1000
+    );
+    calculated=
+      haversineKm(
+        ms680LastWatchPoint,
+        point
+      )/
+      (seconds/3600);
+  }
+
+  point.speedKmh=Math.max(
+    Number.isFinite(point.speed)
+      ?point.speed
+      :0,
+    Number.isFinite(calculated)
+      ?calculated
+      :0
+  );
+
+  ms680LastWatchPoint=point;
+  return point;
+}
+
+function ms680StopDepartureWatch(){
+  if(ms680DepartureWatchId!==null){
+    navigator.geolocation.clearWatch(
+      ms680DepartureWatchId
+    );
+    ms680DepartureWatchId=null;
+  }
+
+  ms680MovementCandidateAt=null;
+  ms680LastWatchPoint=null;
+}
+
+function ms680DisarmDepartureWatch(options={}){
+  ms680StopDepartureWatch();
+  ms680DepartureArmed=false;
+
+  try{
+    localStorage.setItem(
+      `mijnserenity-auto-departure-armed-${currentBoat?.id||'boat'}`,
+      '0'
+    );
+  }catch{}
+
+  if(!options.silent){
+    ms680AddEvent(
+      'cancelled',
+      'Wachtmodus gestopt',
+      null,
+      {dedupe:false}
+    );
+  }
+
+  ms680SetAutoUi(
+    'Klaar voor vertrek',
+    'Tik op Wacht op vertrek om automatische vertrekdetectie te activeren.',
+    'idle',
+    '⚓'
+  );
+}
+
+function ms680ArmDepartureWatch(){
+  if(
+    !navigator.geolocation||
+    liveNavState.status!=='idle'
+  ){
+    if(!navigator.geolocation){
+      alert(
+        'Dit apparaat ondersteunt geen GPS-locatie.'
+      );
+    }
+    return;
+  }
+
+  const settings=ms680AutomationSettings();
+
+  if(!settings.autoStart){
+    showAppToast(
+      'Zet Automatisch starten eerst aan in de instellingen.'
+    );
+    $('ms680AutoStart')?.focus();
+    return;
+  }
+
+  ms680StopDepartureWatch();
+  ms680DepartureArmed=true;
+  ms680DepartureBaseline=null;
+
+  try{
+    localStorage.setItem(
+      `mijnserenity-auto-departure-armed-${currentBoat?.id||'boat'}`,
+      '1'
+    );
+  }catch{}
+
+  ms680AddEvent(
+    'armed',
+    `Start vanaf ${settings.startSpeedKmh.toFixed(1)} km/u`,
+    null,
+    {dedupe:false}
+  );
+
+  ms680SetAutoUi(
+    'Wachten tot Serenity vertrekt',
+    `Beweging wordt ${settings.startConfirmSeconds} seconden gecontroleerd om GPS-jitter te voorkomen.`,
+    'armed',
+    '⚓'
+  );
+
+  setLiveAutoLogStatus(
+    'Wachtmodus actief · laat MijnSerenity geopend en locatie ingeschakeld.',
+    'success'
+  );
+
+  ms680DepartureWatchId=
+    navigator.geolocation.watchPosition(
+      ms680HandleDepartureWatch,
+      error=>{
+        ms680SetAutoUi(
+          'GPS voor vertrekdetectie niet beschikbaar',
+          error?.message||
+          'Controleer de locatietoegang.',
+          'error',
+          '!'
+        );
+      },
+      {
+        enableHighAccuracy:true,
+        maximumAge:1500,
+        timeout:20000
+      }
+    );
+}
+
+async function ms680HandleDepartureWatch(position){
+  if(
+    !ms680DepartureArmed||
+    liveNavState.status!=='idle'||
+    ms680AutoStartInProgress
+  ){
+    return;
+  }
+
+  const settings=ms680AutomationSettings();
+  const point=ms680CurrentWatchSpeed(position);
+
+  if(!point)return;
+
+  if(
+    !ms680DepartureBaseline||
+    Number(position.coords.accuracy)>80
+  ){
+    if(!ms680DepartureBaseline){
+      ms680DepartureBaseline=point;
+    }
+
+    ms680SetAutoUi(
+      'GPS-locatie controleren',
+      `Nauwkeurigheid ${Math.round(position.coords.accuracy||0)} meter`,
+      'armed',
+      '⌖'
+    );
+    return;
+  }
+
+  const movedKm=haversineKm(
+    ms680DepartureBaseline,
+    point
+  );
+  const moving=
+    point.speedKmh>=settings.startSpeedKmh&&
+    movedKm>=.025;
+
+  if(!moving){
+    ms680MovementCandidateAt=null;
+
+    ms680SetAutoUi(
+      'Wachten tot Serenity vertrekt',
+      `Actueel ${point.speedKmh.toFixed(1)} km/u · minimaal ${settings.startSpeedKmh.toFixed(1)} km/u`,
+      'armed',
+      '⚓'
+    );
+    return;
+  }
+
+  if(!ms680MovementCandidateAt){
+    ms680MovementCandidateAt=point.time;
+
+    ms680SetAutoUi(
+      'Beweging gedetecteerd',
+      `Nog ${settings.startConfirmSeconds} seconden bevestigen…`,
+      'moving',
+      '🛥️'
+    );
+    return;
+  }
+
+  const confirmedSeconds=
+    (point.time-ms680MovementCandidateAt)/1000;
+  const remaining=Math.max(
+    0,
+    settings.startConfirmSeconds-
+    confirmedSeconds
+  );
+
+  ms680SetAutoUi(
+    'Serenity begint te varen',
+    remaining>0
+      ?`Vertrek wordt over ${Math.ceil(remaining)} seconden gestart.`
+      :'Vertrek bevestigd · opname starten…',
+    'moving',
+    '🛥️'
+  );
+
+  if(confirmedSeconds<settings.startConfirmSeconds){
+    return;
+  }
+
+  ms680AutoStartInProgress=true;
+  const departurePoint={
+    lat:ms680DepartureBaseline.lat,
+    lon:ms680DepartureBaseline.lon,
+    time:ms680DepartureBaseline.time
+  };
+
+  ms680DisarmDepartureWatch({silent:true});
+  ms680SuppressWaterkaarten=true;
+
+  try{
+    startLiveNavigation();
+
+    ms680EnsureState();
+    liveNavState.autoStarted=true;
+    liveNavState.autoEvents=[];
+    liveNavState.stopEvents=[];
+    liveNavState.points.unshift(
+      departurePoint
+    );
+
+    ms680AddEvent(
+      'departure',
+      'Opname automatisch gestart',
+      departurePoint,
+      {dedupe:false}
+    );
+    ms680AddEvent(
+      'moving',
+      `${point.speedKmh.toFixed(1)} km/u`,
+      point,
+      {dedupe:false}
+    );
+
+    if(!String($('liveFrom')?.value||'').trim()){
+      reverseLivePlaceName([
+        departurePoint.lon,
+        departurePoint.lat
+      ]).then(place=>{
+        if(place){
+          $('liveFrom').value=place;
+          updateLiveRouteTitle();
+          persistLiveState();
+        }
+      });
+    }
+
+    const plan=
+      typeof ms660NavigationPlan==='function'
+        ?ms660NavigationPlan()
+        :null;
+    const destination=
+      plan?.points?.at(-1)?.label||
+      plan?.points?.at(-1)?.place||
+      '';
+
+    if(
+      destination&&
+      !String($('liveTo')?.value||'').trim()
+    ){
+      $('liveTo').value=destination;
+      liveNavState.linkedPlannerId=
+        plan.id||null;
+      updateLiveRouteTitle();
+    }
+
+    persistLiveState();
+    renderLiveState();
+    renderLiveRoute();
+
+    showAppToast(
+      'Vertrek gedetecteerd · automatisch vaarlogboek gestart'
+    );
+  }finally{
+    setTimeout(()=>{
+      ms680SuppressWaterkaarten=false;
+      ms680AutoStartInProgress=false;
+    },1000);
+  }
+}
+
+function ms680ProcessActivePosition(position){
+  if(liveNavState.status!=='active')return;
+
+  ms680EnsureState();
+
+  const point={
+    lat:Number(position?.coords?.latitude),
+    lon:Number(position?.coords?.longitude),
+    time:Number(position?.timestamp)||Date.now()
+  };
+  const speed=Number(liveNavState.speedKmh||0);
+  const settings=ms680AutomationSettings();
+  const now=point.time;
+
+  if(speed>=1.5){
+    if(liveNavState.arrivalIgnoredUntilMove){
+      liveNavState.arrivalIgnoredUntilMove=false;
+    }
+
+    if(ms680StopEventOpen){
+      const stop=liveNavState.stopEvents.at(-1);
+      const stoppedMinutes=stop
+        ?Math.max(
+            0,
+            (now-Number(stop.startedAt||now))/60000
+          )
+        :0;
+
+      if(stop){
+        stop.endedAt=now;
+        stop.durationMinutes=
+          stoppedMinutes;
+      }
+
+      ms680AddEvent(
+        'resume',
+        stoppedMinutes>=1
+          ?`Na ${Math.round(stoppedMinutes)} minuten`
+          :'Vaart hervat',
+        point,
+        {dedupe:false}
+      );
+    }
+
+    ms680StopEventOpen=false;
+    ms680StopCandidateAt=null;
+    return;
+  }
+
+  if(!liveNavState.movingDetected)return;
+
+  if(!ms680StopCandidateAt){
+    ms680StopCandidateAt=now;
+    return;
+  }
+
+  const stopMinutes=
+    (now-ms680StopCandidateAt)/60000;
+
+  if(
+    stopMinutes>=settings.stopEventMinutes&&
+    !ms680StopEventOpen
+  ){
+    ms680StopEventOpen=true;
+
+    liveNavState.stopEvents.push({
+      startedAt:ms680StopCandidateAt,
+      endedAt:null,
+      durationMinutes:null,
+      lat:point.lat,
+      lon:point.lon
+    });
+
+    ms680AddEvent(
+      'stop',
+      `Serenity staat ${Math.floor(stopMinutes)} minuten stil`,
+      point,
+      {dedupe:false}
+    );
+  }
+}
+
+function ms680RenderArrivalCountdown(){
+  const panel=$('ms680ArrivalCountdown');
+
+  if(!panel)return;
+
+  const settings=ms680AutomationSettings();
+  const active=
+    liveNavState.status==='active'&&
+    liveNavState.movingDetected&&
+    liveNavState.stationarySince&&
+    settings.autoStop&&
+    !liveNavState.arrivalIgnoredUntilMove;
+
+  panel.classList.toggle('hidden',!active);
+
+  if(!active)return;
+
+  const elapsed=
+    Date.now()-
+    Number(liveNavState.stationarySince);
+  const total=
+    Number(settings.autoStopMinutes||10)*
+    60000;
+  const remaining=Math.max(
+    0,
+    total-elapsed
+  );
+
+  ms660SetText?.(
+    'ms680ArrivalTitle',
+    remaining>0
+      ?`Automatisch afronden over ${Math.ceil(remaining/60000)} min`
+      :'Aankomst wordt nu vastgelegd'
+  );
+  ms660SetText?.(
+    'ms680ArrivalText',
+    'Blijft Serenity stil, dan worden aankomst, route en logboek automatisch afgerond.'
+  );
+}
+
+function ms680CancelArrivalDetection(){
+  liveNavState.arrivalIgnoredUntilMove=true;
+  liveNavState.stationarySince=null;
+  liveNavState.autoStopTriggered=false;
+  clearLiveAutoStopTimer();
+
+  ms680AddEvent(
+    'cancelled',
+    'Stilstand telt niet als aankomst',
+    liveNavState.points.at(-1),
+    {dedupe:false}
+  );
+
+  persistLiveState();
+  ms680RenderArrivalCountdown();
+  setLiveAutoLogStatus(
+    'Aankomstdetectie geannuleerd. Na opnieuw varen wordt deze automatisch hersteld.',
+    'warning'
+  );
+}
+
+async function ms680FinishNow(){
+  if(
+    !['active','paused'].includes(
+      liveNavState.status
+    )
+  ){
+    return;
+  }
+
+  if(!confirm(
+    'Deze positie als aankomst vastleggen en de vaartocht afronden?'
+  )){
+    return;
+  }
+
+  await stopLiveNavigation({
+    automatic:true,
+    manualArrival:true
+  });
+}
+
+function ms680AddQuickPhotos(fileList){
+  const incoming=[...(fileList||[])];
+
+  if(!incoming.length)return;
+
+  ms680QuickPhotoFiles=[
+    ...ms680QuickPhotoFiles,
+    ...incoming
+  ].slice(0,10);
+
+  const mainInput=$('livePhotos');
+
+  try{
+    const transfer=new DataTransfer();
+
+    [
+      ...(mainInput?.files||[]),
+      ...ms680QuickPhotoFiles
+    ]
+      .slice(0,10)
+      .forEach(file=>transfer.items.add(file));
+
+    if(mainInput){
+      mainInput.files=transfer.files;
+    }
+
+    ms680QuickPhotoFiles=[
+      ...transfer.files
+    ];
+  }catch(error){
+    console.warn(
+      'Foto’s combineren via DataTransfer niet beschikbaar:',
+      error
+    );
+  }
+
+  ms680AddEvent(
+    'photo',
+    `${incoming.length} foto${incoming.length===1?'':'’s'} toegevoegd`,
+    liveNavState.points.at(-1),
+    {dedupe:false}
+  );
+
+  showAppToast(
+    `${ms680QuickPhotoFiles.length} foto${ms680QuickPhotoFiles.length===1?'':'’s'} klaar voor het logboek`
+  );
+
+  const input=$('ms680QuickPhoto');
+  if(input)input.value='';
+}
+
+function ms680TimelineNotes(){
+  const events=Array.isArray(liveNavState.autoEvents)
+    ?liveNavState.autoEvents
+    :[];
+  const stops=Array.isArray(liveNavState.stopEvents)
+    ?liveNavState.stopEvents
+    :[];
+
+  const lines=events.map(event=>{
+    const time=ms680FormatEventTime(event.time);
+    const location=event.place
+      ?` · ${event.place}`
+      :'';
+    const detail=event.details
+      ?` · ${event.details}`
+      :'';
+
+    return `${time} ${event.title}${location}${detail}`;
+  });
+
+  const stopMinutes=stops.reduce(
+    (total,stop)=>
+      total+
+      Number(stop.durationMinutes||0),
+    0
+  );
+
+  return [
+    lines.length
+      ?'Automatische tijdlijn:\n'+lines.join('\n')
+      :'',
+    stopMinutes>0
+      ?`Herkenbare tussenstops: ${Math.round(stopMinutes)} minuten totaal.`
+      :'',
+    liveNavState.autoStarted
+      ?'Opname automatisch gestart na vertrekdetectie.'
+      :''
+  ].filter(Boolean).join('\n');
+}
+
+function ms680RenderAutoLogbook(){
+  ms680EnsureState();
+  ms680RenderTimeline();
+  ms680RenderArrivalCountdown();
+
+  if(ms680DepartureArmed){
+    ms680SetAutoUi(
+      'Wachten tot Serenity vertrekt',
+      'GPS bewaakt beweging. Laat MijnSerenity geopend.',
+      'armed',
+      '⚓'
+    );
+    return;
+  }
+
+  const status=liveNavState.status;
+
+  if(status==='active'){
+    ms680SetAutoUi(
+      liveNavState.autoStarted
+        ?'Automatische opname actief'
+        :'Vaartocht wordt opgenomen',
+      liveNavState.movingDetected
+        ?`${Number(liveNavState.distanceKm||0).toFixed(2)} km vastgelegd`
+        :'Wachten op duidelijke vaarbeweging',
+      'active',
+      '🛥️'
+    );
+  }else if(status==='paused'){
+    ms680SetAutoUi(
+      'Opname gepauzeerd',
+      'Hervat om GPS en automatische detectie weer te starten.',
+      'idle',
+      '⏸'
+    );
+  }else if(status==='stopped'){
+    ms680SetAutoUi(
+      'Aankomst vastgelegd',
+      'Vertrek, aankomst en route worden voorbereid voor het logboek.',
+      'stopped',
+      '🏁'
+    );
+  }else{
+    ms680SetAutoUi(
+      'Klaar voor vertrek',
+      'Tik op Wacht op vertrek of start de opname handmatig.',
+      'idle',
+      '⚓'
+    );
+  }
+}
+
+function ms680RestoreArmedWatch(){
+  if(
+    liveNavState.status!=='idle'||
+    ms680DepartureArmed
+  ){
+    return;
+  }
+
+  let armed=false;
+
+  try{
+    armed=
+      localStorage.getItem(
+        `mijnserenity-auto-departure-armed-${currentBoat?.id||'boat'}`
+      )==='1';
+  }catch{}
+
+  if(
+    armed&&
+    ms680AutomationSettings().autoStart
+  ){
+    setTimeout(
+      ms680ArmDepartureWatch,
+      450
+    );
+  }
+}
+
+/* Respecteer geannuleerde aankomstdetectie. */
+const ms680OriginalAutoStopDetection=
+  updateLiveAutoStopDetection;
+
+updateLiveAutoStopDetection=function(point){
+  if(liveNavState.arrivalIgnoredUntilMove){
+    if(Number(liveNavState.speedKmh||0)>=1.5){
+      liveNavState.arrivalIgnoredUntilMove=false;
+    }else{
+      clearLiveAutoStopTimer();
+      ms680RenderArrivalCountdown();
+      return;
+    }
+  }
+
+  return ms680OriginalAutoStopDetection(point);
+};
+
+/* Verwerk beweging en tussenstops na ieder geldig GPS-resultaat. */
+const ms680OriginalHandleLivePosition=
+  handleLivePosition;
+
+handleLivePosition=function(position){
+  const result=
+    ms680OriginalHandleLivePosition(position);
+
+  ms680ProcessActivePosition(position);
+  ms680RenderAutoLogbook();
+  return result;
+};
+
+/* Automatisch starten mag Waterkaarten niet via een geblokkeerde popup openen. */
+const ms680OriginalOpenWaterkaarten=
+  openWaterkaarten;
+
+openWaterkaarten=function(){
+  if(ms680SuppressWaterkaarten){
+    return;
+  }
+
+  return ms680OriginalOpenWaterkaarten();
+};
+
+/* Nieuwe velden initialiseren bij iedere start. */
+const ms680OriginalStartLiveNavigation=
+  startLiveNavigation;
+
+startLiveNavigation=function(){
+  ms680DisarmDepartureWatch({silent:true});
+
+  const result=
+    ms680OriginalStartLiveNavigation();
+
+  ms680EnsureState();
+
+  if(!liveNavState.autoEvents.length){
+    ms680AddEvent(
+      'departure',
+      liveNavState.autoStarted
+        ?'Automatisch gestart'
+        :'Handmatig gestart',
+      liveNavState.points.at(-1),
+      {dedupe:false}
+    );
+  }
+
+  ms680StopCandidateAt=null;
+  ms680StopEventOpen=false;
+  ms680RenderAutoLogbook();
+
+  return result;
+};
+
+/* Aankomst als gebeurtenis toevoegen vóór automatisch opslaan. */
+const ms680OriginalStopLiveNavigation=
+  stopLiveNavigation;
+
+stopLiveNavigation=async function(options={}){
+  const lastPoint=liveNavState.points.at(-1);
+
+  if(
+    ['active','paused'].includes(
+      liveNavState.status
+    )
+  ){
+    ms680AddEvent(
+      'arrival',
+      options.automatic
+        ?'Automatisch afgerond na afmeren'
+        :'Opname gestopt',
+      lastPoint,
+      {dedupe:false}
+    );
+  }
+
+  const result=
+    await ms680OriginalStopLiveNavigation(
+      options
+    );
+
+  ms680RenderAutoLogbook();
+  return result;
+};
+
+/* Automatische tijdlijn opnemen in de notities. */
+const ms680OriginalBuildAutomaticLiveNotes=
+  buildAutomaticLiveNotes;
+
+buildAutomaticLiveNotes=function(){
+  return [
+    ms680OriginalBuildAutomaticLiveNotes(),
+    ms680TimelineNotes()
+  ].filter(Boolean).join('\n\n');
+};
+
+/* Bij wissen ook de Auto Logbook-status herstellen. */
+const ms680OriginalClearLiveTrip=
+  clearLiveTrip;
+
+clearLiveTrip=function(options={}){
+  ms680StopDepartureWatch();
+  ms680DepartureArmed=false;
+  ms680StopCandidateAt=null;
+  ms680StopEventOpen=false;
+  ms680QuickPhotoFiles=[];
+
+  const result=
+    ms680OriginalClearLiveTrip(options);
+
+  ms680RenderAutoLogbook();
+  return result;
+};
+
+/* Instellingen uitbreiden zonder bestaande voorkeuren te verliezen. */
+const ms680OriginalDefaultLiveAutomationSettings=
+  defaultLiveAutomationSettings;
+
+defaultLiveAutomationSettings=function(){
+  return {
+    ...ms680OriginalDefaultLiveAutomationSettings(),
+    autoStart:true,
+    autoStop:true,
+    autoStopMinutes:10,
+    startSpeedKmh:2,
+    startConfirmSeconds:15,
+    stopEventMinutes:3
+  };
+};
+
+const ms680OriginalSaveLiveAutomationSettings=
+  saveLiveAutomationSettings;
+
+saveLiveAutomationSettings=function(){
+  const current={
+    ...readLiveAutomationSettings(),
+    autoStart:Boolean(
+      $('ms680AutoStart')?.checked
+    ),
+    startSpeedKmh:Number(
+      $('ms680StartSpeed')?.value||2
+    ),
+    startConfirmSeconds:Number(
+      $('ms680StartSeconds')?.value||15
+    ),
+    stopEventMinutes:Number(
+      $('ms680StopEventMinutes')?.value||3
+    ),
+    autoSave:Boolean(
+      $('liveAutoSave')?.checked
+    ),
+    autoStop:Boolean(
+      $('liveAutoStop')?.checked
+    ),
+    autoStopMinutes:Number(
+      $('liveAutoStopMinutes')?.value||10
+    ),
+    minDistanceKm:Number(
+      $('liveAutoMinDistance')?.value||.2
+    ),
+    minDurationMinutes:3
+  };
+
+  try{
+    localStorage.setItem(
+      liveAutomationStorageKey(),
+      JSON.stringify(current)
+    );
+  }catch(error){
+    console.warn(
+      'Auto Logbook-instellingen bewaren mislukt:',
+      error
+    );
+  }
+
+  updateLiveAutoLogUi();
+  ms680RenderAutoLogbook();
+
+  if(
+    !current.autoStart&&
+    ms680DepartureArmed
+  ){
+    ms680DisarmDepartureWatch();
+  }
+};
+
+const ms680OriginalLoadLiveAutomationSettings=
+  loadLiveAutomationSettings;
+
+loadLiveAutomationSettings=function(){
+  ms680OriginalLoadLiveAutomationSettings();
+
+  const settings=ms680AutomationSettings();
+
+  if($('ms680AutoStart')){
+    $('ms680AutoStart').checked=
+      Boolean(settings.autoStart);
+  }
+  if($('ms680StartSpeed')){
+    $('ms680StartSpeed').value=
+      String(settings.startSpeedKmh);
+  }
+  if($('ms680StartSeconds')){
+    $('ms680StartSeconds').value=
+      String(settings.startConfirmSeconds);
+  }
+  if($('ms680StopEventMinutes')){
+    $('ms680StopEventMinutes').value=
+      String(settings.stopEventMinutes);
+  }
+
+  ms680RenderAutoLogbook();
+};
+
+/* Auto Logbook iedere seconde samen met de cockpit bijwerken. */
+const ms680OriginalRenderLiveState=
+  renderLiveState;
+
+renderLiveState=function(){
+  const result=
+    ms680OriginalRenderLiveState();
+
+  ms680RenderAutoLogbook();
+  return result;
+};
+
+const ms680OriginalInitLiveMode=
+  initLiveMode;
+
+initLiveMode=async function(){
+  const result=
+    await ms680OriginalInitLiveMode();
+
+  ms680EnsureState();
+  loadLiveAutomationSettings();
+  ms680RenderAutoLogbook();
+  ms680RestoreArmedWatch();
+
+  return result;
+};
+
+window.addEventListener(
+  'online',
+  ()=>{
+    if(
+      liveNavState.status==='stopped'&&
+      liveNavState.points.length>=2
+    ){
+      setLiveAutoLogStatus(
+        'Internet hersteld · de lokaal bewaarde vaartocht kan worden opgeslagen.',
+        'success'
+      );
+    }
+  },
+  {passive:true}
+);
+
+document.addEventListener(
+  'visibilitychange',
+  ()=>{
+    if(
+      !document.hidden&&
+      ms680DepartureArmed&&
+      ms680DepartureWatchId===null
+    ){
+      ms680ArmDepartureWatch();
+    }
+  }
+);
 

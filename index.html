@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="6.7.3">
-<link rel="apple-touch-icon" href="icon-192.png?v=6730">
+<meta name="mijnserenity-build" content="6.8.0">
+<link rel="apple-touch-icon" href="icon-192.png?v=6800">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=6730">
+<link rel="manifest" href="manifest.json?v=6800">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=6730">
+<link rel="stylesheet" href="styles.css?v=6800">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6730" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6800" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6730" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6800" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -238,7 +238,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=6730" alt="">
+          <img src="waterkaarten-dashboard.png?v=6800" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -332,7 +332,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v6.7.3</div>
+          <div class="label">Sync · v6.8.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -611,16 +611,91 @@
     <div class="card live-auto-log-card">
       <div class="live-auto-log-head">
         <div>
-          <span class="eyebrow">AUTOMATISCH VAARLOGBOEK</span>
-          <h2>Van GPS-opname naar compleet logboek</h2>
+          <span class="eyebrow">AUTO LOGBOOK · NEXT LEVEL</span>
+          <h2>Van vertrekdetectie naar compleet logboek</h2>
           <p class="small">
-            MijnSerenity vult vertrek, aankomst, route, tijd, snelheid,
-            brandstof, weer en POI’s onderweg automatisch in.
+            Bewaak vertrek, vaarbeweging, tussenstops en aankomst. MijnSerenity
+            vult daarna route, plaatsen, tijd, brandstof, weer en POI’s in.
           </p>
         </div>
         <span id="liveAutoLogBadge" class="live-auto-log-badge active">
           Automatisch actief
         </span>
+      </div>
+
+      <div class="ms680-auto-center">
+        <div class="ms680-auto-state">
+          <span id="ms680AutoIcon">⚓</span>
+          <div>
+            <strong id="ms680AutoTitle">Klaar voor vertrek</strong>
+            <small id="ms680AutoText">
+              Tik op Wacht op vertrek. De opname start zodra Serenity
+              aantoonbaar begint te varen.
+            </small>
+          </div>
+          <span id="ms680AutoBadge" class="ms680-auto-badge idle">
+            Gereed
+          </span>
+        </div>
+
+        <div id="ms680ArrivalCountdown"
+          class="ms680-arrival-countdown hidden">
+          <div>
+            <span class="eyebrow">MOGELIJK AFGEMEERD</span>
+            <strong id="ms680ArrivalTitle">
+              Aankomst wordt gecontroleerd
+            </strong>
+            <small id="ms680ArrivalText">
+              De opname blijft nog even actief om wachten voor een brug of
+              sluis niet als aankomst te zien.
+            </small>
+          </div>
+          <button type="button" class="secondary"
+            onclick="ms680CancelArrivalDetection()">
+            Nog niet aangekomen
+          </button>
+        </div>
+
+        <div class="ms680-auto-actions">
+          <button id="ms680ArmButton" type="button"
+            onclick="ms680ArmDepartureWatch()">
+            ⚓ Wacht op vertrek
+          </button>
+          <button id="ms680DisarmButton" type="button"
+            class="secondary hidden"
+            onclick="ms680DisarmDepartureWatch()">
+            Stop wachtmodus
+          </button>
+          <button id="ms680FinishButton" type="button"
+            class="secondary hidden"
+            onclick="ms680FinishNow()">
+            ✓ Nu aankomst vastleggen
+          </button>
+          <button type="button" class="secondary"
+            onclick="document.getElementById('ms680QuickPhoto').click()">
+            📷 Foto onderweg
+          </button>
+          <input id="ms680QuickPhoto" type="file"
+            accept="image/*" capture="environment" multiple hidden
+            onchange="ms680AddQuickPhotos(this.files)">
+        </div>
+
+        <div class="ms680-trip-timeline-wrap">
+          <div class="ms680-timeline-head">
+            <div>
+              <span class="eyebrow">AUTOMATISCHE TIJDLIJN</span>
+              <strong>Wat gebeurde er onderweg?</strong>
+            </div>
+            <span id="ms680TimelineCount">0 gebeurtenissen</span>
+          </div>
+          <div id="ms680TripTimeline"
+            class="ms680-trip-timeline">
+            <div class="ms680-empty-timeline">
+              Vertrek, varen, stilstand en aankomst verschijnen hier
+              automatisch.
+            </div>
+          </div>
+        </div>
       </div>
 
       <details class="live-auto-log-details">
@@ -629,6 +704,18 @@
           <small>Tik om te openen</small>
         </summary>
         <div class="live-auto-log-settings">
+        <label class="live-auto-setting">
+          <input id="ms680AutoStart" type="checkbox" checked
+            onchange="saveLiveAutomationSettings()">
+          <span>
+            <b>Automatisch starten na vertrekdetectie</b>
+            <small>
+              Activeer eerst Wacht op vertrek. Werkt zolang MijnSerenity
+              geopend is en locatie mag gebruiken.
+            </small>
+          </span>
+        </label>
+
         <label class="live-auto-setting">
           <input id="liveAutoSave" type="checkbox" checked
             onchange="saveLiveAutomationSettings()">
@@ -639,7 +726,7 @@
         </label>
 
         <label class="live-auto-setting">
-          <input id="liveAutoStop" type="checkbox"
+          <input id="liveAutoStop" type="checkbox" checked
             onchange="saveLiveAutomationSettings()">
           <span>
             <b>Automatisch stoppen bij afmeren</b>
@@ -647,14 +734,47 @@
           </span>
         </label>
 
+        <div class="live-auto-setting-fields ms680-detection-fields">
+          <div>
+            <label for="ms680StartSpeed">Vertrek herkennen vanaf</label>
+            <select id="ms680StartSpeed"
+              onchange="saveLiveAutomationSettings()">
+              <option value="1.5">1,5 km/u</option>
+              <option value="2" selected>2,0 km/u</option>
+              <option value="3">3,0 km/u</option>
+              <option value="4">4,0 km/u</option>
+            </select>
+          </div>
+          <div>
+            <label for="ms680StartSeconds">Bevestiging beweging</label>
+            <select id="ms680StartSeconds"
+              onchange="saveLiveAutomationSettings()">
+              <option value="10">10 seconden</option>
+              <option value="15" selected>15 seconden</option>
+              <option value="20">20 seconden</option>
+              <option value="30">30 seconden</option>
+            </select>
+          </div>
+          <div>
+            <label for="ms680StopEventMinutes">Tussenstop herkennen na</label>
+            <select id="ms680StopEventMinutes"
+              onchange="saveLiveAutomationSettings()">
+              <option value="2">2 minuten</option>
+              <option value="3" selected>3 minuten</option>
+              <option value="5">5 minuten</option>
+              <option value="10">10 minuten</option>
+            </select>
+          </div>
+        </div>
+
         <div class="live-auto-setting-fields">
           <div>
             <label for="liveAutoStopMinutes">Stilstand voordat opname stopt</label>
             <select id="liveAutoStopMinutes"
               onchange="saveLiveAutomationSettings()">
               <option value="5">5 minuten</option>
-              <option value="10">10 minuten</option>
-              <option value="15" selected>15 minuten</option>
+              <option value="10" selected>10 minuten</option>
+              <option value="15">15 minuten</option>
               <option value="20">20 minuten</option>
               <option value="30">30 minuten</option>
             </select>
@@ -809,8 +929,8 @@
       <label>Foto’s van deze vaartocht</label>
       <input id="livePhotos" type="file" accept="image/*" multiple>
       <p class="small">
-        Optioneel: kies maximaal 10 foto’s. Bij automatisch opslaan worden
-        deze direct aan het logboek toegevoegd.
+        Kies maximaal 10 foto’s of gebruik bovenaan Foto onderweg.
+        Bij automatisch opslaan worden ze direct aan het logboek toegevoegd.
       </p>
 
       <div id="liveAutoSummary" class="live-auto-summary hidden"></div>
@@ -836,7 +956,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">6.7.3</span>
+        <span class="planner-version-badge">6.8.0</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -2735,6 +2855,6 @@
   </div>
 </div>
 
-<script src="app.js?v=6730"></script>
+<script src="app.js?v=6800"></script>
 </body>
 </html>
