@@ -5408,10 +5408,7 @@ function renderPoiList(){
         </div>
       `).join('');
 
-      const stars='★★★★★'.slice(
-        0,
-        Math.max(0,Math.min(5,Number(poi.rating)||0))
-      );
+      const stars=ms692RatingDisplay(poi.rating);
 
       return `
         <div class="item poi-list-item">
@@ -14083,7 +14080,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 6.9.1"
+<gpx version="1.1" creator="MijnSerenity 6.9.2"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14335,7 +14332,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.9.1';
+const APP_VERSION='6.9.2';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16325,7 +16322,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.9.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.9.2 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16714,7 +16711,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.1
+   MijnSerenity Cloud 6.9.2
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17651,7 +17648,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.9.1"
+ creator="MijnSerenity 6.9.2"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17677,7 +17674,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.9.1 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.9.2 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17715,7 +17712,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.1 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.9.2 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18689,7 +18686,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.1 — Smart Route
+   MijnSerenity Cloud 6.9.2 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -19999,7 +19996,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.9.1 Smart Route"
+ creator="MijnSerenity 6.9.2 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -20028,7 +20025,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.9.1 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 6.9.2 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20095,7 +20092,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.1 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 6.9.2 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -21014,7 +21011,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.1 — Auto Logbook
+   MijnSerenity Cloud 6.9.2 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22222,7 +22219,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.1 — Routefoto’s met GPS en omschrijving
+   MijnSerenity Cloud 6.9.2 — Routefoto’s met GPS en omschrijving
    ============================================================ */
 
 let ms681PendingPhotos=[];
@@ -23051,7 +23048,7 @@ initLiveMode=async function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.1 — Boat Intelligence
+   MijnSerenity Cloud 6.9.2 — Boat Intelligence
    ============================================================ */
 
 function ms690Clamp(value,min=0,max=100){
@@ -24347,4 +24344,661 @@ document.addEventListener(
     }
   }
 );
+
+
+
+/* ============================================================
+   MijnSerenity Cloud 6.9.2 — Gewaardeerde havenimporteur
+   ============================================================ */
+
+let ms692HarbourImportBusy=false;
+
+function ms692Normalise(value){
+  return String(value||'')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+
+function ms692RatingDisplay(value){
+  const rating=Number(value);
+
+  if(!Number.isFinite(rating)||rating<=0){
+    return '';
+  }
+
+  const rounded=Math.round(rating*2)/2;
+  const full=Math.floor(rounded);
+  const half=rounded-full>=.5;
+  const stars=[
+    ...Array(full).fill('★'),
+    ...(half?['½']:[]),
+    ...Array(
+      Math.max(0,5-full-(half?1:0))
+    ).fill('☆')
+  ].join('');
+
+  return `${stars} · ${rating.toLocaleString('nl-NL',{
+    minimumFractionDigits:
+      Number.isInteger(rating)?0:1,
+    maximumFractionDigits:1
+  })}`;
+}
+
+function ms692SetHarbourStatus(
+  text,
+  type='info'
+){
+  const status=$('ms692HarbourImportStatus');
+
+  if(status){
+    status.className=
+      `ms692-harbour-status ${type}`;
+    status.textContent=text;
+  }
+}
+
+function ms692SetHarbourBadge(
+  text,
+  type=''
+){
+  const badge=$('ms692HarbourBadge');
+
+  if(badge){
+    badge.className=
+      `ms692-harbour-badge ${type}`;
+    badge.textContent=text;
+  }
+}
+
+function ms692ParseRating(value){
+  const text=String(value??'')
+    .trim()
+    .replace(',','.');
+
+  if(!text)return null;
+
+  const fraction=text.match(
+    /(\d+(?:\.\d+)?)\s*(?:\/|van)\s*(\d+(?:\.\d+)?)/i
+  );
+
+  if(fraction){
+    const numerator=Number(fraction[1]);
+    const denominator=Number(fraction[2]);
+
+    if(
+      Number.isFinite(numerator)&&
+      Number.isFinite(denominator)&&
+      denominator>0
+    ){
+      const normalised=
+        numerator/denominator*5;
+
+      return normalised>=0&&normalised<=5
+        ?Math.round(normalised*10)/10
+        :null;
+    }
+  }
+
+  const number=Number(
+    text.match(/\d+(?:\.\d+)?/)?.[0]
+  );
+
+  if(!Number.isFinite(number)){
+    return null;
+  }
+
+  return number>=0&&number<=5
+    ?Math.round(number*10)/10
+    :null;
+}
+
+function ms692HarbourRating(tags={}){
+  const sources=[
+    ['rating',tags.rating],
+    ['stars',tags.stars],
+    ['review:rating',tags['review:rating']],
+    ['review_score',tags.review_score],
+    ['score',tags.score],
+    ['operator:rating',tags['operator:rating']]
+  ];
+
+  for(const [source,value] of sources){
+    const rating=ms692ParseRating(value);
+
+    if(Number.isFinite(rating)){
+      return {
+        rating,
+        source,
+        original:String(value)
+      };
+    }
+  }
+
+  return null;
+}
+
+function ms692ElementPosition(element){
+  const lat=Number(
+    element?.lat??
+    element?.center?.lat??
+    (
+      element?.bounds
+        ?(
+          Number(element.bounds.minlat)+
+          Number(element.bounds.maxlat)
+        )/2
+        :NaN
+    )
+  );
+  const lon=Number(
+    element?.lon??
+    element?.center?.lon??
+    (
+      element?.bounds
+        ?(
+          Number(element.bounds.minlon)+
+          Number(element.bounds.maxlon)
+        )/2
+        :NaN
+    )
+  );
+
+  return {
+    lat,
+    lon,
+    valid:
+      Number.isFinite(lat)&&
+      Number.isFinite(lon)
+  };
+}
+
+function ms692HarbourQuery(country='NL'){
+  const safeCountry=String(country)
+    .replace(/[^A-Z]/g,'')
+    .slice(0,2)||'NL';
+
+  const ratedSelectors=[
+    '["rating"]',
+    '["stars"]',
+    '["review:rating"]',
+    '["review_score"]',
+    '["score"]',
+    '["operator:rating"]'
+  ];
+
+  const marinaSelectors=[
+    '["leisure"="marina"]',
+    '["seamark:harbour:category"="marina"]',
+    '["seamark:type"="harbour"]["harbour"="marina"]'
+  ];
+
+  const lines=[];
+
+  marinaSelectors.forEach(marina=>{
+    ratedSelectors.forEach(rating=>{
+      lines.push(
+        `nwr${marina}${rating}(area.searchArea);`
+      );
+    });
+  });
+
+  return `[out:json][timeout:90];
+area["ISO3166-1"="${safeCountry}"][admin_level=2]->.searchArea;
+(
+  ${lines.join('\n  ')}
+);
+out center tags;`;
+}
+
+async function ms692FetchHarbours(query){
+  const endpoints=[
+    '/api/overpass',
+    '/api/overpass-backup',
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter'
+  ];
+
+  let lastError=null;
+
+  for(const endpoint of endpoints){
+    const controller=new AbortController();
+    const timeout=setTimeout(
+      ()=>controller.abort(),
+      95000
+    );
+
+    try{
+      const target=endpoint.startsWith('http')
+        ?endpoint
+        :new URL(endpoint,location.origin).toString();
+
+      const response=await fetch(target,{
+        method:'POST',
+        headers:{
+          'content-type':
+            'application/x-www-form-urlencoded;charset=UTF-8',
+          accept:'application/json'
+        },
+        body:new URLSearchParams({
+          data:query
+        }).toString(),
+        signal:controller.signal,
+        cache:'no-store'
+      });
+
+      if(!response.ok){
+        throw new Error(
+          `Kaartdienst gaf HTTP ${response.status}.`
+        );
+      }
+
+      const payload=await response.json();
+
+      if(!Array.isArray(payload?.elements)){
+        throw new Error(
+          'Kaartdienst gaf geen geldige havenlijst terug.'
+        );
+      }
+
+      return payload.elements;
+    }catch(error){
+      lastError=error;
+      console.warn(
+        'Havenimport via kaartdienst mislukt:',
+        endpoint,
+        error
+      );
+    }finally{
+      clearTimeout(timeout);
+    }
+  }
+
+  throw lastError||
+    new Error('Geen kaartdienst bereikbaar.');
+}
+
+function ms692Address(tags={}){
+  const street=[
+    tags['addr:street'],
+    tags['addr:housenumber']
+  ].filter(Boolean).join(' ');
+
+  const city=[
+    tags['addr:postcode'],
+    tags['addr:city']||
+    tags['addr:place']
+  ].filter(Boolean).join(' ');
+
+  return [street,city]
+    .filter(Boolean)
+    .join(', ');
+}
+
+function ms692HarbourPlace(tags={}){
+  return String(
+    tags['addr:city']||
+    tags['addr:place']||
+    tags['is_in:city']||
+    tags['is_in:town']||
+    tags['is_in']||
+    ''
+  ).trim();
+}
+
+function ms692HarbourReview(
+  element,
+  tags,
+  ratingInfo
+){
+  const details=[
+    'Geïmporteerd uit openbare OpenStreetMap-gegevens.',
+    `Openbare score/classificatie: ${ratingInfo.rating.toLocaleString('nl-NL',{
+      maximumFractionDigits:1
+    })}/5`,
+    `brontag: ${ratingInfo.source}=${ratingInfo.original}`,
+    tags.website||tags['contact:website']
+      ?`website: ${tags.website||tags['contact:website']}`
+      :'',
+    tags.phone||tags['contact:phone']
+      ?`telefoon: ${tags.phone||tags['contact:phone']}`
+      :'',
+    tags.vhf
+      ?`VHF: ${tags.vhf}`
+      :'',
+    tags.power_supply==='yes'||
+    tags.power_supply==='available'
+      ?'walstroom aanwezig'
+      :'',
+    tags.shower==='yes'
+      ?'douches aanwezig'
+      :'',
+    tags.toilets==='yes'
+      ?'toiletten aanwezig'
+      :'',
+    tags.washing_machine==='yes'
+      ?'wasmachine aanwezig'
+      :'',
+    `[OSM:${element.type}/${element.id}]`
+  ].filter(Boolean);
+
+  return details.join(' · ');
+}
+
+function ms692HarbourRows(
+  elements,
+  minimum
+){
+  const seen=new Set();
+  const rows=[];
+
+  (elements||[]).forEach(element=>{
+    const tags=element.tags||{};
+    const position=ms692ElementPosition(element);
+    const ratingInfo=ms692HarbourRating(tags);
+
+    if(
+      !position.valid||
+      !ratingInfo||
+      !(ratingInfo.rating>minimum)
+    ){
+      return;
+    }
+
+    const name=String(
+      tags.name||
+      tags['seamark:name']||
+      tags.operator||
+      ''
+    ).trim();
+
+    if(!name)return;
+
+    const key=
+      `${element.type}:${element.id}`;
+
+    if(seen.has(key))return;
+    seen.add(key);
+
+    rows.push({
+      osmKey:key,
+      name,
+      category:'Haven',
+      place:ms692HarbourPlace(tags),
+      address:ms692Address(tags),
+      review:ms692HarbourReview(
+        element,
+        tags,
+        ratingInfo
+      ),
+      rating:ratingInfo.rating,
+      is_favorite:false,
+      latitude:position.lat,
+      longitude:position.lon,
+      tags
+    });
+  });
+
+  return rows.sort(
+    (a,b)=>
+      b.rating-a.rating||
+      a.name.localeCompare(b.name,'nl')
+  );
+}
+
+function ms692ExistingHarbourMatch(candidate){
+  const candidateName=
+    ms692Normalise(candidate.name);
+
+  return (poiCache||[]).some(poi=>{
+    if(poi.category!=='Haven')return false;
+
+    if(
+      String(poi.review||'')
+        .includes(`[OSM:${candidate.osmKey}]`)
+    ){
+      return true;
+    }
+
+    const sameName=
+      candidateName&&
+      ms692Normalise(poi.name)===
+        candidateName;
+
+    const position=getPoiMapPosition(poi);
+    const close=
+      position.valid&&
+      haversineKm(
+        {
+          lat:candidate.latitude,
+          lon:candidate.longitude
+        },
+        {
+          lat:position.lat,
+          lon:position.lon
+        }
+      )<.15;
+
+    return sameName||close;
+  });
+}
+
+function ms692RenderHarbourPreview(
+  candidates,
+  imported,
+  duplicates
+){
+  const preview=$('ms692HarbourPreview');
+  if(!preview)return;
+
+  const examples=candidates
+    .slice(0,10)
+    .map(harbour=>`
+      <article>
+        <span>⚓</span>
+        <div>
+          <strong>${esc(harbour.name)}</strong>
+          <small>
+            ${harbour.place?`${esc(harbour.place)} · `:''}
+            ${esc(ms692RatingDisplay(harbour.rating))}
+          </small>
+        </div>
+      </article>
+    `).join('');
+
+  preview.classList.remove('hidden');
+  preview.innerHTML=`
+    <div class="ms692-harbour-summary">
+      <div>
+        <span>Gevonden</span>
+        <strong>${candidates.length}</strong>
+      </div>
+      <div>
+        <span>Nieuw toegevoegd</span>
+        <strong>${imported}</strong>
+      </div>
+      <div>
+        <span>Al aanwezig</span>
+        <strong>${duplicates}</strong>
+      </div>
+    </div>
+    ${
+      examples
+        ?`<div class="ms692-harbour-examples">${examples}</div>`
+        :''
+    }
+  `;
+}
+
+async function ms692InsertHarbours(rows){
+  let imported=0;
+
+  for(let index=0;index<rows.length;index+=75){
+    const chunk=rows
+      .slice(index,index+75)
+      .map(row=>({
+        boat_id:currentBoat.id,
+        created_by:currentUser.id,
+        name:row.name,
+        category:row.category,
+        place:row.place,
+        address:row.address,
+        review:row.review,
+        rating:row.rating,
+        is_favorite:false,
+        latitude:row.latitude,
+        longitude:row.longitude,
+        updated_at:new Date().toISOString()
+      }));
+
+    ms692SetHarbourStatus(
+      `Havens toevoegen: ${Math.min(index+chunk.length,rows.length)} van ${rows.length}…`
+    );
+
+    const {data,error}=await sb
+      .from('pois')
+      .insert(chunk)
+      .select('id');
+
+    if(error)throw error;
+    imported+=(data||[]).length;
+  }
+
+  return imported;
+}
+
+async function ms692ImportRatedHarbours(){
+  if(ms692HarbourImportBusy)return;
+
+  const button=$('ms692HarbourImportButton');
+  const country=
+    $('ms692HarbourCountry')?.value||
+    'NL';
+  const minimum=Number(
+    $('ms692HarbourMinimum')?.value||
+    3
+  );
+
+  try{
+    if(!currentUser){
+      const {data:{session}}=
+        await sb.auth.getSession();
+      currentUser=session?.user||null;
+    }
+
+    if(!currentBoat&&currentUser){
+      await loadMembership();
+    }
+
+    if(!currentBoat||!currentUser){
+      throw new Error(
+        'Log opnieuw in en koppel Serenity.'
+      );
+    }
+
+    ms692HarbourImportBusy=true;
+    if(button)button.disabled=true;
+
+    ms692SetHarbourBadge(
+      'Zoeken…',
+      'checking'
+    );
+    ms692SetHarbourStatus(
+      `Alle Nederlandse havens met een openbare score hoger dan ${minimum.toLocaleString('nl-NL')} worden gezocht…`
+    );
+
+    const elements=
+      await ms692FetchHarbours(
+        ms692HarbourQuery(country)
+      );
+
+    const candidates=
+      ms692HarbourRows(
+        elements,
+        minimum
+      );
+
+    const fresh=[];
+    let duplicates=0;
+
+    candidates.forEach(candidate=>{
+      if(ms692ExistingHarbourMatch(candidate)){
+        duplicates++;
+      }else{
+        fresh.push(candidate);
+      }
+    });
+
+    if(!candidates.length){
+      ms692SetHarbourBadge(
+        'Geen resultaten',
+        'warning'
+      );
+      ms692SetHarbourStatus(
+        'De openbare kaartgegevens bevatten op dit moment geen Nederlandse havens met een bruikbare numerieke score boven deze grens.',
+        'warning'
+      );
+      ms692RenderHarbourPreview(
+        [],
+        0,
+        0
+      );
+      return;
+    }
+
+    let imported=0;
+
+    if(fresh.length){
+      imported=
+        await ms692InsertHarbours(
+          fresh
+        );
+      await loadPois();
+    }
+
+    ms692SetHarbourBadge(
+      imported
+        ?`${imported} toegevoegd`
+        :'Alles aanwezig',
+      'success'
+    );
+
+    ms692SetHarbourStatus(
+      imported
+        ?`${imported} gewaardeerde haven${imported===1?' is':'s zijn'} toegevoegd aan POI. ${duplicates} bestaande haven${duplicates===1?' is':'s zijn'} overgeslagen.`
+        :`Alle ${duplicates} gevonden havens stonden al in POI.`,
+      'success'
+    );
+
+    ms692RenderHarbourPreview(
+      candidates,
+      imported,
+      duplicates
+    );
+
+    if(imported){
+      showAppToast(
+        `${imported} gewaardeerde havens toegevoegd ✅`
+      );
+    }
+  }catch(error){
+    console.error(
+      'Gewaardeerde havens importeren mislukt:',
+      error
+    );
+    ms692SetHarbourBadge(
+      'Import mislukt',
+      'error'
+    );
+    ms692SetHarbourStatus(
+      `Importeren mislukt: ${error?.message||'onbekende fout'}`,
+      'error'
+    );
+  }finally{
+    ms692HarbourImportBusy=false;
+    if(button)button.disabled=false;
+  }
+}
 

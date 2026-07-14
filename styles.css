@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.9.1";
+  content:" · v6.9.2";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.1 — Finance Command Center + cockpit
+   MijnSerenity Cloud 6.9.2 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5664,7 +5664,7 @@ main{
 }
 
 
-/* MijnSerenity 6.9.1 — Waterkaarten Bridge en gedeelde live vaarkaart */
+/* MijnSerenity 6.9.2 — Waterkaarten Bridge en gedeelde live vaarkaart */
 .live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
 .live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
 .live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
@@ -5677,7 +5677,7 @@ main{
 @media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
 
 
-/* MijnSerenity 6.9.1 — waterwegrouter, nautische laag en route-POI's */
+/* MijnSerenity 6.9.2 — waterwegrouter, nautische laag en route-POI's */
 .planner-fallback-settings{
   margin:10px 0 14px;
   padding:10px 12px;
@@ -5813,7 +5813,7 @@ main{
 }
 
 
-/* MijnSerenity 6.9.1 — iPad/Safari vaste onderbalk */
+/* MijnSerenity 6.9.2 — iPad/Safari vaste onderbalk */
 html,
 body{
   transform:none !important;
@@ -5873,7 +5873,7 @@ body > .bottom-nav:not(.bottom-nav-auto-hidden),
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.1 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.9.2 — Next Level Live Cockpit
    ========================================================= */
 
 .ms660-cockpit-actions{
@@ -6243,7 +6243,7 @@ body.ms660-night-mode
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.1 — Smart Route
+   MijnSerenity Cloud 6.9.2 — Smart Route
    ========================================================= */
 
 .ms670-profile-card{
@@ -6567,7 +6567,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 6.9.1 — iOS delen en route-POI's */
+/* MijnSerenity 6.9.2 — iOS delen en route-POI's */
 .ms672-share-note{
   display:grid;
   grid-template-columns:38px minmax(0,1fr);
@@ -6603,7 +6603,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 6.9.1 — fullscreen kaart en alternatieve route */
+/* MijnSerenity 6.9.2 — fullscreen kaart en alternatieve route */
 .planner-map-shell{
   position:relative;
   overflow:hidden;
@@ -6825,7 +6825,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.1 — Auto Logbook
+   MijnSerenity Cloud 6.9.2 — Auto Logbook
    ========================================================= */
 
 .ms680-auto-center{
@@ -7083,7 +7083,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.1 — Routefoto’s
+   MijnSerenity Cloud 6.9.2 — Routefoto’s
    ========================================================= */
 
 .ms681-photo-composer{
@@ -7328,7 +7328,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.1 — Boat Intelligence
+   MijnSerenity Cloud 6.9.2 — Boat Intelligence
    ========================================================= */
 
 .ms690-intelligence-card{
@@ -7950,5 +7950,210 @@ body.planner-map-fullscreen-open{
 
   .ms690-question-row button{
     width:100%;
+  }
+}
+
+
+/* =========================================================
+   MijnSerenity Cloud 6.9.2 — Havenbibliotheek
+   ========================================================= */
+
+.ms692-harbour-import-card{
+  margin-bottom:14px;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      rgba(69,200,255,.17),
+      transparent 38%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(8,39,55,.98),
+      rgba(5,25,37,.98)
+    );
+  border-color:rgba(69,200,255,.22);
+}
+
+.ms692-harbour-import-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+}
+
+.ms692-harbour-import-head h2{
+  margin-bottom:3px;
+}
+
+.ms692-harbour-badge{
+  flex:0 0 auto;
+  padding:7px 10px;
+  border-radius:999px;
+  color:#cce9f3;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.11);
+  font-size:10px;
+  font-weight:900;
+}
+
+.ms692-harbour-badge.checking{
+  color:#d8f5ff;
+  background:rgba(69,200,255,.12);
+  border-color:rgba(69,200,255,.24);
+}
+
+.ms692-harbour-badge.success{
+  color:#d9ffea;
+  background:rgba(75,211,143,.13);
+  border-color:rgba(75,211,143,.26);
+}
+
+.ms692-harbour-badge.warning{
+  color:#ffeabb;
+  background:rgba(255,190,75,.13);
+  border-color:rgba(255,190,75,.25);
+}
+
+.ms692-harbour-badge.error{
+  color:#ffd4d4;
+  background:rgba(255,82,82,.14);
+  border-color:rgba(255,82,82,.27);
+}
+
+.ms692-harbour-import-controls{
+  display:grid;
+  grid-template-columns:
+    minmax(150px,.65fr)
+    minmax(170px,.75fr)
+    minmax(230px,1fr);
+  align-items:end;
+  gap:9px;
+  margin-top:13px;
+}
+
+.ms692-harbour-import-controls label{
+  margin:0;
+}
+
+.ms692-harbour-import-controls select{
+  margin-top:5px;
+}
+
+.ms692-harbour-import-controls button{
+  min-height:44px;
+}
+
+.ms692-harbour-status{
+  margin-top:10px;
+  padding:9px 11px;
+  border-radius:12px;
+  color:#a9c1ca;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.065);
+  font-size:11px;
+  line-height:1.4;
+}
+
+.ms692-harbour-status.success{
+  color:#c9f5dc;
+  background:rgba(75,211,143,.07);
+  border-color:rgba(75,211,143,.16);
+}
+
+.ms692-harbour-status.warning{
+  color:#e8d49e;
+  background:rgba(255,190,75,.07);
+  border-color:rgba(255,190,75,.17);
+}
+
+.ms692-harbour-status.error{
+  color:#ffd0d0;
+  background:rgba(255,82,82,.08);
+  border-color:rgba(255,82,82,.19);
+}
+
+.ms692-harbour-preview{
+  margin-top:11px;
+}
+
+.ms692-harbour-summary{
+  display:grid;
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+
+.ms692-harbour-summary > div{
+  padding:10px;
+  border-radius:13px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);
+}
+
+.ms692-harbour-summary span,
+.ms692-harbour-summary strong{
+  display:block;
+}
+
+.ms692-harbour-summary span{
+  color:#91aeb9;
+  font-size:10px;
+}
+
+.ms692-harbour-summary strong{
+  margin-top:4px;
+  color:#f0fbff;
+  font-size:21px;
+}
+
+.ms692-harbour-examples{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:7px;
+  margin-top:9px;
+  max-height:330px;
+  overflow:auto;
+}
+
+.ms692-harbour-examples article{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  padding:9px;
+  border-radius:12px;
+  background:rgba(255,255,255,.035);
+}
+
+.ms692-harbour-examples article > span{
+  font-size:19px;
+}
+
+.ms692-harbour-examples strong,
+.ms692-harbour-examples small{
+  display:block;
+}
+
+.ms692-harbour-examples small{
+  margin-top:2px;
+  color:#91acb6;
+}
+
+@media(max-width:760px){
+  .ms692-harbour-import-head{
+    flex-direction:column;
+  }
+
+  .ms692-harbour-import-controls{
+    grid-template-columns:1fr;
+  }
+
+  .ms692-harbour-summary{
+    grid-template-columns:1fr;
+  }
+
+  .ms692-harbour-examples{
+    grid-template-columns:1fr;
   }
 }
