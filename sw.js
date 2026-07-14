@@ -1,14 +1,14 @@
-const CACHE_NAME='mijnserenity-6.3.0';
+const CACHE_NAME='mijnserenity-6.4.0';
 const APP_SHELL=[
   '/',
   '/index.html',
-  '/styles.css?v=6300',
-  '/app.js?v=6300',
-  '/manifest.json?v=6300',
-  '/icon-192.png?v=6300',
-  '/icon-512.png?v=6300',
-  '/waterkaarten-dashboard.png?v=6300',
-  '/mijnserenity-logo.png?v=6300'
+  '/styles.css?v=6400',
+  '/app.js?v=6400',
+  '/manifest.json?v=6400',
+  '/icon-192.png?v=6400',
+  '/icon-512.png?v=6400',
+  '/waterkaarten-dashboard.png?v=6400',
+  '/mijnserenity-logo.png?v=6400'
 ];
 
 self.addEventListener('install',event=>{

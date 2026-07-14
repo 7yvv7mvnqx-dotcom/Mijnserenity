@@ -14310,7 +14310,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.3.0';
+const APP_VERSION='6.4.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16283,3 +16283,353 @@ if(document.readyState==='loading'){
 }else{
   initAutoHideBottomNavigation();
 }
+
+
+/* MijnSerenity Cloud 6.4.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
+let ms640CloudReady=false;
+let ms640Viewing=false;
+let ms640SyncTimer=null;
+let ms640SyncBusy=false;
+let ms640LastSentAt=0;
+let ms640LastReceivedAt=0;
+let ms640Channel=null;
+let ms640InitTimer=null;
+
+function ms640DeviceId(){
+  const key='mijnserenity-device-id';
+  let value=localStorage.getItem(key);
+  if(!value){
+    value=globalThis.crypto?.randomUUID?.()||`device-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(key,value);
+  }
+  return value;
+}
+
+function ms640SessionId(){
+  return globalThis.crypto?.randomUUID?.()||`live-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function ms640IsController(){
+  return Boolean(liveNavState?.controllerDeviceId&&liveNavState.controllerDeviceId===ms640DeviceId());
+}
+
+function ms640SetUi(title,detail,state='ready'){
+  const t=$('liveCloudStatus'), d=$('liveCloudDetail'), b=$('liveCloudBadge');
+  if(t)t.textContent=title;
+  if(d)d.textContent=detail;
+  if(b){
+    b.className=`live-cloud-badge ${state}`;
+    b.textContent={checking:'Controleren',ready:'Gereed',live:'● Live',viewing:'Meekijken',offline:'SQL nodig',error:'Storing'}[state]||'Cloud';
+  }
+}
+
+function ms640TableMissing(error){
+  const text=String(error?.message||error?.details||error?.hint||'').toLowerCase();
+  return text.includes('live_navigation_state')&&(text.includes('does not exist')||text.includes('schema cache')||text.includes('relation'));
+}
+
+function ms640CompactPoints(points){
+  const valid=(Array.isArray(points)?points:[]).filter(p=>Number.isFinite(Number(p?.lat))&&Number.isFinite(Number(p?.lon)));
+  if(valid.length<=2)return valid;
+  const out=[valid[0]];
+  let previous=valid[0];
+  for(let i=1;i<valid.length-1;i++){
+    const point=valid[i];
+    const distance=haversineKm(previous,point);
+    const timeGap=Math.abs(Number(point.time||0)-Number(previous.time||0));
+    if(distance>=0.008||timeGap>=5000){out.push(point);previous=point;}
+  }
+  out.push(valid.at(-1));
+  if(out.length<=1500)return out;
+  const step=Math.ceil(out.length/1500);
+  return out.filter((p,i)=>i===0||i===out.length-1||i%step===0);
+}
+
+function ms640FormData(){
+  return {
+    title:String($('liveTitle')?.value||''),
+    crew:String($('liveCrew')?.value||''),
+    departure:String($('liveFrom')?.value||''),
+    arrival:String($('liveTo')?.value||''),
+    notes:String($('liveNotes')?.value||'')
+  };
+}
+
+function ms640ApplyForm(form={}){
+  const map={liveTitle:form.title,liveCrew:form.crew,liveFrom:form.departure,liveTo:form.arrival,liveNotes:form.notes};
+  Object.entries(map).forEach(([id,value])=>{
+    const element=$(id);
+    if(element&&document.activeElement!==element&&value!==undefined&&value!==null)element.value=String(value);
+  });
+}
+
+function ms640Payload(){
+  return {
+    ...liveNavState,
+    points:ms640CompactPoints(liveNavState.points),
+    form:ms640FormData(),
+    controllerDeviceId:liveNavState.controllerDeviceId||ms640DeviceId(),
+    controllerName:liveNavState.controllerName||getLoggedInFirstName(),
+    cloudUpdatedAt:Date.now()
+  };
+}
+
+function ms640ScheduleSync(immediate=false){
+  if(!currentBoat||!currentUser||!ms640CloudReady||!ms640IsController())return;
+  clearTimeout(ms640SyncTimer);
+  const elapsed=Date.now()-ms640LastSentAt;
+  ms640SyncTimer=setTimeout(ms640Sync,immediate?0:Math.max(0,2000-elapsed));
+}
+
+async function ms640Sync(){
+  if(ms640SyncBusy||!currentBoat||!currentUser||!ms640CloudReady||!ms640IsController())return;
+  ms640SyncBusy=true;
+  try{
+    const {error}=await sb.from('live_navigation_state').upsert({
+      boat_id:currentBoat.id,
+      session_id:liveNavState.sessionId||null,
+      status:liveNavState.status||'idle',
+      controller_user_id:currentUser.id,
+      controller_device_id:ms640DeviceId(),
+      controller_name:liveNavState.controllerName||getLoggedInFirstName(),
+      state:ms640Payload(),
+      updated_at:new Date().toISOString()
+    },{onConflict:'boat_id'});
+    if(error)throw error;
+    ms640LastSentAt=Date.now();
+    ms640SetUi(liveNavState.status==='active'?'Live kaart wordt gedeeld':'Live kaart is gesynchroniseerd',liveNavState.status==='active'?'Alle geopende apparaten ontvangen route en vaargegevens.':'De gedeelde vaarstatus is bijgewerkt.',liveNavState.status==='active'?'live':'ready');
+  }catch(error){
+    console.error('Live vaarkaart synchroniseren mislukt:',error);
+    if(ms640TableMissing(error)){
+      ms640CloudReady=false;
+      ms640SetUi('Cloud livekaart nog niet geactiveerd','Voer SUPABASE_LIVE_VAARKAART_6_4_0.sql één keer uit.','offline');
+    }else{
+      ms640SetUi('Synchronisatie tijdelijk onderbroken',error?.message||'MijnSerenity probeert het opnieuw.','error');
+    }
+  }finally{ms640SyncBusy=false;}
+}
+
+function ms640ApplyRow(row){
+  if(!row||!currentBoat||row.boat_id!==currentBoat.id)return;
+  const updated=Date.parse(row.updated_at||'')||Date.now();
+  if(updated<ms640LastReceivedAt)return;
+  ms640LastReceivedAt=updated;
+  const controllerDeviceId=row.controller_device_id||row.state?.controllerDeviceId||null;
+  if(controllerDeviceId===ms640DeviceId()){
+    ms640Viewing=false;
+    return;
+  }
+  const incoming={
+    ...createEmptyLiveState(),
+    ...(row.state||{}),
+    sessionId:row.session_id||row.state?.sessionId||null,
+    controllerDeviceId,
+    controllerName:row.controller_name||row.state?.controllerName||'ander apparaat',
+    cloudUpdatedAt:updated,
+    points:(Array.isArray(row.state?.points)?row.state.points:[]).filter(p=>Number.isFinite(Number(p?.lat))&&Number.isFinite(Number(p?.lon)))
+  };
+  ms640Viewing=incoming.status!=='idle';
+  if(ms640Viewing){stopLiveGpsWatch();releaseLiveWakeLock();}
+  liveNavState=incoming;
+  ms640ApplyForm(row.state?.form||{});
+  renderLiveState();
+  renderLiveRoute();
+  const time=new Date(updated).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  ms640SetUi(incoming.status==='active'?`Je kijkt live mee met ${incoming.controllerName}`:incoming.status==='paused'?`${incoming.controllerName} heeft de vaart gepauzeerd`:'Gedeelde vaart bijgewerkt',`${incoming.points.length} routepunten · laatste update ${time}`,incoming.status==='active'?'viewing':'ready');
+}
+
+async function ms640LoadCloud(){
+  if(!currentBoat||!currentUser)return;
+  ms640SetUi('Gedeelde livekaart laden…','Controleren of een ander apparaat aan het varen is.','checking');
+  try{
+    const {data,error}=await sb.from('live_navigation_state').select('*').eq('boat_id',currentBoat.id).maybeSingle();
+    if(error)throw error;
+    ms640CloudReady=true;
+    if(data)ms640ApplyRow(data);
+    else ms640SetUi('Gedeelde livekaart gereed','Start een vaart; andere geopende apparaten volgen automatisch.','ready');
+  }catch(error){
+    if(ms640TableMissing(error)){
+      ms640CloudReady=false;
+      ms640SetUi('Cloud livekaart nog niet geactiveerd','Voer SUPABASE_LIVE_VAARKAART_6_4_0.sql één keer uit.','offline');
+    }else{
+      console.error('Gedeelde livekaart laden mislukt:',error);
+      ms640SetUi('Cloud livekaart niet bereikbaar',error?.message||'Probeer het later opnieuw.','error');
+    }
+  }
+}
+
+async function ms640EnsureCloud(){
+  if(!currentBoat||!currentUser)return false;
+  if(ms640Channel)return true;
+  try{
+    const {error}=await sb.from('live_navigation_state').select('boat_id').eq('boat_id',currentBoat.id).maybeSingle();
+    if(error)throw error;
+    ms640CloudReady=true;
+    ms640Channel=sb.channel(`live-navigation-${currentBoat.id}`)
+      .on('postgres_changes',{event:'*',schema:'public',table:'live_navigation_state',filter:`boat_id=eq.${currentBoat.id}`},payload=>ms640ApplyRow(payload.new))
+      .subscribe();
+    await ms640LoadCloud();
+    return true;
+  }catch(error){
+    if(ms640TableMissing(error))ms640SetUi('Cloud livekaart nog niet geactiveerd','Voer SUPABASE_LIVE_VAARKAART_6_4_0.sql één keer uit.','offline');
+    return false;
+  }
+}
+
+const ms640OriginalPersistLiveState=persistLiveState;
+persistLiveState=function(){
+  if(!ms640Viewing||ms640IsController())ms640OriginalPersistLiveState();
+  if(ms640IsController())ms640ScheduleSync(false);
+};
+
+const ms640OriginalStartLiveNavigation=startLiveNavigation;
+startLiveNavigation=function(){
+  ms640Viewing=false;
+  ms640OriginalStartLiveNavigation();
+  liveNavState.sessionId=ms640SessionId();
+  liveNavState.controllerDeviceId=ms640DeviceId();
+  liveNavState.controllerName=getLoggedInFirstName();
+  persistLiveState();
+  ms640ScheduleSync(true);
+  showAppToast('Live varen gestart · alle geopende apparaten kunnen meekijken');
+};
+
+const ms640OriginalPauseLiveNavigation=pauseLiveNavigation;
+pauseLiveNavigation=function(){
+  if(!ms640IsController())return;
+  const result=ms640OriginalPauseLiveNavigation();
+  ms640ScheduleSync(true);
+  return result;
+};
+
+const ms640OriginalResumeLiveNavigation=resumeLiveNavigation;
+resumeLiveNavigation=function(){
+  if(!ms640IsController())return;
+  const result=ms640OriginalResumeLiveNavigation();
+  ms640ScheduleSync(true);
+  return result;
+};
+
+const ms640OriginalStopLiveNavigation=stopLiveNavigation;
+stopLiveNavigation=async function(options={}){
+  if(!ms640IsController())return;
+  const result=await ms640OriginalStopLiveNavigation(options);
+  ms640ScheduleSync(true);
+  return result;
+};
+
+const ms640OriginalClearLiveTrip=clearLiveTrip;
+clearLiveTrip=function(options={}){
+  const wasController=ms640IsController();
+  const result=ms640OriginalClearLiveTrip(options);
+  ms640Viewing=false;
+  if(wasController){
+    liveNavState.controllerDeviceId=ms640DeviceId();
+    liveNavState.controllerName=getLoggedInFirstName();
+    ms640ScheduleSync(true);
+  }
+  return result;
+};
+
+const ms640OriginalRenderLiveState=renderLiveState;
+renderLiveState=function(){
+  const result=ms640OriginalRenderLiveState();
+  const status=liveNavState.status||'idle';
+  const controller=ms640IsController();
+  const remote=ms640Viewing&&['active','paused','stopped'].includes(status);
+  $('liveStartButton')?.classList.toggle('hidden',status!=='idle'||remote);
+  $('livePauseButton')?.classList.toggle('hidden',status!=='active'||!controller);
+  $('liveResumeButton')?.classList.toggle('hidden',status!=='paused'||!controller);
+  $('liveStopButton')?.classList.toggle('hidden',!['active','paused'].includes(status)||!controller);
+  $('liveTakeoverButton')?.classList.toggle('hidden',!ms640Viewing||!['active','paused'].includes(status));
+  $('liveShareRouteButton')?.classList.toggle('hidden',(liveNavState.points||[]).length<2);
+  ['liveEngineRpmInput','liveRudderInput','liveCrew','liveFrom','liveTo','liveNotes'].forEach(id=>{if($(id))$(id).disabled=remote;});
+  if(controller&&status==='active')ms640SetUi('Dit apparaat deelt de livekaart',`${liveNavState.points.length} routepunten · andere apparaten kijken automatisch mee.`,'live');
+  return result;
+};
+
+const ms640OriginalInitLiveMode=initLiveMode;
+initLiveMode=async function(){
+  await ms640OriginalInitLiveMode();
+  ['liveCrew','liveFrom','liveTo','liveNotes'].forEach(id=>{
+    const element=$(id);
+    if(element&&!element.dataset.ms640CloudListener){
+      element.dataset.ms640CloudListener='true';
+      element.addEventListener('input',()=>ms640ScheduleSync(false),{passive:true});
+    }
+  });
+  await ms640EnsureCloud();
+  renderLiveState();
+  renderLiveRoute();
+};
+
+async function takeOverLiveNavigation(){
+  if(!currentBoat||!currentUser)return;
+  if(!confirm('De live opname op dit apparaat overnemen? Het andere apparaat wordt daarna meekijker.'))return;
+  ms640Viewing=false;
+  liveNavState.accumulatedMs=getLiveElapsedMs();
+  liveNavState.segmentStartedAt=Date.now();
+  liveNavState.status='active';
+  liveNavState.controllerDeviceId=ms640DeviceId();
+  liveNavState.controllerName=getLoggedInFirstName();
+  liveNavState.sessionId=liveNavState.sessionId||ms640SessionId();
+  persistLiveState();
+  startLiveGpsWatch();
+  requestLiveWakeLock();
+  renderLiveState();
+  ms640ScheduleSync(true);
+  showAppToast('Live opname overgenomen op dit apparaat ✅');
+}
+
+function ms640Xml(value){
+  return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+function ms640FileName(value='serenity-route'){
+  return String(value||'serenity-route').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64)||'serenity-route';
+}
+
+function ms640PlannerGpx(plan){
+  const points=(Array.isArray(plan?.points)?plan.points:[]).map(p=>({lat:Number(p?.lat),lon:Number(p?.lon),name:String(p?.label||p?.name||'Routepunt')})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon));
+  if(points.length<2)throw new Error('Bereken eerst een route met een vertrekpunt en bestemming.');
+  const title=plan?.title||'Serenity vaarroute';
+  const route=points.map(p=>`<rtept lat="${p.lat.toFixed(7)}" lon="${p.lon.toFixed(7)}"><name>${ms640Xml(p.name)}</name></rtept>`).join('');
+  const gpx=`<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="MijnSerenity" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>${ms640Xml(title)}</name></metadata><rte><name>${ms640Xml(title)}</name>${route}</rte></gpx>`;
+  return new File([gpx],`${ms640FileName(title)}.gpx`,{type:'application/gpx+xml'});
+}
+
+async function ms640ShareFile(file,title){
+  try{
+    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){
+      await navigator.share({title,text:'Route uit MijnSerenity. Kies Waterkaarten om het GPX-bestand te importeren.',files:[file]});
+      return;
+    }
+  }catch(error){if(error?.name==='AbortError')return;}
+  const url=URL.createObjectURL(file),link=document.createElement('a');
+  link.href=url;link.download=file.name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),15000);
+  showAppToast('GPX gedownload. Open of deel het bestand daarna met Waterkaarten.');
+}
+
+async function shareLiveRouteWithWaterkaarten(){
+  if((liveNavState.points||[]).length<2){showAppToast('Er zijn nog onvoldoende routepunten om te delen.');return;}
+  const title=$('liveTitle')?.value||`${$('liveFrom')?.value||'Vertrek'} - ${$('liveTo')?.value||'Aankomst'}`;
+  await ms640ShareFile(createLiveGpxFile(title),title);
+}
+
+async function sharePlannerRouteWithWaterkaarten(){
+  const plan=plannerCurrentPlan||await calculatePlannerRoute({silent:true});
+  if(!plan)return;
+  try{await ms640ShareFile(ms640PlannerGpx(plan),plan.title||'Serenity vaarroute');}
+  catch(error){showAppToast(error?.message||'De GPX-route kon niet worden gemaakt.');}
+}
+
+openFullPlannerRouteInWaterkaarten=async function(){
+  await sharePlannerRouteWithWaterkaarten();
+};
+
+ms640InitTimer=setInterval(async()=>{
+  if(await ms640EnsureCloud()){
+    clearInterval(ms640InitTimer);
+    ms640InitTimer=null;
+  }
+},1200);

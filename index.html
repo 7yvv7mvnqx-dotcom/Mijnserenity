@@ -8,21 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MijnSerenity">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="6.3.0">
-<link rel="apple-touch-icon" href="icon-192.png?v=6300">
+<meta name="mijnserenity-build" content="6.4.0">
+<link rel="apple-touch-icon" href="icon-192.png?v=6400">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=6300">
+<link rel="manifest" href="manifest.json?v=6400">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=6300">
+<link rel="stylesheet" href="styles.css?v=6400">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6300" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6400" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -61,7 +61,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6300" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6400" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -238,7 +238,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=6300" alt="">
+          <img src="waterkaarten-dashboard.png?v=6400" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -332,7 +332,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v6.3.0</div>
+          <div class="label">Sync · v6.4.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -359,11 +359,22 @@
         </div>
         <span id="liveRecordingBadge" class="live-recording-badge idle">Gereed</span>
       </div>
+      <div class="live-cloud-strip">
+        <div>
+          <span class="eyebrow">GEDEELDE LIVE VAARKAART</span>
+          <strong id="liveCloudStatus">Controleren…</strong>
+          <small id="liveCloudDetail">Route, positie en vaargegevens verschijnen live op alle geopende MijnSerenity-apparaten.</small>
+        </div>
+        <span id="liveCloudBadge" class="live-cloud-badge checking">Controleren</span>
+      </div>
       <div class="live-controls">
         <button id="liveStartButton" onclick="startLiveNavigation()">▶ Start varen + Waterkaarten</button>
         <button id="livePauseButton" class="secondary hidden" onclick="pauseLiveNavigation()">⏸ Pauze</button>
         <button id="liveResumeButton" class="secondary hidden" onclick="resumeLiveNavigation()">▶ Hervat</button>
         <button id="liveStopButton" class="danger-button hidden" onclick="stopLiveNavigation()">⏹ Stop opname</button>
+        <button id="liveTakeoverButton" class="secondary hidden" onclick="takeOverLiveNavigation()">⚓ Bediening overnemen</button>
+        <button type="button" class="secondary" onclick="openWaterkaarten()">🗺 Open Waterkaarten</button>
+        <button id="liveShareRouteButton" type="button" class="secondary hidden" onclick="shareLiveRouteWithWaterkaarten()">↗ Deel GPX met Waterkaarten</button>
       </div>
       <div id="liveGpsStatus" class="status small">Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten. Open beide schermen op de iPad in Split View en laat beide schermen open totdat de reis is opgeslagen.</div>
     </div>
@@ -739,11 +750,18 @@
             en zet de planning daarna klaar in het gedeelde logboek.
           </p>
         </div>
-        <span class="planner-version-badge">6.3.0</span>
+        <span class="planner-version-badge">6.4.0</span>
       </div>
       <div class="planner-warning">
         Afstand is een schatting op basis van rechte lijnen en een instelbare
         waterwegfactor. Controleer de definitieve route altijd in Waterkaarten.
+      </div>
+      <div class="planner-waterkaarten-bridge">
+        <span>🧭</span>
+        <div>
+          <b>Waterkaarten Bridge actief</b>
+          <small>Na het berekenen deel je de route als GPX via de iOS-deelkeuze. Kies daar Waterkaarten om de route te importeren.</small>
+        </div>
       </div>
     </div>
 
@@ -871,7 +889,7 @@
             <b>Etappes</b>
             <button type="button" class="secondary"
               onclick="openFullPlannerRouteInWaterkaarten()">
-              🧭 Route naar Waterkaarten
+              🧭 Deel GPX met Waterkaarten
             </button>
           </div>
           <div id="plannerSegments" class="planner-segments"></div>
@@ -2415,6 +2433,6 @@
   </div>
 </div>
 
-<script src="app.js?v=6300"></script>
+<script src="app.js?v=6400"></script>
 </body>
 </html>

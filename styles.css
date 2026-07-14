@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.3.0";
+  content:" · v6.4.0";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 6.3.0 — Finance Command Center + cockpit
+   MijnSerenity Cloud 6.4.0 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5662,3 +5662,16 @@ main{
   .finance-detail-row{grid-template-columns:38px minmax(0,1fr) auto 12px}
   .finance-row-icon,.finance-detail-icon{width:36px;height:36px;font-size:19px}
 }
+
+
+/* MijnSerenity 6.4.0 — Waterkaarten Bridge en gedeelde live vaarkaart */
+.live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
+.live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
+.live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
+.live-cloud-badge.checking{color:#d7e9f5;background:rgba(255,255,255,.07)}.live-cloud-badge.ready{color:#bcecff;background:rgba(69,200,255,.14)}
+.live-cloud-badge.live,.live-cloud-badge.viewing{color:#c9ffdc;background:rgba(75,211,143,.16);border-color:rgba(75,211,143,.35)}.live-cloud-badge.live{animation:live-cloud-pulse 1.4s infinite}
+.live-cloud-badge.offline,.live-cloud-badge.error{color:#ffd0d0;background:rgba(255,107,107,.14);border-color:rgba(255,107,107,.30)}
+.planner-waterkaarten-bridge{display:flex;align-items:flex-start;gap:12px;margin-top:12px;padding:12px 14px;border-radius:15px;background:rgba(69,200,255,.09);border:1px solid rgba(69,200,255,.18)}
+.planner-waterkaarten-bridge>span{font-size:24px}.planner-waterkaarten-bridge b,.planner-waterkaarten-bridge small{display:block}.planner-waterkaarten-bridge small{margin-top:3px;color:var(--muted);line-height:1.35}
+@keyframes live-cloud-pulse{0%,100%{box-shadow:0 0 0 0 rgba(75,211,143,0)}50%{box-shadow:0 0 0 7px rgba(75,211,143,.08)}}
+@media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
