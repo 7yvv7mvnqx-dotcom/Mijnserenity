@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.7.2";
+  content:" · v6.7.3";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 6.7.2 — Finance Command Center + cockpit
+   MijnSerenity Cloud 6.7.3 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5664,7 +5664,7 @@ main{
 }
 
 
-/* MijnSerenity 6.7.2 — Waterkaarten Bridge en gedeelde live vaarkaart */
+/* MijnSerenity 6.7.3 — Waterkaarten Bridge en gedeelde live vaarkaart */
 .live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
 .live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
 .live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
@@ -5677,7 +5677,7 @@ main{
 @media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
 
 
-/* MijnSerenity 6.7.2 — waterwegrouter, nautische laag en route-POI's */
+/* MijnSerenity 6.7.3 — waterwegrouter, nautische laag en route-POI's */
 .planner-fallback-settings{
   margin:10px 0 14px;
   padding:10px 12px;
@@ -5813,7 +5813,7 @@ main{
 }
 
 
-/* MijnSerenity 6.7.2 — iPad/Safari vaste onderbalk */
+/* MijnSerenity 6.7.3 — iPad/Safari vaste onderbalk */
 html,
 body{
   transform:none !important;
@@ -5873,7 +5873,7 @@ body > .bottom-nav:not(.bottom-nav-auto-hidden),
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.7.2 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.7.3 — Next Level Live Cockpit
    ========================================================= */
 
 .ms660-cockpit-actions{
@@ -6243,7 +6243,7 @@ body.ms660-night-mode
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.7.2 — Smart Route
+   MijnSerenity Cloud 6.7.3 — Smart Route
    ========================================================= */
 
 .ms670-profile-card{
@@ -6567,7 +6567,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 6.7.2 — iOS delen en route-POI's */
+/* MijnSerenity 6.7.3 — iOS delen en route-POI's */
 .ms672-share-note{
   display:grid;
   grid-template-columns:38px minmax(0,1fr);
@@ -6600,4 +6600,225 @@ body.ms660-night-mode
   margin-top:3px;
   color:var(--muted);
   line-height:1.35;
+}
+
+
+/* MijnSerenity 6.7.3 — fullscreen kaart en alternatieve route */
+.planner-map-shell{
+  position:relative;
+  overflow:hidden;
+  border-radius:18px;
+}
+.planner-map-shell .planner-map{
+  cursor:zoom-in;
+  border-radius:18px;
+}
+.planner-map-expand{
+  position:absolute;
+  z-index:600;
+  top:12px;
+  right:12px;
+  width:auto;
+  min-height:40px;
+  padding:8px 11px;
+  border-radius:999px;
+  color:#fff;
+  background:rgba(5,24,35,.88);
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:0 4px 16px rgba(0,0,0,.28);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.planner-map-tap-hint{
+  position:absolute;
+  z-index:500;
+  left:50%;
+  bottom:12px;
+  transform:translateX(-50%);
+  padding:6px 10px;
+  border-radius:999px;
+  color:#e8f9ff;
+  background:rgba(5,24,35,.80);
+  border:1px solid rgba(255,255,255,.15);
+  font-size:11px;
+  font-weight:800;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.planner-map-fullscreen{
+  position:fixed;
+  inset:0;
+  z-index:2147483500;
+  padding:
+    max(8px,env(safe-area-inset-top))
+    max(8px,env(safe-area-inset-right))
+    max(8px,env(safe-area-inset-bottom))
+    max(8px,env(safe-area-inset-left));
+  background:rgba(0,4,8,.94);
+  display:flex;
+  align-items:stretch;
+  justify-content:stretch;
+}
+.planner-map-fullscreen-panel{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  min-width:0;
+  min-height:0;
+  border-radius:22px;
+  overflow:hidden;
+  background:#071925;
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 26px 70px rgba(0,0,0,.62);
+}
+.planner-map-fullscreen-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:12px 14px;
+  background:rgba(4,20,30,.98);
+  border-bottom:1px solid rgba(255,255,255,.10);
+}
+.planner-map-fullscreen-head strong,
+.planner-map-fullscreen-head small{
+  display:block;
+}
+.planner-map-fullscreen-head small{
+  margin-top:2px;
+  color:var(--muted);
+}
+.planner-map-fullscreen-close{
+  flex:0 0 auto;
+  width:52px;
+  min-width:52px;
+  height:52px;
+  min-height:52px;
+  padding:0;
+  border-radius:50%;
+  color:#fff;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.22);
+  font-size:38px;
+  line-height:1;
+}
+.planner-map-fullscreen-host{
+  flex:1;
+  min-height:0;
+  background:#061521;
+}
+.planner-map-fullscreen-canvas{
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  border-radius:0 !important;
+  cursor:grab !important;
+}
+.planner-map-fullscreen-canvas:active{
+  cursor:grabbing !important;
+}
+body.planner-map-fullscreen-open{
+  overflow:hidden !important;
+  touch-action:none;
+}
+.ms673-alternative-panel{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin:13px 0;
+  padding:13px 14px;
+  border-radius:16px;
+  background:rgba(69,200,255,.08);
+  border:1px solid rgba(69,200,255,.20);
+}
+.ms673-alternative-panel > div:first-child{
+  min-width:0;
+}
+.ms673-alternative-panel strong,
+.ms673-alternative-panel small{
+  display:block;
+}
+.ms673-alternative-panel small{
+  margin-top:3px;
+  color:var(--muted);
+  line-height:1.35;
+}
+.ms673-alternative-panel.success{
+  background:rgba(75,211,143,.09);
+  border-color:rgba(75,211,143,.25);
+}
+.ms673-alternative-panel.unavailable{
+  background:rgba(255,190,75,.08);
+  border-color:rgba(255,190,75,.20);
+}
+.ms673-alternative-actions{
+  display:flex;
+  flex:0 1 540px;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.ms673-alternative-actions button{
+  width:auto;
+  min-width:150px;
+  padding:9px 11px;
+  text-align:left;
+}
+.ms673-alternative-actions button small{
+  margin-top:3px;
+  color:inherit;
+  opacity:.76;
+  font-size:10px;
+}
+.ms673-alternative-actions button.active{
+  color:#082019;
+  background:#75e2a7;
+}
+.ms673-spinner{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:rgba(69,200,255,.13);
+  font-size:23px;
+  animation:ms673-spin 1s linear infinite;
+}
+@keyframes ms673-spin{
+  to{transform:rotate(360deg)}
+}
+@media(max-width:760px){
+  .planner-map-expand{
+    top:9px;
+    right:9px;
+    min-height:36px;
+    padding:7px 9px;
+    font-size:12px;
+  }
+  .planner-map-tap-hint{
+    display:none;
+  }
+  .planner-map-fullscreen-head small{
+    display:none;
+  }
+  .planner-map-fullscreen-close{
+    width:46px;
+    min-width:46px;
+    height:46px;
+    min-height:46px;
+    font-size:34px;
+  }
+  .ms673-alternative-panel{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .ms673-alternative-actions{
+    flex:0 0 auto;
+    justify-content:flex-start;
+  }
+  .ms673-alternative-actions button{
+    flex:1 1 170px;
+  }
 }
