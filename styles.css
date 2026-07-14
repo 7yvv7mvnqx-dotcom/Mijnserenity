@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v6.9.2";
+  content:" · v6.9.3";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.2 — Finance Command Center + cockpit
+   MijnSerenity Cloud 6.9.3 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5664,7 +5664,7 @@ main{
 }
 
 
-/* MijnSerenity 6.9.2 — Waterkaarten Bridge en gedeelde live vaarkaart */
+/* MijnSerenity 6.9.3 — Waterkaarten Bridge en gedeelde live vaarkaart */
 .live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
 .live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
 .live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
@@ -5677,7 +5677,7 @@ main{
 @media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
 
 
-/* MijnSerenity 6.9.2 — waterwegrouter, nautische laag en route-POI's */
+/* MijnSerenity 6.9.3 — waterwegrouter, nautische laag en route-POI's */
 .planner-fallback-settings{
   margin:10px 0 14px;
   padding:10px 12px;
@@ -5813,7 +5813,7 @@ main{
 }
 
 
-/* MijnSerenity 6.9.2 — iPad/Safari vaste onderbalk */
+/* MijnSerenity 6.9.3 — iPad/Safari vaste onderbalk */
 html,
 body{
   transform:none !important;
@@ -5873,7 +5873,7 @@ body > .bottom-nav:not(.bottom-nav-auto-hidden),
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.2 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.9.3 — Next Level Live Cockpit
    ========================================================= */
 
 .ms660-cockpit-actions{
@@ -6243,7 +6243,7 @@ body.ms660-night-mode
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.2 — Smart Route
+   MijnSerenity Cloud 6.9.3 — Smart Route
    ========================================================= */
 
 .ms670-profile-card{
@@ -6567,7 +6567,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 6.9.2 — iOS delen en route-POI's */
+/* MijnSerenity 6.9.3 — iOS delen en route-POI's */
 .ms672-share-note{
   display:grid;
   grid-template-columns:38px minmax(0,1fr);
@@ -6603,7 +6603,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 6.9.2 — fullscreen kaart en alternatieve route */
+/* MijnSerenity 6.9.3 — fullscreen kaart en alternatieve route */
 .planner-map-shell{
   position:relative;
   overflow:hidden;
@@ -6825,7 +6825,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.2 — Auto Logbook
+   MijnSerenity Cloud 6.9.3 — Auto Logbook
    ========================================================= */
 
 .ms680-auto-center{
@@ -7083,7 +7083,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.2 — Routefoto’s
+   MijnSerenity Cloud 6.9.3 — Routefoto’s
    ========================================================= */
 
 .ms681-photo-composer{
@@ -7328,7 +7328,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.2 — Boat Intelligence
+   MijnSerenity Cloud 6.9.3 — Boat Intelligence
    ========================================================= */
 
 .ms690-intelligence-card{
@@ -7955,7 +7955,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 6.9.2 — Havenbibliotheek
+   MijnSerenity Cloud 6.9.3 — Havenbibliotheek
    ========================================================= */
 
 .ms692-harbour-import-card{
@@ -8155,5 +8155,70 @@ body.planner-map-fullscreen-open{
 
   .ms692-harbour-examples{
     grid-template-columns:1fr;
+  }
+}
+
+
+/* =========================================================
+   MijnSerenity Cloud 6.9.3 — Havens bij mijn locatie
+   ========================================================= */
+
+.ms693-nearby-search{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 190px minmax(220px,.55fr);
+  align-items:end;
+  gap:10px;
+  margin-top:12px;
+  padding:13px;
+  border-radius:15px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(75,211,143,.075),
+      rgba(69,200,255,.04)
+    );
+  border:1px solid rgba(75,211,143,.17);
+}
+
+.ms693-nearby-search strong,
+.ms693-nearby-search small{
+  display:block;
+}
+
+.ms693-nearby-search small{
+  margin-top:3px;
+  color:#91acb7;
+  line-height:1.35;
+}
+
+.ms693-nearby-search label{
+  margin:0;
+}
+
+.ms693-nearby-search select{
+  margin-top:5px;
+}
+
+.ms693-nearby-search button{
+  min-height:44px;
+}
+
+@media(max-width:860px){
+  .ms693-nearby-search{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .ms693-nearby-search > div:first-child{
+    grid-column:1 / -1;
+  }
+}
+
+@media(max-width:600px){
+  .ms693-nearby-search{
+    grid-template-columns:1fr;
+  }
+
+  .ms693-nearby-search > div:first-child{
+    grid-column:auto;
   }
 }

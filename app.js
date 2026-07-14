@@ -14080,7 +14080,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 6.9.2"
+<gpx version="1.1" creator="MijnSerenity 6.9.3"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14332,7 +14332,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.9.2';
+const APP_VERSION='6.9.3';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16322,7 +16322,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.9.2 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.9.3 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16711,7 +16711,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.2
+   MijnSerenity Cloud 6.9.3
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17648,7 +17648,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.9.2"
+ creator="MijnSerenity 6.9.3"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17674,7 +17674,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.9.2 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.9.3 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17712,7 +17712,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.2 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.9.3 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18686,7 +18686,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.2 — Smart Route
+   MijnSerenity Cloud 6.9.3 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -19996,7 +19996,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.9.2 Smart Route"
+ creator="MijnSerenity 6.9.3 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -20025,7 +20025,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.9.2 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 6.9.3 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20092,7 +20092,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.2 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 6.9.3 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -21011,7 +21011,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.2 — Auto Logbook
+   MijnSerenity Cloud 6.9.3 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22219,7 +22219,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.2 — Routefoto’s met GPS en omschrijving
+   MijnSerenity Cloud 6.9.3 — Routefoto’s met GPS en omschrijving
    ============================================================ */
 
 let ms681PendingPhotos=[];
@@ -23048,7 +23048,7 @@ initLiveMode=async function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.2 — Boat Intelligence
+   MijnSerenity Cloud 6.9.3 — Boat Intelligence
    ============================================================ */
 
 function ms690Clamp(value,min=0,max=100){
@@ -24348,7 +24348,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.2 — Gewaardeerde havenimporteur
+   MijnSerenity Cloud 6.9.3 — Gewaardeerde havenimporteur
    ============================================================ */
 
 let ms692HarbourImportBusy=false;
@@ -24998,6 +24998,359 @@ async function ms692ImportRatedHarbours(){
     );
   }finally{
     ms692HarbourImportBusy=false;
+    if(button)button.disabled=false;
+  }
+}
+
+
+
+/* ============================================================
+   MijnSerenity Cloud 6.9.3 — Havens binnen straal van locatie
+   ============================================================ */
+
+let ms693NearbyBusy=false;
+
+function ms693CurrentPosition(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation){
+      reject(
+        new Error(
+          'Dit apparaat ondersteunt geen locatiebepaling.'
+        )
+      );
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      position=>resolve({
+        lat:Number(position.coords.latitude),
+        lon:Number(position.coords.longitude),
+        accuracy:Number(position.coords.accuracy)||null
+      }),
+      error=>{
+        const messages={
+          1:'Locatietoegang is geweigerd. Sta locatie toe voor mijnserenity.nl.',
+          2:'De huidige locatie is tijdelijk niet beschikbaar.',
+          3:'Het ophalen van de locatie duurde te lang.'
+        };
+
+        reject(
+          new Error(
+            messages[error.code]||
+            error.message||
+            'Locatie kon niet worden bepaald.'
+          )
+        );
+      },
+      {
+        enableHighAccuracy:true,
+        maximumAge:30000,
+        timeout:20000
+      }
+    );
+  });
+}
+
+function ms693NearbyHarbourQuery(
+  lat,
+  lon,
+  radiusKm
+){
+  const radiusMeters=Math.round(
+    Math.max(1,Number(radiusKm)||20)*
+    1000
+  );
+
+  return `[out:json][timeout:45];
+(
+  nwr["leisure"="marina"](around:${radiusMeters},${Number(lat).toFixed(6)},${Number(lon).toFixed(6)});
+  nwr["seamark:harbour:category"="marina"](around:${radiusMeters},${Number(lat).toFixed(6)},${Number(lon).toFixed(6)});
+  nwr["seamark:type"="harbour"]["harbour"="marina"](around:${radiusMeters},${Number(lat).toFixed(6)},${Number(lon).toFixed(6)});
+);
+out center tags;`;
+}
+
+function ms693HarbourRows(
+  elements,
+  origin,
+  radiusKm
+){
+  const seen=new Set();
+  const rows=[];
+
+  (elements||[]).forEach(element=>{
+    const tags=element.tags||{};
+    const position=ms692ElementPosition(element);
+
+    if(!position.valid)return;
+
+    const distanceKm=haversineKm(
+      origin,
+      {
+        lat:position.lat,
+        lon:position.lon
+      }
+    );
+
+    if(distanceKm>Number(radiusKm))return;
+
+    const name=String(
+      tags.name||
+      tags['seamark:name']||
+      tags.operator||
+      'Naamloze jachthaven'
+    ).trim();
+
+    const key=
+      `${element.type}:${element.id}`;
+
+    if(seen.has(key))return;
+    seen.add(key);
+
+    const ratingInfo=
+      ms692HarbourRating(tags);
+
+    rows.push({
+      osmKey:key,
+      name,
+      category:'Haven',
+      place:ms692HarbourPlace(tags),
+      address:ms692Address(tags),
+      review:[
+        'Geïmporteerd als haven nabij mijn locatie.',
+        `Afstand bij import: ${distanceKm.toLocaleString('nl-NL',{
+          maximumFractionDigits:1
+        })} km`,
+        ratingInfo
+          ?`Openbare score/classificatie: ${ratingInfo.rating.toLocaleString('nl-NL',{
+              maximumFractionDigits:1
+            })}/5 · brontag ${ratingInfo.source}=${ratingInfo.original}`
+          :'Geen openbare numerieke beoordeling beschikbaar.',
+        tags.website||tags['contact:website']
+          ?`website: ${tags.website||tags['contact:website']}`
+          :'',
+        tags.phone||tags['contact:phone']
+          ?`telefoon: ${tags.phone||tags['contact:phone']}`
+          :'',
+        tags.vhf
+          ?`VHF: ${tags.vhf}`
+          :'',
+        `[OSM:${element.type}/${element.id}]`
+      ].filter(Boolean).join(' · '),
+      rating:ratingInfo?.rating??null,
+      is_favorite:false,
+      latitude:position.lat,
+      longitude:position.lon,
+      distanceKm,
+      tags
+    });
+  });
+
+  return rows.sort(
+    (a,b)=>
+      a.distanceKm-b.distanceKm||
+      a.name.localeCompare(b.name,'nl')
+  );
+}
+
+function ms693RenderNearbyPreview(
+  candidates,
+  imported,
+  duplicates,
+  radiusKm
+){
+  const preview=$('ms692HarbourPreview');
+  if(!preview)return;
+
+  const examples=candidates
+    .slice(0,15)
+    .map(harbour=>`
+      <article>
+        <span>⚓</span>
+        <div>
+          <strong>${esc(harbour.name)}</strong>
+          <small>
+            ${harbour.distanceKm.toLocaleString('nl-NL',{
+              maximumFractionDigits:1
+            })} km
+            ${harbour.place?` · ${esc(harbour.place)}`:''}
+            ${Number.isFinite(Number(harbour.rating))
+              ?` · ${esc(ms692RatingDisplay(harbour.rating))}`
+              :' · geen score'}
+          </small>
+        </div>
+      </article>
+    `).join('');
+
+  preview.classList.remove('hidden');
+  preview.innerHTML=`
+    <div class="ms692-harbour-summary">
+      <div>
+        <span>Binnen ${Number(radiusKm)} km</span>
+        <strong>${candidates.length}</strong>
+      </div>
+      <div>
+        <span>Nieuw toegevoegd</span>
+        <strong>${imported}</strong>
+      </div>
+      <div>
+        <span>Al aanwezig</span>
+        <strong>${duplicates}</strong>
+      </div>
+    </div>
+    ${
+      examples
+        ?`<div class="ms692-harbour-examples">${examples}</div>`
+        :''
+    }
+  `;
+}
+
+async function ms693ImportNearbyHarbours(){
+  if(ms693NearbyBusy)return;
+
+  const button=$('ms693NearbyButton');
+  const radiusKm=Number(
+    $('ms693NearbyRadius')?.value||
+    20
+  );
+
+  try{
+    if(!currentUser){
+      const {data:{session}}=
+        await sb.auth.getSession();
+      currentUser=session?.user||null;
+    }
+
+    if(!currentBoat&&currentUser){
+      await loadMembership();
+    }
+
+    if(!currentBoat||!currentUser){
+      throw new Error(
+        'Log opnieuw in en koppel Serenity.'
+      );
+    }
+
+    ms693NearbyBusy=true;
+    if(button)button.disabled=true;
+
+    ms692SetHarbourBadge(
+      'Locatie bepalen…',
+      'checking'
+    );
+    ms692SetHarbourStatus(
+      'Huidige GPS-locatie ophalen…'
+    );
+
+    const origin=
+      await ms693CurrentPosition();
+
+    ms692SetHarbourBadge(
+      'Havens zoeken…',
+      'checking'
+    );
+    ms692SetHarbourStatus(
+      `Alle jachthavens binnen ${radiusKm} km van je huidige locatie worden gezocht.`
+    );
+
+    const elements=
+      await ms692FetchHarbours(
+        ms693NearbyHarbourQuery(
+          origin.lat,
+          origin.lon,
+          radiusKm
+        )
+      );
+
+    const candidates=
+      ms693HarbourRows(
+        elements,
+        origin,
+        radiusKm
+      );
+
+    const fresh=[];
+    let duplicates=0;
+
+    candidates.forEach(candidate=>{
+      if(ms692ExistingHarbourMatch(candidate)){
+        duplicates++;
+      }else{
+        fresh.push(candidate);
+      }
+    });
+
+    if(!candidates.length){
+      ms692SetHarbourBadge(
+        'Geen havens gevonden',
+        'warning'
+      );
+      ms692SetHarbourStatus(
+        `Binnen ${radiusKm} km zijn geen jachthavens in de openbare kaartgegevens gevonden. Probeer een grotere straal.`,
+        'warning'
+      );
+      ms693RenderNearbyPreview(
+        [],
+        0,
+        0,
+        radiusKm
+      );
+      return;
+    }
+
+    let imported=0;
+
+    if(fresh.length){
+      imported=
+        await ms692InsertHarbours(
+          fresh
+        );
+      await loadPois();
+    }
+
+    ms692SetHarbourBadge(
+      imported
+        ?`${imported} toegevoegd`
+        :'Alles aanwezig',
+      'success'
+    );
+
+    ms692SetHarbourStatus(
+      imported
+        ?`${imported} haven${imported===1?' is':'s zijn'} binnen ${radiusKm} km toegevoegd. ${duplicates} bestaande haven${duplicates===1?' is':'s zijn'} overgeslagen.`
+        :`Alle ${duplicates} gevonden havens stonden al in POI.`,
+      'success'
+    );
+
+    ms693RenderNearbyPreview(
+      candidates,
+      imported,
+      duplicates,
+      radiusKm
+    );
+
+    if(imported){
+      showAppToast(
+        `${imported} havens in de buurt toegevoegd ✅`
+      );
+    }
+  }catch(error){
+    console.error(
+      'Havens in de buurt importeren mislukt:',
+      error
+    );
+
+    ms692SetHarbourBadge(
+      'Zoeken mislukt',
+      'error'
+    );
+    ms692SetHarbourStatus(
+      `Zoeken mislukt: ${error?.message||'onbekende fout'}`,
+      'error'
+    );
+  }finally{
+    ms693NearbyBusy=false;
     if(button)button.disabled=false;
   }
 }
