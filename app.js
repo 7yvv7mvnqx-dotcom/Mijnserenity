@@ -14312,7 +14312,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.7.0';
+const APP_VERSION='6.7.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16287,7 +16287,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.7.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.7.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16638,7 +16638,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.0
+   MijnSerenity Cloud 6.7.1
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -16851,12 +16851,62 @@ async function ms650RequestWaterwayRoute(points){
   }
 
   ms650RoutingRequest=new AbortController();
+  const signal=ms650RoutingRequest.signal;
   const timeout=setTimeout(
     ()=>ms650RoutingRequest?.abort(),
-    24000
+    26000
   );
 
-  try{
+  const normalisedPoints=points.map(point=>({
+    lat:Number(point.lat),
+    lon:Number(point.lon),
+    label:point.label||''
+  }));
+
+  const parseRoutePayload=payload=>{
+    const features=payload?.type==='FeatureCollection'
+      ?payload.features||[]
+      :payload?.type==='Feature'
+        ?[payload]
+        :payload?.type==='LineString'
+          ?[{
+              type:'Feature',
+              geometry:payload,
+              properties:{}
+            }]
+          :[];
+
+    const feature=features.find(candidate=>
+      candidate?.geometry?.type==='LineString'&&
+      Array.isArray(candidate.geometry.coordinates)&&
+      candidate.geometry.coordinates.length>=2
+    );
+
+    if(!feature){
+      throw new Error(
+        'De router gaf geen bruikbare waterwegroute terug.'
+      );
+    }
+
+    const coordinates=feature.geometry.coordinates
+      .map(ms650Coordinate)
+      .filter(ms650ValidCoordinate);
+
+    if(coordinates.length<2){
+      throw new Error(
+        'De waterwegroute bevat te weinig routepunten.'
+      );
+    }
+
+    return {
+      ok:true,
+      coordinates,
+      distanceKm:ms650RouteDistanceKm(coordinates),
+      properties:feature.properties||{}
+    };
+  };
+
+  const tryLegacyFunction=async()=>{
     const response=await fetch(
       '/.netlify/functions/waterway-route',
       {
@@ -16865,15 +16915,15 @@ async function ms650RequestWaterwayRoute(points){
           'content-type':'application/json'
         },
         body:JSON.stringify({
-          points:points.map(point=>({
-            lat:Number(point.lat),
-            lon:Number(point.lon),
-            label:point.label||''
-          }))
+          points:normalisedPoints
         }),
-        signal:ms650RoutingRequest.signal
+        signal
       }
     );
+
+    if(response.status===404){
+      throw new Error('FUNCTION_NOT_DEPLOYED');
+    }
 
     const data=await response.json().catch(()=>({}));
 
@@ -16899,6 +16949,112 @@ async function ms650RequestWaterwayRoute(points){
       ...data,
       coordinates
     };
+  };
+
+  const tryProxyCandidate=async(
+    endpoint,
+    profile
+  )=>{
+    const url=new URL(
+      endpoint,
+      location.origin
+    );
+
+    url.searchParams.set(
+      'lonlats',
+      normalisedPoints
+        .map(point=>`${point.lon},${point.lat}`)
+        .join('|')
+    );
+    url.searchParams.set('profile',profile);
+    url.searchParams.set('alternativeidx','0');
+    url.searchParams.set('format','geojson');
+
+    const response=await fetch(url,{
+      method:'GET',
+      headers:{
+        accept:'application/geo+json, application/json'
+      },
+      signal
+    });
+
+    if(!response.ok){
+      throw new Error(
+        `${profile}: HTTP ${response.status}`
+      );
+    }
+
+    const payload=await response.json();
+    const route=parseRoutePayload(payload);
+
+    return {
+      ...route,
+      source:'Netlify BRouter-proxy',
+      profile
+    };
+  };
+
+  try{
+    try{
+      return await tryLegacyFunction();
+    }catch(error){
+      if(
+        error?.message!=='FUNCTION_NOT_DEPLOYED'
+      ){
+        console.warn(
+          'Netlify Function niet bruikbaar; proxy wordt geprobeerd:',
+          error
+        );
+      }
+    }
+
+    const candidates=[
+      ['/api/waterway-route','motorboat'],
+      ['/api/waterway-route','waterway_nomod'],
+      ['/api/waterway-route','river'],
+      ['/api/waterway-route-backup','motorboat'],
+      ['/api/waterway-route-backup','waterway_nomod'],
+      ['/api/waterway-route-backup','river']
+    ];
+
+    const attempts=candidates.map(
+      ([endpoint,profile])=>
+        tryProxyCandidate(endpoint,profile)
+    );
+
+    if(typeof Promise.any==='function'){
+      return await Promise.any(attempts);
+    }
+
+    const results=await Promise.allSettled(attempts);
+    const success=results.find(
+      result=>result.status==='fulfilled'
+    );
+
+    if(success)return success.value;
+
+    throw new Error(
+      'Geen waterwegrouter kon een route berekenen.'
+    );
+  }catch(error){
+    if(error?.name==='AbortError'){
+      throw new Error(
+        'De waterwegrouter reageerde niet op tijd.'
+      );
+    }
+
+    if(error instanceof AggregateError){
+      const messages=[...error.errors]
+        .map(item=>item?.message)
+        .filter(Boolean);
+
+      throw new Error(
+        messages[0]||
+        'Geen waterwegrouter kon een route berekenen.'
+      );
+    }
+
+    throw error;
   }finally{
     clearTimeout(timeout);
     ms650RoutingRequest=null;
@@ -17320,7 +17476,7 @@ renderPlannerSummary=function(plan){
       <small>
         ${routed
           ?'De kaart en het GPX-bestand gebruiken de volledige waterweg-geometrie.'
-          :'De externe waterwegrouter was niet bereikbaar. Deze lijn is alleen een indicatie.'}
+          :'De waterwegrouter was niet bereikbaar. Deze lijn is alleen een indicatie.'}
         ${plan.routeWarning?` ${esc(plan.routeWarning)}`:''}
       </small>
     `;
@@ -17419,7 +17575,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.7.0"
+ creator="MijnSerenity 6.7.1"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17445,7 +17601,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.7.0 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.7.1 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17483,7 +17639,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.0 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.7.1 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18457,7 +18613,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.7.0 — Smart Route
+   MijnSerenity Cloud 6.7.1 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -19715,7 +19871,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.7.0 Smart Route"
+ creator="MijnSerenity 6.7.1 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>

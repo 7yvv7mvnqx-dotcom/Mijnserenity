@@ -11,6 +11,20 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
+
+# MijnSerenity 6.7.1 — waterwegrouter zonder Functions-map
+[[redirects]]
+  from = "/api/waterway-route"
+  to = "https://brouter.grade.de/brouter"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/waterway-route-backup"
+  to = "https://brouter.de/brouter"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
