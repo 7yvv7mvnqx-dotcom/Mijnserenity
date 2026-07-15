@@ -5,17 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="6.9.4">
+<meta name="mijnserenity-build" content="7.0.0">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=6940">
+<link rel="manifest" href="manifest.json?v=7000">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=6940">
+<link rel="stylesheet" href="styles.css?v=7000">
+  <link rel="stylesheet" href="mission-control.css?v=7000">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=6940">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=6940">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7000">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -24,7 +25,7 @@
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6940" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7000" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -63,7 +64,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6940" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7000" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -173,6 +174,62 @@
             <span>📖</span>
             <small>Nieuw log</small>
           </button>
+        </div>
+      </div>
+
+      <div class="card ms700-mission-card">
+        <div class="ms700-mission-head">
+          <div>
+            <span class="eyebrow">MIJNSERENITY 7.0 · MISSION CONTROL</span>
+            <h2>Serenity volledig onder controle</h2>
+            <p class="small">
+              Vertrekcheck, datakwaliteit, systeemdiagnose en complete
+              backup in één professioneel controlecentrum.
+            </p>
+          </div>
+          <div id="ms700MissionRing" class="ms700-mission-ring">
+            <strong id="ms700MissionScore">–</strong>
+            <small>gereedheid</small>
+          </div>
+        </div>
+
+        <div class="ms700-status-grid">
+          <button type="button" onclick="ms700OpenMissionControl('readiness')">
+            <span>Vertrekcheck</span>
+            <strong id="ms700ReadinessStatus">Controleren…</strong>
+            <small id="ms700ReadinessDetail">Veiligheid en techniek</small>
+          </button>
+          <button type="button" onclick="ms700OpenMissionControl('data')">
+            <span>Datakwaliteit</span>
+            <strong id="ms700DataStatus">Controleren…</strong>
+            <small id="ms700DataDetail">POI’s, logboek en instellingen</small>
+          </button>
+          <button type="button" onclick="ms700OpenMissionControl('diagnostics')">
+            <span>Systeemstatus</span>
+            <strong id="ms700SystemStatus">Controleren…</strong>
+            <small id="ms700SystemDetail">Cloud, app en koppelingen</small>
+          </button>
+          <button type="button" onclick="ms700OpenMissionControl('backup')">
+            <span>Laatste backup</span>
+            <strong id="ms700BackupStatus">Nog geen backup</strong>
+            <small id="ms700BackupDetail">Volledige data-export</small>
+          </button>
+        </div>
+
+        <div class="ms700-mission-actions">
+          <button type="button" onclick="ms700OpenMissionControl('readiness')">
+            ✓ Open vertrekcheck
+          </button>
+          <button type="button" class="secondary" onclick="ms700RunDiagnostics(true)">
+            ⌁ Systeemdiagnose
+          </button>
+          <button type="button" class="secondary" onclick="ms700CreateAndShareBackup()">
+            ⬆︎ Maak & deel backup
+          </button>
+        </div>
+
+        <div id="ms700MissionInsight" class="ms700-mission-insight">
+          Mission Control verzamelt de actuele status van Serenity.
         </div>
       </div>
 
@@ -332,7 +389,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=6940" alt="">
+          <img src="waterkaarten-dashboard.png?v=7000" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -426,7 +483,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v6.9.4</div>
+          <div class="label">Sync · v7.0.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1109,7 +1166,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">6.9.4</span>
+        <span class="planner-version-badge">7.0.0</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -3081,6 +3138,115 @@
   </div>
 </main>
 
+<div id="ms700MissionModal"
+    class="ms700-mission-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-label="MijnSerenity Mission Control"
+    onclick="ms700CloseMissionControl(event)">
+    <div class="ms700-mission-panel" onclick="event.stopPropagation()">
+      <div class="ms700-modal-head">
+        <div>
+          <span class="eyebrow">MISSION CONTROL · SERENITY</span>
+          <h2>Vertrek, data en systemen</h2>
+          <p class="small">Controleer Serenity en bewaar een veilige backup.</p>
+        </div>
+        <div class="ms700-modal-score">
+          <strong id="ms700ModalScore">–</strong><span>/100</span>
+        </div>
+        <button type="button" class="ms700-modal-close"
+          aria-label="Sluiten" onclick="ms700CloseMissionControl(event,true)">×</button>
+      </div>
+
+      <div class="ms700-modal-tabs">
+        <button id="ms700TabReadiness" type="button"
+          onclick="ms700ShowMissionSection('readiness')">Vertrekcheck</button>
+        <button id="ms700TabData" type="button"
+          onclick="ms700ShowMissionSection('data')">Datakwaliteit</button>
+        <button id="ms700TabDiagnostics" type="button"
+          onclick="ms700ShowMissionSection('diagnostics')">Diagnose</button>
+        <button id="ms700TabBackup" type="button"
+          onclick="ms700ShowMissionSection('backup')">Backup</button>
+      </div>
+
+      <div class="ms700-modal-body">
+        <section id="ms700SectionReadiness" class="ms700-mission-section">
+          <div class="ms700-section-head">
+            <div>
+              <span class="eyebrow">VERTREKCHECK VANDAAG</span>
+              <h3>Is Serenity klaar om te varen?</h3>
+            </div>
+            <span id="ms700ReadinessBadge" class="ms700-section-badge">Controleren</span>
+          </div>
+          <div class="ms700-readiness-layout">
+            <div id="ms700AutomaticChecks" class="ms700-check-list"></div>
+            <div class="ms700-manual-checks">
+              <strong>Handmatig afvinken</strong>
+              <small>Deze lijst wordt iedere nieuwe dag opnieuw geopend.</small>
+              <label><input type="checkbox" data-ms700-check="lifejackets"
+                onchange="ms700ManualCheckChanged(this)">
+                <span>Reddingsvesten en veiligheidsmiddelen aanwezig</span></label>
+              <label><input type="checkbox" data-ms700-check="lines"
+                onchange="ms700ManualCheckChanged(this)">
+                <span>Lijnen, stootwillen en pikhaak gereed</span></label>
+              <label><input type="checkbox" data-ms700-check="fire"
+                onchange="ms700ManualCheckChanged(this)">
+                <span>Brandblusser, rookmelders en bilge gecontroleerd</span></label>
+              <label><input type="checkbox" data-ms700-check="documents"
+                onchange="ms700ManualCheckChanged(this)">
+                <span>Documenten, sleutels en telefoons aanwezig</span></label>
+              <label><input type="checkbox" data-ms700-check="deck"
+                onchange="ms700ManualCheckChanged(this)">
+                <span>Dek, luiken, walstroom en losse spullen veilig</span></label>
+            </div>
+          </div>
+        </section>
+
+        <section id="ms700SectionData" class="ms700-mission-section hidden">
+          <div class="ms700-section-head">
+            <div><span class="eyebrow">DATA QUALITY CENTER</span>
+              <h3>Waar ontbreken nog gegevens?</h3></div>
+            <span id="ms700DataBadge" class="ms700-section-badge">Controleren</span>
+          </div>
+          <div id="ms700DataQualityList" class="ms700-quality-list"></div>
+        </section>
+
+        <section id="ms700SectionDiagnostics" class="ms700-mission-section hidden">
+          <div class="ms700-section-head">
+            <div><span class="eyebrow">SYSTEEMDIAGNOSE</span>
+              <h3>Werken cloud, GPS, opslag en koppelingen?</h3></div>
+            <button id="ms700DiagnosticButton" type="button" class="secondary"
+              onclick="ms700RunDiagnostics(false)">Start diagnose</button>
+          </div>
+          <div id="ms700DiagnosticList" class="ms700-diagnostic-list">
+            <div class="ms700-empty-state">Start de diagnose voor een actuele controle.</div>
+          </div>
+          <button type="button" class="secondary ms700-copy-report"
+            onclick="ms700CopySystemReport()">Kopieer systeemrapport</button>
+        </section>
+
+        <section id="ms700SectionBackup" class="ms700-mission-section hidden">
+          <div class="ms700-section-head">
+            <div><span class="eyebrow">BACKUP CENTER</span>
+              <h3>Bewaar een kopie van je MijnSerenity-data</h3></div>
+            <span id="ms700BackupBadge" class="ms700-section-badge">Nog geen backup</span>
+          </div>
+          <div class="ms700-backup-card">
+            <div><strong>Complete JSON-backup</strong>
+              <small>Bootinstellingen, POI’s, vaartochten, kosten, techniek,
+                onderhoud, foto-metadata en live navigatiestatus.</small></div>
+            <button id="ms700BackupButton" type="button"
+              onclick="ms700CreateAndShareBackup()">⬆︎ Maak & deel backup</button>
+          </div>
+          <div id="ms700BackupSummary" class="ms700-backup-summary"></div>
+          <div class="ms700-backup-warning">
+            Een backup bevat persoonlijke bootgegevens. Bewaar het bestand veilig.
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
 <div id="plannerMapFullscreen"
     class="planner-map-fullscreen hidden"
     role="dialog"
@@ -3193,6 +3359,7 @@
   </div>
 </div>
 
-<script src="app.js?v=6940"></script>
+<script src="app.js?v=7000"></script>
+<script src="mission-control.js?v=7000"></script>
 </body>
 </html>
