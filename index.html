@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.0.1">
+<meta name="mijnserenity-build" content="7.1.0">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=7010">
+<link rel="manifest" href="manifest.json?v=7100">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7010">
-  <link rel="stylesheet" href="mission-control.css?v=7010">
+<link rel="stylesheet" href="styles.css?v=7100">
+  <link rel="stylesheet" href="mission-control.css?v=7100">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7010">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7010">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7100">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7100">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -25,7 +25,7 @@
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7010" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7100" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -64,7 +64,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7010" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7100" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -89,6 +89,7 @@
   <div class="tabs">
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
     <button class="tab" onclick="showTab('live',this);initLiveMode()">Live varen</button>
+    <button class="tab" onclick="showTab('weather',this);initWeatherDashboard()">Weer</button>
     <button class="tab" onclick="showTab('map',this);initMap()">Kaart</button>
     <button class="tab" onclick="showTab('planner',this);initPlanner()">Reisplanner</button>
     <button class="tab" onclick="showTab('technical',this);initTechnicalDashboard()">Techniek</button>
@@ -108,7 +109,10 @@
         <span class="eyebrow">CAPTAIN EDITION</span>
         <strong>Alles van Serenity op één plek</strong>
       </div>
-      <button type="button" onclick="captainNavigate('live')">▶ Start live varen</button>
+      <div class="captain-strip-actions">
+        <button type="button" onclick="captainNavigate('live')">▶ Start live varen</button>
+        <button type="button" class="secondary" onclick="captainNavigate('weather')">🌦️ Bekijk weer</button>
+      </div>
     </div>
 
     <div class="card dashboard-photo-card" onclick="goToTab('settings')">
@@ -389,7 +393,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7010" alt="">
+          <img src="waterkaarten-dashboard.png?v=7100" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -483,7 +487,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.0.1</div>
+          <div class="label">Sync · v7.1.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -625,7 +629,7 @@
           <small id="ms660NextPoiDistance">Geen POI op actieve route</small>
         </div>
         <div class="ms660-command-metric">
-          <span>Wind</span>
+          <span>💨 Wind</span>
           <strong id="ms660Wind">–</strong>
           <small id="ms660WindDetail">Wachten op weer</small>
         </div>
@@ -1008,7 +1012,7 @@
 
     <div class="live-detail-metrics">
       <div class="card live-metric live-weather-metric">
-        <span>Weer</span><strong id="liveWeatherTemp">–</strong><small id="liveWeatherShort">Wachten op GPS</small>
+        <span>🌦️ Weer</span><strong id="liveWeatherTemp">–</strong><small id="liveWeatherShort">Wachten op GPS</small>
       </div>
 
       <div class="card live-helm-card" aria-label="Grafische roerstand">
@@ -1068,21 +1072,72 @@
     <div class="card live-instruments-card">
       <div class="live-instruments-head">
         <div>
-          <h2>Weer, motor en roer</h2>
+          <h2>🌤️ Weer, motor en roer</h2>
           <p class="small">Het weer wordt via de GPS-locatie opgehaald. Toerental en roerstand vul je in de webversie handmatig in.</p>
         </div>
-        <button type="button" class="secondary live-weather-refresh" onclick="refreshLiveWeather(true)">↻ Weer</button>
+        <button type="button" class="secondary live-weather-refresh" onclick="refreshLiveWeather(true)">🔄 Weer</button>
       </div>
 
       <div id="liveWeatherDetails" class="live-weather-details">
-        <div><span>Temperatuur</span><strong id="liveWeatherTemperature">–</strong></div>
-        <div><span>Gevoel</span><strong id="liveWeatherFeels">–</strong></div>
-        <div><span>Windkracht</span><strong id="liveWeatherWind">–</strong></div>
-        <div><span>Windstoten</span><strong id="liveWeatherGusts">–</strong></div>
-        <div><span>Neerslag</span><strong id="liveWeatherRain">–</strong></div>
-        <div><span>Situatie</span><strong id="liveWeatherDescription">Wachten op GPS</strong></div>
+        <div><span>🌡️ Temperatuur</span><strong id="liveWeatherTemperature">–</strong></div>
+        <div><span>🧥 Gevoel</span><strong id="liveWeatherFeels">–</strong></div>
+        <div><span>💨 Windkracht</span><strong id="liveWeatherWind">–</strong></div>
+        <div><span>🌬️ Windstoten</span><strong id="liveWeatherGusts">–</strong></div>
+        <div><span>🌧️ Neerslag</span><strong id="liveWeatherRain">–</strong></div>
+        <div><span>🛰️ Situatie</span><strong id="liveWeatherDescription">Wachten op GPS</strong></div>
       </div>
       <div id="liveWeatherStatus" class="status small">Het weer wordt na het eerste GPS-punt automatisch opgehaald.</div>
+
+      <div class="ms710-weather-suite">
+        <div class="ms710-weather-hero">
+          <div id="ms710WeatherHeroIcon" class="ms710-weather-hero-icon">🌤️</div>
+          <div class="ms710-weather-hero-copy">
+            <span class="eyebrow">WEER OP ROUTE</span>
+            <strong id="ms710WeatherHeroTitle">Wachten op GPS</strong>
+            <small id="ms710WeatherHeroMeta">Weerkaarten, tijdlijn en waarschuwingen verschijnen automatisch.</small>
+          </div>
+          <button type="button" class="secondary ms710-weather-refresh" onclick="refreshLiveWeather(true)">↻ Verwachting</button>
+        </div>
+
+        <div class="ms710-weather-block">
+          <div class="ms710-weather-subhead">
+            <strong>Waarschuwingen</strong>
+            <small>Handig voor wind, buien, mist en onweer.</small>
+          </div>
+          <div id="ms710WeatherWarnings" class="ms710-weather-warnings">
+            <article class="ms710-weather-warning good">
+              <span class="ms710-weather-warning-icon">✅</span>
+              <div>
+                <strong>Geen directe weerswaarschuwingen</strong>
+                <small>Zodra GPS actief is zie je hier waarschuwingen voor varen.</small>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="ms710-weather-block">
+          <div class="ms710-weather-subhead">
+            <strong>Weer per tijdlijn</strong>
+            <small id="ms710WeatherTimelineMeta">Komt beschikbaar na het eerste GPS-punt.</small>
+          </div>
+          <div id="ms710WeatherTimeline" class="ms710-weather-timeline"></div>
+        </div>
+
+        <div class="ms710-weather-block">
+          <div class="ms710-weather-subhead">
+            <strong>Interactieve weerkaarten</strong>
+            <small id="ms710WeatherMapMeta">Wind, neerslag, bewolking en temperatuur rond jouw locatie.</small>
+          </div>
+          <div class="ms710-weather-map-tabs">
+            <button type="button" class="ms710-weather-map-tab active" data-layer="wind" onclick="ms710SetWeatherMapLayer('wind')">💨 Wind</button>
+            <button type="button" class="ms710-weather-map-tab" data-layer="rain" onclick="ms710SetWeatherMapLayer('rain')">🌧️ Neerslag</button>
+            <button type="button" class="ms710-weather-map-tab" data-layer="clouds" onclick="ms710SetWeatherMapLayer('clouds')">☁️ Bewolking</button>
+            <button type="button" class="ms710-weather-map-tab" data-layer="temp" onclick="ms710SetWeatherMapLayer('temp')">🌡️ Temperatuur</button>
+          </div>
+          <iframe id="ms710WeatherMapFrame" class="ms710-weather-map-frame" title="MijnSerenity interactieve weerkaart" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          <div id="ms710WeatherMapCaption" class="ms710-weather-map-caption">Weerkaart verschijnt zodra de locatie bekend is.</div>
+        </div>
+      </div>
 
       <div class="live-instrument-inputs">
         <div class="live-instrument-control">
@@ -1155,6 +1210,138 @@
   </section>
 
 
+
+  <section id="weather" class="hidden">
+    <div class="weather-page-head">
+      <div>
+        <span class="eyebrow">WEER AAN BOORD</span>
+        <h1>Interactieve weerkaarten</h1>
+        <p class="small">Actueel weer, 72-uurs tijdlijn, zevendaagse verwachting en vaarwaarschuwingen voor Serenity.</p>
+      </div>
+      <div class="weather-head-actions">
+        <button type="button" onclick="useCurrentLocationForWeather()">📍 Mijn locatie</button>
+        <button type="button" class="secondary" onclick="usePlannerDestinationForWeather()">🏁 Bestemming</button>
+        <button type="button" class="secondary" onclick="refreshWeatherDashboard(true)">🔄 Vernieuwen</button>
+      </div>
+    </div>
+
+    <div class="card weather-search-card">
+      <label for="weatherLocationSearch">🔎 Zoek plaats, haven of vaargebied</label>
+      <div class="weather-search-row">
+        <input id="weatherLocationSearch" type="search" placeholder="Bijvoorbeeld Blokzijl, Giethoorn of Jachthaven Deventer"
+          autocomplete="off" onkeydown="handleWeatherSearchEnter(event)">
+        <button type="button" onclick="searchWeatherLocation()">Zoeken</button>
+      </div>
+      <div id="weatherSearchResults" class="weather-search-results hidden"></div>
+      <div id="weatherPageStatus" class="status small">Kies een locatie of gebruik je GPS.</div>
+    </div>
+
+    <div class="weather-current-grid">
+      <article id="weatherHeroCard" class="card weather-hero-card">
+        <div id="weatherHeroIcon" class="weather-hero-icon">🌦️</div>
+        <div class="weather-hero-copy">
+          <span id="weatherHeroTime" class="weather-hero-time">Actueel</span>
+          <strong id="weatherHeroTemp">–</strong>
+          <h2 id="weatherHeroDescription">Weer ophalen…</h2>
+          <p id="weatherHeroLocation">Locatie bepalen</p>
+        </div>
+        <div class="weather-hero-side">
+          <span>Voelt als <b id="weatherHeroFeels">–</b></span>
+          <span>Wind <b id="weatherHeroWind">–</b></span>
+          <span>Neerslag <b id="weatherHeroRain">–</b></span>
+          <span id="weatherHeroUpdated">Nog niet bijgewerkt</span>
+        </div>
+      </article>
+
+      <article class="card weather-warning-card">
+        <div class="weather-card-heading">
+          <div>
+            <span class="eyebrow">VAARWAARSCHUWINGEN</span>
+            <h2>⚠️ Aandacht op het water</h2>
+          </div>
+          <span id="weatherWarningBadge" class="weather-warning-badge good">Rustig</span>
+        </div>
+        <div id="weatherWarnings" class="weather-warning-list">
+          <div class="weather-warning-item good"><span>✅</span><div><b>Geen directe waarschuwingen</b><small>De komende uren worden na het ophalen beoordeeld.</small></div></div>
+        </div>
+      </article>
+    </div>
+
+    <div class="card weather-map-card">
+      <div class="weather-card-heading weather-map-heading">
+        <div>
+          <span class="eyebrow">WEERKAART</span>
+          <h2>🗺️ Weer rond de gekozen locatie</h2>
+          <p class="small">Tik op de kaart om een ander punt te bekijken. Kies een laag en beweeg door de tijd.</p>
+        </div>
+        <div class="weather-layer-buttons" role="group" aria-label="Weerkaartlaag">
+          <button type="button" class="active" data-weather-layer="temperature" onclick="setWeatherMapLayer('temperature',this)">🌡️ Temperatuur</button>
+          <button type="button" data-weather-layer="wind" onclick="setWeatherMapLayer('wind',this)">💨 Wind</button>
+          <button type="button" data-weather-layer="rain" onclick="setWeatherMapLayer('rain',this)">🌧️ Regen</button>
+          <button type="button" data-weather-layer="clouds" onclick="setWeatherMapLayer('clouds',this)">☁️ Wolken</button>
+        </div>
+      </div>
+      <div id="weatherMapCanvas" class="weather-map-canvas"></div>
+      <div class="weather-map-timeline">
+        <button id="weatherTimelinePlay" type="button" class="weather-play-button" onclick="toggleWeatherTimelinePlayback()">▶</button>
+        <input id="weatherTimelineRange" type="range" min="0" max="47" value="0" step="1"
+          aria-label="Tijdstip op weerkaart" oninput="setWeatherTimelineHour(this.value,true)">
+        <strong id="weatherTimelineLabel">Nu</strong>
+      </div>
+      <div id="weatherMapLegend" class="weather-map-legend"></div>
+    </div>
+
+    <div class="card weather-timeline-card">
+      <div class="weather-card-heading">
+        <div>
+          <span class="eyebrow">UUR VOOR UUR</span>
+          <h2>⏱️ Weer per tijdlijn</h2>
+          <p class="small">Veeg horizontaal en tik op een uur om de weerkaart en details bij te werken.</p>
+        </div>
+        <span id="weatherTimelineSummary" class="weather-timeline-summary">72 uur</span>
+      </div>
+      <div id="weatherHourlyTimeline" class="weather-hourly-timeline"></div>
+    </div>
+
+    <div class="weather-detail-grid">
+      <article class="card weather-details-card">
+        <div class="weather-card-heading">
+          <div><span class="eyebrow">DETAILS</span><h2>🧭 Vaarcondities</h2></div>
+        </div>
+        <div class="weather-detail-metrics">
+          <div><span>💧 Luchtvochtigheid</span><strong id="weatherDetailHumidity">–</strong></div>
+          <div><span>👁️ Zicht</span><strong id="weatherDetailVisibility">–</strong></div>
+          <div><span>☁️ Bewolking</span><strong id="weatherDetailClouds">–</strong></div>
+          <div><span>🧭 Windrichting</span><strong id="weatherDetailDirection">–</strong></div>
+          <div><span>🌬️ Windstoten</span><strong id="weatherDetailGusts">–</strong></div>
+          <div><span>🌧️ Regenkans</span><strong id="weatherDetailRainChance">–</strong></div>
+          <div><span>🔆 UV-index</span><strong id="weatherDetailUv">–</strong></div>
+          <div><span>📈 Luchtdruk</span><strong id="weatherDetailPressure">–</strong></div>
+        </div>
+      </article>
+
+      <article class="card weather-advice-card">
+        <div class="weather-card-heading">
+          <div><span class="eyebrow">DIGITALE SCHIPPER</span><h2>⛵ Vaaradvies</h2></div>
+        </div>
+        <div id="weatherSailingAdvice" class="weather-sailing-advice">
+          Weergegevens worden beoordeeld zodra een locatie is geladen.
+        </div>
+        <button type="button" class="secondary" onclick="openExternalWeatherMap()">🌍 Open uitgebreide modelkaart</button>
+      </article>
+    </div>
+
+    <div class="card weather-daily-card">
+      <div class="weather-card-heading">
+        <div>
+          <span class="eyebrow">VOORUITKIJKEN</span>
+          <h2>📅 Zevendaagse verwachting</h2>
+        </div>
+      </div>
+      <div id="weatherDailyForecast" class="weather-daily-forecast"></div>
+    </div>
+  </section>
+
   <section id="planner" class="hidden">
     <div class="card hero planner-hero">
       <div class="planner-hero-head">
@@ -1166,7 +1353,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.0.1</span>
+        <span class="planner-version-badge">7.1.0</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -3335,6 +3522,9 @@
     <button class="bottom-nav-item live-nav-button" data-target="live" onclick="captainNavigate('live',this)">
       <span>⛵</span><small>Live</small>
     </button>
+    <button class="bottom-nav-item" data-target="weather" onclick="captainNavigate('weather',this)">
+      <span>🌦️</span><small>Weer</small>
+    </button>
     <button class="bottom-nav-item" data-target="map" onclick="captainNavigate('map',this)">
       <span>🗺️</span><small>Kaart</small>
     </button>
@@ -3412,7 +3602,7 @@
   </div>
 </div>
 
-<script src="app.js?v=7010"></script>
-<script src="mission-control.js?v=7010"></script>
+<script src="app.js?v=7100"></script>
+<script src="mission-control.js?v=7100"></script>
 </body>
 </html>

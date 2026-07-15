@@ -2202,20 +2202,22 @@ function goToTab(id){
   const map={
     dashboard:0,
     live:1,
-    map:2,
-    planner:3,
-    technical:4,
-    pois:5,
-    logbook:6,
-    costs:7,
-    finance:8,
-    settings:9,
-    boat:10
+    weather:2,
+    map:3,
+    planner:4,
+    technical:5,
+    pois:6,
+    logbook:7,
+    costs:8,
+    finance:9,
+    settings:10,
+    boat:11
   };
   const button=buttons[map[id]];
 
   if(button)showTab(id,button);
   if(id==='live')initLiveMode();
+  if(id==='weather')initWeatherDashboard();
   if(id==='map')initMap();
   if(id==='planner')initPlanner();
   if(id==='technical')initTechnicalDashboard();
@@ -12990,15 +12992,16 @@ function captainNavigate(id, sourceButton=null){
   const map={
     dashboard:0,
     live:1,
-    map:2,
-    planner:3,
-    technical:4,
-    pois:5,
-    logbook:6,
-    costs:7,
-    finance:8,
-    settings:9,
-    boat:10
+    weather:2,
+    map:3,
+    planner:4,
+    technical:5,
+    pois:6,
+    logbook:7,
+    costs:8,
+    finance:9,
+    settings:10,
+    boat:11
   };
   const desktopButton=desktopButtons[map[id]];
 
@@ -13018,6 +13021,10 @@ function captainNavigate(id, sourceButton=null){
 
   if(id==='live'&&typeof initLiveMode==='function'){
     setTimeout(()=>initLiveMode(),80);
+  }
+
+  if(id==='weather'&&typeof initWeatherDashboard==='function'){
+    setTimeout(()=>initWeatherDashboard(),80);
   }
 
   if(id==='map'&&typeof initMap==='function'){
@@ -13135,9 +13142,15 @@ function createEmptyLiveState(){
     engineRpm:0,
     rudderAngle:0,
     weather:null,
+    weatherForecast:null,
+    weatherWarnings:[],
     weatherUpdatedAt:null,
     lastWeatherLat:null,
     lastWeatherLon:null,
+    weatherTimeline:[],
+    weatherWarnings:[],
+    weatherDaily:null,
+    weatherMapLayer:'wind',
     movingDetected:false,
     lastMovingAt:null,
     stationarySince:null,
@@ -14260,6 +14273,21 @@ function weatherCodeDescription(code){
   return 'Onbekend';
 }
 
+function weatherCodeIcon(code){
+  const value=Number(code);
+  if(value===0)return '☀️';
+  if([1,2].includes(value))return '⛅';
+  if(value===3)return '☁️';
+  if([45,48].includes(value))return '🌫️';
+  if([51,53,55,56,57].includes(value))return '🌦️';
+  if([61,63,65,66,67].includes(value))return '🌧️';
+  if([71,73,75,77].includes(value))return '❄️';
+  if([80,81,82].includes(value))return '🌦️';
+  if([85,86].includes(value))return '🌨️';
+  if([95,96,99].includes(value))return '⛈️';
+  return '🌤️';
+}
+
 function windKmhToBeaufort(kmh){
   const speed=Math.max(0,Number(kmh)||0);
   const limits=[1,6,12,20,29,39,50,62,75,89,103,118];
@@ -14284,7 +14312,268 @@ function weatherSummary(weather){
   const wind=Number.isFinite(Number(weather.windSpeed))
     ?formatWindBeaufort(weather.windSpeed,false)
     :'';
-  return [description,wind].filter(Boolean).join(' · ');
+  return [`${weatherCodeIcon(weather.weatherCode)} ${description}`,wind]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+const MS710_WEATHER_MAP_LAYERS={
+  wind:{label:'Wind',overlay:'wind',caption:'Windkaart met richting en sterkte rond jouw actuele positie.'},
+  rain:{label:'Neerslag',overlay:'rain',caption:'Regen- en buienkaart om neerslag langs je route te volgen.'},
+  clouds:{label:'Bewolking',overlay:'clouds',caption:'Bewolkingskaart voor open lucht, zicht en wolkenvelden.'},
+  temp:{label:'Temperatuur',overlay:'temp',caption:'Temperatuurkaart voor gevoelstemperatuur en opwarming onderweg.'}
+};
+
+function weatherTimelineTimeLabel(value){
+  if(!value)return '—';
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return String(value).slice(11,16)||String(value);
+  return date.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+}
+
+function weatherTimelineDayLabel(value){
+  if(!value)return '';
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return '';
+  return date.toLocaleDateString('nl-NL',{weekday:'short',day:'2-digit',month:'2-digit'});
+}
+
+function weatherWarningIcon(level){
+  if(level==='critical')return '🚨';
+  if(level==='warning')return '⚠️';
+  return '✅';
+}
+
+function ms710EmptyWeatherWarnings(){
+  return [{
+    level:'good',
+    title:'Geen directe weerswaarschuwingen',
+    text:'Op basis van de huidige verwachting zijn er geen directe waarschuwingen voor varen.'
+  }];
+}
+
+function analyseWeatherWarnings(current,timeline=[]){
+  const warnings=[];
+  const firstThunder=timeline.find(item=>[95,96,99].includes(Number(item.weatherCode)));
+  const denseFog=timeline.find(item=>[45,48].includes(Number(item.weatherCode)));
+  const maxRain=Math.max(
+    Number(current?.precipitation)||0,
+    ...timeline.map(item=>Number(item.precipitation)||0)
+  );
+  const maxWind=Math.max(
+    Number(current?.windSpeed)||0,
+    ...timeline.map(item=>Number(item.windSpeed)||0)
+  );
+  const maxGust=Math.max(
+    Number(current?.windGusts)||0,
+    ...timeline.map(item=>Number(item.windGusts)||0)
+  );
+
+  if(maxGust>=75){
+    warnings.push({
+      level:'critical',
+      title:'Zware windstoten verwacht',
+      text:`Windstoten kunnen oplopen tot ${windKmhToBeaufort(maxGust)} Bft (${maxGust.toFixed(0)} km/u). Houd rekening met lastige manoeuvres en open water.`
+    });
+  }else if(maxWind>=50||maxGust>=60){
+    warnings.push({
+      level:'warning',
+      title:'Stevige wind op komst',
+      text:`Verwachting tot ${windKmhToBeaufort(Math.max(maxWind,maxGust))} Bft. Controleer route, afmeren en comfort aan boord.`
+    });
+  }
+
+  if(firstThunder){
+    warnings.push({
+      level:'critical',
+      title:'Kans op onweer',
+      text:`Rond ${weatherTimelineTimeLabel(firstThunder.time)} wordt onweer verwacht. Zoek tijdig beschutting en let op windstoten.`
+    });
+  }
+
+  if(maxRain>=5){
+    warnings.push({
+      level:'warning',
+      title:'Flinke regen of buien',
+      text:`Neerslag kan pieken tot ${maxRain.toFixed(1)} mm per uur. Houd rekening met zichtverlies en nat dek.`
+    });
+  }
+
+  if(denseFog){
+    warnings.push({
+      level:'warning',
+      title:'Mist of beperkt zicht',
+      text:`Mist wordt verwacht rond ${weatherTimelineTimeLabel(denseFog.time)}. Gebruik extra voorzichtigheid bij bruggen en drukke trajecten.`
+    });
+  }
+
+  if(!warnings.length)return ms710EmptyWeatherWarnings();
+  return warnings;
+}
+
+function renderWeatherWarnings(){
+  const container=$('ms710WeatherWarnings');
+  if(!container)return;
+  const warnings=(liveNavState.weatherWarnings||[]).length
+    ?liveNavState.weatherWarnings
+    :ms710EmptyWeatherWarnings();
+
+  container.innerHTML=warnings.map(item=>`
+    <article class="ms710-weather-warning ${item.level||'good'}">
+      <span class="ms710-weather-warning-icon">${weatherWarningIcon(item.level)}</span>
+      <div>
+        <strong>${esc(item.title||'Waarschuwing')}</strong>
+        <small>${esc(item.text||'')}</small>
+      </div>
+    </article>
+  `).join('');
+}
+
+function renderWeatherTimeline(){
+  const container=$('ms710WeatherTimeline');
+  const meta=$('ms710WeatherTimelineMeta');
+  if(!container)return;
+
+  const timeline=Array.isArray(liveNavState.weatherTimeline)
+    ?liveNavState.weatherTimeline
+    :[];
+
+  if(!timeline.length){
+    container.innerHTML=`
+      <article class="ms710-weather-hour empty">
+        <strong>Wachten op GPS</strong>
+        <small>Zodra de locatie bekend is, verschijnt hier een interactieve tijdlijn voor de komende uren.</small>
+      </article>
+    `;
+    if(meta)meta.textContent='Komt beschikbaar na het eerste GPS-punt.';
+    return;
+  }
+
+  const cards=timeline
+    .filter((_,index)=>index<24&&index%2===0)
+    .slice(0,12);
+
+  container.innerHTML=cards.map(item=>`
+    <article class="ms710-weather-hour">
+      <span class="ms710-weather-hour-time">${esc(weatherTimelineTimeLabel(item.time))}</span>
+      <small class="ms710-weather-hour-day">${esc(weatherTimelineDayLabel(item.time))}</small>
+      <div class="ms710-weather-hour-icon">${weatherCodeIcon(item.weatherCode)}</div>
+      <strong>${Number.isFinite(Number(item.temperature))?`${Number(item.temperature).toFixed(0)}°`:'–'}</strong>
+      <small>${esc(weatherCodeDescription(item.weatherCode))}</small>
+      <div class="ms710-weather-hour-meta">
+        <span>💨 ${Number.isFinite(Number(item.windSpeed))?formatWindBeaufort(item.windSpeed,false):'–'}</span>
+        <span>🌧️ ${Number.isFinite(Number(item.precipitationProbability))?`${Math.round(Number(item.precipitationProbability))}%`:'–'}</span>
+      </div>
+    </article>
+  `).join('');
+
+  if(meta){
+    const first=cards[0]?.time;
+    const last=cards.at(-1)?.time;
+    meta.textContent=first&&last
+      ?`Tijdlijn van ${weatherTimelineTimeLabel(first)} tot ${weatherTimelineTimeLabel(last)}.`
+      :'Komende uren';
+  }
+}
+
+function ms710WeatherMapReferencePoint(){
+  const latest=liveNavState.points?.at?.(-1);
+  if(latest&&Number.isFinite(Number(latest.lat))&&Number.isFinite(Number(latest.lon))){
+    return {lat:Number(latest.lat),lon:Number(latest.lon),label:'actuele GPS-locatie'};
+  }
+  if(Number.isFinite(Number(liveNavState.lastWeatherLat))&&Number.isFinite(Number(liveNavState.lastWeatherLon))){
+    return {lat:Number(liveNavState.lastWeatherLat),lon:Number(liveNavState.lastWeatherLon),label:'laatste weerlocatie'};
+  }
+  return {lat:52.2215,lon:6.8937,label:'standaardpositie Enschede'};
+}
+
+function ms710WeatherMapUrl(layerKey){
+  const layer=MS710_WEATHER_MAP_LAYERS[layerKey]||MS710_WEATHER_MAP_LAYERS.wind;
+  const point=ms710WeatherMapReferencePoint();
+  const params=new URLSearchParams({
+    lat:String(point.lat),
+    lon:String(point.lon),
+    detailLat:String(point.lat),
+    detailLon:String(point.lon),
+    width:'650',
+    height:'420',
+    zoom:'7',
+    level:'surface',
+    overlay:layer.overlay,
+    product:'ecmwf',
+    menu:'',
+    message:'true',
+    marker:'true',
+    calendar:'now',
+    pressure:'',
+    type:'map',
+    location:'coordinates',
+    detail:'true',
+    metricWind:'km/h',
+    metricTemp:'°C',
+    radarRange:'-1'
+  });
+  return `https://embed.windy.com/embed2.html?${params.toString()}`;
+}
+
+function renderWeatherMap(){
+  const iframe=$('ms710WeatherMapFrame');
+  const caption=$('ms710WeatherMapCaption');
+  if(!iframe)return;
+
+  const activeLayer=liveNavState.weatherMapLayer||'wind';
+  iframe.src=ms710WeatherMapUrl(activeLayer);
+
+  const layer=MS710_WEATHER_MAP_LAYERS[activeLayer]||MS710_WEATHER_MAP_LAYERS.wind;
+  const point=ms710WeatherMapReferencePoint();
+  if(caption){
+    caption.textContent=`${layer.caption} Kaart gecentreerd op ${point.label}.`;
+  }
+
+  document
+    .querySelectorAll('.ms710-weather-map-tab')
+    .forEach(button=>{
+      button.classList.toggle('active',button.dataset.layer===activeLayer);
+    });
+}
+
+function ms710SetWeatherMapLayer(layerKey){
+  liveNavState.weatherMapLayer=MS710_WEATHER_MAP_LAYERS[layerKey]
+    ?layerKey
+    :'wind';
+  persistLiveState();
+  renderWeatherMap();
+}
+
+function renderWeatherHero(){
+  const weather=liveNavState.weather;
+  const icon=$('ms710WeatherHeroIcon');
+  const title=$('ms710WeatherHeroTitle');
+  const meta=$('ms710WeatherHeroMeta');
+  if(icon)icon.textContent=weather?weatherCodeIcon(weather.weatherCode):'🌤️';
+  if(title){
+    title.textContent=weather
+      ?`${weatherCodeDescription(weather.weatherCode)} · ${Number.isFinite(Number(weather.temperature))?`${Number(weather.temperature).toFixed(1)} °C`:'–'}`
+      :'Wachten op GPS';
+  }
+  if(meta){
+    const wind=weather&&Number.isFinite(Number(weather.windSpeed))
+      ?formatWindBeaufort(weather.windSpeed,true)
+      :'—';
+    const rain=weather&&Number.isFinite(Number(weather.precipitation))
+      ?`${Number(weather.precipitation).toFixed(1)} mm`
+      :'—';
+    meta.textContent=weather
+      ?`Wind ${wind} · Neerslag ${rain} · ${liveNavState.weatherWarnings?.length?liveNavState.weatherWarnings.length:'geen'} melding(en).`
+      :'Weerkaarten, tijdlijn en waarschuwingen verschijnen automatisch.';
+  }
+}
+
+function renderWeatherSuite(){
+  renderWeatherHero();
+  renderWeatherWarnings();
+  renderWeatherTimeline();
+  renderWeatherMap();
 }
 
 function liveWeatherDistanceKm(lat,lon){
@@ -14303,7 +14592,7 @@ function renderLiveWeather(){
   const weather=liveNavState.weather;
 
   $('liveWeatherTemp').textContent=weather&&Number.isFinite(Number(weather.temperature))
-    ?`${Number(weather.temperature).toFixed(1)}°`
+    ?`${weatherCodeIcon(weather.weatherCode)} ${Number(weather.temperature).toFixed(1)}°`
     :'–';
   $('liveWeatherShort').textContent=weatherSummary(weather);
 
@@ -14323,7 +14612,7 @@ function renderLiveWeather(){
     ?`${Number(weather.precipitation).toFixed(1)} mm`
     :'–';
   $('liveWeatherDescription').textContent=weather
-    ?weatherCodeDescription(weather.weatherCode)
+    ?`${weatherCodeIcon(weather.weatherCode)} ${weatherCodeDescription(weather.weatherCode)}`
     :'Wachten op GPS';
 
   if(weather&&liveNavState.weatherUpdatedAt){
@@ -14333,6 +14622,8 @@ function renderLiveWeather(){
     });
     $('liveWeatherStatus').textContent=`Actueel weer bij de route · bijgewerkt ${time}`;
   }
+
+  renderWeatherSuite();
 }
 
 async function fetchLiveWeather(lat,lon,force=false){
@@ -14345,7 +14636,7 @@ async function fetchLiveWeather(lat,lon,force=false){
     return;
   }
 
-  $('liveWeatherStatus').textContent='Actueel weer ophalen…';
+  $('liveWeatherStatus').textContent='Actueel weer en verwachting ophalen…';
 
   try{
     const params=new URLSearchParams({
@@ -14360,6 +14651,23 @@ async function fetchLiveWeather(lat,lon,force=false){
         'wind_gusts_10m',
         'wind_direction_10m'
       ].join(','),
+      hourly:[
+        'temperature_2m',
+        'precipitation',
+        'precipitation_probability',
+        'weather_code',
+        'wind_speed_10m',
+        'wind_gusts_10m'
+      ].join(','),
+      daily:[
+        'weather_code',
+        'temperature_2m_max',
+        'temperature_2m_min',
+        'precipitation_probability_max',
+        'wind_speed_10m_max',
+        'wind_gusts_10m_max'
+      ].join(','),
+      forecast_days:'3',
       wind_speed_unit:'kmh',
       timezone:'auto'
     });
@@ -14380,6 +14688,18 @@ async function fetchLiveWeather(lat,lon,force=false){
       throw new Error('Geen actuele weergegevens ontvangen.');
     }
 
+    const hourly=payload?.hourly||{};
+    const timeline=(hourly.time||[]).map((time,index)=>({
+      time,
+      temperature:Number(hourly.temperature_2m?.[index]),
+      precipitation:Number(hourly.precipitation?.[index]),
+      precipitationProbability:Number(hourly.precipitation_probability?.[index]),
+      weatherCode:Number(hourly.weather_code?.[index]),
+      windSpeed:Number(hourly.wind_speed_10m?.[index]),
+      windGusts:Number(hourly.wind_gusts_10m?.[index])
+    })).filter(item=>item.time).slice(0,24);
+
+    const daily=payload?.daily;
     liveNavState.weather={
       temperature:Number(current.temperature_2m),
       apparentTemperature:Number(current.apparent_temperature),
@@ -14389,6 +14709,19 @@ async function fetchLiveWeather(lat,lon,force=false){
       windGusts:Number(current.wind_gusts_10m),
       windDirection:Number(current.wind_direction_10m)
     };
+    liveNavState.weatherTimeline=timeline;
+    liveNavState.weatherDaily=daily?{
+      weatherCode:Number(daily.weather_code?.[0]),
+      tempMax:Number(daily.temperature_2m_max?.[0]),
+      tempMin:Number(daily.temperature_2m_min?.[0]),
+      precipitationProbabilityMax:Number(daily.precipitation_probability_max?.[0]),
+      windSpeedMax:Number(daily.wind_speed_10m_max?.[0]),
+      windGustsMax:Number(daily.wind_gusts_10m_max?.[0])
+    }:null;
+    liveNavState.weatherWarnings=analyseWeatherWarnings(
+      liveNavState.weather,
+      timeline
+    );
     liveNavState.weatherUpdatedAt=Date.now();
     liveNavState.lastWeatherLat=Number(lat);
     liveNavState.lastWeatherLon=Number(lon);
@@ -14398,6 +14731,7 @@ async function fetchLiveWeather(lat,lon,force=false){
   }catch(error){
     console.error('Live weer ophalen mislukt:',error);
     $('liveWeatherStatus').textContent='Weer kon niet worden opgehaald. Tik op Weer om opnieuw te proberen.';
+    renderWeatherSuite();
   }
 }
 
@@ -14923,7 +15257,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.0.1';
+const APP_VERSION='7.1.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -15045,6 +15379,7 @@ window.addEventListener('load',()=>{
   updateInstallTile();
   updateConnectionStatus();
   registerMijnSerenityServiceWorker();
+  try{renderWeatherSuite();}catch(error){console.warn('Weather suite initialisatie mislukt:',error);}
 });
 
 
@@ -16537,7 +16872,7 @@ function renderLiveTripMetricBalloons(metrics){
       ?['🛞',metrics.rudder]
       :null,
     metrics.weather
-      ?['🌤️',metrics.weather]
+      ?[weatherIconFromText(metrics.weather),metrics.weather]
       :null,
     metrics.routePois
       ?['🧭',metrics.routePois]
@@ -19016,13 +19351,16 @@ function ms660RenderCommandCenter(){
   if(Number.isFinite(wind)){
     ms660SetText(
       'ms660Wind',
-      `${windKmhToBeaufort(wind)} Bft${direction?` ${direction}`:''}`
+      `${weatherCodeIcon(weather.weatherCode)} ${windKmhToBeaufort(wind)} Bft${direction?` ${direction}`:''}`
     );
     ms660SetText(
       'ms660WindDetail',
-      Number.isFinite(gusts)
-        ?`windstoten ${windKmhToBeaufort(gusts)} Bft`
-        :`${ms660Number(wind,1)} km/u`
+      [
+        weatherCodeDescription(weather.weatherCode),
+        Number.isFinite(gusts)
+          ?`windstoten ${windKmhToBeaufort(gusts)} Bft`
+          :`${ms660Number(wind,1)} km/u`
+      ].filter(Boolean).join(' · ')
     );
   }else{
     ms660SetText('ms660Wind','–');
@@ -27328,3 +27666,749 @@ loadPois=async function(){
   return result;
 };
 
+
+
+/* MijnSerenity 7.1.0 — uitgebreide interactieve weerkaarten */
+const MS710_WEATHER_VERSION='7.1.0';
+const ms710WeatherState={
+  initialized:false,
+  loading:false,
+  center:{lat:52.2215,lon:6.8937,label:'Enschede'},
+  forecast:null,
+  map:null,
+  mapLayer:null,
+  sampleData:[],
+  hourIndex:0,
+  layer:'temperature',
+  playbackTimer:null,
+  searchController:null,
+  mapRequestToken:0
+};
+
+function weatherCodeIcon(code,isDay=1){
+  const value=Number(code);
+  if(value===0)return Number(isDay)===0?'🌙':'☀️';
+  if(value===1)return Number(isDay)===0?'🌙':'🌤️';
+  if(value===2)return '⛅';
+  if(value===3)return '☁️';
+  if([45,48].includes(value))return '🌫️';
+  if([51,53,55,56,57].includes(value))return '🌦️';
+  if([61,63,65,66,67].includes(value))return '🌧️';
+  if([71,73,75,77].includes(value))return '🌨️';
+  if([80,81,82].includes(value))return '🌧️';
+  if([85,86].includes(value))return '🌨️';
+  if([95,96,99].includes(value))return '⛈️';
+  return '🌦️';
+}
+
+function weatherIconFromText(value){
+  const text=String(value||'').toLowerCase();
+  if(/onweer|bliksem/.test(text))return '⛈️';
+  if(/sneeuw|hagel/.test(text))return '🌨️';
+  if(/mist|nevel/.test(text))return '🌫️';
+  if(/regen|bui|motregen/.test(text))return '🌧️';
+  if(/bewolkt|wolk/.test(text))return '☁️';
+  if(/helder|zonnig|zon/.test(text))return '☀️';
+  return '🌦️';
+}
+
+function weatherDirectionText(degrees){
+  if(!Number.isFinite(Number(degrees)))return '–';
+  const names=['N','NO','O','ZO','Z','ZW','W','NW'];
+  return names[Math.round((((Number(degrees)%360)+360)%360)/45)%8];
+}
+
+function weatherVisibilityText(meters){
+  const value=Number(meters);
+  if(!Number.isFinite(value))return '–';
+  if(value<1000)return `${Math.round(value)} m`;
+  return `${(value/1000).toLocaleString('nl-NL',{maximumFractionDigits:1})} km`;
+}
+
+function weatherTimeText(value,withDate=false){
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return '–';
+  return date.toLocaleString('nl-NL',withDate
+    ?{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}
+    :{hour:'2-digit',minute:'2-digit'}
+  );
+}
+
+function weatherHourData(forecast,index){
+  const hourly=forecast?.hourly;
+  if(!hourly?.time?.length)return null;
+  const safe=Math.max(0,Math.min(Number(index)||0,hourly.time.length-1));
+  const get=name=>Array.isArray(hourly[name])?hourly[name][safe]:null;
+  return {
+    index:safe,
+    time:hourly.time[safe],
+    temperature:Number(get('temperature_2m')),
+    apparentTemperature:Number(get('apparent_temperature')),
+    humidity:Number(get('relative_humidity_2m')),
+    precipitationProbability:Number(get('precipitation_probability')),
+    precipitation:Number(get('precipitation')),
+    weatherCode:Number(get('weather_code')),
+    cloudCover:Number(get('cloud_cover')),
+    visibility:Number(get('visibility')),
+    pressure:Number(get('pressure_msl')),
+    windSpeed:Number(get('wind_speed_10m')),
+    windGusts:Number(get('wind_gusts_10m')),
+    windDirection:Number(get('wind_direction_10m')),
+    uvIndex:Number(get('uv_index')),
+    isDay:Number(get('is_day'))
+  };
+}
+
+function weatherNearestHourIndex(times,date=new Date()){
+  if(!Array.isArray(times)||!times.length)return 0;
+  const target=date.getTime();
+  let best=0;
+  let bestDistance=Infinity;
+  times.forEach((value,index)=>{
+    const distance=Math.abs(new Date(value).getTime()-target);
+    if(distance<bestDistance){bestDistance=distance;best=index;}
+  });
+  return best;
+}
+
+function buildMarineWeatherWarnings(forecast,current=null,hours=24){
+  const warnings=[];
+  const add=(level,icon,title,text,time='')=>{
+    const key=`${level}:${title}`;
+    if(warnings.some(item=>item.key===key))return;
+    warnings.push({key,level,icon,title,text,time});
+  };
+
+  const points=[];
+  if(current){
+    points.push({
+      time:'Nu',
+      weatherCode:Number(current.weather_code??current.weatherCode),
+      temperature:Number(current.temperature_2m??current.temperature),
+      precipitation:Number(current.precipitation),
+      precipitationProbability:Number(current.precipitation_probability),
+      visibility:Number(current.visibility),
+      windSpeed:Number(current.wind_speed_10m??current.windSpeed),
+      windGusts:Number(current.wind_gusts_10m??current.windGusts)
+    });
+  }
+
+  const hourly=forecast?.hourly;
+  if(hourly?.time?.length){
+    const start=weatherNearestHourIndex(hourly.time);
+    for(let i=start;i<Math.min(hourly.time.length,start+hours);i+=1){
+      points.push({
+        time:weatherTimeText(hourly.time[i],true),
+        weatherCode:Number(hourly.weather_code?.[i]),
+        temperature:Number(hourly.temperature_2m?.[i]),
+        precipitation:Number(hourly.precipitation?.[i]),
+        precipitationProbability:Number(hourly.precipitation_probability?.[i]),
+        visibility:Number(hourly.visibility?.[i]),
+        windSpeed:Number(hourly.wind_speed_10m?.[i]),
+        windGusts:Number(hourly.wind_gusts_10m?.[i])
+      });
+    }
+  }
+
+  points.forEach(point=>{
+    const when=point.time&&point.time!=='Nu'?` · ${point.time}`:'';
+    if([95,96,99].includes(point.weatherCode)){
+      add('critical','⛈️','Onweerswaarschuwing',`Blijf uit open water en zoek tijdig een veilige ligplaats${when}.`,point.time);
+    }
+    if(point.windGusts>=75){
+      add('critical','🌪️','Zeer zware windstoten',`${windKmhToBeaufort(point.windGusts)} Bft / ${Math.round(point.windGusts)} km/u. Niet uitvaren of direct beschutting zoeken${when}.`,point.time);
+    }else if(point.windGusts>=50){
+      add('warning','🌬️','Stevige windstoten',`${windKmhToBeaufort(point.windGusts)} Bft / ${Math.round(point.windGusts)} km/u. Extra voorzichtig bij sluizen, bruggen en afmeren${when}.`,point.time);
+    }
+    if(point.windSpeed>=62){
+      add('critical','💨','Stormachtige wind',`${windKmhToBeaufort(point.windSpeed)} Bft aanhoudende wind. Doorvaren wordt afgeraden${when}.`,point.time);
+    }else if(point.windSpeed>=39){
+      add('warning','💨','Harde wind',`${windKmhToBeaufort(point.windSpeed)} Bft. Controleer vaargebied en manoeuvreerruimte${when}.`,point.time);
+    }
+    if(point.precipitation>=8){
+      add('critical','🌧️','Zware neerslag',`${point.precipitation.toFixed(1)} mm in één uur. Slecht zicht en plotselinge windstoten mogelijk${when}.`,point.time);
+    }else if(point.precipitation>=3||point.precipitationProbability>=80){
+      add('warning','☔','Grote kans op regen',`${Number.isFinite(point.precipitationProbability)?Math.round(point.precipitationProbability)+'% kans · ':''}${Number.isFinite(point.precipitation)?point.precipitation.toFixed(1)+' mm':''}${when}.`,point.time);
+    }
+    if(point.visibility>0&&point.visibility<1000){
+      add('critical','🌫️','Zeer slecht zicht',`${weatherVisibilityText(point.visibility)} zicht. Gebruik navigatieverlichting en vaar alleen wanneer verantwoord${when}.`,point.time);
+    }else if(point.visibility>0&&point.visibility<3000){
+      add('warning','🌫️','Beperkt zicht',`${weatherVisibilityText(point.visibility)} zicht. Verminder snelheid en houd extra uitkijk${when}.`,point.time);
+    }
+    if(point.temperature<=1&&point.precipitation>0){
+      add('warning','🧊','Kans op gladheid',`Neerslag bij ongeveer ${point.temperature.toFixed(1)} °C. Let op gladde dekken en steigers${when}.`,point.time);
+    }
+    if(point.temperature>=30){
+      add('warning','🥵','Hoge temperatuur',`${point.temperature.toFixed(1)} °C. Zorg voor drinkwater, schaduw en ventilatie${when}.`,point.time);
+    }
+  });
+
+  const order={critical:3,warning:2,info:1};
+  return warnings.sort((a,b)=>order[b.level]-order[a.level]);
+}
+
+function weatherSailingAdvice(warnings,hour){
+  const critical=warnings.filter(item=>item.level==='critical');
+  const caution=warnings.filter(item=>item.level==='warning');
+  if(critical.length){
+    return `<div class="weather-advice-level critical"><span>🛑</span><div><b>Uitvaren wordt afgeraden</b><p>${esc(critical[0].text)}</p></div></div>`;
+  }
+  if(caution.length){
+    return `<div class="weather-advice-level warning"><span>⚠️</span><div><b>Varen met extra aandacht</b><p>${esc(caution[0].text)}</p></div></div>`;
+  }
+  const wind=Number(hour?.windSpeed);
+  const rain=Number(hour?.precipitationProbability);
+  return `<div class="weather-advice-level good"><span>✅</span><div><b>Geen directe weersbelemmering</b><p>${Number.isFinite(wind)?`Wind ${formatWindBeaufort(wind,true)}. `:''}${Number.isFinite(rain)?`Regenkans ${Math.round(rain)}%.`:''} Blijf lokale omstandigheden en scheepvaartberichten volgen.</p></div></div>`;
+}
+
+// Bestaande Live-weerweergave verrijken met actuele pictogrammen.
+const ms710BaseWeatherSummary=weatherSummary;
+weatherSummary=function(weather){
+  if(!weather)return 'Wachten op GPS';
+  const icon=weatherCodeIcon(weather.weatherCode,weather.isDay);
+  const description=weatherCodeDescription(weather.weatherCode);
+  const wind=Number.isFinite(Number(weather.windSpeed))?formatWindBeaufort(weather.windSpeed,false):'';
+  return [icon,description,wind].filter(Boolean).join(' · ');
+};
+
+const ms710BaseRenderLiveWeather=renderLiveWeather;
+renderLiveWeather=function(){
+  ms710BaseRenderLiveWeather();
+  const weather=liveNavState.weather;
+  if(!weather)return;
+  const icon=weatherCodeIcon(weather.weatherCode,weather.isDay);
+  if($('liveWeatherTemp'))$('liveWeatherTemp').textContent=`${icon} ${Number(weather.temperature).toFixed(1)}°`;
+  if($('liveWeatherDescription'))$('liveWeatherDescription').textContent=`${icon} ${weatherCodeDescription(weather.weatherCode)}`;
+  if($('liveWeatherWind'))$('liveWeatherWind').textContent=`💨 ${formatWindBeaufort(weather.windSpeed,true)}`;
+  if($('liveWeatherGusts'))$('liveWeatherGusts').textContent=`🌬️ ${formatWindBeaufort(weather.windGusts,true)}`;
+  if($('liveWeatherRain'))$('liveWeatherRain').textContent=`🌧️ ${Number(weather.precipitation||0).toFixed(1)} mm`;
+  if($('liveWeatherTemperature'))$('liveWeatherTemperature').textContent=`🌡️ ${Number(weather.temperature).toFixed(1)} °C`;
+  if($('liveWeatherFeels'))$('liveWeatherFeels').textContent=`🧥 ${Number(weather.apparentTemperature).toFixed(1)} °C`;
+};
+
+// Uitgebreidere live fetch: huidige situatie + 48 uur voor waarschuwingen.
+fetchLiveWeather=async function(lat,lon,force=false){
+  if(!Number.isFinite(Number(lat))||!Number.isFinite(Number(lon)))return;
+  const age=Date.now()-Number(liveNavState.weatherUpdatedAt||0);
+  const movedKm=liveWeatherDistanceKm(lat,lon);
+  if(!force&&liveNavState.weather&&age<15*60*1000&&movedKm<5)return;
+  if($('liveWeatherStatus'))$('liveWeatherStatus').textContent='Actueel weer en waarschuwingen ophalen…';
+
+  try{
+    const params=new URLSearchParams({
+      latitude:String(Number(lat).toFixed(6)),
+      longitude:String(Number(lon).toFixed(6)),
+      current:[
+        'temperature_2m','apparent_temperature','relative_humidity_2m','precipitation',
+        'weather_code','cloud_cover','pressure_msl','visibility','is_day',
+        'wind_speed_10m','wind_gusts_10m','wind_direction_10m'
+      ].join(','),
+      hourly:[
+        'temperature_2m','apparent_temperature','relative_humidity_2m',
+        'precipitation_probability','precipitation','weather_code','cloud_cover',
+        'visibility','pressure_msl','wind_speed_10m','wind_gusts_10m',
+        'wind_direction_10m','uv_index','is_day'
+      ].join(','),
+      forecast_hours:'48',
+      wind_speed_unit:'kmh',
+      timezone:'auto',
+      cell_selection:'nearest'
+    });
+    const response=await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`,{headers:{Accept:'application/json'}});
+    if(!response.ok)throw new Error(`Weerservice gaf fout ${response.status}`);
+    const payload=await response.json();
+    const current=payload?.current;
+    if(!current)throw new Error('Geen actuele weergegevens ontvangen.');
+
+    liveNavState.weather={
+      temperature:Number(current.temperature_2m),
+      apparentTemperature:Number(current.apparent_temperature),
+      humidity:Number(current.relative_humidity_2m),
+      precipitation:Number(current.precipitation),
+      weatherCode:Number(current.weather_code),
+      cloudCover:Number(current.cloud_cover),
+      pressure:Number(current.pressure_msl),
+      visibility:Number(current.visibility),
+      isDay:Number(current.is_day),
+      windSpeed:Number(current.wind_speed_10m),
+      windGusts:Number(current.wind_gusts_10m),
+      windDirection:Number(current.wind_direction_10m)
+    };
+    liveNavState.weatherForecast={hourly:payload.hourly,timezone:payload.timezone};
+    liveNavState.weatherWarnings=buildMarineWeatherWarnings(payload,current,24);
+    liveNavState.weatherUpdatedAt=Date.now();
+    liveNavState.lastWeatherLat=Number(lat);
+    liveNavState.lastWeatherLon=Number(lon);
+    persistLiveState();
+    renderLiveWeather();
+    if(typeof ms660RenderCommandCenter==='function')ms660RenderCommandCenter();
+    if(ms710WeatherState.initialized&&haversineKm({lat:Number(lat),lon:Number(lon)},ms710WeatherState.center)<2){
+      ms710WeatherState.forecast={...payload,label:ms710WeatherState.center.label};
+      renderWeatherDashboard();
+    }
+  }catch(error){
+    console.error('Live weer ophalen mislukt:',error);
+    if($('liveWeatherStatus'))$('liveWeatherStatus').textContent='Weer kon niet worden opgehaald. Tik op Weer om opnieuw te proberen.';
+  }
+};
+
+const ms710BaseMs660Alerts=ms660Alerts;
+ms660Alerts=function(){
+  const alerts=ms710BaseMs660Alerts();
+  const future=Array.isArray(liveNavState.weatherWarnings)?liveNavState.weatherWarnings:[];
+  future.slice(0,3).forEach(item=>{
+    if(!alerts.some(alert=>alert.title===item.title)){
+      alerts.push({level:item.level,title:`${item.icon} ${item.title}`,text:item.text});
+    }
+  });
+  const order={critical:3,warning:2,info:1};
+  return alerts.sort((a,b)=>order[b.level]-order[a.level]);
+};
+
+const ms710BaseCommandCenter=ms660RenderCommandCenter;
+ms660RenderCommandCenter=function(){
+  ms710BaseCommandCenter();
+  const weather=liveNavState.weather;
+  if(weather&&Number.isFinite(Number(weather.windSpeed))){
+    const direction=weatherDirectionText(weather.windDirection);
+    ms660SetText('ms660Wind',`💨 ${windKmhToBeaufort(weather.windSpeed)} Bft${direction?` ${direction}`:''}`);
+    ms660SetText('ms660WindDetail',`${weatherCodeIcon(weather.weatherCode,weather.isDay)} ${weatherCodeDescription(weather.weatherCode)} · stoten ${windKmhToBeaufort(weather.windGusts)} Bft`);
+  }
+};
+
+function setWeatherPageStatus(message,state=''){
+  const element=$('weatherPageStatus');
+  if(!element)return;
+  element.textContent=message||'';
+  element.className=`status small${state?' '+state:''}`;
+}
+
+function weatherCurrentPoint(){
+  const latest=liveNavState.points?.at(-1);
+  if(latest&&Number.isFinite(Number(latest.lat))&&Number.isFinite(Number(latest.lon))){
+    return {lat:Number(latest.lat),lon:Number(latest.lon),label:'Huidige vaarpositie'};
+  }
+  if(Number.isFinite(Number(liveNavState.lastWeatherLat))&&Number.isFinite(Number(liveNavState.lastWeatherLon))){
+    return {lat:Number(liveNavState.lastWeatherLat),lon:Number(liveNavState.lastWeatherLon),label:'Laatste vaarpositie'};
+  }
+  return null;
+}
+
+function initWeatherMap(){
+  const container=$('weatherMapCanvas');
+  if(!container||ms710WeatherState.map)return;
+  ms710WeatherState.map=L.map(container,{zoomControl:true,attributionControl:true}).setView([ms710WeatherState.center.lat,ms710WeatherState.center.lon],8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap · weerdata Open-Meteo'}).addTo(ms710WeatherState.map);
+  ms710WeatherState.mapLayer=L.layerGroup().addTo(ms710WeatherState.map);
+  ms710WeatherState.map.on('click',event=>{
+    const point={lat:event.latlng.lat,lon:event.latlng.lng,label:`Kaartpunt ${event.latlng.lat.toFixed(3)}, ${event.latlng.lng.toFixed(3)}`};
+    setWeatherLocation(point,true);
+  });
+}
+
+async function initWeatherDashboard(){
+  initWeatherMap();
+  setTimeout(()=>ms710WeatherState.map?.invalidateSize({pan:false}),100);
+  if(ms710WeatherState.loading)return;
+  if(ms710WeatherState.initialized&&ms710WeatherState.forecast){
+    renderWeatherDashboard();
+    return;
+  }
+  ms710WeatherState.initialized=true;
+  const existing=weatherCurrentPoint();
+  if(existing){
+    ms710WeatherState.center=existing;
+    await refreshWeatherDashboard(false);
+    return;
+  }
+  await useCurrentLocationForWeather(true);
+}
+
+function weatherGeolocation(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation){reject(new Error('GPS-locatie wordt niet ondersteund.'));return;}
+    navigator.geolocation.getCurrentPosition(position=>resolve({
+      lat:Number(position.coords.latitude),lon:Number(position.coords.longitude),label:'Mijn huidige locatie'
+    }),error=>reject(new Error(error?.message||'Locatie kon niet worden opgehaald.')),{enableHighAccuracy:true,maximumAge:120000,timeout:15000});
+  });
+}
+
+async function useCurrentLocationForWeather(silent=false){
+  setWeatherPageStatus('GPS-locatie ophalen…');
+  try{
+    const point=await weatherGeolocation();
+    await setWeatherLocation(point,true);
+  }catch(error){
+    if(!silent)showAppToast(error.message);
+    setWeatherPageStatus(`${error.message} Daarom wordt Enschede getoond.`,'warning');
+    await setWeatherLocation(ms710WeatherState.center,true);
+  }
+}
+
+async function usePlannerDestinationForWeather(){
+  try{
+    let point=plannerCurrentPlan?.points?.at(-1)||null;
+    if(!point){
+      const ref=String($('plannerTo')?.value||'');
+      if(ref)point=await resolvePlannerPoint(ref);
+    }
+    if(!point)throw new Error('Kies eerst een bestemming in de Reisplanner.');
+    await setWeatherLocation({lat:Number(point.lat),lon:Number(point.lon),label:point.label||point.place||'Routebestemming'},true);
+  }catch(error){
+    showAppToast(error.message);
+    setWeatherPageStatus(error.message,'warning');
+  }
+}
+
+async function setWeatherLocation(point,refresh=true){
+  if(!Number.isFinite(Number(point?.lat))||!Number.isFinite(Number(point?.lon)))return;
+  ms710WeatherState.center={lat:Number(point.lat),lon:Number(point.lon),label:String(point.label||point.name||'Gekozen locatie')};
+  if(ms710WeatherState.map){
+    ms710WeatherState.map.setView([ms710WeatherState.center.lat,ms710WeatherState.center.lon],Math.max(ms710WeatherState.map.getZoom(),8));
+  }
+  if(refresh)await refreshWeatherDashboard(true);
+}
+
+function handleWeatherSearchEnter(event){
+  if(event.key==='Enter'){event.preventDefault();searchWeatherLocation();}
+}
+
+async function searchWeatherLocation(){
+  const query=String($('weatherLocationSearch')?.value||'').trim();
+  if(query.length<2){setWeatherPageStatus('Typ minimaal twee tekens.','warning');return;}
+  ms710WeatherState.searchController?.abort();
+  ms710WeatherState.searchController=new AbortController();
+  setWeatherPageStatus('Locaties zoeken…');
+  try{
+    const params=new URLSearchParams({name:query,count:'8',language:'nl',format:'json'});
+    const response=await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`,{signal:ms710WeatherState.searchController.signal});
+    if(!response.ok)throw new Error(`Zoeken gaf fout ${response.status}`);
+    const payload=await response.json();
+    const items=Array.isArray(payload?.results)?payload.results:[];
+    renderWeatherSearchResults(items);
+    setWeatherPageStatus(items.length?`${items.length} locatie${items.length===1?'':'s'} gevonden.`:'Geen locaties gevonden.',items.length?'success':'warning');
+  }catch(error){
+    if(error.name==='AbortError')return;
+    setWeatherPageStatus(`Zoeken mislukt: ${error.message}`,'error');
+  }
+}
+
+function renderWeatherSearchResults(items){
+  const container=$('weatherSearchResults');
+  if(!container)return;
+  if(!items.length){container.classList.add('hidden');container.innerHTML='';return;}
+  container.innerHTML=items.map((item,index)=>{
+    const region=[item.admin1,item.country].filter(Boolean).join(', ');
+    return `<button type="button" onclick="chooseWeatherSearchResult(${index})"><span>📍</span><div><b>${esc(item.name||'Locatie')}</b><small>${esc(region)}${item.elevation?` · ${Math.round(item.elevation)} m`:''}</small></div></button>`;
+  }).join('');
+  container._weatherItems=items;
+  container.classList.remove('hidden');
+}
+
+async function chooseWeatherSearchResult(index){
+  const container=$('weatherSearchResults');
+  const item=container?._weatherItems?.[index];
+  if(!item)return;
+  container.classList.add('hidden');
+  const label=[item.name,item.admin1].filter(Boolean).join(', ');
+  await setWeatherLocation({lat:Number(item.latitude),lon:Number(item.longitude),label},true);
+}
+
+function weatherApiParams(point){
+  return new URLSearchParams({
+    latitude:String(Number(point.lat).toFixed(6)),
+    longitude:String(Number(point.lon).toFixed(6)),
+    current:[
+      'temperature_2m','apparent_temperature','relative_humidity_2m','precipitation',
+      'weather_code','cloud_cover','pressure_msl','visibility','is_day',
+      'wind_speed_10m','wind_gusts_10m','wind_direction_10m'
+    ].join(','),
+    hourly:[
+      'temperature_2m','apparent_temperature','relative_humidity_2m','precipitation_probability',
+      'precipitation','weather_code','cloud_cover','visibility','pressure_msl',
+      'wind_speed_10m','wind_gusts_10m','wind_direction_10m','uv_index','is_day'
+    ].join(','),
+    daily:[
+      'weather_code','temperature_2m_max','temperature_2m_min','sunrise','sunset',
+      'precipitation_sum','precipitation_probability_max','wind_speed_10m_max',
+      'wind_gusts_10m_max','wind_direction_10m_dominant','uv_index_max'
+    ].join(','),
+    forecast_days:'7',wind_speed_unit:'kmh',timezone:'auto',cell_selection:'nearest'
+  });
+}
+
+async function refreshWeatherDashboard(force=false){
+  if(ms710WeatherState.loading)return;
+  ms710WeatherState.loading=true;
+  setWeatherPageStatus(`Weer voor ${ms710WeatherState.center.label} ophalen…`);
+  try{
+    const response=await fetch(`https://api.open-meteo.com/v1/forecast?${weatherApiParams(ms710WeatherState.center)}`,{headers:{Accept:'application/json'}});
+    if(!response.ok)throw new Error(`Weerservice gaf fout ${response.status}`);
+    const payload=await response.json();
+    payload.label=ms710WeatherState.center.label;
+    ms710WeatherState.forecast=payload;
+    ms710WeatherState.hourIndex=weatherNearestHourIndex(payload?.hourly?.time);
+    renderWeatherDashboard();
+    await fetchWeatherMapSamples();
+    setWeatherPageStatus(`Weer bijgewerkt voor ${ms710WeatherState.center.label}.`,'success');
+  }catch(error){
+    console.error(error);
+    setWeatherPageStatus(`Weer ophalen mislukt: ${error.message}`,'error');
+  }finally{
+    ms710WeatherState.loading=false;
+  }
+}
+
+function currentWeatherAsHour(payload){
+  const current=payload?.current||{};
+  return {
+    time:current.time||new Date().toISOString(),
+    temperature:Number(current.temperature_2m),
+    apparentTemperature:Number(current.apparent_temperature),
+    humidity:Number(current.relative_humidity_2m),
+    precipitation:Number(current.precipitation),
+    precipitationProbability:null,
+    weatherCode:Number(current.weather_code),
+    cloudCover:Number(current.cloud_cover),
+    visibility:Number(current.visibility),
+    pressure:Number(current.pressure_msl),
+    windSpeed:Number(current.wind_speed_10m),
+    windGusts:Number(current.wind_gusts_10m),
+    windDirection:Number(current.wind_direction_10m),
+    uvIndex:null,
+    isDay:Number(current.is_day)
+  };
+}
+
+function renderWeatherDashboard(){
+  const payload=ms710WeatherState.forecast;
+  if(!payload)return;
+  const selected=weatherHourData(payload,ms710WeatherState.hourIndex)||currentWeatherAsHour(payload);
+  renderWeatherHero(selected);
+  renderWeatherWarnings(payload);
+  renderWeatherTimeline(payload);
+  renderWeatherDetails(selected);
+  renderWeatherDaily(payload);
+  renderWeatherMap();
+  const range=$('weatherTimelineRange');
+  if(range){range.max=String(Math.max(0,(payload.hourly?.time?.length||1)-1));range.value=String(ms710WeatherState.hourIndex);}
+  const label=$('weatherTimelineLabel');
+  if(label)label.textContent=weatherTimeText(selected.time,true);
+}
+
+function renderWeatherHero(hour){
+  if(!hour)return;
+  const icon=weatherCodeIcon(hour.weatherCode,hour.isDay);
+  $('weatherHeroIcon').textContent=icon;
+  $('weatherHeroTemp').textContent=Number.isFinite(hour.temperature)?`${hour.temperature.toFixed(1)}°`:'–';
+  $('weatherHeroDescription').textContent=weatherCodeDescription(hour.weatherCode);
+  $('weatherHeroLocation').textContent=ms710WeatherState.center.label;
+  $('weatherHeroFeels').textContent=Number.isFinite(hour.apparentTemperature)?`${hour.apparentTemperature.toFixed(1)} °C`:'–';
+  $('weatherHeroWind').textContent=Number.isFinite(hour.windSpeed)?formatWindBeaufort(hour.windSpeed,true):'–';
+  $('weatherHeroRain').textContent=Number.isFinite(hour.precipitation)?`${hour.precipitation.toFixed(1)} mm`:'–';
+  $('weatherHeroTime').textContent=ms710WeatherState.hourIndex===weatherNearestHourIndex(ms710WeatherState.forecast?.hourly?.time)?'Actueel / dichtstbijzijnde uur':weatherTimeText(hour.time,true);
+  $('weatherHeroUpdated').textContent=`Modeltijd ${weatherTimeText(hour.time,true)}`;
+  const card=$('weatherHeroCard');
+  card.dataset.weather=String(hour.weatherCode);
+  card.dataset.day=String(hour.isDay);
+}
+
+function renderWeatherWarnings(payload){
+  const warnings=buildMarineWeatherWarnings(payload,payload.current,24);
+  const container=$('weatherWarnings');
+  const badge=$('weatherWarningBadge');
+  if(!warnings.length){
+    container.innerHTML='<div class="weather-warning-item good"><span>✅</span><div><b>Geen directe waarschuwingen</b><small>Wind, zicht, neerslag, temperatuur en onweer geven voor de komende 24 uur geen directe waarschuwing.</small></div></div>';
+    badge.textContent='Rustig';badge.className='weather-warning-badge good';
+  }else{
+    const level=warnings[0].level;
+    badge.textContent=level==='critical'?'Niet uitvaren':`${warnings.length} melding${warnings.length===1?'':'en'}`;
+    badge.className=`weather-warning-badge ${level}`;
+    container.innerHTML=warnings.slice(0,6).map(item=>`<div class="weather-warning-item ${item.level}"><span>${item.icon}</span><div><b>${esc(item.title)}</b><small>${esc(item.text)}</small></div></div>`).join('');
+  }
+  const selected=weatherHourData(payload,ms710WeatherState.hourIndex);
+  $('weatherSailingAdvice').innerHTML=weatherSailingAdvice(warnings,selected);
+}
+
+function renderWeatherTimeline(payload){
+  const container=$('weatherHourlyTimeline');
+  const hourly=payload?.hourly;
+  if(!container||!hourly?.time?.length)return;
+  const start=weatherNearestHourIndex(hourly.time);
+  const end=Math.min(hourly.time.length,start+72);
+  let previousDay='';
+  const cards=[];
+  for(let i=start;i<end;i+=1){
+    const hour=weatherHourData(payload,i);
+    const date=new Date(hour.time);
+    const day=date.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric'});
+    const dayLabel=day!==previousDay?`<span class="weather-hour-day">${day}</span>`:'';
+    previousDay=day;
+    cards.push(`<button type="button" class="weather-hour-card ${i===ms710WeatherState.hourIndex?'active':''}" data-index="${i}" onclick="setWeatherTimelineHour(${i},false)">${dayLabel}<b>${weatherTimeText(hour.time)}</b><span class="weather-hour-icon">${weatherCodeIcon(hour.weatherCode,hour.isDay)}</span><strong>${Number.isFinite(hour.temperature)?Math.round(hour.temperature)+'°':'–'}</strong><small>💨 ${Number.isFinite(hour.windSpeed)?windKmhToBeaufort(hour.windSpeed)+' Bft':'–'}</small><small>🌧️ ${Number.isFinite(hour.precipitationProbability)?Math.round(hour.precipitationProbability)+'%':'–'}</small></button>`);
+  }
+  container.innerHTML=cards.join('');
+  $('weatherTimelineSummary').textContent=`${end-start} uur vooruit`;
+  requestAnimationFrame(()=>container.querySelector('.weather-hour-card.active')?.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'}));
+}
+
+function setWeatherTimelineHour(value,fromSlider=false){
+  const max=(ms710WeatherState.forecast?.hourly?.time?.length||1)-1;
+  ms710WeatherState.hourIndex=Math.max(0,Math.min(Number(value)||0,max));
+  renderWeatherDashboard();
+  if(!fromSlider){
+    const range=$('weatherTimelineRange');if(range)range.value=String(ms710WeatherState.hourIndex);
+  }
+}
+
+function toggleWeatherTimelinePlayback(){
+  const button=$('weatherTimelinePlay');
+  if(ms710WeatherState.playbackTimer){
+    clearInterval(ms710WeatherState.playbackTimer);ms710WeatherState.playbackTimer=null;
+    if(button)button.textContent='▶';
+    return;
+  }
+  if(button)button.textContent='⏸';
+  ms710WeatherState.playbackTimer=setInterval(()=>{
+    const max=(ms710WeatherState.forecast?.hourly?.time?.length||1)-1;
+    const next=ms710WeatherState.hourIndex>=max?0:ms710WeatherState.hourIndex+1;
+    setWeatherTimelineHour(next,true);
+  },900);
+}
+
+function renderWeatherDetails(hour){
+  if(!hour)return;
+  $('weatherDetailHumidity').textContent=Number.isFinite(hour.humidity)?`${Math.round(hour.humidity)}%`:'–';
+  $('weatherDetailVisibility').textContent=weatherVisibilityText(hour.visibility);
+  $('weatherDetailClouds').textContent=Number.isFinite(hour.cloudCover)?`${Math.round(hour.cloudCover)}%`:'–';
+  $('weatherDetailDirection').textContent=Number.isFinite(hour.windDirection)?`${weatherDirectionText(hour.windDirection)} · ${Math.round(hour.windDirection)}°`:'–';
+  $('weatherDetailGusts').textContent=Number.isFinite(hour.windGusts)?formatWindBeaufort(hour.windGusts,true):'–';
+  $('weatherDetailRainChance').textContent=Number.isFinite(hour.precipitationProbability)?`${Math.round(hour.precipitationProbability)}%`:'–';
+  $('weatherDetailUv').textContent=Number.isFinite(hour.uvIndex)?hour.uvIndex.toFixed(1):'–';
+  $('weatherDetailPressure').textContent=Number.isFinite(hour.pressure)?`${Math.round(hour.pressure)} hPa`:'–';
+}
+
+function renderWeatherDaily(payload){
+  const daily=payload?.daily;
+  const container=$('weatherDailyForecast');
+  if(!container||!daily?.time?.length)return;
+  container.innerHTML=daily.time.map((time,index)=>{
+    const date=new Date(`${time}T12:00`);
+    const day=date.toLocaleDateString('nl-NL',{weekday:'long'});
+    const dateText=date.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+    const code=Number(daily.weather_code?.[index]);
+    return `<article class="weather-day-card"><span>${day}</span><small>${dateText}</small><div class="weather-day-icon">${weatherCodeIcon(code,1)}</div><b>${weatherCodeDescription(code)}</b><strong>${Math.round(Number(daily.temperature_2m_max?.[index]))}° <em>${Math.round(Number(daily.temperature_2m_min?.[index]))}°</em></strong><small>🌧️ ${Math.round(Number(daily.precipitation_probability_max?.[index])||0)}% · ${Number(daily.precipitation_sum?.[index]||0).toFixed(1)} mm</small><small>💨 ${windKmhToBeaufort(Number(daily.wind_speed_10m_max?.[index])||0)} Bft · stoten ${windKmhToBeaufort(Number(daily.wind_gusts_10m_max?.[index])||0)} Bft</small></article>`;
+  }).join('');
+}
+
+function weatherSamplePoints(center){
+  const latStep=.34;
+  const lonStep=.52/Math.max(.45,Math.cos(Number(center.lat)*Math.PI/180));
+  const points=[];
+  [-1,0,1].forEach(y=>[-1,0,1].forEach(x=>points.push({lat:center.lat+y*latStep,lon:center.lon+x*lonStep,label:x===0&&y===0?center.label:'Omgeving'})));
+  return points;
+}
+
+async function fetchWeatherMapSamples(){
+  const token=++ms710WeatherState.mapRequestToken;
+  const points=weatherSamplePoints(ms710WeatherState.center);
+  setWeatherPageStatus('Weerkaartpunten berekenen…');
+  try{
+    const params=new URLSearchParams({
+      latitude:points.map(point=>point.lat.toFixed(5)).join(','),
+      longitude:points.map(point=>point.lon.toFixed(5)).join(','),
+      hourly:['temperature_2m','precipitation_probability','precipitation','weather_code','cloud_cover','wind_speed_10m','wind_gusts_10m','wind_direction_10m','is_day'].join(','),
+      forecast_hours:'72',wind_speed_unit:'kmh',timezone:'auto',cell_selection:'nearest'
+    });
+    const response=await fetch(`https://api.open-meteo.com/v1/forecast?${params}`,{headers:{Accept:'application/json'}});
+    if(!response.ok)throw new Error(`Kaartservice gaf fout ${response.status}`);
+    const payload=await response.json();
+    if(token!==ms710WeatherState.mapRequestToken)return;
+    const list=Array.isArray(payload)?payload:[payload];
+    ms710WeatherState.sampleData=list.map((item,index)=>({...item,label:points[index]?.label||'Omgeving'}));
+    renderWeatherMap();
+  }catch(error){
+    console.error(error);
+    setWeatherPageStatus(`Weerkaart kon niet volledig worden opgebouwd: ${error.message}`,'warning');
+  }
+}
+
+function weatherMapValue(sample,index){
+  const hourly=sample?.hourly||{};
+  const safe=Math.max(0,Math.min(index,(hourly.time?.length||1)-1));
+  return {
+    time:hourly.time?.[safe],temperature:Number(hourly.temperature_2m?.[safe]),
+    precipitationProbability:Number(hourly.precipitation_probability?.[safe]),precipitation:Number(hourly.precipitation?.[safe]),
+    weatherCode:Number(hourly.weather_code?.[safe]),cloudCover:Number(hourly.cloud_cover?.[safe]),
+    windSpeed:Number(hourly.wind_speed_10m?.[safe]),windGusts:Number(hourly.wind_gusts_10m?.[safe]),
+    windDirection:Number(hourly.wind_direction_10m?.[safe]),isDay:Number(hourly.is_day?.[safe])
+  };
+}
+
+function weatherTemperatureColor(value){
+  if(value<=0)return '#7dd3fc';if(value<=10)return '#38bdf8';if(value<=18)return '#22c55e';if(value<=25)return '#facc15';if(value<=30)return '#fb923c';return '#ef4444';
+}
+function weatherWindColor(value){
+  const bft=windKmhToBeaufort(value);if(bft<=2)return '#34d399';if(bft<=4)return '#facc15';if(bft<=6)return '#fb923c';return '#ef4444';
+}
+function weatherRainColor(value){
+  if(value<.2)return '#64748b';if(value<1)return '#38bdf8';if(value<4)return '#2563eb';return '#7c3aed';
+}
+
+function weatherMapMarkerHtml(data,layer){
+  if(layer==='wind'){
+    const color=weatherWindColor(data.windSpeed);
+    return `<div class="weather-map-marker wind" style="--weather-color:${color}"><span class="weather-wind-arrow" style="transform:rotate(${Number(data.windDirection)||0}deg)">↑</span><b>${windKmhToBeaufort(data.windSpeed)} Bft</b></div>`;
+  }
+  if(layer==='rain'){
+    const color=weatherRainColor(data.precipitation);
+    return `<div class="weather-map-marker" style="--weather-color:${color}"><span>🌧️</span><b>${Number(data.precipitation||0).toFixed(1)} mm</b><small>${Math.round(Number(data.precipitationProbability)||0)}%</small></div>`;
+  }
+  if(layer==='clouds'){
+    const darkness=Math.max(25,Math.min(90,Number(data.cloudCover)||0));
+    return `<div class="weather-map-marker clouds" style="--weather-cloud:${darkness}%"><span>${weatherCodeIcon(data.weatherCode,data.isDay)}</span><b>${Math.round(Number(data.cloudCover)||0)}%</b></div>`;
+  }
+  const color=weatherTemperatureColor(data.temperature);
+  return `<div class="weather-map-marker" style="--weather-color:${color}"><span>${weatherCodeIcon(data.weatherCode,data.isDay)}</span><b>${Number(data.temperature).toFixed(1)}°</b></div>`;
+}
+
+function renderWeatherMap(){
+  initWeatherMap();
+  if(!ms710WeatherState.map||!ms710WeatherState.mapLayer)return;
+  ms710WeatherState.mapLayer.clearLayers();
+  const samples=ms710WeatherState.sampleData;
+  const mainTimes=ms710WeatherState.forecast?.hourly?.time||[];
+  const selectedTime=mainTimes[ms710WeatherState.hourIndex];
+  samples.forEach(sample=>{
+    let index=ms710WeatherState.hourIndex;
+    if(selectedTime&&sample.hourly?.time?.length){index=weatherNearestHourIndex(sample.hourly.time,new Date(selectedTime));}
+    const data=weatherMapValue(sample,index);
+    const icon=L.divIcon({className:'weather-leaflet-icon',html:weatherMapMarkerHtml(data,ms710WeatherState.layer),iconSize:[92,64],iconAnchor:[46,32]});
+    L.marker([Number(sample.latitude),Number(sample.longitude)],{icon}).addTo(ms710WeatherState.mapLayer).bindPopup(`<b>${weatherCodeIcon(data.weatherCode,data.isDay)} ${esc(sample.label||'Weerpunt')}</b><br>${esc(weatherTimeText(data.time,true))}<br>Temperatuur ${Number(data.temperature).toFixed(1)} °C<br>Wind ${esc(formatWindBeaufort(data.windSpeed,true))}<br>Stoten ${esc(formatWindBeaufort(data.windGusts,true))}<br>Neerslag ${Number(data.precipitation||0).toFixed(1)} mm (${Math.round(Number(data.precipitationProbability)||0)}%)`);
+  });
+  L.circleMarker([ms710WeatherState.center.lat,ms710WeatherState.center.lon],{radius:9,weight:3,fillOpacity:.85}).addTo(ms710WeatherState.mapLayer).bindTooltip(`📍 ${ms710WeatherState.center.label}`);
+  renderWeatherMapLegend();
+}
+
+function setWeatherMapLayer(layer,button){
+  ms710WeatherState.layer=layer;
+  document.querySelectorAll('[data-weather-layer]').forEach(item=>item.classList.toggle('active',item.dataset.weatherLayer===layer));
+  renderWeatherMap();
+}
+
+function renderWeatherMapLegend(){
+  const legends={
+    temperature:'🌡️ Blauw = koud · groen = mild · geel/oranje = warm · rood = heet',
+    wind:'💨 Groen = rustig · geel = matig · oranje = krachtig · rood = gevaarlijk',
+    rain:'🌧️ Getal = mm per uur · percentage = regenkans',
+    clouds:'☁️ Percentage = totale bewolking op het gekozen tijdstip'
+  };
+  $('weatherMapLegend').textContent=legends[ms710WeatherState.layer]||'';
+}
+
+function openExternalWeatherMap(){
+  window.open('https://maps.open-meteo.com/','_blank','noopener,noreferrer');
+}
+
+window.addEventListener('resize',()=>{
+  if(!$('weather')?.classList.contains('hidden'))setTimeout(()=>ms710WeatherState.map?.invalidateSize({pan:false}),100);
+});
