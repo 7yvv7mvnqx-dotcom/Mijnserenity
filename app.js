@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false,homeAssistantStatusCache=null,homeAssistantStatusLoading=false,radarCameraRefreshTimer=null,radarCameraLiveActive=false,radarCameraLiveToken='',radarCameraLiveRefreshTimer=null,radarCameraFrameTimer=null,radarCameraFrameBusy=false,radarCameraFrameFailures=0;
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,plannerExternalPoints=[],plannerLocationSearchResults={from:[],to:[],stop:[]},plannerLocationSearchController=null,plannerLocationSearchCache=new Map(),plannerLocationSearchLastRequestAt=0,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false,homeAssistantStatusCache=null,homeAssistantStatusLoading=false,radarCameraRefreshTimer=null,radarCameraLiveActive=false,radarCameraLiveToken='',radarCameraLiveRefreshTimer=null,radarCameraFrameTimer=null,radarCameraFrameBusy=false,radarCameraFrameFailures=0;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -5754,6 +5754,567 @@ function writePlannerDrafts(plans){
   }
 }
 
+
+const PLANNER_EXTERNAL_LOCATION_VERSION='v1';
+
+function plannerExternalLocationStorageKey(){
+  return `mijnserenity-planner-locations-${PLANNER_EXTERNAL_LOCATION_VERSION}-${currentBoat?.id||'geen-boot'}`;
+}
+
+function plannerLoadExternalPoints(){
+  try{
+    const stored=JSON.parse(
+      localStorage.getItem(plannerExternalLocationStorageKey())||'[]'
+    );
+
+    plannerExternalPoints=(Array.isArray(stored)?stored:[])
+      .map(point=>({
+        ref:String(point?.ref||''),
+        label:String(point?.label||'').trim(),
+        place:String(point?.place||'').trim(),
+        address:String(point?.address||'').trim(),
+        category:String(point?.category||'Online locatie').trim(),
+        lat:Number(point?.lat),
+        lon:Number(point?.lon),
+        source:String(point?.source||'online')
+      }))
+      .filter(point=>
+        point.ref&&
+        point.label&&
+        Number.isFinite(point.lat)&&
+        Number.isFinite(point.lon)
+      )
+      .slice(0,40);
+  }catch(error){
+    console.warn('Online plannerlocaties laden mislukt:',error);
+    plannerExternalPoints=[];
+  }
+}
+
+function plannerSaveExternalPoints(){
+  try{
+    localStorage.setItem(
+      plannerExternalLocationStorageKey(),
+      JSON.stringify(plannerExternalPoints.slice(0,40))
+    );
+  }catch(error){
+    console.warn('Online plannerlocaties bewaren mislukt:',error);
+  }
+}
+
+function plannerExternalPointByRef(ref){
+  return plannerExternalPoints.find(
+    point=>String(point.ref)===String(ref)
+  )||null;
+}
+
+function plannerExternalRef(result){
+  const osmType=String(result?.osm_type||'').trim();
+  const osmId=String(result?.osm_id||'').trim();
+
+  if(osmType&&osmId){
+    return `online:${osmType}:${osmId}`;
+  }
+
+  const lat=Number(result?.lat);
+  const lon=Number(result?.lon);
+  const label=String(
+    result?.name||
+    result?.display_name||
+    'locatie'
+  )
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,48);
+
+  return `online:${label}:${lat.toFixed(5)}:${lon.toFixed(5)}`;
+}
+
+function plannerSearchRoleConfig(role){
+  const configs={
+    from:{
+      input:'plannerFromSearch',
+      results:'plannerFromSearchResults',
+      select:'plannerFrom'
+    },
+    to:{
+      input:'plannerToSearch',
+      results:'plannerToSearchResults',
+      select:'plannerTo'
+    },
+    stop:{
+      input:'plannerStopSearch',
+      results:'plannerStopSearchResults',
+      select:'plannerStopSelect'
+    }
+  };
+
+  return configs[role]||null;
+}
+
+function plannerSearchInputValue(role){
+  const config=plannerSearchRoleConfig(role);
+  return String($(config?.input)?.value||'').trim();
+}
+
+function plannerSearchGoogleUrl(query,point=null){
+  const text=point
+    ?[
+        point.label,
+        point.address,
+        point.place
+      ].filter(Boolean).join(' ')
+    :String(query||'').trim();
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}`;
+}
+
+function openPlannerSearchInGoogle(role,index=null){
+  const query=plannerSearchInputValue(role);
+  const result=Number.isInteger(index)
+    ?plannerLocationSearchResults?.[role]?.[index]
+    :null;
+
+  const url=plannerSearchGoogleUrl(
+    query,
+    result?.point||null
+  );
+
+  window.open(url,'_blank','noopener,noreferrer');
+}
+
+function plannerSearchKeydown(event,role){
+  if(event.key!=='Enter')return;
+  event.preventDefault();
+  searchPlannerLocations(role);
+}
+
+function plannerSearchCategory(result){
+  const type=String(result?.type||'').toLowerCase();
+  const category=String(result?.category||'').toLowerCase();
+  const addresstype=String(result?.addresstype||'').toLowerCase();
+  const joined=`${type} ${category} ${addresstype}`;
+
+  if(/marina|harbour|harbor|haven|boatyard/.test(joined))return 'Haven';
+  if(/lock|sluis/.test(joined))return 'Sluis';
+  if(/bridge|brug/.test(joined))return 'Brug';
+  if(/restaurant|fast_food|cafe|pub/.test(joined))return 'Horeca';
+  if(/fuel|tankstation|gas_station/.test(joined))return 'Tankplaats';
+  if(/supermarket|convenience|shop/.test(joined))return 'Winkel';
+  if(/city|town|village|municipality|place/.test(joined))return 'Plaats';
+  return 'Online locatie';
+}
+
+function plannerSearchPlace(result){
+  const address=result?.address||{};
+  return String(
+    address.city||
+    address.town||
+    address.village||
+    address.municipality||
+    address.hamlet||
+    address.county||
+    ''
+  ).trim();
+}
+
+function plannerNormalizeOnlineResult(result){
+  const lat=Number(result?.lat);
+  const lon=Number(result?.lon);
+  if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
+
+  const place=plannerSearchPlace(result);
+  const named=String(
+    result?.namedetails?.name_nl||
+    result?.namedetails?.name||
+    result?.name||
+    ''
+  ).trim();
+
+  const display=String(result?.display_name||'').trim();
+  const firstDisplayPart=display.split(',')[0]?.trim();
+  const label=named||firstDisplayPart||place||'Online locatie';
+
+  return {
+    ref:plannerExternalRef(result),
+    label,
+    place,
+    address:display,
+    category:plannerSearchCategory(result),
+    lat,
+    lon,
+    source:'online-map',
+    osmType:String(result?.osm_type||''),
+    osmId:String(result?.osm_id||'')
+  };
+}
+
+function plannerLocalSearchResults(query){
+  const needle=String(query||'').trim().toLocaleLowerCase('nl');
+  if(!needle)return [];
+
+  return plannerSortedPois()
+    .filter(poi=>{
+      const haystack=[
+        poi.name,
+        poi.place,
+        poi.address,
+        poi.category,
+        poi.description
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLocaleLowerCase('nl');
+
+      return haystack.includes(needle);
+    })
+    .slice(0,8)
+    .map(poi=>({
+      kind:'poi',
+      point:plannerPointFromPoi(poi),
+      label:poi.name||'POI',
+      subtitle:[
+        poi.category,
+        poi.place,
+        poi.address
+      ].filter(Boolean).join(' · ')
+    }));
+}
+
+function plannerOnlineSearchQuery(query){
+  const text=String(query||'').trim();
+  if(!text)return '';
+
+  const nauticalTerms=[
+    'haven','jachthaven','marina','passantenhaven','sluis','brug',
+    'aanlegplaats','tankstation','restaurant','supermarkt','poi'
+  ];
+
+  const lower=text.toLocaleLowerCase('nl');
+  const hasNauticalTerm=nauticalTerms.some(term=>lower.includes(term));
+
+  return hasNauticalTerm
+    ?text
+    :text;
+}
+
+async function plannerFetchOnlineLocations(query,signal){
+  const normalizedQuery=plannerOnlineSearchQuery(query);
+  const cacheKey=normalizedQuery.toLocaleLowerCase('nl');
+
+  if(plannerLocationSearchCache.has(cacheKey)){
+    return plannerLocationSearchCache.get(cacheKey);
+  }
+
+  const wait=Math.max(
+    0,
+    1100-(Date.now()-Number(plannerLocationSearchLastRequestAt||0))
+  );
+  if(wait)await new Promise(resolve=>setTimeout(resolve,wait));
+
+  plannerLocationSearchLastRequestAt=Date.now();
+
+  const params=new URLSearchParams({
+    q:normalizedQuery,
+    format:'jsonv2',
+    limit:'14',
+    countrycodes:'nl,be,de',
+    addressdetails:'1',
+    namedetails:'1',
+    extratags:'1',
+    dedupe:'1',
+    'accept-language':'nl'
+  });
+
+  const response=await fetch(
+    `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+    {
+      headers:{Accept:'application/json'},
+      signal
+    }
+  );
+
+  if(!response.ok){
+    throw new Error(`Online kaartzoeker gaf fout ${response.status}.`);
+  }
+
+  const payload=await response.json();
+  const points=(Array.isArray(payload)?payload:[])
+    .map(plannerNormalizeOnlineResult)
+    .filter(Boolean);
+
+  const seen=new Set();
+  const unique=points.filter(point=>{
+    const key=[
+      point.label.toLocaleLowerCase('nl'),
+      point.lat.toFixed(5),
+      point.lon.toFixed(5)
+    ].join('|');
+
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  }).slice(0,12);
+
+  plannerLocationSearchCache.set(cacheKey,unique);
+  return unique;
+}
+
+function plannerRenderSearchResults(role,items=[],state=''){
+  const config=plannerSearchRoleConfig(role);
+  const container=$(config?.results);
+  if(!container)return;
+
+  if(state==='loading'){
+    container.innerHTML=`
+      <div class="planner-location-search-state">
+        <span class="planner-search-spinner"></span>
+        Online locaties zoeken…
+      </div>
+    `;
+    container.classList.remove('hidden');
+    return;
+  }
+
+  if(state==='error'){
+    container.innerHTML=`
+      <div class="planner-location-search-state error">
+        Zoeken lukt nu niet. Probeer opnieuw of gebruik de Google Maps-knop.
+      </div>
+    `;
+    container.classList.remove('hidden');
+    return;
+  }
+
+  if(!items.length){
+    container.innerHTML=`
+      <div class="planner-location-search-state">
+        Geen locaties gevonden. Probeer een plaatsnaam of specifieker trefwoord.
+      </div>
+    `;
+    container.classList.remove('hidden');
+    return;
+  }
+
+  plannerLocationSearchResults[role]=items;
+
+  container.innerHTML=items.map((item,index)=>{
+    const point=item.point;
+    const icon=item.kind==='poi'
+      ?String(point?.category||'')==='Haven'?'⚓':'⭐'
+      :point?.category==='Haven'?'⚓'
+        :point?.category==='Sluis'?'🚧'
+        :point?.category==='Brug'?'🌉'
+        :'📍';
+
+    const subtitle=item.subtitle||[
+      point?.category,
+      point?.place,
+      point?.address
+    ].filter(Boolean).join(' · ');
+
+    return `
+      <article class="planner-location-result">
+        <button type="button" class="planner-location-result-main"
+          onclick="choosePlannerLocationSearchResult('${role}',${index})">
+          <span class="planner-location-result-icon">${icon}</span>
+          <span>
+            <strong>${esc(item.label||point?.label||'Locatie')}</strong>
+            <small>${esc(subtitle||'GPS-locatie')}</small>
+          </span>
+          <b>Gebruik</b>
+        </button>
+        <button type="button" class="planner-location-result-google"
+          onclick="openPlannerSearchInGoogle('${role}',${index})"
+          aria-label="Open deze locatie in Google Maps">G</button>
+      </article>
+    `;
+  }).join('');
+
+  container.classList.remove('hidden');
+}
+
+async function searchPlannerLocations(role){
+  const config=plannerSearchRoleConfig(role);
+  if(!config)return;
+
+  const query=plannerSearchInputValue(role);
+
+  if(query.length<2){
+    showAppToast('Typ minimaal twee letters, een plaats, haven of trefwoord.');
+    $(config.input)?.focus();
+    return;
+  }
+
+  const localItems=plannerLocalSearchResults(query);
+  plannerRenderSearchResults(role,localItems,'loading');
+
+  plannerLocationSearchController?.abort();
+  plannerLocationSearchController=new AbortController();
+
+  try{
+    const onlinePoints=await plannerFetchOnlineLocations(
+      query,
+      plannerLocationSearchController.signal
+    );
+
+    const onlineItems=onlinePoints.map(point=>({
+      kind:'external',
+      point,
+      label:point.label,
+      subtitle:[
+        point.category,
+        point.place,
+        point.address
+      ].filter(Boolean).join(' · ')
+    }));
+
+    const combined=[...localItems,...onlineItems];
+    const seen=new Set();
+
+    const unique=combined.filter(item=>{
+      const point=item.point||{};
+      const key=item.kind==='poi'
+        ?String(point.ref)
+        :[
+            String(point.label||'').toLocaleLowerCase('nl'),
+            Number(point.lat).toFixed(5),
+            Number(point.lon).toFixed(5)
+          ].join('|');
+
+      if(seen.has(key))return false;
+      seen.add(key);
+      return true;
+    }).slice(0,18);
+
+    plannerRenderSearchResults(role,unique);
+  }catch(error){
+    if(error?.name==='AbortError')return;
+    console.warn('Plannerlocaties zoeken mislukt:',error);
+
+    if(localItems.length){
+      plannerRenderSearchResults(role,localItems);
+      showAppToast('Alleen eigen POI’s gevonden; online zoeken is tijdelijk niet bereikbaar.');
+    }else{
+      plannerRenderSearchResults(role,[],'error');
+    }
+  }
+}
+
+function plannerRegisterExternalPoint(point){
+  const normalized={
+    ref:String(point?.ref||''),
+    label:String(point?.label||'Online locatie').trim(),
+    place:String(point?.place||'').trim(),
+    address:String(point?.address||'').trim(),
+    category:String(point?.category||'Online locatie').trim(),
+    lat:Number(point?.lat),
+    lon:Number(point?.lon),
+    source:String(point?.source||'online-map')
+  };
+
+  if(
+    !normalized.ref||
+    !Number.isFinite(normalized.lat)||
+    !Number.isFinite(normalized.lon)
+  ){
+    throw new Error('Deze online locatie heeft geen geldige GPS-positie.');
+  }
+
+  plannerExternalPoints=[
+    normalized,
+    ...plannerExternalPoints.filter(
+      existing=>String(existing.ref)!==normalized.ref
+    )
+  ].slice(0,40);
+
+  plannerSaveExternalPoints();
+  return normalized;
+}
+
+function choosePlannerLocationSearchResult(role,index){
+  const config=plannerSearchRoleConfig(role);
+  const item=plannerLocationSearchResults?.[role]?.[index];
+  if(!config||!item)return;
+
+  let ref='';
+
+  if(item.kind==='poi'){
+    ref=String(item.point?.ref||'');
+  }else{
+    const point=plannerRegisterExternalPoint(item.point);
+    ref=point.ref;
+    populatePlannerSelectors();
+  }
+
+  const select=$(config.select);
+  const input=$(config.input);
+  const results=$(config.results);
+
+  if(select)select.value=ref;
+  if(input)input.value=item.label||item.point?.label||'';
+  results?.classList.add('hidden');
+
+  plannerFormChanged();
+
+  if(role==='stop'){
+    showAppToast('Tussenstop gekozen. Tik nog op ＋ Toevoegen.');
+  }else{
+    showAppToast(
+      role==='from'
+        ?'Vertrekpunt gekozen.'
+        :'Bestemming gekozen.'
+    );
+  }
+}
+
+function plannerExternalSelectOptions(){
+  if(!plannerExternalPoints.length)return '';
+
+  return `
+    <optgroup label="Recent online gezocht">
+      ${plannerExternalPoints.map(point=>`
+        <option value="${esc(point.ref)}">
+          ${esc(
+            `${point.category==='Haven'?'⚓':'📍'} ${point.label}${point.place?' · '+point.place:''}`
+          )}
+        </option>
+      `).join('')}
+    </optgroup>
+  `;
+}
+
+function clearPlannerLocationSearch(role=''){
+  const roles=role?[role]:['from','to','stop'];
+
+  roles.forEach(item=>{
+    const config=plannerSearchRoleConfig(item);
+    if(!config)return;
+    const input=$(config.input);
+    const results=$(config.results);
+    if(input)input.value='';
+    if(results){
+      results.innerHTML='';
+      results.classList.add('hidden');
+    }
+    plannerLocationSearchResults[item]=[];
+  });
+}
+
+document.addEventListener('click',event=>{
+  const inside=event.target.closest?.(
+    '.planner-location-search, .planner-location-results'
+  );
+  if(inside)return;
+
+  ['from','to','stop'].forEach(role=>{
+    const config=plannerSearchRoleConfig(role);
+    $(config?.results)?.classList.add('hidden');
+  });
+});
+
+
 function plannerPoiHasLocation(poi){
   const position=getPoiMapPosition(poi);
   return Boolean(position?.valid);
@@ -5840,15 +6401,17 @@ function plannerSelectOptions({includeCurrent=false}={}){
       .sort((a,b)=>a.localeCompare(b,'nl'))
   ];
 
-  return currentOption+ordered.map(category=>`
-    <optgroup label="${esc(category)}">
-      ${groups.get(category).map(poi=>`
-        <option value="${esc(plannerPoiReference(poi))}">
-          ${esc(plannerOptionLabel(poi))}
-        </option>
-      `).join('')}
-    </optgroup>
-  `).join('');
+  return currentOption+
+    plannerExternalSelectOptions()+
+    ordered.map(category=>`
+      <optgroup label="${esc(category)}">
+        ${groups.get(category).map(poi=>`
+          <option value="${esc(plannerPoiReference(poi))}">
+            ${esc(plannerOptionLabel(poi))}
+          </option>
+        `).join('')}
+      </optgroup>
+    `).join('');
 }
 
 function populatePlannerSelectors(){
@@ -5913,6 +6476,7 @@ function initPlanner(){
     return;
   }
 
+  plannerLoadExternalPoints();
   populatePlannerSelectors();
   plannerSetDefaults();
   renderPlannerStops();
@@ -6027,6 +6591,7 @@ function addPlannerStop(){
 
   plannerStops.push(ref);
   select.value='';
+  clearPlannerLocationSearch('stop');
   renderPlannerStops();
   plannerFormChanged();
 }
@@ -6060,6 +6625,9 @@ function plannerRefLabel(ref){
   if(ref==='current'){
     return plannerCurrentPosition?.label||'Huidige positie';
   }
+
+  const external=plannerExternalPointByRef(ref);
+  if(external)return external.label||'Online locatie';
 
   const poi=plannerPoiByRef(ref);
   return poi?.name||'Onbekende POI';
@@ -6144,6 +6712,20 @@ async function resolvePlannerPoint(ref){
       plannerCurrentPosition=await plannerGeolocation();
     }
     return {...plannerCurrentPosition};
+  }
+
+  const external=plannerExternalPointByRef(ref);
+  if(external){
+    return {
+      ref:external.ref,
+      label:external.label,
+      place:external.place||'',
+      address:external.address||'',
+      category:external.category||'Online locatie',
+      lat:Number(external.lat),
+      lon:Number(external.lon),
+      source:external.source||'online-map'
+    };
   }
 
   const poi=plannerPoiByRef(ref);
@@ -6669,6 +7251,7 @@ function resetPlannerForm(){
   if($('plannerTitle'))$('plannerTitle').value='';
   if($('plannerNotes'))$('plannerNotes').value='';
 
+  clearPlannerLocationSearch();
   renderPlannerStops();
 
   $('plannerSummary')?.classList.add('hidden');
@@ -14088,7 +14671,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.0.0"
+<gpx version="1.1" creator="MijnSerenity 7.0.1"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14340,7 +14923,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.0.0';
+const APP_VERSION='7.0.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14417,7 +15000,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=7000',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=7010',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -16330,7 +16913,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 7.0.0 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 7.0.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16719,7 +17302,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0
+   MijnSerenity Cloud 7.0.1
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17656,7 +18239,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.0.0"
+ creator="MijnSerenity 7.0.1"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17682,7 +18265,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.0.0 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 7.0.1 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17720,7 +18303,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0 — Next Level Live Cockpit
+   MijnSerenity Cloud 7.0.1 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18694,7 +19277,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0 — Smart Route
+   MijnSerenity Cloud 7.0.1 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -20004,7 +20587,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.0.0 Smart Route"
+ creator="MijnSerenity 7.0.1 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -20033,7 +20616,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.0.0 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 7.0.1 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20100,7 +20683,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 7.0.1 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -21019,7 +21602,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0 — Auto Logbook
+   MijnSerenity Cloud 7.0.1 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22227,7 +22810,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0 — Routefoto’s met GPS en omschrijving
+   MijnSerenity Cloud 7.0.1 — Routefoto’s met GPS en omschrijving
    ============================================================ */
 
 let ms681PendingPhotos=[];
@@ -23056,7 +23639,7 @@ initLiveMode=async function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0 — Boat Intelligence
+   MijnSerenity Cloud 7.0.1 — Boat Intelligence
    ============================================================ */
 
 function ms690Clamp(value,min=0,max=100){
@@ -24356,7 +24939,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0 — Gewaardeerde havenimporteur
+   MijnSerenity Cloud 7.0.1 — Gewaardeerde havenimporteur
    ============================================================ */
 
 let ms692HarbourImportBusy=false;
@@ -25013,7 +25596,7 @@ async function ms692ImportRatedHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0 — Havens binnen straal van locatie
+   MijnSerenity Cloud 7.0.1 — Havens binnen straal van locatie
    ============================================================ */
 
 let ms693NearbyBusy=false;
@@ -25366,7 +25949,7 @@ async function ms693ImportNearbyHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.0 — POI Data Service
+   MijnSerenity Cloud 7.0.1 — POI Data Service
    ============================================================ */
 
 let ms694EnrichmentBusy=false;

@@ -2243,7 +2243,7 @@ header{
 
 /* Cloud 5.1.40 — cache-busting en directe updatecontrole */
 .app-brand-edition::after{
-  content:" · v7.0.0";
+  content:" · v7.0.1";
   color:#6fcfee;
   font-weight:800;
 }
@@ -5304,7 +5304,7 @@ main{
 }
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.0 — Finance Command Center + cockpit
+   MijnSerenity Cloud 7.0.1 — Finance Command Center + cockpit
    ========================================================= */
 
 /* Motortoerental: groen t/m 1800, geel 1801–2300, rood >2300 */
@@ -5664,7 +5664,7 @@ main{
 }
 
 
-/* MijnSerenity 7.0.0 — Waterkaarten Bridge en gedeelde live vaarkaart */
+/* MijnSerenity 7.0.1 — Waterkaarten Bridge en gedeelde live vaarkaart */
 .live-cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:13px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(69,200,255,.16),rgba(75,211,143,.10));border:1px solid rgba(255,255,255,.11)}
 .live-cloud-strip>div{min-width:0}.live-cloud-strip strong{display:block;margin-top:3px;font-size:16px}.live-cloud-strip small{display:block;margin-top:3px;color:var(--muted);line-height:1.35}
 .live-cloud-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.15)}
@@ -5677,7 +5677,7 @@ main{
 @media(max-width:700px){.live-cloud-strip{align-items:flex-start;flex-direction:column}}
 
 
-/* MijnSerenity 7.0.0 — waterwegrouter, nautische laag en route-POI's */
+/* MijnSerenity 7.0.1 — waterwegrouter, nautische laag en route-POI's */
 .planner-fallback-settings{
   margin:10px 0 14px;
   padding:10px 12px;
@@ -5813,7 +5813,7 @@ main{
 }
 
 
-/* MijnSerenity 7.0.0 — iPad/Safari vaste onderbalk */
+/* MijnSerenity 7.0.1 — iPad/Safari vaste onderbalk */
 html,
 body{
   transform:none !important;
@@ -5873,7 +5873,7 @@ body > .bottom-nav:not(.bottom-nav-auto-hidden),
 
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.0 — Next Level Live Cockpit
+   MijnSerenity Cloud 7.0.1 — Next Level Live Cockpit
    ========================================================= */
 
 .ms660-cockpit-actions{
@@ -6243,7 +6243,7 @@ body.ms660-night-mode
 
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.0 — Smart Route
+   MijnSerenity Cloud 7.0.1 — Smart Route
    ========================================================= */
 
 .ms670-profile-card{
@@ -6567,7 +6567,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 7.0.0 — iOS delen en route-POI's */
+/* MijnSerenity 7.0.1 — iOS delen en route-POI's */
 .ms672-share-note{
   display:grid;
   grid-template-columns:38px minmax(0,1fr);
@@ -6603,7 +6603,7 @@ body.ms660-night-mode
 }
 
 
-/* MijnSerenity 7.0.0 — fullscreen kaart en alternatieve route */
+/* MijnSerenity 7.0.1 — fullscreen kaart en alternatieve route */
 .planner-map-shell{
   position:relative;
   overflow:hidden;
@@ -6825,7 +6825,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.0 — Auto Logbook
+   MijnSerenity Cloud 7.0.1 — Auto Logbook
    ========================================================= */
 
 .ms680-auto-center{
@@ -7083,7 +7083,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.0 — Routefoto’s
+   MijnSerenity Cloud 7.0.1 — Routefoto’s
    ========================================================= */
 
 .ms681-photo-composer{
@@ -7328,7 +7328,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.0 — Boat Intelligence
+   MijnSerenity Cloud 7.0.1 — Boat Intelligence
    ========================================================= */
 
 .ms690-intelligence-card{
@@ -7955,7 +7955,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.0 — Havenbibliotheek
+   MijnSerenity Cloud 7.0.1 — Havenbibliotheek
    ========================================================= */
 
 .ms692-harbour-import-card{
@@ -8160,7 +8160,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.0 — Havens bij mijn locatie
+   MijnSerenity Cloud 7.0.1 — Havens bij mijn locatie
    ========================================================= */
 
 .ms693-nearby-search{
@@ -8225,7 +8225,7 @@ body.planner-map-fullscreen-open{
 
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.0 — POI Data Service
+   MijnSerenity Cloud 7.0.1 — POI Data Service
    ========================================================= */
 
 .ms694-enrichment-card{
@@ -8462,5 +8462,181 @@ body.planner-map-fullscreen-open{
 
   .ms694-enrichment-actions button{
     width:100%;
+  }
+}
+
+
+/* MijnSerenity Cloud 7.0.1 — online locatiezoeker + Google Maps controle */
+.planner-location-row{
+  align-items:start;
+}
+.planner-location-search{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto 44px;
+  gap:7px;
+  align-items:center;
+}
+.planner-location-search input,
+.planner-location-search button{
+  min-height:45px;
+  margin:0;
+}
+.planner-location-search .secondary{
+  width:auto;
+  padding:8px 12px;
+}
+.planner-google-button,
+.planner-location-result-google{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(93,176,255,.25);
+  background:
+    linear-gradient(135deg,#4285f4 0 25%,#34a853 25% 50%,#fbbc05 50% 75%,#ea4335 75%);
+  color:#fff;
+  font-weight:1000;
+  text-shadow:0 1px 2px rgba(0,0,0,.42);
+}
+.planner-google-button{
+  width:44px;
+  min-width:44px;
+  padding:0;
+  border-radius:12px;
+}
+.planner-own-location-label{
+  margin-top:8px;
+  color:#8ca9b5;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.planner-location-results{
+  position:relative;
+  z-index:40;
+  display:grid;
+  gap:6px;
+  max-height:330px;
+  margin-top:7px;
+  padding:7px;
+  overflow:auto;
+  border:1px solid rgba(111,207,238,.18);
+  border-radius:14px;
+  background:rgba(4,24,38,.98);
+  box-shadow:0 18px 40px rgba(0,0,0,.34);
+  overscroll-behavior:contain;
+}
+.planner-location-result{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 38px;
+  gap:6px;
+  align-items:stretch;
+  padding:5px;
+  border:1px solid rgba(255,255,255,.065);
+  border-radius:12px;
+  background:rgba(255,255,255,.035);
+}
+.planner-location-result-main{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr) auto;
+  gap:9px;
+  align-items:center;
+  width:100%;
+  min-height:52px;
+  margin:0;
+  padding:4px 6px;
+  border:0;
+  background:transparent;
+  color:#effaff;
+  text-align:left;
+}
+.planner-location-result-main>span:nth-child(2){
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  gap:3px;
+}
+.planner-location-result-main strong,
+.planner-location-result-main small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.planner-location-result-main small{
+  color:#8daab6;
+  font-size:10px;
+}
+.planner-location-result-main>b{
+  color:#72d7f4;
+  font-size:10px;
+}
+.planner-location-result-icon{
+  display:flex;
+  width:32px;
+  height:32px;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  background:rgba(111,207,238,.10);
+  font-size:17px;
+}
+.planner-location-result-google{
+  width:38px;
+  min-height:44px;
+  margin:0;
+  padding:0;
+  border-radius:10px;
+}
+.planner-location-search-state{
+  padding:13px;
+  color:#a5c0ca;
+  font-size:11px;
+  line-height:1.45;
+  text-align:center;
+}
+.planner-location-search-state.error{
+  color:#ffb0a7;
+}
+.planner-search-spinner{
+  display:inline-block;
+  width:13px;
+  height:13px;
+  margin-right:7px;
+  border:2px solid rgba(111,207,238,.25);
+  border-top-color:#6fcfee;
+  border-radius:999px;
+  vertical-align:-2px;
+  animation:planner-search-spin .8s linear infinite;
+}
+@keyframes planner-search-spin{
+  to{transform:rotate(360deg)}
+}
+.planner-location-help{
+  margin:10px 0 0;
+  color:#87a5b0;
+  font-size:10px;
+  line-height:1.45;
+}
+.planner-location-help b{
+  color:#dbeef4;
+}
+@media(max-width:620px){
+  .planner-location-search{
+    grid-template-columns:minmax(0,1fr) 44px;
+  }
+  .planner-location-search .secondary{
+    grid-column:1 / -1;
+    grid-row:2;
+  }
+  .planner-google-button{
+    grid-column:2;
+    grid-row:1;
+  }
+  .planner-location-result-main{
+    grid-template-columns:32px minmax(0,1fr);
+  }
+  .planner-location-result-main>b{
+    grid-column:2;
+    justify-self:start;
   }
 }
