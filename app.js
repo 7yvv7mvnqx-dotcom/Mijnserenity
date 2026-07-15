@@ -28973,3 +28973,498 @@ function openExternalWeatherMap(){
 window.addEventListener('resize',()=>{
   if(!$('weather')?.classList.contains('hidden'))setTimeout(()=>ms710WeatherState.map?.invalidateSize({pan:false}),100);
 });
+
+
+/* ============================================================
+   MijnSerenity Cloud 7.1.2 — Snelle Smart Route-objectcontrole
+   Parallelle corridorcontrole, cache en achtergrondverrijking
+   ============================================================ */
+
+const MS712_ROUTE_OBJECT_CACHE_PREFIX='mijnserenity-routeobjects-712-';
+const MS712_ROUTE_OBJECT_CACHE_TTL=12*60*60*1000;
+const MS712_ROUTE_OBJECT_BATCH_SIZE=6;
+const MS712_ROUTE_OBJECT_CONCURRENCY=3;
+const MS712_ROUTE_OBJECT_ENDPOINT_TIMEOUT=14000;
+const MS712_OVERPASS_MEMORY_CACHE=new Map();
+const MS712_OVERPASS_INFLIGHT=new Map();
+
+function ms712SimpleHash(value){
+  let hash=2166136261;
+  const text=String(value||'');
+  for(let index=0;index<text.length;index+=1){
+    hash^=text.charCodeAt(index);
+    hash=Math.imul(hash,16777619);
+  }
+  return (hash>>>0).toString(36);
+}
+
+function ms712RouteSignature(coordinates){
+  const points=(Array.isArray(coordinates)?coordinates:[])
+    .map(ms650Coordinate)
+    .filter(ms650ValidCoordinate);
+  if(points.length<2)return '';
+
+  const step=Math.max(1,Math.floor(points.length/40));
+  const sampled=[];
+  for(let index=0;index<points.length;index+=step){
+    const point=points[index];
+    sampled.push(`${point.lat.toFixed(4)},${point.lon.toFixed(4)}`);
+  }
+  const last=points.at(-1);
+  const lastKey=`${last.lat.toFixed(4)},${last.lon.toFixed(4)}`;
+  if(sampled.at(-1)!==lastKey)sampled.push(lastKey);
+  return ms712SimpleHash(sampled.join('|'));
+}
+
+function ms712Chunk(items,size){
+  const chunks=[];
+  for(let index=0;index<items.length;index+=size){
+    chunks.push(items.slice(index,index+size));
+  }
+  return chunks;
+}
+
+function ms712BoundsKey(bounds){
+  return [bounds.south,bounds.west,bounds.north,bounds.east]
+    .map(value=>Number(value).toFixed(4))
+    .join(':');
+}
+
+ms711RouteCorridorBounds=function(coordinates){
+  const route=(Array.isArray(coordinates)?coordinates:[])
+    .map(ms650Coordinate)
+    .filter(ms650ValidCoordinate);
+  if(route.length<2)return [];
+
+  const boxes=[];
+  let group=[route[0]];
+  let travelled=0;
+
+  const pushGroup=()=>{
+    if(group.length<2)return;
+    const lats=group.map(point=>point.lat);
+    const lons=group.map(point=>point.lon);
+    const margin=.012;
+    boxes.push({
+      south:Math.min(...lats)-margin,
+      west:Math.min(...lons)-margin,
+      north:Math.max(...lats)+margin,
+      east:Math.max(...lons)+margin
+    });
+  };
+
+  for(let index=1;index<route.length;index+=1){
+    const previous=route[index-1];
+    const point=route[index];
+    travelled+=haversineKm(previous,point);
+    group.push(point);
+
+    if(travelled>=24){
+      pushGroup();
+      group=[point];
+      travelled=0;
+    }
+  }
+  if(group.length>1)pushGroup();
+
+  const unique=[];
+  const seen=new Set();
+  boxes.forEach(box=>{
+    const key=ms712BoundsKey(box);
+    if(seen.has(key))return;
+    seen.add(key);
+    unique.push(box);
+  });
+  return unique.slice(0,20);
+};
+
+function ms712InfrastructureBatchQuery(boxes,{services=false}={}){
+  const statements=[];
+  boxes.forEach(bounds=>{
+    const box=[bounds.south,bounds.west,bounds.north,bounds.east]
+      .map(value=>Number(value).toFixed(6)).join(',');
+
+    if(services){
+      statements.push(
+        `nwr["leisure"="marina"](${box});`,
+        `nwr["harbour"="yes"](${box});`,
+        `nwr["seamark:type"="harbour"](${box});`,
+        `nwr["amenity"="fuel"](${box});`,
+        `nwr["amenity"="drinking_water"](${box});`,
+        `nwr["mooring"](${box});`
+      );
+      return;
+    }
+
+    statements.push(
+      `nwr["waterway"="lock_gate"](${box});`,
+      `nwr["waterway"="lock"](${box});`,
+      `nwr["lock"](${box});`,
+      `nwr["bridge"](${box});`,
+      `nwr["man_made"="bridge"](${box});`,
+      `nwr["seamark:type"="bridge"](${box});`,
+      `nwr["boat"="no"](${box});`,
+      `nwr["waterway"="weir"](${box});`,
+      `nwr["waterway"]["maxheight"](${box});`,
+      `nwr["waterway"]["maxwidth"](${box});`,
+      `nwr["waterway"]["maxlength"](${box});`,
+      `nwr["waterway"]["maxdraft"](${box});`,
+      `nwr["waterway"]["maxdraught"](${box});`
+    );
+  });
+
+  return `[out:json][timeout:18];\n(\n${statements.join('\n')}\n);\nout center tags;`;
+}
+
+ms670InfrastructureQuery=function(bounds){
+  return ms712InfrastructureBatchQuery([bounds],{services:false});
+};
+
+function ms712CachedElements(query){
+  const hash=ms712SimpleHash(query);
+  const memory=MS712_OVERPASS_MEMORY_CACHE.get(hash);
+  if(memory&&Date.now()-memory.savedAt<MS712_ROUTE_OBJECT_CACHE_TTL){
+    const copy=memory.elements.slice();
+    copy.__ms712Cached=true;
+    return copy;
+  }
+
+  try{
+    const raw=localStorage.getItem(MS712_ROUTE_OBJECT_CACHE_PREFIX+hash);
+    if(!raw)return null;
+    const parsed=JSON.parse(raw);
+    if(!parsed||Date.now()-Number(parsed.savedAt||0)>=MS712_ROUTE_OBJECT_CACHE_TTL){
+      localStorage.removeItem(MS712_ROUTE_OBJECT_CACHE_PREFIX+hash);
+      return null;
+    }
+    if(!Array.isArray(parsed.elements))return null;
+    MS712_OVERPASS_MEMORY_CACHE.set(hash,parsed);
+    const copy=parsed.elements.slice();
+    copy.__ms712Cached=true;
+    return copy;
+  }catch{
+    return null;
+  }
+}
+
+function ms712StoreElements(query,elements){
+  if(!Array.isArray(elements)||elements.length>2500)return;
+  const hash=ms712SimpleHash(query);
+  const payload={savedAt:Date.now(),elements};
+  MS712_OVERPASS_MEMORY_CACHE.set(hash,payload);
+  try{
+    localStorage.setItem(
+      MS712_ROUTE_OBJECT_CACHE_PREFIX+hash,
+      JSON.stringify(payload)
+    );
+  }catch(error){
+    // Opslag vol: verwijder alleen oude Smart Route-cache en probeer één keer opnieuw.
+    try{
+      Object.keys(localStorage)
+        .filter(key=>key.startsWith(MS712_ROUTE_OBJECT_CACHE_PREFIX))
+        .slice(0,8)
+        .forEach(key=>localStorage.removeItem(key));
+      localStorage.setItem(
+        MS712_ROUTE_OBJECT_CACHE_PREFIX+hash,
+        JSON.stringify(payload)
+      );
+    }catch{}
+  }
+}
+
+function ms712EndpointOrder(){
+  const preferred=sessionStorage.getItem('mijnserenity-overpass-preferred')||'';
+  return [...MS670_OVERPASS_ENDPOINTS]
+    .sort((a,b)=>(a===preferred?-1:0)-(b===preferred?-1:0));
+}
+
+async function ms712FetchEndpoint(endpoint,query,externalSignal){
+  const controller=new AbortController();
+  const abort=()=>controller.abort();
+  if(externalSignal){
+    if(externalSignal.aborted)controller.abort();
+    else externalSignal.addEventListener('abort',abort,{once:true});
+  }
+  const timeout=setTimeout(()=>controller.abort(),MS712_ROUTE_OBJECT_ENDPOINT_TIMEOUT);
+
+  try{
+    const target=endpoint.startsWith('http')
+      ?endpoint
+      :new URL(endpoint,location.origin).toString();
+    const response=await fetch(target,{
+      method:'POST',
+      headers:{
+        'content-type':'application/x-www-form-urlencoded;charset=UTF-8',
+        accept:'application/json'
+      },
+      body:new URLSearchParams({data:query}).toString(),
+      signal:controller.signal,
+      cache:'no-store'
+    });
+    if(!response.ok)throw new Error(`Kaartdienst gaf HTTP ${response.status}.`);
+    const data=await response.json();
+    if(!Array.isArray(data?.elements)){
+      throw new Error('Kaartdienst gaf geen geldige objectenlijst terug.');
+    }
+    try{sessionStorage.setItem('mijnserenity-overpass-preferred',endpoint);}catch{}
+    return data.elements;
+  }finally{
+    clearTimeout(timeout);
+    externalSignal?.removeEventListener?.('abort',abort);
+  }
+}
+
+ms670FetchOverpass=async function(query,options={}){
+  const force=Boolean(options?.force);
+  const signal=options?.signal||null;
+  const hash=ms712SimpleHash(query);
+
+  if(!force){
+    const cached=ms712CachedElements(query);
+    if(cached)return cached;
+    if(MS712_OVERPASS_INFLIGHT.has(hash)){
+      return MS712_OVERPASS_INFLIGHT.get(hash);
+    }
+  }
+
+  const request=(async()=>{
+    let lastError=null;
+    for(const endpoint of ms712EndpointOrder()){
+      try{
+        const elements=await ms712FetchEndpoint(endpoint,query,signal);
+        ms712StoreElements(query,elements);
+        return elements;
+      }catch(error){
+        lastError=error;
+        if(signal?.aborted)throw error;
+        console.warn('Smart Route kaartdienst niet bereikbaar:',endpoint,error);
+      }
+    }
+    throw lastError||new Error('Geen kaartdienst bereikbaar.');
+  })();
+
+  MS712_OVERPASS_INFLIGHT.set(hash,request);
+  try{
+    return await request;
+  }finally{
+    MS712_OVERPASS_INFLIGHT.delete(hash);
+  }
+};
+
+async function ms712ParallelBatches(batches,worker,concurrency=MS712_ROUTE_OBJECT_CONCURRENCY){
+  let nextIndex=0;
+  const results=new Array(batches.length);
+  const runners=Array.from(
+    {length:Math.min(concurrency,batches.length)},
+    async()=>{
+      while(true){
+        const index=nextIndex++;
+        if(index>=batches.length)return;
+        results[index]=await worker(batches[index],index);
+      }
+    }
+  );
+  await Promise.all(runners);
+  return results;
+}
+
+async function ms712FetchBoxes(boxes,{services=false,signal=null,force=false,onProgress=null,concurrency=MS712_ROUTE_OBJECT_CONCURRENCY}={}){
+  const batches=ms712Chunk(boxes,MS712_ROUTE_OBJECT_BATCH_SIZE);
+  const elementMap=new Map();
+  let completed=0;
+  let failed=0;
+  let cachedBatches=0;
+  let lastError='';
+
+  await ms712ParallelBatches(
+    batches,
+    async batch=>{
+      try{
+        const query=ms712InfrastructureBatchQuery(batch,{services});
+        const elements=await ms670FetchOverpass(query,{signal,force});
+        if(elements.__ms712Cached)cachedBatches+=1;
+        elements.forEach(element=>{
+          const key=`${element.type}:${element.id}`;
+          if(!elementMap.has(key))elementMap.set(key,element);
+        });
+        completed+=batch.length;
+      }catch(error){
+        failed+=batch.length;
+        lastError=error?.message||'Kaartdienst niet bereikbaar.';
+        console.warn('Smart Route routegedeelte niet beschikbaar:',error);
+      }
+      onProgress?.({completed,failed,cachedBatches,elements:elementMap.size,lastError,batches:batches.length});
+    },
+    concurrency
+  );
+
+  return {
+    elements:[...elementMap.values()],
+    completed,
+    failed,
+    cachedBatches,
+    batches:batches.length,
+    error:lastError
+  };
+}
+
+async function ms712EnrichRouteServices(plan,boxes,routeSignature){
+  if(!plan||!Array.isArray(boxes)||!boxes.length)return;
+  try{
+    const result=await ms712FetchBoxes(boxes,{
+      services:true,
+      concurrency:2
+    });
+    if(!result.completed||!result.elements.length)return;
+    if(ms712RouteSignature(plan.routeCoordinates)!==routeSignature)return;
+
+    const serviceObjects=ms670ProcessObjects(result.elements,plan.routeCoordinates)
+      .filter(object=>['Haven','Tankstation','Drinkwater','Aanlegplaats'].includes(object.category));
+    if(!serviceObjects.length)return;
+
+    const merged=new Map();
+    [...(plan.routeObjects||[]),...serviceObjects].forEach(object=>{
+      if(object?.id&&!merged.has(object.id))merged.set(object.id,object);
+    });
+    plan.routeObjects=[...merged.values()].sort((a,b)=>a.alongRouteKm-b.alongRouteKm);
+    plan.smartAnalysis=ms670AnalysePlan(plan);
+    plan.dayPlan=ms670BuildDayPlan(plan);
+    plan.serviceDataStatus=result.failed?'partial':'online';
+    if(plan.smartDataMeta)plan.smartDataMeta.objects=plan.routeObjects.length;
+
+    if(plannerCurrentPlan===plan){
+      renderPlannerSummary(plan);
+    }
+  }catch(error){
+    console.warn('Havens en voorzieningen op de achtergrond laden mislukt:',error);
+  }
+}
+
+ms670LoadInfrastructure=async function(plan){
+  if(!Array.isArray(plan?.routeCoordinates)||plan.routeCoordinates.length<2){
+    ms711LastRouteObjectMeta={status:'unavailable',requested:0,completed:0,failed:0,objects:0,error:'Geen volledige waterwegroute beschikbaar.'};
+    return [];
+  }
+
+  const boxes=ms711RouteCorridorBounds(plan.routeCoordinates);
+  if(!boxes.length){
+    ms711LastRouteObjectMeta={status:'unavailable',requested:0,completed:0,failed:0,objects:0,error:'Geen vaarcorridor berekend.'};
+    return [];
+  }
+
+  if(ms670InfrastructureController){
+    try{ms670InfrastructureController.abort();}catch{}
+  }
+  const controller=new AbortController();
+  ms670InfrastructureController=controller;
+  const startedAt=performance.now();
+  const force=Boolean(plan.ms712ForceRouteObjectRefresh);
+  delete plan.ms712ForceRouteObjectRefresh;
+
+  ms711LastRouteObjectMeta={
+    status:'loading',requested:boxes.length,completed:0,failed:0,
+    objects:0,error:'',batches:Math.ceil(boxes.length/MS712_ROUTE_OBJECT_BATCH_SIZE),cachedBatches:0
+  };
+  ms711RenderRouteObjectStatus(plan,ms711LastRouteObjectMeta);
+
+  const result=await ms712FetchBoxes(boxes,{
+    services:false,
+    signal:controller.signal,
+    force,
+    onProgress:progress=>{
+      ms711LastRouteObjectMeta={
+        status:'loading',
+        requested:boxes.length,
+        completed:progress.completed,
+        failed:progress.failed,
+        objects:progress.elements,
+        error:progress.lastError,
+        batches:progress.batches,
+        cachedBatches:progress.cachedBatches,
+        elapsedMs:Math.round(performance.now()-startedAt)
+      };
+      ms711RenderRouteObjectStatus(plan,ms711LastRouteObjectMeta);
+    }
+  });
+
+  const objects=ms670ProcessObjects(result.elements,plan.routeCoordinates);
+  const status=result.completed===0
+    ?'unavailable'
+    :result.failed>0
+      ?'partial'
+      :objects.length
+        ?'online'
+        :'empty';
+
+  ms711LastRouteObjectMeta={
+    status,
+    requested:boxes.length,
+    completed:result.completed,
+    failed:result.failed,
+    objects:objects.length,
+    error:result.error,
+    batches:result.batches,
+    cachedBatches:result.cachedBatches,
+    elapsedMs:Math.round(performance.now()-startedAt)
+  };
+
+  const signature=ms712RouteSignature(plan.routeCoordinates);
+  setTimeout(()=>ms712EnrichRouteServices(plan,boxes,signature),0);
+  return objects;
+};
+
+ms711RenderRouteObjectStatus=function(plan=plannerCurrentPlan,meta=ms711LastRouteObjectMeta){
+  const panel=$('ms711RouteObjectStatus');
+  const icon=$('ms711RouteObjectStatusIcon');
+  const title=$('ms711RouteObjectStatusTitle');
+  const text=$('ms711RouteObjectStatusText');
+  if(!panel||!icon||!title||!text)return;
+
+  const status=meta?.status||plan?.smartDataStatus||'idle';
+  const objectCount=Number(meta?.objects??plan?.routeObjects?.length??0);
+  const seconds=Number(meta?.elapsedMs)>0?Math.max(.1,Number(meta.elapsedMs)/1000):null;
+  const cacheText=Number(meta?.cachedBatches||0)>0
+    ?` · ${Number(meta.cachedBatches)} snelle cachebatch${Number(meta.cachedBatches)===1?'':'es'}`
+    :'';
+  panel.className=`ms711-route-object-status ${status}`;
+
+  if(status==='loading'){
+    icon.textContent='⚡';
+    title.textContent='Routeobjecten snel controleren';
+    text.textContent=`${Number(meta.completed||0)} van ${Number(meta.requested||0)} routegedeelten gereed${cacheText}. Meerdere gedeelten worden tegelijk verwerkt.`;
+    return;
+  }
+  if(status==='online'){
+    icon.textContent='✅';
+    title.textContent=`${objectCount} veiligheidsobjecten gecontroleerd`;
+    text.textContent=`Bruggen, sluizen en maatbeperkingen zijn langs de route gecontroleerd${seconds?` in ${seconds.toFixed(1)} sec`:''}${cacheText}. Havens en voorzieningen worden op de achtergrond aangevuld.`;
+    return;
+  }
+  if(status==='partial'){
+    icon.textContent='⚠️';
+    title.textContent=`Gedeeltelijke routecontrole · ${objectCount} objecten`;
+    text.textContent=`${Number(meta.completed||0)} van ${Number(meta.requested||0)} routegedeelten geladen. Controleer de ontbrekende delen handmatig.`;
+    return;
+  }
+  if(status==='empty'){
+    icon.textContent='⚠️';
+    title.textContent='Geen veiligheidsobjecten ontvangen';
+    text.textContent='Er zijn geen bruggen, sluizen of maatbeperkingen teruggekomen. De route blijft daarom niet volledig geverifieerd.';
+    return;
+  }
+  if(status==='estimate'){
+    icon.textContent='⛔';
+    title.textContent='Geen echte waterwegroute';
+    text.textContent='Bij een noodschatting kunnen bruggen, sluizen en dieptebeperkingen niet betrouwbaar worden gecontroleerd.';
+    return;
+  }
+  icon.textContent='⛔';
+  title.textContent='Routeobjectcontrole niet beschikbaar';
+  text.textContent=meta?.error||plan?.smartDataError||'De openbare kaartdienst reageerde niet. Deze route is niet geverifieerd.';
+};
+
+const ms712PreviousReloadSmartRouteObjects=ms711ReloadSmartRouteObjects;
+ms711ReloadSmartRouteObjects=async function(){
+  if(plannerCurrentPlan)plannerCurrentPlan.ms712ForceRouteObjectRefresh=true;
+  return ms712PreviousReloadSmartRouteObjects();
+};
