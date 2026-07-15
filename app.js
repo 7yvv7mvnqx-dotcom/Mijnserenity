@@ -28976,7 +28976,7 @@ window.addEventListener('resize',()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.1.2 — Snelle Smart Route-objectcontrole
+   MijnSerenity Cloud 7.2.0 — Snelle Smart Route-objectcontrole
    Parallelle corridorcontrole, cache en achtergrondverrijking
    ============================================================ */
 
@@ -29468,3 +29468,352 @@ ms711ReloadSmartRouteObjects=async function(){
   if(plannerCurrentPlan)plannerCurrentPlan.ms712ForceRouteObjectRefresh=true;
   return ms712PreviousReloadSmartRouteObjects();
 };
+
+
+/* ============================================================
+   MijnSerenity 7.2.0 — Waterkaarten direct delen
+   ============================================================ */
+
+let ms720DirectImportBusy=false;
+let ms720DirectImportTimer=null;
+let ms720DirectImportReady=false;
+const MS720_IMPORT_POLL_MS=30000;
+const MS720_RECEIVE_RPC='receive_waterkaarten_route';
+const MS720_CLAIM_RPC='claim_waterkaarten_route';
+const MS720_RELEASE_RPC='release_waterkaarten_route';
+
+function ms720SetDirectStatus(message,type='info'){
+  ['waterkaartenDirectStatus','waterkaartenDirectLogbookStatus'].forEach(id=>{
+    const element=$(id);
+    if(!element)return;
+    element.textContent=message;
+    element.className=`status small ${type||''}`.trim();
+  });
+}
+
+function ms720SetDirectBadge(text,state=''){
+  ['waterkaartenDirectBadge','waterkaartenDirectLogbookBadge'].forEach(id=>{
+    const badge=$(id);
+    if(!badge)return;
+    badge.textContent=text;
+    badge.className=`ms720-direct-badge ${state}`.trim();
+  });
+}
+
+function ms720RandomToken(){
+  const bytes=new Uint8Array(30);
+  crypto.getRandomValues(bytes);
+  const raw=btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g,'-')
+    .replace(/\//g,'_')
+    .replace(/=+$/,'');
+  return `MSR-${raw}`;
+}
+
+function ms720ImportCode(){
+  return String(
+    settingsCache?.waterkaarten_import_token||
+    $('waterkaartenImportCode')?.value||
+    ''
+  ).trim();
+}
+
+function ms720RenderDirectImportSettings(){
+  const code=ms720ImportCode();
+  const input=$('waterkaartenImportCode');
+  if(input&&code)input.value=code;
+
+  if(code){
+    ms720SetDirectBadge('Gereed','ready');
+    if(!ms720DirectImportBusy){
+      ms720SetDirectStatus(
+        'Direct delen is gereed. MijnSerenity controleert automatisch op nieuwe Waterkaarten-routes.',
+        'success'
+      );
+    }
+  }else{
+    ms720SetDirectBadge('Instellen');
+  }
+}
+
+function ms720IsMissingDatabaseFeature(error){
+  const text=String(error?.message||error?.details||'').toLowerCase();
+  return error?.code==='42883'||
+    error?.code==='42703'||
+    error?.code==='PGRST202'||
+    error?.code==='PGRST204'||
+    text.includes('waterkaarten_route')||
+    text.includes('waterkaarten_import_token');
+}
+
+async function ms720EnsureImportCode(){
+  if(!currentBoat||!currentUser)return null;
+  let code=ms720ImportCode();
+  if(code){
+    ms720RenderDirectImportSettings();
+    return code;
+  }
+
+  code=ms720RandomToken();
+  const update={
+    waterkaarten_import_token:code,
+    updated_at:new Date().toISOString()
+  };
+
+  let result=await sb
+    .from('boat_settings')
+    .update(update)
+    .eq('boat_id',currentBoat.id)
+    .select('waterkaarten_import_token')
+    .maybeSingle();
+
+  if(!result.error&&!result.data){
+    result=await sb.from('boat_settings').upsert({
+      boat_id:currentBoat.id,
+      boat_name:settingsCache?.boat_name||currentBoat.name||'Serenity',
+      ...update
+    },{onConflict:'boat_id'}).select('waterkaarten_import_token').maybeSingle();
+  }
+
+  if(result.error){
+    console.warn('Waterkaarten-importcode opslaan mislukt:',result.error);
+    if(ms720IsMissingDatabaseFeature(result.error)){
+      ms720DirectImportReady=false;
+      ms720SetDirectBadge('SQL nodig','error');
+      ms720SetDirectStatus(
+        'Voer eerst SQL_WATERKAARTEN_DIRECT_IMPORT_7_2_0.sql uit in Supabase.',
+        'warning'
+      );
+      return null;
+    }
+    ms720SetDirectBadge('Fout','error');
+    ms720SetDirectStatus('Importcode kon niet worden opgeslagen.','error');
+    return null;
+  }
+
+  settingsCache={...(settingsCache||{}),waterkaarten_import_token:code};
+  ms720DirectImportReady=true;
+  ms720RenderDirectImportSettings();
+  return code;
+}
+
+function toggleWaterkaartenImportCode(){
+  const input=$('waterkaartenImportCode');
+  if(!input)return;
+  input.type=input.type==='password'?'text':'password';
+}
+
+async function ms720CopyText(text,success){
+  try{
+    await navigator.clipboard.writeText(text);
+    showAppToast(success);
+  }catch{
+    const area=document.createElement('textarea');
+    area.value=text;
+    area.style.position='fixed';
+    area.style.opacity='0';
+    document.body.append(area);
+    area.select();
+    document.execCommand('copy');
+    area.remove();
+    showAppToast(success);
+  }
+}
+
+async function copyWaterkaartenImportCode(){
+  const code=await ms720EnsureImportCode();
+  if(code)await ms720CopyText(code,'Waterkaarten-importcode gekopieerd ✅');
+}
+
+function ms720ShortcutSetupText(code){
+  return [
+    'MIJNSERENITY — BEWAAR IN MIJNSERENITY',
+    '',
+    `Endpoint: ${SUPABASE_URL}/rest/v1/rpc/${MS720_RECEIVE_RPC}`,
+    `Header apikey: ${SUPABASE_KEY}`,
+    `Header Authorization: Bearer ${SUPABASE_KEY}`,
+    'Header Content-Type: application/json',
+    '',
+    `p_token: ${code}`,
+    'p_file_name: naam van de gedeelde GPX/KML/KMZ',
+    'p_file_base64: Base64-gecodeerde inhoud van het gedeelde bestand',
+    'p_content_type: application/gpx+xml',
+    '',
+    'Open daarna:',
+    `${location.origin}/?open=logbook&waterkaarten=check`
+  ].join('\n');
+}
+
+async function copyWaterkaartenShortcutSetup(){
+  const code=await ms720EnsureImportCode();
+  if(!code)return;
+  await ms720CopyText(
+    ms720ShortcutSetupText(code),
+    'Alle gegevens voor de Apple Opdracht zijn gekopieerd ✅'
+  );
+}
+
+async function rotateWaterkaartenImportCode(){
+  if(!currentBoat)return;
+  if(!confirm('Nieuwe importcode maken? De bestaande Apple Opdracht moet daarna één keer worden bijgewerkt.'))return;
+
+  const code=ms720RandomToken();
+  const {error}=await sb.from('boat_settings').update({
+    waterkaarten_import_token:code,
+    updated_at:new Date().toISOString()
+  }).eq('boat_id',currentBoat.id);
+
+  if(error){
+    if(ms720IsMissingDatabaseFeature(error)){
+      ms720SetDirectBadge('SQL nodig','error');
+      ms720SetDirectStatus('Voer eerst het meegeleverde Supabase SQL-bestand uit.','warning');
+      return;
+    }
+    alert('Nieuwe importcode opslaan mislukt: '+error.message);
+    return;
+  }
+
+  settingsCache={...(settingsCache||{}),waterkaarten_import_token:code};
+  const input=$('waterkaartenImportCode');
+  if(input)input.value=code;
+  ms720RenderDirectImportSettings();
+  showAppToast('Nieuwe importcode gemaakt. Werk de Apple Opdracht bij.');
+}
+
+function ms720Base64ToFile(row){
+  const clean=String(row?.file_base64||'').replace(/\s+/g,'');
+  if(!clean)throw new Error('Het gedeelde routebestand is leeg.');
+  const binary=atob(clean);
+  const bytes=new Uint8Array(binary.length);
+  for(let index=0;index<binary.length;index+=1){
+    bytes[index]=binary.charCodeAt(index);
+  }
+  const name=String(row?.file_name||'waterkaarten-route.gpx')
+    .replace(/[\\/:*?"<>|]/g,'_');
+  const type=String(row?.content_type||getRouteContentType({name}));
+  return new File([bytes],name,{type,lastModified:Date.now()});
+}
+
+async function ms720ReleaseImport(code,id){
+  if(!code||!id)return;
+  try{
+    await sb.rpc(MS720_RELEASE_RPC,{p_token:code,p_route_id:id});
+  }catch(error){
+    console.warn('Waterkaarten-route vrijgeven mislukt:',error);
+  }
+}
+
+async function checkWaterkaartenDirectImports(silent=true){
+  if(ms720DirectImportBusy||!currentUser||!currentBoat)return false;
+  const code=await ms720EnsureImportCode();
+  if(!code)return false;
+
+  ms720DirectImportBusy=true;
+  if(!silent){
+    ms720SetDirectBadge('Controleren…');
+    ms720SetDirectStatus('Controleren op een nieuwe gedeelde Waterkaarten-route…','info');
+  }
+
+  let claimed=null;
+  try{
+    const {data,error}=await sb.rpc(MS720_CLAIM_RPC,{p_token:code});
+    if(error)throw error;
+    claimed=Array.isArray(data)?data[0]:data;
+
+    if(!claimed?.id){
+      ms720DirectImportReady=true;
+      ms720SetDirectBadge('Gereed','ready');
+      if(!silent)ms720SetDirectStatus('Geen nieuwe gedeelde route gevonden.','success');
+      return false;
+    }
+
+    ms720SetDirectBadge('Ontvangen','received');
+    ms720SetDirectStatus(`${claimed.file_name} ontvangen. Route wordt ingelezen…`,'info');
+
+    const file=ms720Base64ToFile(claimed);
+    captainNavigate('logbook');
+    await handleTripRouteImport(file,'Waterkaarten deelmenu');
+    setTripFormCollapsed(false);
+
+    const query=new URL(location.href);
+    query.searchParams.delete('waterkaarten');
+    history.replaceState({},'',query.pathname+query.search+query.hash);
+
+    ms720SetDirectBadge('Route klaar','received');
+    ms720SetDirectStatus(
+      `${file.name} staat klaar. Controleer de gegevens en tik op ‘Vaartocht opslaan’.`,
+      'success'
+    );
+    showAppToast('Waterkaarten-route rechtstreeks ontvangen ✅');
+    return true;
+  }catch(error){
+    console.error('Directe Waterkaarten-import mislukt:',error);
+    if(claimed?.id)await ms720ReleaseImport(code,claimed.id);
+
+    if(ms720IsMissingDatabaseFeature(error)){
+      ms720DirectImportReady=false;
+      ms720SetDirectBadge('SQL nodig','error');
+      ms720SetDirectStatus(
+        'Direct delen is nog niet geactiveerd. Voer SQL_WATERKAARTEN_DIRECT_IMPORT_7_2_0.sql uit in Supabase.',
+        'warning'
+      );
+    }else{
+      ms720SetDirectBadge('Fout','error');
+      ms720SetDirectStatus(
+        'De gedeelde route kon niet worden opgehaald: '+(error?.message||'onbekende fout'),
+        'error'
+      );
+    }
+    return false;
+  }finally{
+    ms720DirectImportBusy=false;
+  }
+}
+
+function ms720StartDirectImportPolling(){
+  clearInterval(ms720DirectImportTimer);
+  ms720DirectImportTimer=setInterval(()=>{
+    if(!document.hidden&&navigator.onLine){
+      checkWaterkaartenDirectImports(true);
+    }
+  },MS720_IMPORT_POLL_MS);
+}
+
+async function ms720InitDirectImport(){
+  if(!currentUser||!currentBoat)return;
+  await ms720EnsureImportCode();
+  ms720StartDirectImportPolling();
+
+  const params=new URLSearchParams(location.search);
+  const shouldCheck=params.get('waterkaarten')==='check';
+  if(shouldCheck){
+    captainNavigate('logbook');
+    setTimeout(()=>checkWaterkaartenDirectImports(false),250);
+  }else{
+    setTimeout(()=>checkWaterkaartenDirectImports(true),1000);
+  }
+}
+
+const ms720OriginalLoadSettings=loadSettings;
+loadSettings=async function(){
+  const result=await ms720OriginalLoadSettings();
+  await ms720InitDirectImport();
+  return result;
+};
+
+const ms720OriginalLoadSettingsForm=loadSettingsForm;
+loadSettingsForm=function(){
+  const result=ms720OriginalLoadSettingsForm();
+  ms720RenderDirectImportSettings();
+  return result;
+};
+
+window.addEventListener('focus',()=>{
+  if(currentUser&&currentBoat)checkWaterkaartenDirectImports(true);
+});
+
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&currentUser&&currentBoat){
+    checkWaterkaartenDirectImports(true);
+  }
+});
