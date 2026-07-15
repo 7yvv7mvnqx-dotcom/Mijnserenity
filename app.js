@@ -5582,8 +5582,22 @@ async function removeDashboardPhoto(){
   settingsCache.dashboard_photo_path=null;await loadDashboardPhoto();
 }
 
-function loadSettingsForm(){if(!settingsCache)return;$('settingBoatName').value=settingsCache.boat_name||'Serenity';$('settingFuelPrice').value=settingsCache.fuel_price??'';$('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';$('settingTankCapacity').value=settingsCache.tank_capacity??''}
+function loadSettingsForm(){
+  if(!settingsCache)return;
+  $('settingBoatName').value=settingsCache.boat_name||'Serenity';
+  $('settingFuelPrice').value=settingsCache.fuel_price??'';
+  $('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';
+  $('settingTankCapacity').value=settingsCache.tank_capacity??'';
+  ms670LoadProfile();
+  ms711RenderBoatDimensionsState();
+}
 async function saveSettings(){
+  if(!ms711SaveBoatDimensionsFromSettings()){
+    $('settingsMsg').textContent='Vul eerst alle bootafmetingen in.';
+    $('settingsMsg').className='status small warning';
+    return;
+  }
+
   const row={
     boat_id:currentBoat.id,
     boat_name:$('settingBoatName').value.trim()||'Serenity',
@@ -5598,7 +5612,9 @@ async function saveSettings(){
   if(error)return alert(error.message);
 
   settingsCache={...(settingsCache||{}),...row};
-  $('settingsMsg').textContent='Instellingen opgeslagen ✅';
+  ms670SaveProfile();
+  ms711RenderBoatDimensionsState();
+  $('settingsMsg').textContent='Bootinstellingen en afmetingen opgeslagen ✅';
   $('settingsMsg').classList.remove('hidden');
   await loadDashboardPhoto();
   previewFuelCalculation();
@@ -15257,7 +15273,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.1.0';
+const APP_VERSION='7.1.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -19633,26 +19649,103 @@ function ms670ProfileKey(){
 }
 
 function ms670Number(value){
-  const number=Number(value);
+  const number=Number(String(value??'').replace(',','.'));
   return Number.isFinite(number)&&number>0
     ?number
     :null;
 }
 
+function ms711ReadStoredProfile(){
+  try{
+    return JSON.parse(
+      localStorage.getItem(ms670ProfileKey())||'null'
+    )||{};
+  }catch{
+    return {};
+  }
+}
+
+function ms711BoatDimensionsComplete(profile=ms670BoatProfile()){
+  return ['length','width','draft','airDraft'].every(
+    key=>Number.isFinite(Number(profile?.[key]))&&Number(profile[key])>0
+  );
+}
+
+function ms711BoatDimensionsText(profile=ms670BoatProfile()){
+  if(!ms711BoatDimensionsComplete(profile))return 'Nog niet volledig ingevuld';
+  return `${plannerNumber(profile.length,2)} × ${plannerNumber(profile.width,2)} m · diepgang ${plannerNumber(profile.draft,2)} m · hoogte ${plannerNumber(profile.airDraft,2)} m`;
+}
+
+function ms711RenderBoatDimensionsState(){
+  const profile=ms670BoatProfile();
+  const complete=ms711BoatDimensionsComplete(profile);
+  const summary=$('ms711PlannerBoatProfileSummary');
+  const plannerStatus=$('ms711PlannerBoatProfileStatus');
+  const status=$('settingBoatDimensionsStatus');
+  const badge=$('settingBoatDimensionsBadge');
+
+  if(summary)summary.textContent=ms711BoatDimensionsText(profile);
+  if(plannerStatus){
+    plannerStatus.textContent=complete
+      ?'Deze maten worden automatisch gebruikt bij iedere Smart Route-check.'
+      :'Vul de ontbrekende bootmaten in bij Instellingen voordat je een route berekent.';
+    plannerStatus.className=complete?'success':'warning';
+  }
+  if(status){
+    status.textContent=complete
+      ?'Scheepsmaten compleet en beschikbaar voor Smart Route ✅'
+      :'Vul lengte, breedte, diepgang en doorvaarthoogte volledig in.';
+    status.className=`status small ${complete?'success':'warning'}`;
+  }
+  if(badge){
+    badge.textContent=complete?'Compleet':'Verplicht';
+    badge.className=`ms711-dimensions-badge ${complete?'complete':'warning'}`;
+  }
+  return complete;
+}
+
+function ms711SaveBoatDimensionsFromSettings({quiet=false}={}){
+  const profile=ms670BoatProfile();
+  const complete=ms711BoatDimensionsComplete(profile);
+  if(!complete){
+    ms711RenderBoatDimensionsState();
+    if(!quiet)showAppToast('Vul eerst alle bootafmetingen in.');
+    return false;
+  }
+
+  try{
+    localStorage.setItem(ms670ProfileKey(),JSON.stringify(profile));
+  }catch(error){
+    console.warn('Bootafmetingen lokaal bewaren mislukt:',error);
+  }
+  ms711RenderBoatDimensionsState();
+  return true;
+}
+
+function ms711OpenBoatSettings(){
+  captainNavigate('settings');
+  setPanelCollapsed('settingsFormWrap','settingsFormToggle',false);
+  setTimeout(()=>{
+    $('settingBoatLength')?.scrollIntoView({behavior:'smooth',block:'center'});
+    $('settingBoatWidth')?.focus();
+  },160);
+}
+
 function ms670BoatProfile(){
+  const saved=ms711ReadStoredProfile();
   return {
-    length:ms670Number($('ms670BoatLength')?.value),
-    width:ms670Number($('ms670BoatWidth')?.value),
-    draft:ms670Number($('ms670BoatDraft')?.value),
-    airDraft:ms670Number($('ms670BoatAirDraft')?.value),
+    length:ms670Number($('settingBoatLength')?.value)||ms670Number(saved?.length)||11.2,
+    width:ms670Number($('settingBoatWidth')?.value)||ms670Number(saved?.width),
+    draft:ms670Number($('settingBoatDraft')?.value)||ms670Number(saved?.draft),
+    airDraft:ms670Number($('settingBoatAirDraft')?.value)||ms670Number(saved?.airDraft),
     dailyHours:
-      ms670Number($('ms670DailyHours')?.value)||6,
+      ms670Number($('ms670DailyHours')?.value)||ms670Number(saved?.dailyHours)||6,
     startTime:
-      String($('ms670StartTime')?.value||'09:00'),
+      String($('ms670StartTime')?.value||saved?.startTime||'09:00'),
     bridgeDelayMinutes:
-      Number($('ms670BridgeDelay')?.value||15),
+      Number($('ms670BridgeDelay')?.value||saved?.bridgeDelayMinutes||15),
     lockDelayMinutes:
-      Number($('ms670LockDelay')?.value||30)
+      Number($('ms670LockDelay')?.value||saved?.lockDelayMinutes||30)
   };
 }
 
@@ -19691,10 +19784,10 @@ function ms670LoadProfile(){
   }catch{}
 
   const values={
-    ms670BoatLength:saved?.length||11.2,
-    ms670BoatWidth:saved?.width||'',
-    ms670BoatDraft:saved?.draft||'',
-    ms670BoatAirDraft:saved?.airDraft||'',
+    settingBoatLength:saved?.length||11.2,
+    settingBoatWidth:saved?.width||'',
+    settingBoatDraft:saved?.draft||'',
+    settingBoatAirDraft:saved?.airDraft||'',
     ms670DailyHours:saved?.dailyHours||6,
     ms670StartTime:saved?.startTime||'09:00',
     ms670BridgeDelay:saved?.bridgeDelayMinutes||15,
@@ -19710,10 +19803,12 @@ function ms670LoadProfile(){
 
   if(badge){
     badge.textContent=saved
-      ?'Profiel geladen'
-      :'Vul maten aan';
+      ?'Voorkeuren geladen'
+      :'Voorkeuren opslaan';
     badge.classList.toggle('saved',Boolean(saved));
   }
+
+  ms711RenderBoatDimensionsState();
 }
 
 function ms670PlannerProfileChanged(){
@@ -19818,7 +19913,8 @@ function ms670ObjectCategory(tags={}){
   )return 'Sluis';
 
   if(
-    tags.bridge==='movable'||
+    tags.bridge||
+    tags.man_made==='bridge'||
     tags['seamark:type']==='bridge'||
     tags['bridge:movable']||
     tags.maxheight||
@@ -19841,6 +19937,7 @@ function ms670ObjectCategory(tags={}){
   if(tags.leisure==='slipway')return 'Trailerhelling';
   if(tags.mooring)return 'Aanlegplaats';
   if(tags.tourism==='attraction')return 'Bezienswaardigheid';
+  if(tags.boat==='no'||tags.waterway==='weir')return 'Vaarbeperking';
 
   return 'Vaarobject';
 }
@@ -19862,7 +19959,8 @@ function ms670ObjectName(tags,category){
       Drinkwater:'Drinkwaterpunt',
       Trailerhelling:'Trailerhelling',
       Aanlegplaats:'Aanlegplaats',
-      Bezienswaardigheid:'Bezienswaardigheid'
+      Bezienswaardigheid:'Bezienswaardigheid',
+      Vaarbeperking:'Vaarbeperking'
     }[category]||
     'Vaarobject'
   );
@@ -19895,30 +19993,81 @@ function ms670InfrastructureQuery(bounds){
     bounds.east
   ].map(value=>Number(value).toFixed(6)).join(',');
 
-  return `[out:json][timeout:32];
+  return `[out:json][timeout:25];
 (
   nwr["waterway"="lock_gate"](${box});
   nwr["waterway"="lock"](${box});
-  nwr["lock"="yes"](${box});
-  nwr["bridge"="movable"](${box});
+  nwr["lock"](${box});
+  nwr["bridge"](${box});
+  nwr["man_made"="bridge"](${box});
   nwr["seamark:type"="bridge"](${box});
-  nwr["bridge"]["maxheight"](${box});
-  nwr["bridge"]["maxheight:physical"](${box});
+  nwr["maxheight"](${box});
+  nwr["maxheight:physical"](${box});
+  nwr["maxwidth"](${box});
+  nwr["maxlength"](${box});
+  nwr["maxdraft"](${box});
+  nwr["maxdraught"](${box});
+  nwr["boat"="no"](${box});
+  nwr["waterway"="weir"](${box});
   nwr["leisure"="marina"](${box});
   nwr["harbour"="yes"](${box});
   nwr["seamark:type"="harbour"](${box});
   nwr["amenity"="fuel"](${box});
-  nwr["amenity"="restaurant"](${box});
-  nwr["amenity"="cafe"](${box});
-  nwr["shop"="supermarket"](${box});
-  nwr["amenity"="toilets"](${box});
   nwr["amenity"="drinking_water"](${box});
-  nwr["leisure"="slipway"](${box});
   nwr["mooring"](${box});
-  nwr["tourism"="attraction"](${box});
 );
 out center tags;`;
 }
+
+function ms711RouteCorridorBounds(coordinates){
+  const route=(Array.isArray(coordinates)?coordinates:[])
+    .map(ms650Coordinate)
+    .filter(ms650ValidCoordinate);
+  if(route.length<2)return [];
+
+  const boxes=[];
+  let group=[route[0]];
+  let travelled=0;
+
+  const pushGroup=()=>{
+    if(group.length<2)return;
+    const lats=group.map(point=>point.lat);
+    const lons=group.map(point=>point.lon);
+    const margin=.018;
+    boxes.push({
+      south:Math.min(...lats)-margin,
+      west:Math.min(...lons)-margin,
+      north:Math.max(...lats)+margin,
+      east:Math.max(...lons)+margin
+    });
+  };
+
+  for(let index=1;index<route.length;index+=1){
+    const previous=route[index-1];
+    const point=route[index];
+    travelled+=haversineKm(previous,point);
+    group.push(point);
+
+    if(travelled>=12){
+      pushGroup();
+      group=[point];
+      travelled=0;
+    }
+  }
+
+  if(group.length>1)pushGroup();
+
+  return boxes.slice(0,32);
+}
+
+let ms711LastRouteObjectMeta={
+  status:'idle',
+  requested:0,
+  completed:0,
+  failed:0,
+  objects:0,
+  error:''
+};
 
 async function ms670FetchOverpass(query){
   let lastError=null;
@@ -20015,6 +20164,19 @@ function ms670ObjectWidth(tags={}){
   return null;
 }
 
+function ms670ObjectLength(tags={}){
+  for(const candidate of [
+    tags.maxlength,
+    tags['maxlength:physical'],
+    tags['seamark:lock:chamber_length']
+  ]){
+    const value=ms670ParseMeasurement(candidate);
+    if(Number.isFinite(value))return value;
+  }
+
+  return null;
+}
+
 function ms670ObjectDepth(tags={}){
   for(const candidate of [
     tags.maxdraft,
@@ -20073,8 +20235,10 @@ function ms670ProcessObjects(
       Trailerhelling:1.5,
       Aanlegplaats:1,
       Bezienswaardigheid:2.5,
-      Brug:.8,
-      Sluis:.8
+      Vaarbeperking:.25,
+      Vaarobject:.25,
+      Brug:.35,
+      Sluis:.35
     }[category]||.8;
 
     if(nearest.distanceKm>maxDistance)return;
@@ -20098,6 +20262,7 @@ function ms670ProcessObjects(
       distanceFromRouteKm:nearest.distanceKm,
       clearanceHeight:ms670ObjectClearance(tags),
       clearanceWidth:ms670ObjectWidth(tags),
+      maxLength:ms670ObjectLength(tags),
       maxDepth:ms670ObjectDepth(tags),
       movable:
         category==='Brug'&&
@@ -20130,23 +20295,67 @@ async function ms670LoadInfrastructure(plan){
     !Array.isArray(plan?.routeCoordinates)||
     plan.routeCoordinates.length<2
   ){
+    ms711LastRouteObjectMeta={status:'unavailable',requested:0,completed:0,failed:0,objects:0,error:'Geen volledige waterwegroute beschikbaar.'};
     return [];
   }
 
-  const bounds=ms670RouteBounds(
-    plan.routeCoordinates
-  );
+  const boxes=ms711RouteCorridorBounds(plan.routeCoordinates);
+  if(!boxes.length){
+    ms711LastRouteObjectMeta={status:'unavailable',requested:0,completed:0,failed:0,objects:0,error:'Geen vaarcorridor berekend.'};
+    return [];
+  }
 
-  if(!bounds)return [];
+  const elementMap=new Map();
+  let completed=0;
+  let failed=0;
+  let lastError='';
 
-  const elements=await ms670FetchOverpass(
-    ms670InfrastructureQuery(bounds)
-  );
+  ms711LastRouteObjectMeta={status:'loading',requested:boxes.length,completed:0,failed:0,objects:0,error:''};
+  ms711RenderRouteObjectStatus(plan,ms711LastRouteObjectMeta);
 
-  return ms670ProcessObjects(
-    elements,
-    plan.routeCoordinates
-  );
+  for(let index=0;index<boxes.length;index+=1){
+    try{
+      const elements=await ms670FetchOverpass(ms670InfrastructureQuery(boxes[index]));
+      elements.forEach(element=>{
+        const key=`${element.type}:${element.id}`;
+        if(!elementMap.has(key))elementMap.set(key,element);
+      });
+      completed+=1;
+    }catch(error){
+      failed+=1;
+      lastError=error?.message||'Kaartdienst niet bereikbaar.';
+      console.warn(`Smart Route corridor ${index+1}/${boxes.length} mislukt:`,error);
+    }
+
+    ms711LastRouteObjectMeta={
+      status:'loading',
+      requested:boxes.length,
+      completed,
+      failed,
+      objects:elementMap.size,
+      error:lastError
+    };
+    ms711RenderRouteObjectStatus(plan,ms711LastRouteObjectMeta);
+  }
+
+  const objects=ms670ProcessObjects([...elementMap.values()],plan.routeCoordinates);
+  const status=completed===0
+    ?'unavailable'
+    :failed>0
+      ?'partial'
+      :objects.length
+        ?'online'
+        :'empty';
+
+  ms711LastRouteObjectMeta={
+    status,
+    requested:boxes.length,
+    completed,
+    failed,
+    objects:objects.length,
+    error:lastError
+  };
+  return objects;
 }
 
 function ms670CheckResult(
@@ -20256,6 +20465,60 @@ function ms670AnalysePlan(plan){
   });
 
   objects.forEach(object=>{
+    if(
+      object.category!=='Brug'&&
+      profile.width&&
+      Number.isFinite(object.clearanceWidth)
+    ){
+      const margin=object.clearanceWidth-profile.width;
+      if(margin<0){
+        checks.push(ms670CheckResult(
+          'critical',
+          `${object.label} mogelijk te smal`,
+          `Bekende maximale breedte ${plannerNumber(object.clearanceWidth)} m · Serenity ${plannerNumber(profile.width)} m.`,
+          object
+        ));
+      }else if(margin<.6){
+        checks.push(ms670CheckResult(
+          'warning',
+          `Weinig breedtemarge bij ${object.label}`,
+          `Ongeveer ${plannerNumber(margin,2)} m bekende totale marge.`,
+          object
+        ));
+      }
+    }
+
+    if(
+      profile.length&&
+      Number.isFinite(object.maxLength)
+    ){
+      const margin=object.maxLength-profile.length;
+      if(margin<0){
+        checks.push(ms670CheckResult(
+          'critical',
+          `${object.label} mogelijk te kort`,
+          `Bekende maximale lengte ${plannerNumber(object.maxLength)} m · Serenity ${plannerNumber(profile.length)} m.`,
+          object
+        ));
+      }else if(margin<1){
+        checks.push(ms670CheckResult(
+          'warning',
+          `Weinig lengtemarge bij ${object.label}`,
+          `Ongeveer ${plannerNumber(margin,2)} m bekende marge.`,
+          object
+        ));
+      }
+    }
+
+    if(object.category==='Vaarbeperking'||object.tags?.boat==='no'){
+      checks.push(ms670CheckResult(
+        'critical',
+        `${object.label}: varen mogelijk niet toegestaan`,
+        'De kaartgegevens markeren dit routeobject met een vaarverbod of fysieke vaarbeperking.',
+        object
+      ));
+    }
+
     if(
       profile.draft&&
       Number.isFinite(object.maxDepth)
@@ -20508,7 +20771,8 @@ function ms670Icon(category){
     Drinkwater:'🚰',
     Trailerhelling:'🛥️',
     Aanlegplaats:'🪢',
-    Bezienswaardigheid:'⭐'
+    Bezienswaardigheid:'⭐',
+    Vaarbeperking:'⛔'
   }[category]||'📍';
 }
 
@@ -20534,6 +20798,12 @@ function ms670ObjectDetail(object){
   if(Number.isFinite(object.clearanceWidth)){
     details.push(
       `breedte ${plannerNumber(object.clearanceWidth)} m`
+    );
+  }
+
+  if(Number.isFinite(object.maxLength)){
+    details.push(
+      `lengte ${plannerNumber(object.maxLength)} m`
     );
   }
 
@@ -20580,11 +20850,16 @@ function ms670RenderSmartRoute(plan){
   if(badge){
     badge.className=
       `ms670-route-badge ${analysis.status}`;
+    const unknown=(analysis.checks||[]).filter(check=>check.level==='unknown').length;
     badge.textContent=analysis.critical
-      ?`${analysis.critical} blokkade${analysis.critical===1?'':'s'}`
-      :analysis.warnings
-        ?`${analysis.warnings} aandachtspunt${analysis.warnings===1?'':'en'}`
-        :'Onvolledig gecontroleerd';
+      ?`ROUTE GEBLOKKEERD · ${analysis.critical}`
+      :plan.smartDataStatus==='unavailable'||plan.smartDataStatus==='empty'
+        ?'NIET GEVERIFIEERD'
+        :analysis.warnings
+          ?`${analysis.warnings} aandachtspunt${analysis.warnings===1?'':'en'}`
+          :unknown
+            ?'HANDMATIG CONTROLEREN'
+            :'Geen bekende blokkade';
   }
 
   $('ms670RouteChecks').innerHTML=
@@ -20635,8 +20910,9 @@ function ms670RenderSmartRoute(plan){
         </article>
       `).join('')
       :`
-        <div class="ms670-empty">
-          Nog geen bruggen, sluizen, havens of tankpunten ontvangen.
+        <div class="ms670-empty ms711-route-objects-empty">
+          <b>Routeobjecten niet beschikbaar</b>
+          <span>Deze route is niet geverifieerd voor de afmetingen van Serenity. Tik op Opnieuw of kies een andere route.</span>
         </div>
       `;
 
@@ -20782,7 +21058,8 @@ calculatePlannerRoute=async function(options={}){
     try{
       plan.routeObjects=
         await ms670LoadInfrastructure(plan);
-      plan.smartDataStatus='online';
+      plan.smartDataStatus=ms711LastRouteObjectMeta.status;
+      plan.smartDataMeta={...ms711LastRouteObjectMeta};
     }catch(error){
       console.warn(
         'Smart Route-objecten konden niet worden geladen:',
@@ -20925,7 +21202,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.0.1 Smart Route"
+ creator="MijnSerenity 7.1.1 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -21315,8 +21592,12 @@ function ms673RouteCandidateScore(candidate){
   const unknown=(analysis.checks||[])
     .filter(check=>check.level==='unknown')
     .length;
+  const verified=
+    candidate.smartDataStatus==='online'&&
+    Number(candidate.routeObjects?.length||0)>0;
 
   return (
+    (verified?0:250000)+
     Number(analysis.critical||0)*100000+
     Number(analysis.warnings||0)*10000+
     unknown*500+
@@ -21481,6 +21762,8 @@ function ms673VariantFromPlan(
     ],
     smartAnalysis:plan.smartAnalysis,
     dayPlan:plan.dayPlan,
+    smartDataStatus:plan.smartDataStatus||'unavailable',
+    smartDataMeta:plan.smartDataMeta||null,
     score:ms673RouteCandidateScore(plan)
   };
 }
@@ -21488,7 +21771,8 @@ function ms673VariantFromPlan(
 function ms673BuildCandidate(
   basePlan,
   variant,
-  elements
+  elements,
+  dataStatus='online'
 ){
   const distanceKm=
     ms650RouteDistanceKm(
@@ -21522,6 +21806,16 @@ function ms673BuildCandidate(
     )
   };
 
+  candidate.smartDataStatus=routeObjects.length
+    ?dataStatus
+    :'unavailable';
+  candidate.smartDataMeta={
+    status:candidate.smartDataStatus,
+    objects:routeObjects.length,
+    requested:1,
+    completed:elements?.length?1:0,
+    failed:elements?.length?0:1
+  };
   candidate.smartAnalysis=
     ms670AnalysePlan(candidate);
   candidate.dayPlan=
@@ -21541,6 +21835,8 @@ function ms673BuildCandidate(
     segments:candidate.segments,
     smartAnalysis:candidate.smartAnalysis,
     dayPlan:candidate.dayPlan,
+    smartDataStatus:candidate.smartDataStatus,
+    smartDataMeta:candidate.smartDataMeta,
     score:ms673RouteCandidateScore(candidate)
   };
 }
@@ -21572,6 +21868,10 @@ function ms673ApplyVariantData(
     variant.smartAnalysis;
   plan.dayPlan=
     variant.dayPlan;
+  plan.smartDataStatus=
+    variant.smartDataStatus||'unavailable';
+  plan.smartDataMeta=
+    variant.smartDataMeta||null;
   plan.selectedRouteVariant=
     variant.id;
   plan.updatedAt=
@@ -21599,7 +21899,10 @@ function ms673VariantDescription(variant){
       :'geen bekende blokkade',
     warnings
       ?`${warnings} aandachtspunt${warnings===1?'':'en'}`
-      :''
+      :'',
+    variant.smartDataStatus==='online'&&Number(variant.routeObjects?.length||0)>0
+      ?'objecten gecontroleerd'
+      :'niet geverifieerd'
   ].filter(Boolean).join(' · ');
 }
 
@@ -21704,6 +22007,15 @@ function ms673SelectRouteVariant(id){
 
   if(!plan||!variant)return;
 
+  if(
+    variant.smartDataStatus!=='online'||
+    !Number(variant.routeObjects?.length||0)
+  ){
+    setPlannerStatus('Dit alternatief is niet volledig gecontroleerd op routeobjecten en wordt daarom niet gekozen.','warning');
+    showAppToast('Alternatieve route niet geverifieerd.');
+    return;
+  }
+
   ms673ApplyVariantData(
     plan,
     variant
@@ -21805,36 +22117,61 @@ async function ms673FindSaferAlternative(
       return plan;
     }
 
-    const bounds=ms673UnionBounds([
-      plan.routeCoordinates,
-      ...rawVariants.map(
-        variant=>variant.coordinates
-      )
-    ]);
+    const alternativeBoxes=[];
+    const boxKeys=new Set();
 
-    let elements=[];
+    rawVariants.slice(0,3).forEach(variant=>{
+      ms711RouteCorridorBounds(variant.coordinates).forEach(box=>{
+        const key=[box.south,box.west,box.north,box.east]
+          .map(value=>Number(value).toFixed(3))
+          .join(':');
+        if(boxKeys.has(key))return;
+        boxKeys.add(key);
+        alternativeBoxes.push(box);
+      });
+    });
 
-    if(bounds){
+    const alternativeElementMap=new Map();
+    let alternativeCompleted=0;
+    let alternativeFailed=0;
+
+    for(const box of alternativeBoxes.slice(0,36)){
       try{
-        elements=await ms670FetchOverpass(
-          ms670InfrastructureQuery(bounds)
+        const found=await ms670FetchOverpass(
+          ms670InfrastructureQuery(box)
         );
+        found.forEach(element=>{
+          const key=`${element.type}:${element.id}`;
+          if(!alternativeElementMap.has(key)){
+            alternativeElementMap.set(key,element);
+          }
+        });
+        alternativeCompleted+=1;
       }catch(error){
+        alternativeFailed+=1;
         console.warn(
-          'Objecten voor alternatieve route niet beschikbaar:',
+          'Routeobjecten voor een alternatieve vaarcorridor niet beschikbaar:',
           error
         );
       }
     }
 
+    const elements=[...alternativeElementMap.values()];
+    const alternativeDataStatus=alternativeCompleted===0
+      ?'unavailable'
+      :alternativeFailed
+        ?'partial'
+        :'online';
+
     const baseVariant=
       ms673VariantFromPlan(plan);
-    const alternatives=rawVariants.map(
+    const alternatives=rawVariants.slice(0,3).map(
       variant=>
         ms673BuildCandidate(
           plan,
           variant,
-          elements
+          elements,
+          alternativeDataStatus
         )
     );
 
@@ -21850,6 +22187,8 @@ async function ms673FindSaferAlternative(
 
     if(
       safest&&
+      safest.smartDataStatus==='online'&&
+      Number(safest.routeObjects?.length||0)>0&&
       safest.score<baseVariant.score
     ){
       ms673ApplyVariantData(
@@ -21937,6 +22276,228 @@ initPlanner=function(){
   return result;
 };
 
+
+
+/* ============================================================
+   MijnSerenity Cloud 7.1.1 — Smart Route Safety Fix
+   Bootmaten in Instellingen + corridor-objectcontrole
+   ============================================================ */
+
+function ms711RenderRouteObjectStatus(plan=plannerCurrentPlan,meta=ms711LastRouteObjectMeta){
+  const panel=$('ms711RouteObjectStatus');
+  const icon=$('ms711RouteObjectStatusIcon');
+  const title=$('ms711RouteObjectStatusTitle');
+  const text=$('ms711RouteObjectStatusText');
+  if(!panel||!icon||!title||!text)return;
+
+  const status=meta?.status||plan?.smartDataStatus||'idle';
+  const objectCount=Number(meta?.objects??plan?.routeObjects?.length??0);
+  panel.className=`ms711-route-object-status ${status}`;
+
+  if(status==='loading'){
+    icon.textContent='⟳';
+    title.textContent='Routeobjecten worden opgehaald';
+    text.textContent=`${Number(meta.completed||0)} van ${Number(meta.requested||0)} vaarcorridors gecontroleerd${meta.failed?` · ${meta.failed} tijdelijk mislukt`:''}.`;
+    return;
+  }
+
+  if(status==='online'){
+    icon.textContent='✅';
+    title.textContent=`${objectCount} routeobjecten gecontroleerd`;
+    text.textContent='Bruggen, sluizen en bekende maatbeperkingen zijn langs de volledige waterwegroute opgehaald.';
+    return;
+  }
+
+  if(status==='partial'){
+    icon.textContent='⚠️';
+    title.textContent=`Gedeeltelijke routecontrole · ${objectCount} objecten`;
+    text.textContent=`${Number(meta.completed||0)} van ${Number(meta.requested||0)} corridors geladen. Controleer ontbrekende delen handmatig.`;
+    return;
+  }
+
+  if(status==='empty'){
+    icon.textContent='⚠️';
+    title.textContent='Geen routeobjecten ontvangen';
+    text.textContent='De route is niet veilig geverifieerd voor de bootafmetingen. Probeer opnieuw of kies andere tussenstops.';
+    return;
+  }
+
+  if(status==='estimate'){
+    icon.textContent='⛔';
+    title.textContent='Geen echte waterwegroute';
+    text.textContent='Bij een noodschatting kunnen bruggen, sluizen en dieptebeperkingen niet betrouwbaar worden gecontroleerd.';
+    return;
+  }
+
+  icon.textContent='⛔';
+  title.textContent='Routeobjectcontrole niet beschikbaar';
+  text.textContent=meta?.error||plan?.smartDataError||'De openbare kaartdienst reageerde niet. Deze route is niet geverifieerd.';
+}
+
+function ms711SetRouteSafety(plan){
+  if(!plan)return 'unverified';
+  const critical=Number(plan.smartAnalysis?.critical||0);
+  const dataStatus=plan.smartDataStatus||'unavailable';
+  const complete=ms711BoatDimensionsComplete(plan.boatProfile||ms670BoatProfile());
+
+  plan.routeSafetyStatus=!complete
+    ?'profile-incomplete'
+    :critical>0
+      ?'blocked'
+      :['online','partial'].includes(dataStatus)&&Number(plan.routeObjects?.length||0)>0
+        ?(dataStatus==='partial'?'partial':'checked')
+        :'unverified';
+  return plan.routeSafetyStatus;
+}
+
+async function ms711ReloadSmartRouteObjects(){
+  const plan=plannerCurrentPlan;
+  if(!plan||plan.routingMode!=='waterway'||!Array.isArray(plan.routeCoordinates)||plan.routeCoordinates.length<2){
+    showAppToast('Bereken eerst een echte waterwegroute.');
+    return;
+  }
+
+  ms711RenderRouteObjectStatus(plan,{status:'loading',requested:1,completed:0,failed:0,objects:0});
+  setPlannerStatus('Routeobjecten opnieuw ophalen…');
+
+  try{
+    plan.routeObjects=await ms670LoadInfrastructure(plan);
+    plan.smartDataStatus=ms711LastRouteObjectMeta.status;
+    plan.smartDataMeta={...ms711LastRouteObjectMeta};
+    plan.boatProfile=ms670BoatProfile();
+    plan.smartAnalysis=ms670AnalysePlan(plan);
+    plan.dayPlan=ms670BuildDayPlan(plan);
+    ms711SetRouteSafety(plan);
+    plannerCurrentPlan=plan;
+    renderPlannerSummary(plan);
+
+    if(plan.smartAnalysis.critical){
+      await ms673FindSaferAlternative(plan);
+    }
+
+    const status=ms711SetRouteSafety(plannerCurrentPlan||plan);
+    setPlannerStatus(
+      status==='blocked'
+        ?'Route geblokkeerd: minimaal één bekend object past niet bij de afmetingen van Serenity.'
+        :status==='checked'
+          ?'Routeobjecten opnieuw geladen. Geen bekende blokkade gevonden.'
+          :'Route slechts gedeeltelijk of niet geverifieerd. Handmatige controle blijft nodig.',
+      status==='blocked'?'error':status==='checked'?'success':'warning'
+    );
+  }catch(error){
+    console.error('Routeobjecten opnieuw laden mislukt:',error);
+    plan.smartDataStatus='unavailable';
+    plan.smartDataError=error?.message||'Kaartdienst niet bereikbaar.';
+    ms711SetRouteSafety(plan);
+    renderPlannerSummary(plan);
+    setPlannerStatus('Routeobjecten konden niet worden geladen. De route is niet geverifieerd.','error');
+  }
+}
+
+const ms711PreviousRenderSmartRoute=ms670RenderSmartRoute;
+ms670RenderSmartRoute=function(plan){
+  ms711PreviousRenderSmartRoute(plan);
+  ms711SetRouteSafety(plan);
+  const routeMeta=plan?.smartDataMeta||{
+    status:plan?.smartDataStatus||'unavailable',
+    requested:0,
+    completed:0,
+    failed:0,
+    objects:Number(plan?.routeObjects?.length||0),
+    error:plan?.smartDataError||''
+  };
+  ms711RenderRouteObjectStatus(plan,routeMeta);
+  ms711RenderBoatDimensionsState();
+
+  const panel=$('ms670SmartRoute');
+  if(panel){
+    panel.classList.toggle('ms711-route-blocked',plan?.routeSafetyStatus==='blocked');
+    panel.classList.toggle('ms711-route-unverified',['unverified','partial','profile-incomplete'].includes(plan?.routeSafetyStatus));
+  }
+};
+
+const ms711PreviousCalculatePlannerRoute=calculatePlannerRoute;
+calculatePlannerRoute=async function(options={}){
+  const profile=ms670BoatProfile();
+  if(!ms711BoatDimensionsComplete(profile)){
+    ms711RenderBoatDimensionsState();
+    setPlannerStatus('Vul eerst lengte, breedte, diepgang en doorvaarthoogte in bij Bootinstellingen. Zonder deze maten wordt geen route gekozen.','error');
+    showAppToast('Bootafmetingen zijn nog niet compleet.');
+    return null;
+  }
+
+  ms670SaveProfile();
+  const plan=await ms711PreviousCalculatePlannerRoute(options);
+  if(!plan)return null;
+
+  plan.boatProfile=profile;
+  plan.smartAnalysis=ms670AnalysePlan(plan);
+  ms711SetRouteSafety(plan);
+  plannerCurrentPlan=plan;
+  renderPlannerSummary(plan);
+
+  if(plan.routeSafetyStatus==='blocked'){
+    setPlannerStatus('Deze route is geblokkeerd: bekende brughoogte, breedte of diepte past niet bij Serenity. Kies een alternatief of andere tussenstop.','error');
+  }else if(plan.routeSafetyStatus==='unverified'||plan.routeSafetyStatus==='partial'){
+    setPlannerStatus('De route is nog niet volledig geverifieerd voor de bootafmetingen. Gebruik hem niet als definitieve vaarroute zonder handmatige controle.','warning');
+  }
+
+  return plan;
+};
+
+const ms711PreviousSavePlannerDraft=savePlannerDraft;
+savePlannerDraft=async function(){
+  const plan=plannerCurrentPlan||await calculatePlannerRoute({silent:true});
+  if(!plan)return;
+  ms711SetRouteSafety(plan);
+  if(plan.routeSafetyStatus==='blocked'){
+    setPlannerStatus('Geblokkeerde route wordt niet als vaarplan opgeslagen. Kies eerst een passende route.','error');
+    return;
+  }
+  return ms711PreviousSavePlannerDraft();
+};
+
+const ms711PreviousSharePlannerRoute=sharePlannerRouteWithWaterkaarten;
+sharePlannerRouteWithWaterkaarten=async function(){
+  const plan=plannerCurrentPlan||await calculatePlannerRoute({silent:true});
+  if(!plan)return;
+  ms711SetRouteSafety(plan);
+  if(plan.routeSafetyStatus==='blocked'){
+    setPlannerStatus('Deze route bevat een bekende maatblokkade en wordt niet naar Waterkaarten geëxporteerd.','error');
+    showAppToast('Kies eerst een passende route.');
+    return;
+  }
+  if(['unverified','partial','profile-incomplete'].includes(plan.routeSafetyStatus)){
+    setPlannerStatus('Routeobjecten zijn niet volledig geverifieerd. Laad ze opnieuw voordat je de route exporteert.','warning');
+    showAppToast('Route nog niet volledig geverifieerd.');
+    return;
+  }
+  return ms711PreviousSharePlannerRoute();
+};
+
+const ms711PreviousInitPlanner=initPlanner;
+initPlanner=function(){
+  const result=ms711PreviousInitPlanner();
+  ms670LoadProfile();
+  ms711RenderBoatDimensionsState();
+  if(plannerCurrentPlan){
+    ms711SetRouteSafety(plannerCurrentPlan);
+    ms711RenderRouteObjectStatus(plannerCurrentPlan,plannerCurrentPlan.smartDataMeta||{
+      status:plannerCurrentPlan.smartDataStatus||'unavailable',
+      objects:Number(plannerCurrentPlan.routeObjects?.length||0),
+      error:plannerCurrentPlan.smartDataError||''
+    });
+  }
+  return result;
+};
+
+['settingBoatLength','settingBoatWidth','settingBoatDraft','settingBoatAirDraft'].forEach(id=>{
+  document.addEventListener('input',event=>{
+    if(event.target?.id===id){
+      ms711RenderBoatDimensionsState();
+    }
+  });
+});
 
 
 /* ============================================================
@@ -27668,8 +28229,8 @@ loadPois=async function(){
 
 
 
-/* MijnSerenity 7.1.0 — uitgebreide interactieve weerkaarten */
-const MS710_WEATHER_VERSION='7.1.0';
+/* MijnSerenity 7.1.1 — uitgebreide interactieve weerkaarten */
+const MS710_WEATHER_VERSION='7.1.1';
 const ms710WeatherState={
   initialized:false,
   loading:false,

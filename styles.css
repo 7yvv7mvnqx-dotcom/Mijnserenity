@@ -8642,7 +8642,7 @@ body.planner-map-fullscreen-open{
 }
 
 
-/* === MijnSerenity 7.1.0 uitgebreide weersuite === */
+/* === MijnSerenity 7.1.1 uitgebreide weersuite === */
 .ms710-weather-suite{
   margin-top:1rem;
   display:grid;
@@ -8833,7 +8833,7 @@ body.planner-map-fullscreen-open{
 }
 
 
-/* MijnSerenity 7.1.0 — uitgebreide weerkaarten */
+/* MijnSerenity 7.1.1 — uitgebreide weerkaarten */
 .captain-strip-actions{display:flex;gap:.55rem;flex-wrap:wrap;justify-content:flex-end}
 .weather-page-head,.weather-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
 .weather-page-head{margin-bottom:1rem}.weather-page-head h1{margin:.15rem 0}.weather-head-actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
@@ -8850,3 +8850,130 @@ body.planner-map-fullscreen-open{
 .weather-daily-forecast{display:grid;grid-template-columns:repeat(7,minmax(145px,1fr));gap:.65rem;overflow-x:auto;padding-bottom:.25rem}.weather-day-card{min-width:145px;padding:.75rem;border-radius:16px;border:1px solid rgba(113,216,243,.14);background:linear-gradient(160deg,rgba(16,65,89,.58),rgba(5,27,43,.86));display:flex;flex-direction:column;align-items:center;text-align:center;gap:.28rem}.weather-day-card>span{text-transform:capitalize;font-weight:800}.weather-day-card small{color:#a9c2cc;font-size:.68rem}.weather-day-icon{font-size:2.25rem;margin:.25rem}.weather-day-card>b{font-size:.75rem;min-height:2em}.weather-day-card strong{font-size:1.25rem}.weather-day-card em{font-style:normal;color:#8eb6c5;font-weight:650}
 @media(max-width:900px){.weather-current-grid,.weather-detail-grid{grid-template-columns:1fr}.weather-hero-card{grid-template-columns:auto minmax(0,1fr)}.weather-hero-side{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))}.weather-map-heading{flex-direction:column}.weather-layer-buttons{justify-content:flex-start}.weather-daily-forecast{grid-template-columns:repeat(7,145px)}}
 @media(max-width:620px){.weather-page-head{flex-direction:column}.weather-head-actions{justify-content:flex-start;width:100%}.weather-search-row{grid-template-columns:1fr}.weather-hero-card{grid-template-columns:1fr;text-align:center}.weather-hero-icon{font-size:4.4rem}.weather-hero-copy strong{font-size:3.7rem}.weather-hero-side{grid-template-columns:1fr 1fr;text-align:left}.weather-map-canvas{height:390px}.weather-map-timeline{grid-template-columns:auto minmax(0,1fr)}.weather-map-timeline strong{grid-column:1/-1;text-align:center}.weather-detail-metrics{grid-template-columns:1fr 1fr}.weather-card-heading{gap:.55rem}.weather-layer-buttons button{flex:1 1 45%}.captain-strip-actions{width:100%;justify-content:flex-start}}
+
+
+/* ============================================================
+   MijnSerenity 7.1.1 — Bootafmetingen & Smart Route safety
+   ============================================================ */
+.ms711-boat-dimensions-card {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(88, 211, 238, .28);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(8, 45, 65, .88), rgba(7, 27, 43, .94));
+}
+
+.ms711-boat-dimensions-head,
+.ms711-planner-boat-profile,
+.ms711-route-object-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .85rem;
+}
+
+.ms711-boat-dimensions-head h3 { margin: .2rem 0; }
+.ms711-boat-dimensions-head p { margin: 0; }
+
+.ms711-dimensions-badge {
+  flex: 0 0 auto;
+  padding: .36rem .58rem;
+  border-radius: 999px;
+  background: rgba(255, 190, 80, .15);
+  color: #ffd27d;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.ms711-dimensions-badge.complete {
+  background: rgba(50, 204, 146, .14);
+  color: #7de6bc;
+}
+
+.ms711-boat-dimensions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .8rem;
+  margin-top: .9rem;
+}
+
+.ms711-boat-dimensions-grid label,
+.ms711-route-preferences-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  color: #dff7ff;
+  font-weight: 700;
+}
+
+.ms711-boat-dimensions-grid label span,
+.ms711-route-preferences-grid label span {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: #9fc2ce;
+  font-size: .8rem;
+}
+
+.ms711-boat-dimensions-grid input { min-width: 0; width: 100%; }
+
+.ms711-planner-boat-profile {
+  margin: .85rem 0 1rem;
+  padding: .8rem;
+  border-radius: 14px;
+  border: 1px solid rgba(109, 217, 242, .2);
+  background: rgba(12, 64, 87, .28);
+}
+
+.ms711-planner-boat-profile > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: .18rem;
+}
+
+.ms711-planner-boat-profile span { color: #91becd; font-size: .72rem; }
+.ms711-planner-boat-profile strong { color: #f0fbff; }
+.ms711-planner-boat-profile small { color: #9fc0ca; }
+.ms711-planner-boat-profile small.warning { color: #ffd27d; }
+.ms711-planner-boat-profile small.success { color: #7fe2bb; }
+
+.ms711-route-object-status {
+  margin: .85rem 0;
+  padding: .78rem .85rem;
+  border-radius: 14px;
+  border: 1px solid rgba(116, 196, 222, .22);
+  background: rgba(11, 49, 67, .58);
+}
+
+.ms711-route-object-status > span { font-size: 1.35rem; }
+.ms711-route-object-status > div { flex: 1; display: flex; min-width: 0; flex-direction: column; gap: .14rem; }
+.ms711-route-object-status strong { color: #ecfbff; }
+.ms711-route-object-status small { color: #9bbbc6; }
+.ms711-route-object-status.online { border-color: rgba(61, 218, 158, .3); background: rgba(35, 144, 105, .12); }
+.ms711-route-object-status.partial,
+.ms711-route-object-status.empty { border-color: rgba(255, 191, 73, .32); background: rgba(177, 116, 26, .12); }
+.ms711-route-object-status.unavailable,
+.ms711-route-object-status.estimate { border-color: rgba(255, 104, 104, .3); background: rgba(154, 48, 48, .14); }
+.ms711-route-object-status.loading > span { animation: ms711RouteSpin 1s linear infinite; }
+
+.ms711-route-blocked { border: 2px solid rgba(255, 90, 90, .45) !important; }
+.ms711-route-unverified { border: 2px solid rgba(255, 190, 70, .35) !important; }
+
+.ms711-route-objects-empty {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  color: #ffd27d;
+}
+
+@keyframes ms711RouteSpin { to { transform: rotate(360deg); } }
+
+@media (max-width: 680px) {
+  .ms711-boat-dimensions-grid { grid-template-columns: 1fr; }
+  .ms711-boat-dimensions-head,
+  .ms711-planner-boat-profile,
+  .ms711-route-object-status { align-items: flex-start; flex-direction: column; }
+  .ms711-route-object-status button,
+  .ms711-planner-boat-profile button { width: 100%; }
+}

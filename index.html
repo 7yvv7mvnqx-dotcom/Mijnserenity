@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.1.0">
+<meta name="mijnserenity-build" content="7.1.1">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=7100">
+<link rel="manifest" href="manifest.json?v=7110">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7100">
-  <link rel="stylesheet" href="mission-control.css?v=7100">
+<link rel="stylesheet" href="styles.css?v=7110">
+  <link rel="stylesheet" href="mission-control.css?v=7110">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7100">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7100">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7110">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7110">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -25,7 +25,7 @@
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7100" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7110" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -64,7 +64,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7100" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7110" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -393,7 +393,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7100" alt="">
+          <img src="waterkaarten-dashboard.png?v=7110" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -487,7 +487,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.1.0</div>
+          <div class="label">Sync · v7.1.1</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1353,7 +1353,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.1.0</span>
+        <span class="planner-version-badge">7.1.1</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -1493,42 +1493,30 @@
           </div>
         </div>
 
-        <div class="ms670-profile-card">
+        <div class="ms670-profile-card ms711-route-preferences-card">
           <div class="ms670-profile-head">
             <div>
-              <span class="eyebrow">SCHEEPSPROFIEL SERENITY</span>
-              <strong>Controleer bekende beperkingen langs de route</strong>
+              <span class="eyebrow">ROUTEVOORKEUREN</span>
+              <strong>Vaardag, brug- en sluisbuffers</strong>
             </div>
             <span id="ms670ProfileBadge" class="ms670-profile-badge">
-              Profiel opslaan
+              Voorkeuren opslaan
             </span>
           </div>
 
-          <div class="ms670-profile-grid">
-            <label>
-              Lengte
-              <span><input id="ms670BoatLength" type="number" min="0"
-                step="0.1" value="11.2"
-                oninput="ms670PlannerProfileChanged()"> meter</span>
-            </label>
-            <label>
-              Breedte
-              <span><input id="ms670BoatWidth" type="number" min="0"
-                step="0.05" placeholder="Vul in"
-                oninput="ms670PlannerProfileChanged()"> meter</span>
-            </label>
-            <label>
-              Diepgang
-              <span><input id="ms670BoatDraft" type="number" min="0"
-                step="0.05" placeholder="Vul in"
-                oninput="ms670PlannerProfileChanged()"> meter</span>
-            </label>
-            <label>
-              Doorvaarthoogte
-              <span><input id="ms670BoatAirDraft" type="number" min="0"
-                step="0.05" placeholder="Vul in"
-                oninput="ms670PlannerProfileChanged()"> meter</span>
-            </label>
+          <div class="ms711-planner-boat-profile">
+            <div>
+              <span>Afmetingen uit Bootinstellingen</span>
+              <strong id="ms711PlannerBoatProfileSummary">Nog niet volledig ingevuld</strong>
+              <small id="ms711PlannerBoatProfileStatus">
+                Lengte, breedte, diepgang en doorvaarthoogte zijn verplicht voor Smart Route.
+              </small>
+            </div>
+            <button type="button" class="secondary"
+              onclick="ms711OpenBoatSettings()">⚙️ Bootafmetingen</button>
+          </div>
+
+          <div class="ms670-profile-grid ms711-route-preferences-grid">
             <label>
               Maximaal varen per dag
               <span><input id="ms670DailyHours" type="number" min="1"
@@ -1689,6 +1677,19 @@
 
             <div id="ms670RouteChecks"
               class="ms670-route-checks"></div>
+
+            <div id="ms711RouteObjectStatus"
+              class="ms711-route-object-status loading">
+              <span id="ms711RouteObjectStatusIcon">⟳</span>
+              <div>
+                <strong id="ms711RouteObjectStatusTitle">Routeobjecten controleren</strong>
+                <small id="ms711RouteObjectStatusText">
+                  Bruggen, sluizen en maatbeperkingen worden in kleine vaarcorridors opgehaald.
+                </small>
+              </div>
+              <button type="button" class="secondary"
+                onclick="ms711ReloadSmartRouteObjects()">↻ Opnieuw</button>
+            </div>
 
             <div class="ms670-smart-columns">
               <div>
@@ -3248,7 +3249,48 @@
         <button class="secondary" onclick="uploadDashboardPhoto()">Foto opslaan</button>
         <button class="small-danger" onclick="removeDashboardPhoto()">Foto verwijderen</button>
       </div>
-      <div id="dashboardPhotoMsg" class="status small hidden"></div><div class="row"><div><label>Bootnaam</label><input id="settingBoatName" value="Serenity"></div><div><label>Tankinhoud liter</label><input id="settingTankCapacity" type="number" step="1"></div></div><div class="row"><div><label>Brandstofprijs per liter €</label><input id="settingFuelPrice" type="number" step="0.01"></div><div><label>Gemiddeld verbruik per uur</label><input id="settingFuelPerHour" type="number" step="0.1"></div></div><button onclick="saveSettings()">Instellingen opslaan</button>
+      <div id="dashboardPhotoMsg" class="status small hidden"></div>
+
+      <div class="row">
+        <div><label for="settingBoatName">Bootnaam</label><input id="settingBoatName" value="Serenity"></div>
+        <div><label for="settingTankCapacity">Tankinhoud liter</label><input id="settingTankCapacity" type="number" min="0" step="1"></div>
+      </div>
+
+      <div class="ms711-boat-dimensions-card">
+        <div class="ms711-boat-dimensions-head">
+          <div>
+            <span class="eyebrow">SMART ROUTE SCHEEPSMATEN</span>
+            <h3>Afmetingen van Serenity</h3>
+            <p class="small">
+              Deze maximale maten worden vóór iedere routeberekening gebruikt voor brughoogte, breedte en diepgang.
+            </p>
+          </div>
+          <span id="settingBoatDimensionsBadge" class="ms711-dimensions-badge">Verplicht</span>
+        </div>
+        <div class="ms711-boat-dimensions-grid">
+          <label for="settingBoatLength">Lengte over alles
+            <span><input id="settingBoatLength" type="number" min="0.1" step="0.05" value="11.20"> meter</span>
+          </label>
+          <label for="settingBoatWidth">Maximale breedte
+            <span><input id="settingBoatWidth" type="number" min="0.1" step="0.05" placeholder="Bijv. 3,65"> meter</span>
+          </label>
+          <label for="settingBoatDraft">Maximale diepgang
+            <span><input id="settingBoatDraft" type="number" min="0.1" step="0.05" placeholder="Bijv. 1,05"> meter</span>
+          </label>
+          <label for="settingBoatAirDraft">Doorvaarthoogte
+            <span><input id="settingBoatAirDraft" type="number" min="0.1" step="0.05" placeholder="Hoogste vaste punt"> meter</span>
+          </label>
+        </div>
+        <div id="settingBoatDimensionsStatus" class="status small">
+          Vul alle vier de maten in. Smart Route berekent anders geen vaarroute.
+        </div>
+      </div>
+
+      <div class="row">
+        <div><label for="settingFuelPrice">Brandstofprijs per liter €</label><input id="settingFuelPrice" type="number" min="0" step="0.01"></div>
+        <div><label for="settingFuelPerHour">Gemiddeld verbruik per uur</label><input id="settingFuelPerHour" type="number" min="0" step="0.1"></div>
+      </div>
+      <button onclick="saveSettings()">Instellingen opslaan</button>
       <button type="button" class="secondary settings-share-button" onclick="captainNavigate('boat')">Boot delen en leden beheren</button>
       <div id="settingsMsg" class="status small hidden"></div></div></div>
 
@@ -3602,7 +3644,7 @@
   </div>
 </div>
 
-<script src="app.js?v=7100"></script>
-<script src="mission-control.js?v=7100"></script>
+<script src="app.js?v=7110"></script>
+<script src="mission-control.js?v=7110"></script>
 </body>
 </html>
