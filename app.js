@@ -5402,6 +5402,12 @@ function renderPoiList(){
           <img src="${esc(photo.url)}"
             alt="Foto van ${esc(poi.name||'POI')}"
             onclick="openLightbox(${JSON.stringify(photo.url)})">
+          ${photo.auto_imported
+            ?`<span class="ms694-photo-source"
+                title="${esc(photo.source_attribution||'Wikimedia Commons')}">
+                Wikimedia
+              </span>`
+            :''}
           <button class="photo-delete"
             aria-label="Foto verwijderen"
             onclick="deletePhoto('${photo.id}','${esc(photo.storage_path)}')">×</button>
@@ -5434,6 +5440,8 @@ function renderPoiList(){
           ${poi.review
             ?`<p class="poi-list-review">${esc(poi.review)}</p>`
             :''}
+
+          ${ms694PoiExtraHtml(poi)}
 
           ${photos
             ?`<div class="photo-grid">${photos}</div>`
@@ -14080,7 +14088,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 6.9.3"
+<gpx version="1.1" creator="MijnSerenity 6.9.4"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14332,7 +14340,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='6.9.3';
+const APP_VERSION='6.9.4';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -16322,7 +16330,7 @@ if(document.readyState==='loading'){
 }
 
 
-/* MijnSerenity Cloud 6.9.3 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 6.9.4 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16711,7 +16719,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.3
+   MijnSerenity Cloud 6.9.4
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17648,7 +17656,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.9.3"
+ creator="MijnSerenity 6.9.4"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17674,7 +17682,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.9.3 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 6.9.4 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17712,7 +17720,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.3 — Next Level Live Cockpit
+   MijnSerenity Cloud 6.9.4 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18686,7 +18694,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.3 — Smart Route
+   MijnSerenity Cloud 6.9.4 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -19996,7 +20004,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 6.9.3 Smart Route"
+ creator="MijnSerenity 6.9.4 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -20025,7 +20033,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 6.9.3 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 6.9.4 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20092,7 +20100,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.3 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 6.9.4 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -21011,7 +21019,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.3 — Auto Logbook
+   MijnSerenity Cloud 6.9.4 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22219,7 +22227,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.3 — Routefoto’s met GPS en omschrijving
+   MijnSerenity Cloud 6.9.4 — Routefoto’s met GPS en omschrijving
    ============================================================ */
 
 let ms681PendingPhotos=[];
@@ -23048,7 +23056,7 @@ initLiveMode=async function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.3 — Boat Intelligence
+   MijnSerenity Cloud 6.9.4 — Boat Intelligence
    ============================================================ */
 
 function ms690Clamp(value,min=0,max=100){
@@ -24348,7 +24356,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.3 — Gewaardeerde havenimporteur
+   MijnSerenity Cloud 6.9.4 — Gewaardeerde havenimporteur
    ============================================================ */
 
 let ms692HarbourImportBusy=false;
@@ -25005,7 +25013,7 @@ async function ms692ImportRatedHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 6.9.3 — Havens binnen straal van locatie
+   MijnSerenity Cloud 6.9.4 — Havens binnen straal van locatie
    ============================================================ */
 
 let ms693NearbyBusy=false;
@@ -25354,4 +25362,1386 @@ async function ms693ImportNearbyHarbours(){
     if(button)button.disabled=false;
   }
 }
+
+
+
+/* ============================================================
+   MijnSerenity Cloud 6.9.4 — POI Data Service
+   ============================================================ */
+
+let ms694EnrichmentBusy=false;
+let ms694EnrichmentCancelled=false;
+let ms694AutomaticRunStarted=false;
+
+function ms694SettingsKey(){
+  return `mijnserenity-poi-enrichment-${currentBoat?.id||'boat'}`;
+}
+
+function ms694DefaultSettings(){
+  return {
+    intervalDays:30,
+    autoPhotos:true,
+    autoOnOpen:true
+  };
+}
+
+function ms694ReadSettings(){
+  try{
+    return {
+      ...ms694DefaultSettings(),
+      ...JSON.parse(
+        localStorage.getItem(ms694SettingsKey())||
+        '{}'
+      )
+    };
+  }catch{
+    return ms694DefaultSettings();
+  }
+}
+
+function ms694LoadSettings(){
+  const settings=ms694ReadSettings();
+
+  if($('ms694RefreshInterval')){
+    $('ms694RefreshInterval').value=
+      String(settings.intervalDays);
+  }
+
+  if($('ms694AutoPhotos')){
+    $('ms694AutoPhotos').checked=
+      Boolean(settings.autoPhotos);
+  }
+
+  if($('ms694AutoOnOpen')){
+    $('ms694AutoOnOpen').checked=
+      Boolean(settings.autoOnOpen);
+  }
+
+  ms694RenderOverview();
+}
+
+function ms694SaveSettings(){
+  const settings={
+    intervalDays:Number(
+      $('ms694RefreshInterval')?.value||
+      0
+    ),
+    autoPhotos:Boolean(
+      $('ms694AutoPhotos')?.checked
+    ),
+    autoOnOpen:Boolean(
+      $('ms694AutoOnOpen')?.checked
+    )
+  };
+
+  try{
+    localStorage.setItem(
+      ms694SettingsKey(),
+      JSON.stringify(settings)
+    );
+  }catch{}
+
+  ms694RenderOverview();
+}
+
+function ms694SetStatus(
+  message,
+  type=''
+){
+  const status=$('ms694EnrichmentStatus');
+
+  if(status){
+    status.className=
+      `ms694-enrichment-status ${type}`;
+    status.textContent=message;
+  }
+}
+
+function ms694SetBadge(
+  message,
+  type=''
+){
+  const badge=$('ms694EnrichmentBadge');
+
+  if(badge){
+    badge.className=
+      `ms694-enrichment-badge ${type}`;
+    badge.textContent=message;
+  }
+}
+
+function ms694SetProgress(
+  current,
+  total
+){
+  const percentage=
+    total>0
+      ?Math.round(current/total*100)
+      :0;
+  const bar=$('ms694ProgressBar');
+
+  if(bar){
+    bar.style.width=`${percentage}%`;
+  }
+}
+
+function ms694ValidCoordinate(poi){
+  const latitude=Number(poi?.latitude);
+  const longitude=Number(poi?.longitude);
+
+  return {
+    latitude,
+    longitude,
+    valid:
+      Number.isFinite(latitude)&&
+      Number.isFinite(longitude)
+  };
+}
+
+function ms694PoiAgeDays(poi){
+  if(!poi?.enriched_at)return Infinity;
+
+  const timestamp=
+    new Date(poi.enriched_at).getTime();
+
+  return Number.isFinite(timestamp)
+    ?Math.max(
+        0,
+        (Date.now()-timestamp)/86400000
+      )
+    :Infinity;
+}
+
+function ms694PoiNeedsRefresh(
+  poi,
+  intervalDays
+){
+  const missingCore=
+    !String(poi.place||'').trim()||
+    !String(poi.address||'').trim()||
+    !String(poi.website||'').trim()||
+    !String(poi.phone||'').trim();
+
+  return missingCore||
+    ms694PoiAgeDays(poi)>=intervalDays;
+}
+
+function ms694ReviewLinks(poi){
+  const query=[
+    poi.name,
+    poi.place,
+    poi.address
+  ].filter(Boolean).join(' ');
+
+  const encoded=encodeURIComponent(query);
+
+  return {
+    google:
+      `https://www.google.com/maps/search/?api=1&query=${encoded}`,
+    tripadvisor:
+      `https://www.tripadvisor.nl/Search?q=${encoded}`
+  };
+}
+
+function ms694SafeExternalUrl(value){
+  const text=String(value||'').trim();
+
+  if(!text)return '';
+
+  try{
+    const url=new URL(
+      /^https?:\/\//i.test(text)
+        ?text
+        :`https://${text}`
+    );
+
+    return ['http:','https:'].includes(
+      url.protocol
+    )
+      ?url.toString()
+      :'';
+  }catch{
+    return '';
+  }
+}
+
+function ms694PoiExtraHtml(poi){
+  const website=
+    ms694SafeExternalUrl(poi.website);
+  const phone=String(poi.phone||'').trim();
+  const hours=String(
+    poi.opening_hours||
+    ''
+  ).trim();
+  const externalRating=Number(
+    poi.external_rating
+  );
+  const links=ms694ReviewLinks(poi);
+  const enriched=poi.enriched_at
+    ?new Date(poi.enriched_at)
+    :null;
+  const source=String(
+    poi.enrichment_sources||
+    ''
+  ).trim();
+
+  if(
+    !website&&
+    !phone&&
+    !hours&&
+    !Number.isFinite(externalRating)&&
+    !enriched
+  ){
+    return `
+      <div class="ms694-poi-extra pending">
+        <span>ℹ️ Nog niet automatisch verrijkt</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="ms694-poi-extra">
+      <div class="ms694-poi-extra-badges">
+        ${
+          Number.isFinite(externalRating)
+            ?`<span class="rating">
+                ★ ${externalRating.toLocaleString('nl-NL',{
+                  maximumFractionDigits:1
+                })}
+                ${poi.external_rating_source
+                  ?`· ${esc(poi.external_rating_source)}`
+                  :''}
+              </span>`
+            :''
+        }
+        ${
+          enriched
+            ?`<span>
+                ↻ ${enriched.toLocaleDateString('nl-NL',{
+                  day:'numeric',
+                  month:'short',
+                  year:'numeric'
+                })}
+              </span>`
+            :''
+        }
+      </div>
+
+      ${
+        hours
+          ?`<div class="ms694-poi-detail">
+              🕒 ${esc(hours)}
+            </div>`
+          :''
+      }
+
+      <div class="ms694-poi-links">
+        ${
+          website
+            ?`<a href="${esc(website)}"
+                target="_blank"
+                rel="noopener noreferrer">
+                🌐 Website
+              </a>`
+            :''
+        }
+        ${
+          phone
+            ?`<a href="tel:${esc(phone.replace(/[^\d+]/g,''))}">
+                ☎️ Bellen
+              </a>`
+            :''
+        }
+        <a href="${esc(links.google)}"
+          target="_blank"
+          rel="noopener noreferrer">
+          ⭐ Google-recensies
+        </a>
+        <a href="${esc(links.tripadvisor)}"
+          target="_blank"
+          rel="noopener noreferrer">
+          🦉 Tripadvisor
+        </a>
+      </div>
+
+      ${
+        source
+          ?`<small class="ms694-poi-source">
+              Bronnen: ${esc(source)}
+            </small>`
+          :''
+      }
+    </div>
+  `;
+}
+
+function ms694ParseOsmReference(poi){
+  const match=String(poi?.review||'')
+    .match(
+      /\[OSM:(node|way|relation)\/(\d+)\]/i
+    );
+
+  return match
+    ?{
+        type:match[1].toLowerCase(),
+        id:match[2]
+      }
+    :null;
+}
+
+function ms694OsmSelectors(category){
+  const map={
+    Haven:[
+      '["leisure"="marina"]',
+      '["seamark:harbour:category"="marina"]',
+      '["seamark:type"="harbour"]'
+    ],
+    Brug:[
+      '["bridge"]',
+      '["seamark:type"="bridge"]'
+    ],
+    Sluis:[
+      '["waterway"="lock_gate"]',
+      '["waterway"="lock"]',
+      '["lock"="yes"]'
+    ],
+    Supermarkt:[
+      '["shop"="supermarket"]'
+    ],
+    Cafetaria:[
+      '["amenity"="fast_food"]'
+    ],
+    Restaurant:[
+      '["amenity"="restaurant"]'
+    ],
+    Café:[
+      '["amenity"="cafe"]'
+    ],
+    Tankstation:[
+      '["amenity"="fuel"]'
+    ],
+    Bakker:[
+      '["shop"="bakery"]'
+    ],
+    Apotheek:[
+      '["amenity"="pharmacy"]'
+    ],
+    Winkel:[
+      '["shop"]'
+    ],
+    Camping:[
+      '["tourism"="camp_site"]'
+    ],
+    Parkeren:[
+      '["amenity"="parking"]'
+    ],
+    Toilet:[
+      '["amenity"="toilets"]'
+    ],
+    Watertappunt:[
+      '["amenity"="drinking_water"]'
+    ],
+    Tankplaats:[
+      '["amenity"="fuel"]'
+    ],
+    Ankerplek:[
+      '["seamark:type"="anchorage"]',
+      '["anchorage"]'
+    ]
+  };
+
+  return map[category]||
+    ['["name"]'];
+}
+
+function ms694OsmQuery(poi,coordinate){
+  const reference=
+    ms694ParseOsmReference(poi);
+
+  if(reference){
+    return `[out:json][timeout:25];
+${reference.type}(${reference.id});
+out center tags;`;
+  }
+
+  const selectors=
+    ms694OsmSelectors(poi.category);
+
+  return `[out:json][timeout:28];
+(
+  ${selectors.map(selector=>
+    `nwr${selector}(around:300,${coordinate.latitude.toFixed(7)},${coordinate.longitude.toFixed(7)});`
+  ).join('\n  ')}
+);
+out center tags;`;
+}
+
+function ms694OsmPosition(element){
+  return ms692ElementPosition(element);
+}
+
+function ms694OsmCandidateScore(
+  poi,
+  element,
+  coordinate
+){
+  const tags=element.tags||{};
+  const name=ms692Normalise(
+    tags['name:nl']||
+    tags.name||
+    tags.operator||
+    ''
+  );
+  const target=ms692Normalise(poi.name);
+  const position=ms694OsmPosition(element);
+
+  if(!position.valid)return -Infinity;
+
+  const distance=haversineKm(
+    {
+      lat:coordinate.latitude,
+      lon:coordinate.longitude
+    },
+    {
+      lat:position.lat,
+      lon:position.lon
+    }
+  );
+
+  let score=Math.max(0,30-distance*100);
+
+  if(name===target)score+=100;
+  else if(
+    name&&target&&
+    (
+      name.includes(target)||
+      target.includes(name)
+    )
+  )score+=65;
+  else{
+    const words=target.split(' ')
+      .filter(word=>word.length>=3);
+
+    score+=words.filter(word=>
+      name.includes(word)
+    ).length*12;
+  }
+
+  return score;
+}
+
+async function ms694FetchOsmDetails(
+  poi,
+  coordinate
+){
+  try{
+    const elements=
+      await ms692FetchHarbours(
+        ms694OsmQuery(
+          poi,
+          coordinate
+        )
+      );
+
+    if(!elements.length)return null;
+
+    return [...elements]
+      .sort(
+        (a,b)=>
+          ms694OsmCandidateScore(
+            poi,b,coordinate
+          )-
+          ms694OsmCandidateScore(
+            poi,a,coordinate
+          )
+      )[0]||null;
+  }catch(error){
+    console.warn(
+      'OSM-details voor POI niet beschikbaar:',
+      poi.name,
+      error
+    );
+    return null;
+  }
+}
+
+function ms694OsmAddress(tags={}){
+  return [
+    [
+      tags['addr:street'],
+      tags['addr:housenumber']
+    ].filter(Boolean).join(' '),
+    [
+      tags['addr:postcode'],
+      tags['addr:city']||
+      tags['addr:place']||
+      tags['addr:village']
+    ].filter(Boolean).join(' ')
+  ].filter(Boolean).join(', ');
+}
+
+function ms694OsmPlace(tags={}){
+  return String(
+    tags['addr:city']||
+    tags['addr:place']||
+    tags['addr:village']||
+    tags['is_in:city']||
+    tags['is_in:town']||
+    tags['is_in']||
+    ''
+  ).trim();
+}
+
+function ms694OsmRating(tags={}){
+  const result=ms692HarbourRating(tags);
+
+  return result
+    ?{
+        rating:result.rating,
+        source:`OpenStreetMap ${result.source}`
+      }
+    :{
+        rating:null,
+        source:''
+      };
+}
+
+async function ms694ResolveCoordinate(poi){
+  const current=ms694ValidCoordinate(poi);
+
+  if(current.valid)return current;
+
+  const query=[
+    poi.name,
+    poi.address,
+    poi.place
+  ].filter(Boolean).join(' ');
+
+  if(query.length<3)return current;
+
+  try{
+    const suggestResponse=await fetch(
+      `https://api.pdok.nl/bzk/locatieserver/search/v3_1/suggest?${new URLSearchParams({
+        q:query,
+        rows:'5'
+      })}`,
+      {
+        headers:{Accept:'application/json'}
+      }
+    );
+
+    if(!suggestResponse.ok)return current;
+
+    const suggest=await suggestResponse.json();
+    const candidate=
+      suggest?.response?.docs?.[0];
+
+    if(!candidate?.id)return current;
+
+    const lookupResponse=await fetch(
+      `https://api.pdok.nl/bzk/locatieserver/search/v3_1/lookup?${new URLSearchParams({
+        id:candidate.id
+      })}`,
+      {
+        headers:{Accept:'application/json'}
+      }
+    );
+
+    if(!lookupResponse.ok)return current;
+
+    const lookup=await lookupResponse.json();
+    const doc=lookup?.response?.docs?.[0];
+    const point=parsePdokPoint(
+      doc?.centroide_ll||
+      doc?.geometrie_ll||
+      ''
+    );
+
+    return point
+      ?{
+          latitude:Number(point.latitude),
+          longitude:Number(point.longitude),
+          valid:true
+        }
+      :current;
+  }catch(error){
+    console.warn(
+      'POI-coördinaten bepalen mislukt:',
+      poi.name,
+      error
+    );
+    return current;
+  }
+}
+
+async function ms694ReversePdok(coordinate){
+  if(!coordinate.valid)return null;
+
+  try{
+    const response=await fetch(
+      `https://api.pdok.nl/bzk/locatieserver/search/v3_1/reverse?${new URLSearchParams({
+        lat:String(coordinate.latitude),
+        lon:String(coordinate.longitude),
+        rows:'10'
+      })}`,
+      {
+        headers:{Accept:'application/json'}
+      }
+    );
+
+    if(!response.ok)return null;
+
+    const payload=await response.json();
+    const docs=Array.isArray(
+      payload?.response?.docs
+    )
+      ?payload.response.docs
+      :[];
+
+    const addressDoc=docs.find(doc=>
+      String(doc.type||'').toLowerCase()==='adres'
+    )||docs[0];
+
+    if(!addressDoc)return null;
+
+    return {
+      place:String(
+        addressDoc.woonplaatsnaam||
+        addressDoc.gemeentenaam||
+        ''
+      ).trim(),
+      address:buildPdokAddress(
+        addressDoc
+      ),
+      displayName:String(
+        addressDoc.weergavenaam||
+        ''
+      ).replace(/<[^>]+>/g,'').trim()
+    };
+  }catch(error){
+    console.warn(
+      'PDOK reverse lookup mislukt:',
+      error
+    );
+    return null;
+  }
+}
+
+function ms694PhotoContext(poi,coordinate){
+  const address=String(poi.address||'');
+  const addressStreet=address
+    .split(',')[0]
+    .replace(/\b\d+[a-zA-Z-]*\b/g,' ')
+    .trim();
+
+  return {
+    name:String(poi.name||'').trim(),
+    place:String(poi.place||'').trim(),
+    address,
+    category:String(poi.category||'').trim(),
+    latitude:coordinate.valid
+      ?coordinate.latitude
+      :null,
+    longitude:coordinate.valid
+      ?coordinate.longitude
+      :null,
+    nameNormalised:
+      poiPhotoNormaliseText(poi.name),
+    placeNormalised:
+      poiPhotoNormaliseText(poi.place),
+    addressNormalised:
+      poiPhotoNormaliseText(address),
+    nameTokens:
+      poiPhotoTokens(poi.name),
+    placeTokens:
+      poiPhotoTokens(
+        poi.place,
+        {allowGeneric:true}
+      ),
+    streetTokens:
+      poiPhotoTokens(
+        addressStreet,
+        {allowGeneric:true}
+      ),
+    categoryTokens:
+      poiPhotoTokens(
+        poi.category,
+        {allowGeneric:true}
+      )
+  };
+}
+
+async function ms694FindPhoto(
+  poi,
+  coordinate
+){
+  if(
+    (poiPhotoCache[poi.id]||[]).length
+  ){
+    return null;
+  }
+
+  const context=
+    ms694PhotoContext(
+      poi,
+      coordinate
+    );
+
+  if(
+    context.name.length<3||
+    !context.nameTokens.length
+  ){
+    return null;
+  }
+
+  const quotedName=
+    `"${context.name.replace(/"/g,'')}"`;
+
+  const queries=[
+    [quotedName,context.place]
+      .filter(Boolean).join(' '),
+    [quotedName,context.category,context.place]
+      .filter(Boolean).join(' ')
+  ];
+
+  const controller=new AbortController();
+  const timeout=setTimeout(
+    ()=>controller.abort(),
+    25000
+  );
+
+  try{
+    const jobs=queries.map(query=>
+      fetchCommonsPhotosByText(
+        query,
+        controller.signal
+      )
+    );
+
+    if(coordinate.valid){
+      jobs.push(
+        fetchCommonsPhotosByCoordinates(
+          coordinate.latitude,
+          coordinate.longitude,
+          controller.signal
+        )
+      );
+    }
+
+    const results=
+      await Promise.allSettled(jobs);
+    const seen=new Set();
+    const photos=[];
+
+    results.forEach(result=>{
+      if(result.status!=='fulfilled')return;
+
+      result.value.forEach(photo=>{
+        const key=commonsPhotoKey(photo);
+
+        if(!key||seen.has(key))return;
+        seen.add(key);
+        photos.push(photo);
+      });
+    });
+
+    return filterRelevantPoiWebPhotos(
+      photos,
+      context
+    )[0]||null;
+  }catch(error){
+    console.warn(
+      'Automatische fotozoekactie mislukt:',
+      poi.name,
+      error
+    );
+    return null;
+  }finally{
+    clearTimeout(timeout);
+  }
+}
+
+function ms694MissingPhotoColumns(error){
+  const message=String(
+    error?.message||
+    ''
+  ).toLowerCase();
+
+  return [
+    'source_url',
+    'source_title',
+    'source_attribution',
+    'source_license',
+    'auto_imported',
+    'enriched_at',
+    'schema cache'
+  ].some(term=>message.includes(term));
+}
+
+async function ms694UploadPhoto(
+  poi,
+  photo
+){
+  if(!photo)return false;
+
+  const file=await webPhotoToFile(
+    photo,
+    0
+  );
+  const safeExt=(
+    file.name.split('.').pop()||
+    'jpg'
+  )
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g,'')||
+    'jpg';
+  const path=
+    `${currentBoat.id}/${poi.id}/`+
+    `${crypto.randomUUID()}.${safeExt}`;
+
+  const {error:uploadError}=await sb.storage
+    .from(PHOTO_BUCKET)
+    .upload(path,file,{
+      cacheControl:'3600',
+      upsert:false,
+      contentType:
+        file.type||
+        'image/jpeg'
+    });
+
+  if(uploadError)throw uploadError;
+
+  const metadata={
+    poi_id:poi.id,
+    boat_id:currentBoat.id,
+    created_by:currentUser.id,
+    storage_path:path,
+    original_name:file.name,
+    source_url:photo.sourceUrl||null,
+    source_title:photo.title||null,
+    source_attribution:
+      webPhotoAttributionLine(photo),
+    source_license:photo.license||null,
+    auto_imported:true,
+    enriched_at:
+      new Date().toISOString()
+  };
+
+  let {error}=await sb
+    .from('poi_photos')
+    .insert(metadata);
+
+  if(
+    error&&
+    ms694MissingPhotoColumns(error)
+  ){
+    const fallback=await sb
+      .from('poi_photos')
+      .insert({
+        poi_id:poi.id,
+        boat_id:currentBoat.id,
+        created_by:currentUser.id,
+        storage_path:path,
+        original_name:file.name
+      });
+
+    error=fallback.error;
+  }
+
+  if(error){
+    await sb.storage
+      .from(PHOTO_BUCKET)
+      .remove([path]);
+    throw error;
+  }
+
+  return true;
+}
+
+function ms694OsmSourceUrl(element){
+  if(!element?.type||!element?.id)return '';
+
+  return `https://www.openstreetmap.org/${element.type}/${element.id}`;
+}
+
+function ms694ExternalFields(
+  poi,
+  osmElement,
+  pdok
+){
+  const tags=osmElement?.tags||{};
+  const rating=ms694OsmRating(tags);
+  const osmAddress=ms694OsmAddress(tags);
+  const osmPlace=ms694OsmPlace(tags);
+  const website=ms694SafeExternalUrl(
+    tags.website||
+    tags['contact:website']||
+    poi.website
+  );
+  const phone=String(
+    tags.phone||
+    tags['contact:phone']||
+    poi.phone||
+    ''
+  ).trim();
+  const openingHours=String(
+    tags.opening_hours||
+    poi.opening_hours||
+    ''
+  ).trim();
+
+  const sources=[
+    pdok&&(pdok.place||pdok.address)
+      ?'PDOK'
+      :'',
+    osmElement
+      ?'OpenStreetMap'
+      :'',
+    (poiPhotoCache[poi.id]||[])
+      .some(photo=>photo.auto_imported)
+      ?'Wikimedia Commons'
+      :''
+  ].filter(Boolean);
+
+  return {
+    latitude:
+      Number.isFinite(Number(poi.latitude))
+        ?Number(poi.latitude)
+        :null,
+    longitude:
+      Number.isFinite(Number(poi.longitude))
+        ?Number(poi.longitude)
+        :null,
+    place:
+      String(poi.place||'').trim()||
+      osmPlace||
+      pdok?.place||
+      '',
+    address:
+      String(poi.address||'').trim()||
+      osmAddress||
+      pdok?.address||
+      '',
+    website,
+    phone,
+    opening_hours:openingHours,
+    external_rating:
+      Number.isFinite(rating.rating)
+        ?rating.rating
+        :poi.external_rating??null,
+    external_rating_source:
+      rating.source||
+      poi.external_rating_source||
+      '',
+    source_url:
+      ms694OsmSourceUrl(osmElement)||
+      poi.source_url||
+      '',
+    osm_type:
+      osmElement?.type||
+      poi.osm_type||
+      null,
+    osm_id:
+      osmElement?.id
+        ?String(osmElement.id)
+        :poi.osm_id||
+        null,
+    enrichment_sources:
+      [...new Set([
+        ...sources,
+        ...String(
+          poi.enrichment_sources||
+          ''
+        ).split(' · ').filter(Boolean)
+      ])].join(' · '),
+    enriched_at:
+      new Date().toISOString(),
+    enrichment_status:'success',
+    updated_at:
+      new Date().toISOString()
+  };
+}
+
+async function ms694EnrichPoi(
+  poi,
+  settings
+){
+  const coordinate=
+    await ms694ResolveCoordinate(poi);
+
+  const pdok=coordinate.valid
+    ?await ms694ReversePdok(coordinate)
+    :null;
+
+  const workingPoi={
+    ...poi,
+    latitude:coordinate.valid
+      ?coordinate.latitude
+      :poi.latitude,
+    longitude:coordinate.valid
+      ?coordinate.longitude
+      :poi.longitude,
+    place:
+      String(poi.place||'').trim()||
+      pdok?.place||
+      '',
+    address:
+      String(poi.address||'').trim()||
+      pdok?.address||
+      ''
+  };
+
+  const osmElement=coordinate.valid
+    ?await ms694FetchOsmDetails(
+        workingPoi,
+        coordinate
+      )
+    :null;
+
+  const update=ms694ExternalFields(
+    workingPoi,
+    osmElement,
+    pdok
+  );
+
+  if(coordinate.valid){
+    update.latitude=coordinate.latitude;
+    update.longitude=coordinate.longitude;
+  }
+
+  const {error}=await sb
+    .from('pois')
+    .update(update)
+    .eq('id',poi.id)
+    .eq('boat_id',currentBoat.id);
+
+  if(error)throw error;
+
+  let photoAdded=false;
+
+  if(
+    settings.autoPhotos&&
+    !(poiPhotoCache[poi.id]||[]).length
+  ){
+    const photo=await ms694FindPhoto(
+      {
+        ...workingPoi,
+        ...update
+      },
+      coordinate
+    );
+
+    if(photo){
+      photoAdded=
+        await ms694UploadPhoto(
+          poi,
+          photo
+        );
+    }
+  }
+
+  return {
+    updated:true,
+    photoAdded,
+    coordinate:coordinate.valid,
+    osm:Boolean(osmElement),
+    pdok:Boolean(pdok)
+  };
+}
+
+function ms694Delay(milliseconds){
+  return new Promise(resolve=>
+    setTimeout(resolve,milliseconds)
+  );
+}
+
+function ms694CancelEnrichment(){
+  ms694EnrichmentCancelled=true;
+  ms694SetStatus(
+    'Bijwerken wordt na de huidige POI gestopt.',
+    'warning'
+  );
+}
+
+async function ms694RunQueue(
+  pois,
+  {
+    automatic=false
+  }={}
+){
+  if(
+    ms694EnrichmentBusy||
+    !pois.length
+  ){
+    return;
+  }
+
+  const settings=ms694ReadSettings();
+  const button=$('ms694EnrichAllButton');
+  const cancel=$('ms694CancelButton');
+
+  ms694EnrichmentBusy=true;
+  ms694EnrichmentCancelled=false;
+
+  if(button)button.disabled=true;
+  cancel?.classList.remove('hidden');
+
+  let updated=0;
+  let photos=0;
+  let failed=0;
+
+  ms694SetBadge(
+    automatic
+      ?'Automatisch bijwerken'
+      :'Bezig…',
+    'checking'
+  );
+  ms694SetProgress(0,pois.length);
+
+  for(
+    let index=0;
+    index<pois.length;
+    index++
+  ){
+    if(ms694EnrichmentCancelled)break;
+
+    const poi=pois[index];
+
+    ms694SetStatus(
+      `${index+1} van ${pois.length}: ${poi.name} aanvullen…`
+    );
+
+    try{
+      const result=
+        await ms694EnrichPoi(
+          poi,
+          settings
+        );
+
+      if(result.updated)updated++;
+      if(result.photoAdded)photos++;
+    }catch(error){
+      failed++;
+
+      console.warn(
+        'POI-verrijking mislukt:',
+        poi.name,
+        error
+      );
+
+      try{
+        await sb.from('pois')
+          .update({
+            enrichment_status:'error',
+            enriched_at:
+              new Date().toISOString()
+          })
+          .eq('id',poi.id)
+          .eq('boat_id',currentBoat.id);
+      }catch{}
+    }
+
+    ms694SetProgress(
+      index+1,
+      pois.length
+    );
+
+    if(index<pois.length-1){
+      await ms694Delay(850);
+    }
+  }
+
+  const stopped=ms694EnrichmentCancelled;
+
+  try{
+    await loadPoisOriginalForMs694();
+  }catch{
+    await loadPois();
+  }
+
+  ms694SetBadge(
+    stopped
+      ?'Gestopt'
+      :`${updated} bijgewerkt`,
+    stopped
+      ?'warning'
+      :failed
+        ?'warning'
+        :'success'
+  );
+
+  ms694SetStatus(
+    stopped
+      ?`Gestopt. ${updated} POI’s zijn bijgewerkt en ${photos} foto’s toegevoegd.`
+      :`${updated} POI’s bijgewerkt · ${photos} foto’s toegevoegd · ${failed} niet gelukt.`,
+    failed||stopped
+      ?'warning'
+      :'success'
+  );
+
+  if(!automatic&&!stopped){
+    showAppToast(
+      `${updated} POI’s bijgewerkt ✅`
+    );
+  }
+
+  try{
+    localStorage.setItem(
+      `${ms694SettingsKey()}-last-run`,
+      String(Date.now())
+    );
+  }catch{}
+
+  ms694EnrichmentBusy=false;
+  ms694EnrichmentCancelled=false;
+  if(button)button.disabled=false;
+  cancel?.classList.add('hidden');
+  ms694RenderOverview();
+}
+
+async function ms694EnrichAllPois(){
+  if(!currentBoat||!currentUser){
+    alert('Log opnieuw in.');
+    return;
+  }
+
+  if(!poiCache.length){
+    showAppToast(
+      'Er zijn nog geen POI’s om bij te werken.'
+    );
+    return;
+  }
+
+  if(!confirm(
+    `Alle ${poiCache.length} POI’s controleren en aanvullen? Dit kan enkele minuten duren.`
+  )){
+    return;
+  }
+
+  await ms694RunQueue(
+    [...poiCache],
+    {automatic:false}
+  );
+}
+
+function ms694RenderOverview(){
+  if(!$('ms694EnrichmentBadge'))return;
+
+  const settings=ms694ReadSettings();
+  const enriched=(poiCache||[])
+    .filter(poi=>poi.enriched_at);
+  const stale=(poiCache||[])
+    .filter(poi=>
+      ms694PoiNeedsRefresh(
+        poi,
+        Math.max(
+          1,
+          Number(settings.intervalDays)||30
+        )
+      )
+    );
+
+  if(ms694EnrichmentBusy)return;
+
+  if(!poiCache.length){
+    ms694SetBadge(
+      'Geen POI’s',
+      ''
+    );
+    return;
+  }
+
+  ms694SetBadge(
+    `${enriched.length}/${poiCache.length} verrijkt`,
+    stale.length
+      ?'warning'
+      :'success'
+  );
+
+  if(!ms694EnrichmentBusy){
+    ms694SetProgress(
+      enriched.length,
+      poiCache.length
+    );
+  }
+}
+
+async function ms694MaybeAutoRefresh(){
+  if(
+    ms694AutomaticRunStarted||
+    ms694EnrichmentBusy||
+    !currentBoat||
+    !currentUser
+  ){
+    return;
+  }
+
+  const settings=ms694ReadSettings();
+
+  if(
+    !settings.autoOnOpen||
+    Number(settings.intervalDays)<=0
+  ){
+    return;
+  }
+
+  let lastRun=0;
+
+  try{
+    lastRun=Number(
+      localStorage.getItem(
+        `${ms694SettingsKey()}-last-auto-run`
+      )||0
+    );
+  }catch{}
+
+  if(Date.now()-lastRun<20*60*60*1000){
+    return;
+  }
+
+  const stale=(poiCache||[])
+    .filter(poi=>
+      ms694PoiNeedsRefresh(
+        poi,
+        Number(settings.intervalDays)
+      )
+    )
+    .sort((a,b)=>
+      ms694PoiAgeDays(b)-
+      ms694PoiAgeDays(a)
+    )
+    .slice(0,3);
+
+  if(!stale.length)return;
+
+  ms694AutomaticRunStarted=true;
+
+  try{
+    localStorage.setItem(
+      `${ms694SettingsKey()}-last-auto-run`,
+      String(Date.now())
+    );
+  }catch{}
+
+  setTimeout(()=>{
+    ms694RunQueue(
+      stale,
+      {automatic:true}
+    );
+  },1800);
+}
+
+const loadPoisOriginalForMs694=
+  loadPois;
+
+loadPois=async function(){
+  const result=
+    await loadPoisOriginalForMs694();
+
+  ms694LoadSettings();
+  ms694RenderOverview();
+  ms694MaybeAutoRefresh();
+
+  return result;
+};
 

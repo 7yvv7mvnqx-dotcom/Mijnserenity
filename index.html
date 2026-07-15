@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="6.9.3">
+<meta name="mijnserenity-build" content="6.9.4">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=6930">
+<link rel="manifest" href="manifest.json?v=6940">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=6930">
+<link rel="stylesheet" href="styles.css?v=6940">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=6930">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=6930">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=6940">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=6940">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -24,7 +24,7 @@
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6930" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=6940" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -63,7 +63,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6930" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=6940" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -332,7 +332,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=6930" alt="">
+          <img src="waterkaarten-dashboard.png?v=6940" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -426,7 +426,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v6.9.3</div>
+          <div class="label">Sync · v6.9.4</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1109,7 +1109,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">6.9.3</span>
+        <span class="planner-version-badge">6.9.4</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -2444,6 +2444,81 @@
         class="ms692-harbour-preview hidden"></div>
     </div>
 
+    <div class="card ms694-enrichment-card">
+      <div class="ms694-enrichment-head">
+        <div>
+          <span class="eyebrow">POI DATA SERVICE</span>
+          <h2>Gegevens automatisch aanvullen</h2>
+          <p class="small">
+            Zoekt per POI naar plaats, adres, website, telefoon,
+            openingstijden, openbare classificatie, reviewlinks en een
+            duidelijk passende rechtenvrije foto.
+          </p>
+        </div>
+        <span id="ms694EnrichmentBadge"
+          class="ms694-enrichment-badge">Nog niet uitgevoerd</span>
+      </div>
+
+      <div class="ms694-enrichment-options">
+        <label>
+          Automatisch opnieuw controleren
+          <select id="ms694RefreshInterval"
+            onchange="ms694SaveSettings()">
+            <option value="0">Alleen handmatig</option>
+            <option value="7">Iedere 7 dagen</option>
+            <option value="30" selected>Iedere 30 dagen</option>
+            <option value="90">Iedere 90 dagen</option>
+          </select>
+        </label>
+
+        <label class="checkline">
+          <input id="ms694AutoPhotos" type="checkbox" checked
+            onchange="ms694SaveSettings()">
+          <span>
+            <b>Automatisch één passende foto toevoegen</b>
+            <small>Alleen wanneer de POI nog geen foto heeft.</small>
+          </span>
+        </label>
+
+        <label class="checkline">
+          <input id="ms694AutoOnOpen" type="checkbox" checked
+            onchange="ms694SaveSettings()">
+          <span>
+            <b>Bij openen rustig bijwerken</b>
+            <small>Maximaal drie verouderde POI’s per sessie.</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="ms694-enrichment-actions">
+        <button id="ms694EnrichAllButton" type="button"
+          onclick="ms694EnrichAllPois()">
+          ✨ Werk alle POI’s nu bij
+        </button>
+        <button id="ms694CancelButton" type="button"
+          class="secondary hidden"
+          onclick="ms694CancelEnrichment()">
+          Stop bijwerken
+        </button>
+      </div>
+
+      <div class="ms694-progress-shell">
+        <div id="ms694ProgressBar" class="ms694-progress-bar"></div>
+      </div>
+
+      <div id="ms694EnrichmentStatus"
+        class="ms694-enrichment-status">
+        Externe recensieteksten worden niet gekopieerd. MijnSerenity toont
+        betrouwbare openbare scores wanneer aanwezig en maakt knoppen naar
+        Google Maps en Tripadvisor.
+      </div>
+
+      <div class="ms694-source-note">
+        Adres en plaats: PDOK · Objectgegevens: OpenStreetMap ·
+        Foto’s: Wikimedia Commons
+      </div>
+    </div>
+
     <div class="card collapsible-card">
       <button id="poiFormToggle" class="section-toggle" type="button" onclick="toggleSection('poiFormWrap',this)">
         <span>Nieuwe POI toevoegen</span><span class="chevron">⌄</span>
@@ -3118,6 +3193,6 @@
   </div>
 </div>
 
-<script src="app.js?v=6930"></script>
+<script src="app.js?v=6940"></script>
 </body>
 </html>
