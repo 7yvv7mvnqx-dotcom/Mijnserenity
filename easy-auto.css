@@ -1,0 +1,196 @@
+
+/* =========================================================
+   MijnSerenity Cloud 7.0.1 — Eenvoudig automatisch varen
+   ========================================================= */
+
+.ms701-auto-card{
+  margin-bottom:14px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(75,211,143,.17),transparent 36%),
+    linear-gradient(145deg,rgba(7,38,49,.99),rgba(3,22,31,.99));
+  border-color:rgba(75,211,143,.24);
+}
+
+.ms701-auto-card.disabled{
+  opacity:.78;
+  border-color:rgba(255,255,255,.10);
+}
+
+.ms701-auto-head{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+}
+
+.ms701-auto-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:52px;
+  height:52px;
+  border-radius:16px;
+  background:rgba(75,211,143,.12);
+  border:1px solid rgba(75,211,143,.22);
+  font-size:27px;
+}
+
+.ms701-auto-head h2{
+  margin-bottom:2px;
+}
+
+.ms701-switch{
+  position:relative;
+  display:block;
+  width:56px;
+  height:32px;
+  margin:0;
+}
+
+.ms701-switch input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+
+.ms701-switch span{
+  position:absolute;
+  inset:0;
+  border-radius:999px;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.14);
+  transition:.2s ease;
+}
+
+.ms701-switch span::after{
+  content:'';
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 3px 10px rgba(0,0,0,.30);
+  transition:.2s ease;
+}
+
+.ms701-switch input:checked + span{
+  background:#4bd38f;
+  border-color:#4bd38f;
+}
+
+.ms701-switch input:checked + span::after{
+  transform:translateX(24px);
+}
+
+.ms701-auto-status-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-top:12px;
+}
+
+.ms701-auto-status-grid > div{
+  padding:10px 11px;
+  border-radius:13px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);
+}
+
+.ms701-auto-status-grid span,
+.ms701-auto-status-grid strong{
+  display:block;
+}
+
+.ms701-auto-status-grid span{
+  color:#91aeb8;
+  font-size:9px;
+  font-weight:850;
+  text-transform:uppercase;
+}
+
+.ms701-auto-status-grid strong{
+  margin-top:5px;
+  color:#eefbff;
+  font-size:14px;
+}
+
+.ms701-auto-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:11px;
+}
+
+.ms701-auto-actions button{
+  width:auto;
+}
+
+.ms701-auto-message{
+  margin-top:9px;
+  padding:9px 11px;
+  border-radius:12px;
+  color:#cce9f1;
+  background:rgba(69,200,255,.055);
+  border:1px solid rgba(69,200,255,.13);
+  font-size:10px;
+  line-height:1.4;
+}
+
+/* Standaard een rustig dashboard zonder dubbele informatie. */
+body.ms701-simple-mode .ms690-intelligence-card,
+body.ms701-simple-mode .captain-season-grid,
+body.ms701-simple-mode .captain-activity-card,
+body.ms701-simple-mode #dashboardFinanceCard,
+body.ms701-simple-mode #latestRouteCard,
+body.ms701-simple-mode .compact-status{
+  display:none !important;
+}
+
+/* Alleen de meest gebruikte hoofdfuncties direct tonen. */
+body.ms701-simple-mode .dashboard-actions .tile-map,
+body.ms701-simple-mode .dashboard-actions .tile-finance,
+body.ms701-simple-mode .dashboard-actions .tile-costs,
+body.ms701-simple-mode .dashboard-actions .tile-settings{
+  display:none !important;
+}
+
+/* Live varen rustiger: hoofd-cockpit en automatische log blijven zichtbaar. */
+body.ms701-simple-mode #live .ms690-live-advisor-card,
+body.ms701-simple-mode #live .live-detail-metrics,
+body.ms701-simple-mode #live .live-auto-log-details{
+  display:none !important;
+}
+
+body.ms701-simple-mode #live .live-cloud-strip{
+  padding:9px 10px;
+}
+
+body.ms701-simple-mode #live .live-cloud-strip small{
+  display:none;
+}
+
+body.ms701-simple-mode #live .live-controls{
+  gap:7px;
+}
+
+@media(max-width:700px){
+  .ms701-auto-head{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+
+  .ms701-switch{
+    grid-column:1 / -1;
+    justify-self:end;
+    margin-top:-4px;
+  }
+
+  .ms701-auto-status-grid{
+    grid-template-columns:1fr;
+  }
+
+  .ms701-auto-actions button{
+    width:100%;
+  }
+}

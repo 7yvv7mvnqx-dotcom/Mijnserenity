@@ -1,19 +1,36 @@
-# MijnSerenity Cloud 7.0.1 — Routezoeker
+# MijnSerenity Cloud 7.0.1 — Eenvoudig automatisch varen
 
-## Nieuw
+## Eenvoudiger dashboard
 
-- Online zoeken bij vertrek, bestemming en tussenstop.
-- Zoeken op plaats, adres, haven, sluis, brug en vrije trefwoorden.
-- Online zoekresultaten direct gebruiken als GPS-routepunt.
-- Recente online locaties worden lokaal bewaard en verschijnen in de keuzelijst.
-- Directe Google Maps-knop per zoekveld en per resultaat.
-- Eigen opgeslagen POI’s blijven volledig beschikbaar.
-- Werkt zonder Google API-sleutel of extra databasewijziging.
+- Nieuwe compacte kaart `Eenvoudig automatisch varen`.
+- Standaard minder dubbele statistieken en minder knoppen.
+- Alleen Live varen, Waterkaarten, Reisplanner, Techniek, Logboek en POI
+  staan direct in beeld.
+- Via `Toon uitgebreid dashboard` blijft alle bestaande informatie bereikbaar.
 
-## Technisch
+## Automatisch varen hersteld
 
-- Appversie en PWA-cache verhoogd naar 7.0.1 / 7010.
-- Serviceworker vernieuwd zodat iPhone en iPad de nieuwe bestanden laden.
-- Online locaties worden per boot lokaal opgeslagen.
-- Bestaande conceptplanningen, Smart Route, GPX-delen en Waterkaarten-koppeling
-  blijven behouden.
+Wanneer MijnSerenity geopend is:
+
+- vertrekdetectie wordt automatisch geactiveerd;
+- GPS-opname start zodra Serenity echt begint te varen;
+- live positie en route worden automatisch naar andere geopende
+  MijnSerenity-apparaten gedeeld;
+- stilstand en afmeren worden automatisch herkend;
+- de vaartocht wordt automatisch afgerond en opgeslagen;
+- na opslaan wordt MijnSerenity vanzelf opnieuw klaargezet voor de volgende vaart.
+
+De hoofdschakelaar bovenaan zet vertrekdetectie, automatisch delen,
+automatisch stoppen en automatisch opslaan in één keer aan of uit.
+
+## Belangrijk voor iPhone en iPad
+
+MijnSerenity moet geopend blijven en locatietoegang hebben. iOS laat een
+webapp niet onbeperkt GPS gebruiken wanneer deze volledig is afgesloten.
+Waterkaarten kan vanwege iOS-beveiliging niet betrouwbaar zonder een tik
+naar voren worden geopend; daarvoor staat een grote knop in de automatische kaart.
+
+## Installatie
+
+Upload alle bestanden uit deze ZIP naar de hoofdmap van GitHub.
+Geen nieuwe SQL nodig.

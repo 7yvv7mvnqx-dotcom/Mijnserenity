@@ -13,7 +13,7 @@ let pendingTripRouteDetails=null;
 let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
-let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,plannerExternalPoints=[],plannerLocationSearchResults={from:[],to:[],stop:[]},plannerLocationSearchController=null,plannerLocationSearchCache=new Map(),plannerLocationSearchLastRequestAt=0,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false,homeAssistantStatusCache=null,homeAssistantStatusLoading=false,radarCameraRefreshTimer=null,radarCameraLiveActive=false,radarCameraLiveToken='',radarCameraLiveRefreshTimer=null,radarCameraFrameTimer=null,radarCameraFrameBusy=false,radarCameraFrameFailures=0;
+let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false,homeAssistantStatusCache=null,homeAssistantStatusLoading=false,radarCameraRefreshTimer=null,radarCameraLiveActive=false,radarCameraLiveToken='',radarCameraLiveRefreshTimer=null,radarCameraFrameTimer=null,radarCameraFrameBusy=false,radarCameraFrameFailures=0;
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -2202,22 +2202,20 @@ function goToTab(id){
   const map={
     dashboard:0,
     live:1,
-    weather:2,
-    map:3,
-    planner:4,
-    technical:5,
-    pois:6,
-    logbook:7,
-    costs:8,
-    finance:9,
-    settings:10,
-    boat:11
+    map:2,
+    planner:3,
+    technical:4,
+    pois:5,
+    logbook:6,
+    costs:7,
+    finance:8,
+    settings:9,
+    boat:10
   };
   const button=buttons[map[id]];
 
   if(button)showTab(id,button);
   if(id==='live')initLiveMode();
-  if(id==='weather')initWeatherDashboard();
   if(id==='map')initMap();
   if(id==='planner')initPlanner();
   if(id==='technical')initTechnicalDashboard();
@@ -5582,22 +5580,8 @@ async function removeDashboardPhoto(){
   settingsCache.dashboard_photo_path=null;await loadDashboardPhoto();
 }
 
-function loadSettingsForm(){
-  if(!settingsCache)return;
-  $('settingBoatName').value=settingsCache.boat_name||'Serenity';
-  $('settingFuelPrice').value=settingsCache.fuel_price??'';
-  $('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';
-  $('settingTankCapacity').value=settingsCache.tank_capacity??'';
-  ms670LoadProfile();
-  ms711RenderBoatDimensionsState();
-}
+function loadSettingsForm(){if(!settingsCache)return;$('settingBoatName').value=settingsCache.boat_name||'Serenity';$('settingFuelPrice').value=settingsCache.fuel_price??'';$('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';$('settingTankCapacity').value=settingsCache.tank_capacity??''}
 async function saveSettings(){
-  if(!ms711SaveBoatDimensionsFromSettings()){
-    $('settingsMsg').textContent='Vul eerst alle bootafmetingen in.';
-    $('settingsMsg').className='status small warning';
-    return;
-  }
-
   const row={
     boat_id:currentBoat.id,
     boat_name:$('settingBoatName').value.trim()||'Serenity',
@@ -5612,9 +5596,7 @@ async function saveSettings(){
   if(error)return alert(error.message);
 
   settingsCache={...(settingsCache||{}),...row};
-  ms670SaveProfile();
-  ms711RenderBoatDimensionsState();
-  $('settingsMsg').textContent='Bootinstellingen en afmetingen opgeslagen ✅';
+  $('settingsMsg').textContent='Instellingen opgeslagen ✅';
   $('settingsMsg').classList.remove('hidden');
   await loadDashboardPhoto();
   previewFuelCalculation();
@@ -5772,567 +5754,6 @@ function writePlannerDrafts(plans){
   }
 }
 
-
-const PLANNER_EXTERNAL_LOCATION_VERSION='v1';
-
-function plannerExternalLocationStorageKey(){
-  return `mijnserenity-planner-locations-${PLANNER_EXTERNAL_LOCATION_VERSION}-${currentBoat?.id||'geen-boot'}`;
-}
-
-function plannerLoadExternalPoints(){
-  try{
-    const stored=JSON.parse(
-      localStorage.getItem(plannerExternalLocationStorageKey())||'[]'
-    );
-
-    plannerExternalPoints=(Array.isArray(stored)?stored:[])
-      .map(point=>({
-        ref:String(point?.ref||''),
-        label:String(point?.label||'').trim(),
-        place:String(point?.place||'').trim(),
-        address:String(point?.address||'').trim(),
-        category:String(point?.category||'Online locatie').trim(),
-        lat:Number(point?.lat),
-        lon:Number(point?.lon),
-        source:String(point?.source||'online')
-      }))
-      .filter(point=>
-        point.ref&&
-        point.label&&
-        Number.isFinite(point.lat)&&
-        Number.isFinite(point.lon)
-      )
-      .slice(0,40);
-  }catch(error){
-    console.warn('Online plannerlocaties laden mislukt:',error);
-    plannerExternalPoints=[];
-  }
-}
-
-function plannerSaveExternalPoints(){
-  try{
-    localStorage.setItem(
-      plannerExternalLocationStorageKey(),
-      JSON.stringify(plannerExternalPoints.slice(0,40))
-    );
-  }catch(error){
-    console.warn('Online plannerlocaties bewaren mislukt:',error);
-  }
-}
-
-function plannerExternalPointByRef(ref){
-  return plannerExternalPoints.find(
-    point=>String(point.ref)===String(ref)
-  )||null;
-}
-
-function plannerExternalRef(result){
-  const osmType=String(result?.osm_type||'').trim();
-  const osmId=String(result?.osm_id||'').trim();
-
-  if(osmType&&osmId){
-    return `online:${osmType}:${osmId}`;
-  }
-
-  const lat=Number(result?.lat);
-  const lon=Number(result?.lon);
-  const label=String(
-    result?.name||
-    result?.display_name||
-    'locatie'
-  )
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g,'-')
-    .replace(/^-+|-+$/g,'')
-    .slice(0,48);
-
-  return `online:${label}:${lat.toFixed(5)}:${lon.toFixed(5)}`;
-}
-
-function plannerSearchRoleConfig(role){
-  const configs={
-    from:{
-      input:'plannerFromSearch',
-      results:'plannerFromSearchResults',
-      select:'plannerFrom'
-    },
-    to:{
-      input:'plannerToSearch',
-      results:'plannerToSearchResults',
-      select:'plannerTo'
-    },
-    stop:{
-      input:'plannerStopSearch',
-      results:'plannerStopSearchResults',
-      select:'plannerStopSelect'
-    }
-  };
-
-  return configs[role]||null;
-}
-
-function plannerSearchInputValue(role){
-  const config=plannerSearchRoleConfig(role);
-  return String($(config?.input)?.value||'').trim();
-}
-
-function plannerSearchGoogleUrl(query,point=null){
-  const text=point
-    ?[
-        point.label,
-        point.address,
-        point.place
-      ].filter(Boolean).join(' ')
-    :String(query||'').trim();
-
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}`;
-}
-
-function openPlannerSearchInGoogle(role,index=null){
-  const query=plannerSearchInputValue(role);
-  const result=Number.isInteger(index)
-    ?plannerLocationSearchResults?.[role]?.[index]
-    :null;
-
-  const url=plannerSearchGoogleUrl(
-    query,
-    result?.point||null
-  );
-
-  window.open(url,'_blank','noopener,noreferrer');
-}
-
-function plannerSearchKeydown(event,role){
-  if(event.key!=='Enter')return;
-  event.preventDefault();
-  searchPlannerLocations(role);
-}
-
-function plannerSearchCategory(result){
-  const type=String(result?.type||'').toLowerCase();
-  const category=String(result?.category||'').toLowerCase();
-  const addresstype=String(result?.addresstype||'').toLowerCase();
-  const joined=`${type} ${category} ${addresstype}`;
-
-  if(/marina|harbour|harbor|haven|boatyard/.test(joined))return 'Haven';
-  if(/lock|sluis/.test(joined))return 'Sluis';
-  if(/bridge|brug/.test(joined))return 'Brug';
-  if(/restaurant|fast_food|cafe|pub/.test(joined))return 'Horeca';
-  if(/fuel|tankstation|gas_station/.test(joined))return 'Tankplaats';
-  if(/supermarket|convenience|shop/.test(joined))return 'Winkel';
-  if(/city|town|village|municipality|place/.test(joined))return 'Plaats';
-  return 'Online locatie';
-}
-
-function plannerSearchPlace(result){
-  const address=result?.address||{};
-  return String(
-    address.city||
-    address.town||
-    address.village||
-    address.municipality||
-    address.hamlet||
-    address.county||
-    ''
-  ).trim();
-}
-
-function plannerNormalizeOnlineResult(result){
-  const lat=Number(result?.lat);
-  const lon=Number(result?.lon);
-  if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
-
-  const place=plannerSearchPlace(result);
-  const named=String(
-    result?.namedetails?.name_nl||
-    result?.namedetails?.name||
-    result?.name||
-    ''
-  ).trim();
-
-  const display=String(result?.display_name||'').trim();
-  const firstDisplayPart=display.split(',')[0]?.trim();
-  const label=named||firstDisplayPart||place||'Online locatie';
-
-  return {
-    ref:plannerExternalRef(result),
-    label,
-    place,
-    address:display,
-    category:plannerSearchCategory(result),
-    lat,
-    lon,
-    source:'online-map',
-    osmType:String(result?.osm_type||''),
-    osmId:String(result?.osm_id||'')
-  };
-}
-
-function plannerLocalSearchResults(query){
-  const needle=String(query||'').trim().toLocaleLowerCase('nl');
-  if(!needle)return [];
-
-  return plannerSortedPois()
-    .filter(poi=>{
-      const haystack=[
-        poi.name,
-        poi.place,
-        poi.address,
-        poi.category,
-        poi.description
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLocaleLowerCase('nl');
-
-      return haystack.includes(needle);
-    })
-    .slice(0,8)
-    .map(poi=>({
-      kind:'poi',
-      point:plannerPointFromPoi(poi),
-      label:poi.name||'POI',
-      subtitle:[
-        poi.category,
-        poi.place,
-        poi.address
-      ].filter(Boolean).join(' · ')
-    }));
-}
-
-function plannerOnlineSearchQuery(query){
-  const text=String(query||'').trim();
-  if(!text)return '';
-
-  const nauticalTerms=[
-    'haven','jachthaven','marina','passantenhaven','sluis','brug',
-    'aanlegplaats','tankstation','restaurant','supermarkt','poi'
-  ];
-
-  const lower=text.toLocaleLowerCase('nl');
-  const hasNauticalTerm=nauticalTerms.some(term=>lower.includes(term));
-
-  return hasNauticalTerm
-    ?text
-    :text;
-}
-
-async function plannerFetchOnlineLocations(query,signal){
-  const normalizedQuery=plannerOnlineSearchQuery(query);
-  const cacheKey=normalizedQuery.toLocaleLowerCase('nl');
-
-  if(plannerLocationSearchCache.has(cacheKey)){
-    return plannerLocationSearchCache.get(cacheKey);
-  }
-
-  const wait=Math.max(
-    0,
-    1100-(Date.now()-Number(plannerLocationSearchLastRequestAt||0))
-  );
-  if(wait)await new Promise(resolve=>setTimeout(resolve,wait));
-
-  plannerLocationSearchLastRequestAt=Date.now();
-
-  const params=new URLSearchParams({
-    q:normalizedQuery,
-    format:'jsonv2',
-    limit:'14',
-    countrycodes:'nl,be,de',
-    addressdetails:'1',
-    namedetails:'1',
-    extratags:'1',
-    dedupe:'1',
-    'accept-language':'nl'
-  });
-
-  const response=await fetch(
-    `https://nominatim.openstreetmap.org/search?${params.toString()}`,
-    {
-      headers:{Accept:'application/json'},
-      signal
-    }
-  );
-
-  if(!response.ok){
-    throw new Error(`Online kaartzoeker gaf fout ${response.status}.`);
-  }
-
-  const payload=await response.json();
-  const points=(Array.isArray(payload)?payload:[])
-    .map(plannerNormalizeOnlineResult)
-    .filter(Boolean);
-
-  const seen=new Set();
-  const unique=points.filter(point=>{
-    const key=[
-      point.label.toLocaleLowerCase('nl'),
-      point.lat.toFixed(5),
-      point.lon.toFixed(5)
-    ].join('|');
-
-    if(seen.has(key))return false;
-    seen.add(key);
-    return true;
-  }).slice(0,12);
-
-  plannerLocationSearchCache.set(cacheKey,unique);
-  return unique;
-}
-
-function plannerRenderSearchResults(role,items=[],state=''){
-  const config=plannerSearchRoleConfig(role);
-  const container=$(config?.results);
-  if(!container)return;
-
-  if(state==='loading'){
-    container.innerHTML=`
-      <div class="planner-location-search-state">
-        <span class="planner-search-spinner"></span>
-        Online locaties zoeken…
-      </div>
-    `;
-    container.classList.remove('hidden');
-    return;
-  }
-
-  if(state==='error'){
-    container.innerHTML=`
-      <div class="planner-location-search-state error">
-        Zoeken lukt nu niet. Probeer opnieuw of gebruik de Google Maps-knop.
-      </div>
-    `;
-    container.classList.remove('hidden');
-    return;
-  }
-
-  if(!items.length){
-    container.innerHTML=`
-      <div class="planner-location-search-state">
-        Geen locaties gevonden. Probeer een plaatsnaam of specifieker trefwoord.
-      </div>
-    `;
-    container.classList.remove('hidden');
-    return;
-  }
-
-  plannerLocationSearchResults[role]=items;
-
-  container.innerHTML=items.map((item,index)=>{
-    const point=item.point;
-    const icon=item.kind==='poi'
-      ?String(point?.category||'')==='Haven'?'⚓':'⭐'
-      :point?.category==='Haven'?'⚓'
-        :point?.category==='Sluis'?'🚧'
-        :point?.category==='Brug'?'🌉'
-        :'📍';
-
-    const subtitle=item.subtitle||[
-      point?.category,
-      point?.place,
-      point?.address
-    ].filter(Boolean).join(' · ');
-
-    return `
-      <article class="planner-location-result">
-        <button type="button" class="planner-location-result-main"
-          onclick="choosePlannerLocationSearchResult('${role}',${index})">
-          <span class="planner-location-result-icon">${icon}</span>
-          <span>
-            <strong>${esc(item.label||point?.label||'Locatie')}</strong>
-            <small>${esc(subtitle||'GPS-locatie')}</small>
-          </span>
-          <b>Gebruik</b>
-        </button>
-        <button type="button" class="planner-location-result-google"
-          onclick="openPlannerSearchInGoogle('${role}',${index})"
-          aria-label="Open deze locatie in Google Maps">G</button>
-      </article>
-    `;
-  }).join('');
-
-  container.classList.remove('hidden');
-}
-
-async function searchPlannerLocations(role){
-  const config=plannerSearchRoleConfig(role);
-  if(!config)return;
-
-  const query=plannerSearchInputValue(role);
-
-  if(query.length<2){
-    showAppToast('Typ minimaal twee letters, een plaats, haven of trefwoord.');
-    $(config.input)?.focus();
-    return;
-  }
-
-  const localItems=plannerLocalSearchResults(query);
-  plannerRenderSearchResults(role,localItems,'loading');
-
-  plannerLocationSearchController?.abort();
-  plannerLocationSearchController=new AbortController();
-
-  try{
-    const onlinePoints=await plannerFetchOnlineLocations(
-      query,
-      plannerLocationSearchController.signal
-    );
-
-    const onlineItems=onlinePoints.map(point=>({
-      kind:'external',
-      point,
-      label:point.label,
-      subtitle:[
-        point.category,
-        point.place,
-        point.address
-      ].filter(Boolean).join(' · ')
-    }));
-
-    const combined=[...localItems,...onlineItems];
-    const seen=new Set();
-
-    const unique=combined.filter(item=>{
-      const point=item.point||{};
-      const key=item.kind==='poi'
-        ?String(point.ref)
-        :[
-            String(point.label||'').toLocaleLowerCase('nl'),
-            Number(point.lat).toFixed(5),
-            Number(point.lon).toFixed(5)
-          ].join('|');
-
-      if(seen.has(key))return false;
-      seen.add(key);
-      return true;
-    }).slice(0,18);
-
-    plannerRenderSearchResults(role,unique);
-  }catch(error){
-    if(error?.name==='AbortError')return;
-    console.warn('Plannerlocaties zoeken mislukt:',error);
-
-    if(localItems.length){
-      plannerRenderSearchResults(role,localItems);
-      showAppToast('Alleen eigen POI’s gevonden; online zoeken is tijdelijk niet bereikbaar.');
-    }else{
-      plannerRenderSearchResults(role,[],'error');
-    }
-  }
-}
-
-function plannerRegisterExternalPoint(point){
-  const normalized={
-    ref:String(point?.ref||''),
-    label:String(point?.label||'Online locatie').trim(),
-    place:String(point?.place||'').trim(),
-    address:String(point?.address||'').trim(),
-    category:String(point?.category||'Online locatie').trim(),
-    lat:Number(point?.lat),
-    lon:Number(point?.lon),
-    source:String(point?.source||'online-map')
-  };
-
-  if(
-    !normalized.ref||
-    !Number.isFinite(normalized.lat)||
-    !Number.isFinite(normalized.lon)
-  ){
-    throw new Error('Deze online locatie heeft geen geldige GPS-positie.');
-  }
-
-  plannerExternalPoints=[
-    normalized,
-    ...plannerExternalPoints.filter(
-      existing=>String(existing.ref)!==normalized.ref
-    )
-  ].slice(0,40);
-
-  plannerSaveExternalPoints();
-  return normalized;
-}
-
-function choosePlannerLocationSearchResult(role,index){
-  const config=plannerSearchRoleConfig(role);
-  const item=plannerLocationSearchResults?.[role]?.[index];
-  if(!config||!item)return;
-
-  let ref='';
-
-  if(item.kind==='poi'){
-    ref=String(item.point?.ref||'');
-  }else{
-    const point=plannerRegisterExternalPoint(item.point);
-    ref=point.ref;
-    populatePlannerSelectors();
-  }
-
-  const select=$(config.select);
-  const input=$(config.input);
-  const results=$(config.results);
-
-  if(select)select.value=ref;
-  if(input)input.value=item.label||item.point?.label||'';
-  results?.classList.add('hidden');
-
-  plannerFormChanged();
-
-  if(role==='stop'){
-    showAppToast('Tussenstop gekozen. Tik nog op ＋ Toevoegen.');
-  }else{
-    showAppToast(
-      role==='from'
-        ?'Vertrekpunt gekozen.'
-        :'Bestemming gekozen.'
-    );
-  }
-}
-
-function plannerExternalSelectOptions(){
-  if(!plannerExternalPoints.length)return '';
-
-  return `
-    <optgroup label="Recent online gezocht">
-      ${plannerExternalPoints.map(point=>`
-        <option value="${esc(point.ref)}">
-          ${esc(
-            `${point.category==='Haven'?'⚓':'📍'} ${point.label}${point.place?' · '+point.place:''}`
-          )}
-        </option>
-      `).join('')}
-    </optgroup>
-  `;
-}
-
-function clearPlannerLocationSearch(role=''){
-  const roles=role?[role]:['from','to','stop'];
-
-  roles.forEach(item=>{
-    const config=plannerSearchRoleConfig(item);
-    if(!config)return;
-    const input=$(config.input);
-    const results=$(config.results);
-    if(input)input.value='';
-    if(results){
-      results.innerHTML='';
-      results.classList.add('hidden');
-    }
-    plannerLocationSearchResults[item]=[];
-  });
-}
-
-document.addEventListener('click',event=>{
-  const inside=event.target.closest?.(
-    '.planner-location-search, .planner-location-results'
-  );
-  if(inside)return;
-
-  ['from','to','stop'].forEach(role=>{
-    const config=plannerSearchRoleConfig(role);
-    $(config?.results)?.classList.add('hidden');
-  });
-});
-
-
 function plannerPoiHasLocation(poi){
   const position=getPoiMapPosition(poi);
   return Boolean(position?.valid);
@@ -6419,17 +5840,15 @@ function plannerSelectOptions({includeCurrent=false}={}){
       .sort((a,b)=>a.localeCompare(b,'nl'))
   ];
 
-  return currentOption+
-    plannerExternalSelectOptions()+
-    ordered.map(category=>`
-      <optgroup label="${esc(category)}">
-        ${groups.get(category).map(poi=>`
-          <option value="${esc(plannerPoiReference(poi))}">
-            ${esc(plannerOptionLabel(poi))}
-          </option>
-        `).join('')}
-      </optgroup>
-    `).join('');
+  return currentOption+ordered.map(category=>`
+    <optgroup label="${esc(category)}">
+      ${groups.get(category).map(poi=>`
+        <option value="${esc(plannerPoiReference(poi))}">
+          ${esc(plannerOptionLabel(poi))}
+        </option>
+      `).join('')}
+    </optgroup>
+  `).join('');
 }
 
 function populatePlannerSelectors(){
@@ -6494,7 +5913,6 @@ function initPlanner(){
     return;
   }
 
-  plannerLoadExternalPoints();
   populatePlannerSelectors();
   plannerSetDefaults();
   renderPlannerStops();
@@ -6609,7 +6027,6 @@ function addPlannerStop(){
 
   plannerStops.push(ref);
   select.value='';
-  clearPlannerLocationSearch('stop');
   renderPlannerStops();
   plannerFormChanged();
 }
@@ -6643,9 +6060,6 @@ function plannerRefLabel(ref){
   if(ref==='current'){
     return plannerCurrentPosition?.label||'Huidige positie';
   }
-
-  const external=plannerExternalPointByRef(ref);
-  if(external)return external.label||'Online locatie';
 
   const poi=plannerPoiByRef(ref);
   return poi?.name||'Onbekende POI';
@@ -6730,20 +6144,6 @@ async function resolvePlannerPoint(ref){
       plannerCurrentPosition=await plannerGeolocation();
     }
     return {...plannerCurrentPosition};
-  }
-
-  const external=plannerExternalPointByRef(ref);
-  if(external){
-    return {
-      ref:external.ref,
-      label:external.label,
-      place:external.place||'',
-      address:external.address||'',
-      category:external.category||'Online locatie',
-      lat:Number(external.lat),
-      lon:Number(external.lon),
-      source:external.source||'online-map'
-    };
   }
 
   const poi=plannerPoiByRef(ref);
@@ -7269,7 +6669,6 @@ function resetPlannerForm(){
   if($('plannerTitle'))$('plannerTitle').value='';
   if($('plannerNotes'))$('plannerNotes').value='';
 
-  clearPlannerLocationSearch();
   renderPlannerStops();
 
   $('plannerSummary')?.classList.add('hidden');
@@ -13008,16 +12407,15 @@ function captainNavigate(id, sourceButton=null){
   const map={
     dashboard:0,
     live:1,
-    weather:2,
-    map:3,
-    planner:4,
-    technical:5,
-    pois:6,
-    logbook:7,
-    costs:8,
-    finance:9,
-    settings:10,
-    boat:11
+    map:2,
+    planner:3,
+    technical:4,
+    pois:5,
+    logbook:6,
+    costs:7,
+    finance:8,
+    settings:9,
+    boat:10
   };
   const desktopButton=desktopButtons[map[id]];
 
@@ -13037,10 +12435,6 @@ function captainNavigate(id, sourceButton=null){
 
   if(id==='live'&&typeof initLiveMode==='function'){
     setTimeout(()=>initLiveMode(),80);
-  }
-
-  if(id==='weather'&&typeof initWeatherDashboard==='function'){
-    setTimeout(()=>initWeatherDashboard(),80);
   }
 
   if(id==='map'&&typeof initMap==='function'){
@@ -13158,15 +12552,9 @@ function createEmptyLiveState(){
     engineRpm:0,
     rudderAngle:0,
     weather:null,
-    weatherForecast:null,
-    weatherWarnings:[],
     weatherUpdatedAt:null,
     lastWeatherLat:null,
     lastWeatherLon:null,
-    weatherTimeline:[],
-    weatherWarnings:[],
-    weatherDaily:null,
-    weatherMapLayer:'wind',
     movingDetected:false,
     lastMovingAt:null,
     stationarySince:null,
@@ -14289,21 +13677,6 @@ function weatherCodeDescription(code){
   return 'Onbekend';
 }
 
-function weatherCodeIcon(code){
-  const value=Number(code);
-  if(value===0)return '☀️';
-  if([1,2].includes(value))return '⛅';
-  if(value===3)return '☁️';
-  if([45,48].includes(value))return '🌫️';
-  if([51,53,55,56,57].includes(value))return '🌦️';
-  if([61,63,65,66,67].includes(value))return '🌧️';
-  if([71,73,75,77].includes(value))return '❄️';
-  if([80,81,82].includes(value))return '🌦️';
-  if([85,86].includes(value))return '🌨️';
-  if([95,96,99].includes(value))return '⛈️';
-  return '🌤️';
-}
-
 function windKmhToBeaufort(kmh){
   const speed=Math.max(0,Number(kmh)||0);
   const limits=[1,6,12,20,29,39,50,62,75,89,103,118];
@@ -14328,268 +13701,7 @@ function weatherSummary(weather){
   const wind=Number.isFinite(Number(weather.windSpeed))
     ?formatWindBeaufort(weather.windSpeed,false)
     :'';
-  return [`${weatherCodeIcon(weather.weatherCode)} ${description}`,wind]
-    .filter(Boolean)
-    .join(' · ');
-}
-
-const MS710_WEATHER_MAP_LAYERS={
-  wind:{label:'Wind',overlay:'wind',caption:'Windkaart met richting en sterkte rond jouw actuele positie.'},
-  rain:{label:'Neerslag',overlay:'rain',caption:'Regen- en buienkaart om neerslag langs je route te volgen.'},
-  clouds:{label:'Bewolking',overlay:'clouds',caption:'Bewolkingskaart voor open lucht, zicht en wolkenvelden.'},
-  temp:{label:'Temperatuur',overlay:'temp',caption:'Temperatuurkaart voor gevoelstemperatuur en opwarming onderweg.'}
-};
-
-function weatherTimelineTimeLabel(value){
-  if(!value)return '—';
-  const date=new Date(value);
-  if(Number.isNaN(date.getTime()))return String(value).slice(11,16)||String(value);
-  return date.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
-}
-
-function weatherTimelineDayLabel(value){
-  if(!value)return '';
-  const date=new Date(value);
-  if(Number.isNaN(date.getTime()))return '';
-  return date.toLocaleDateString('nl-NL',{weekday:'short',day:'2-digit',month:'2-digit'});
-}
-
-function weatherWarningIcon(level){
-  if(level==='critical')return '🚨';
-  if(level==='warning')return '⚠️';
-  return '✅';
-}
-
-function ms710EmptyWeatherWarnings(){
-  return [{
-    level:'good',
-    title:'Geen directe weerswaarschuwingen',
-    text:'Op basis van de huidige verwachting zijn er geen directe waarschuwingen voor varen.'
-  }];
-}
-
-function analyseWeatherWarnings(current,timeline=[]){
-  const warnings=[];
-  const firstThunder=timeline.find(item=>[95,96,99].includes(Number(item.weatherCode)));
-  const denseFog=timeline.find(item=>[45,48].includes(Number(item.weatherCode)));
-  const maxRain=Math.max(
-    Number(current?.precipitation)||0,
-    ...timeline.map(item=>Number(item.precipitation)||0)
-  );
-  const maxWind=Math.max(
-    Number(current?.windSpeed)||0,
-    ...timeline.map(item=>Number(item.windSpeed)||0)
-  );
-  const maxGust=Math.max(
-    Number(current?.windGusts)||0,
-    ...timeline.map(item=>Number(item.windGusts)||0)
-  );
-
-  if(maxGust>=75){
-    warnings.push({
-      level:'critical',
-      title:'Zware windstoten verwacht',
-      text:`Windstoten kunnen oplopen tot ${windKmhToBeaufort(maxGust)} Bft (${maxGust.toFixed(0)} km/u). Houd rekening met lastige manoeuvres en open water.`
-    });
-  }else if(maxWind>=50||maxGust>=60){
-    warnings.push({
-      level:'warning',
-      title:'Stevige wind op komst',
-      text:`Verwachting tot ${windKmhToBeaufort(Math.max(maxWind,maxGust))} Bft. Controleer route, afmeren en comfort aan boord.`
-    });
-  }
-
-  if(firstThunder){
-    warnings.push({
-      level:'critical',
-      title:'Kans op onweer',
-      text:`Rond ${weatherTimelineTimeLabel(firstThunder.time)} wordt onweer verwacht. Zoek tijdig beschutting en let op windstoten.`
-    });
-  }
-
-  if(maxRain>=5){
-    warnings.push({
-      level:'warning',
-      title:'Flinke regen of buien',
-      text:`Neerslag kan pieken tot ${maxRain.toFixed(1)} mm per uur. Houd rekening met zichtverlies en nat dek.`
-    });
-  }
-
-  if(denseFog){
-    warnings.push({
-      level:'warning',
-      title:'Mist of beperkt zicht',
-      text:`Mist wordt verwacht rond ${weatherTimelineTimeLabel(denseFog.time)}. Gebruik extra voorzichtigheid bij bruggen en drukke trajecten.`
-    });
-  }
-
-  if(!warnings.length)return ms710EmptyWeatherWarnings();
-  return warnings;
-}
-
-function renderWeatherWarnings(){
-  const container=$('ms710WeatherWarnings');
-  if(!container)return;
-  const warnings=(liveNavState.weatherWarnings||[]).length
-    ?liveNavState.weatherWarnings
-    :ms710EmptyWeatherWarnings();
-
-  container.innerHTML=warnings.map(item=>`
-    <article class="ms710-weather-warning ${item.level||'good'}">
-      <span class="ms710-weather-warning-icon">${weatherWarningIcon(item.level)}</span>
-      <div>
-        <strong>${esc(item.title||'Waarschuwing')}</strong>
-        <small>${esc(item.text||'')}</small>
-      </div>
-    </article>
-  `).join('');
-}
-
-function renderWeatherTimeline(){
-  const container=$('ms710WeatherTimeline');
-  const meta=$('ms710WeatherTimelineMeta');
-  if(!container)return;
-
-  const timeline=Array.isArray(liveNavState.weatherTimeline)
-    ?liveNavState.weatherTimeline
-    :[];
-
-  if(!timeline.length){
-    container.innerHTML=`
-      <article class="ms710-weather-hour empty">
-        <strong>Wachten op GPS</strong>
-        <small>Zodra de locatie bekend is, verschijnt hier een interactieve tijdlijn voor de komende uren.</small>
-      </article>
-    `;
-    if(meta)meta.textContent='Komt beschikbaar na het eerste GPS-punt.';
-    return;
-  }
-
-  const cards=timeline
-    .filter((_,index)=>index<24&&index%2===0)
-    .slice(0,12);
-
-  container.innerHTML=cards.map(item=>`
-    <article class="ms710-weather-hour">
-      <span class="ms710-weather-hour-time">${esc(weatherTimelineTimeLabel(item.time))}</span>
-      <small class="ms710-weather-hour-day">${esc(weatherTimelineDayLabel(item.time))}</small>
-      <div class="ms710-weather-hour-icon">${weatherCodeIcon(item.weatherCode)}</div>
-      <strong>${Number.isFinite(Number(item.temperature))?`${Number(item.temperature).toFixed(0)}°`:'–'}</strong>
-      <small>${esc(weatherCodeDescription(item.weatherCode))}</small>
-      <div class="ms710-weather-hour-meta">
-        <span>💨 ${Number.isFinite(Number(item.windSpeed))?formatWindBeaufort(item.windSpeed,false):'–'}</span>
-        <span>🌧️ ${Number.isFinite(Number(item.precipitationProbability))?`${Math.round(Number(item.precipitationProbability))}%`:'–'}</span>
-      </div>
-    </article>
-  `).join('');
-
-  if(meta){
-    const first=cards[0]?.time;
-    const last=cards.at(-1)?.time;
-    meta.textContent=first&&last
-      ?`Tijdlijn van ${weatherTimelineTimeLabel(first)} tot ${weatherTimelineTimeLabel(last)}.`
-      :'Komende uren';
-  }
-}
-
-function ms710WeatherMapReferencePoint(){
-  const latest=liveNavState.points?.at?.(-1);
-  if(latest&&Number.isFinite(Number(latest.lat))&&Number.isFinite(Number(latest.lon))){
-    return {lat:Number(latest.lat),lon:Number(latest.lon),label:'actuele GPS-locatie'};
-  }
-  if(Number.isFinite(Number(liveNavState.lastWeatherLat))&&Number.isFinite(Number(liveNavState.lastWeatherLon))){
-    return {lat:Number(liveNavState.lastWeatherLat),lon:Number(liveNavState.lastWeatherLon),label:'laatste weerlocatie'};
-  }
-  return {lat:52.2215,lon:6.8937,label:'standaardpositie Enschede'};
-}
-
-function ms710WeatherMapUrl(layerKey){
-  const layer=MS710_WEATHER_MAP_LAYERS[layerKey]||MS710_WEATHER_MAP_LAYERS.wind;
-  const point=ms710WeatherMapReferencePoint();
-  const params=new URLSearchParams({
-    lat:String(point.lat),
-    lon:String(point.lon),
-    detailLat:String(point.lat),
-    detailLon:String(point.lon),
-    width:'650',
-    height:'420',
-    zoom:'7',
-    level:'surface',
-    overlay:layer.overlay,
-    product:'ecmwf',
-    menu:'',
-    message:'true',
-    marker:'true',
-    calendar:'now',
-    pressure:'',
-    type:'map',
-    location:'coordinates',
-    detail:'true',
-    metricWind:'km/h',
-    metricTemp:'°C',
-    radarRange:'-1'
-  });
-  return `https://embed.windy.com/embed2.html?${params.toString()}`;
-}
-
-function renderWeatherMap(){
-  const iframe=$('ms710WeatherMapFrame');
-  const caption=$('ms710WeatherMapCaption');
-  if(!iframe)return;
-
-  const activeLayer=liveNavState.weatherMapLayer||'wind';
-  iframe.src=ms710WeatherMapUrl(activeLayer);
-
-  const layer=MS710_WEATHER_MAP_LAYERS[activeLayer]||MS710_WEATHER_MAP_LAYERS.wind;
-  const point=ms710WeatherMapReferencePoint();
-  if(caption){
-    caption.textContent=`${layer.caption} Kaart gecentreerd op ${point.label}.`;
-  }
-
-  document
-    .querySelectorAll('.ms710-weather-map-tab')
-    .forEach(button=>{
-      button.classList.toggle('active',button.dataset.layer===activeLayer);
-    });
-}
-
-function ms710SetWeatherMapLayer(layerKey){
-  liveNavState.weatherMapLayer=MS710_WEATHER_MAP_LAYERS[layerKey]
-    ?layerKey
-    :'wind';
-  persistLiveState();
-  renderWeatherMap();
-}
-
-function renderWeatherHero(){
-  const weather=liveNavState.weather;
-  const icon=$('ms710WeatherHeroIcon');
-  const title=$('ms710WeatherHeroTitle');
-  const meta=$('ms710WeatherHeroMeta');
-  if(icon)icon.textContent=weather?weatherCodeIcon(weather.weatherCode):'🌤️';
-  if(title){
-    title.textContent=weather
-      ?`${weatherCodeDescription(weather.weatherCode)} · ${Number.isFinite(Number(weather.temperature))?`${Number(weather.temperature).toFixed(1)} °C`:'–'}`
-      :'Wachten op GPS';
-  }
-  if(meta){
-    const wind=weather&&Number.isFinite(Number(weather.windSpeed))
-      ?formatWindBeaufort(weather.windSpeed,true)
-      :'—';
-    const rain=weather&&Number.isFinite(Number(weather.precipitation))
-      ?`${Number(weather.precipitation).toFixed(1)} mm`
-      :'—';
-    meta.textContent=weather
-      ?`Wind ${wind} · Neerslag ${rain} · ${liveNavState.weatherWarnings?.length?liveNavState.weatherWarnings.length:'geen'} melding(en).`
-      :'Weerkaarten, tijdlijn en waarschuwingen verschijnen automatisch.';
-  }
-}
-
-function renderWeatherSuite(){
-  renderWeatherHero();
-  renderWeatherWarnings();
-  renderWeatherTimeline();
-  renderWeatherMap();
+  return [description,wind].filter(Boolean).join(' · ');
 }
 
 function liveWeatherDistanceKm(lat,lon){
@@ -14608,7 +13720,7 @@ function renderLiveWeather(){
   const weather=liveNavState.weather;
 
   $('liveWeatherTemp').textContent=weather&&Number.isFinite(Number(weather.temperature))
-    ?`${weatherCodeIcon(weather.weatherCode)} ${Number(weather.temperature).toFixed(1)}°`
+    ?`${Number(weather.temperature).toFixed(1)}°`
     :'–';
   $('liveWeatherShort').textContent=weatherSummary(weather);
 
@@ -14628,7 +13740,7 @@ function renderLiveWeather(){
     ?`${Number(weather.precipitation).toFixed(1)} mm`
     :'–';
   $('liveWeatherDescription').textContent=weather
-    ?`${weatherCodeIcon(weather.weatherCode)} ${weatherCodeDescription(weather.weatherCode)}`
+    ?weatherCodeDescription(weather.weatherCode)
     :'Wachten op GPS';
 
   if(weather&&liveNavState.weatherUpdatedAt){
@@ -14638,8 +13750,6 @@ function renderLiveWeather(){
     });
     $('liveWeatherStatus').textContent=`Actueel weer bij de route · bijgewerkt ${time}`;
   }
-
-  renderWeatherSuite();
 }
 
 async function fetchLiveWeather(lat,lon,force=false){
@@ -14652,7 +13762,7 @@ async function fetchLiveWeather(lat,lon,force=false){
     return;
   }
 
-  $('liveWeatherStatus').textContent='Actueel weer en verwachting ophalen…';
+  $('liveWeatherStatus').textContent='Actueel weer ophalen…';
 
   try{
     const params=new URLSearchParams({
@@ -14667,23 +13777,6 @@ async function fetchLiveWeather(lat,lon,force=false){
         'wind_gusts_10m',
         'wind_direction_10m'
       ].join(','),
-      hourly:[
-        'temperature_2m',
-        'precipitation',
-        'precipitation_probability',
-        'weather_code',
-        'wind_speed_10m',
-        'wind_gusts_10m'
-      ].join(','),
-      daily:[
-        'weather_code',
-        'temperature_2m_max',
-        'temperature_2m_min',
-        'precipitation_probability_max',
-        'wind_speed_10m_max',
-        'wind_gusts_10m_max'
-      ].join(','),
-      forecast_days:'3',
       wind_speed_unit:'kmh',
       timezone:'auto'
     });
@@ -14704,18 +13797,6 @@ async function fetchLiveWeather(lat,lon,force=false){
       throw new Error('Geen actuele weergegevens ontvangen.');
     }
 
-    const hourly=payload?.hourly||{};
-    const timeline=(hourly.time||[]).map((time,index)=>({
-      time,
-      temperature:Number(hourly.temperature_2m?.[index]),
-      precipitation:Number(hourly.precipitation?.[index]),
-      precipitationProbability:Number(hourly.precipitation_probability?.[index]),
-      weatherCode:Number(hourly.weather_code?.[index]),
-      windSpeed:Number(hourly.wind_speed_10m?.[index]),
-      windGusts:Number(hourly.wind_gusts_10m?.[index])
-    })).filter(item=>item.time).slice(0,24);
-
-    const daily=payload?.daily;
     liveNavState.weather={
       temperature:Number(current.temperature_2m),
       apparentTemperature:Number(current.apparent_temperature),
@@ -14725,19 +13806,6 @@ async function fetchLiveWeather(lat,lon,force=false){
       windGusts:Number(current.wind_gusts_10m),
       windDirection:Number(current.wind_direction_10m)
     };
-    liveNavState.weatherTimeline=timeline;
-    liveNavState.weatherDaily=daily?{
-      weatherCode:Number(daily.weather_code?.[0]),
-      tempMax:Number(daily.temperature_2m_max?.[0]),
-      tempMin:Number(daily.temperature_2m_min?.[0]),
-      precipitationProbabilityMax:Number(daily.precipitation_probability_max?.[0]),
-      windSpeedMax:Number(daily.wind_speed_10m_max?.[0]),
-      windGustsMax:Number(daily.wind_gusts_10m_max?.[0])
-    }:null;
-    liveNavState.weatherWarnings=analyseWeatherWarnings(
-      liveNavState.weather,
-      timeline
-    );
     liveNavState.weatherUpdatedAt=Date.now();
     liveNavState.lastWeatherLat=Number(lat);
     liveNavState.lastWeatherLon=Number(lon);
@@ -14747,7 +13815,6 @@ async function fetchLiveWeather(lat,lon,force=false){
   }catch(error){
     console.error('Live weer ophalen mislukt:',error);
     $('liveWeatherStatus').textContent='Weer kon niet worden opgehaald. Tik op Weer om opnieuw te proberen.';
-    renderWeatherSuite();
   }
 }
 
@@ -15273,7 +14340,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.1.1';
+const APP_VERSION='7.0.1';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -15395,7 +14462,6 @@ window.addEventListener('load',()=>{
   updateInstallTile();
   updateConnectionStatus();
   registerMijnSerenityServiceWorker();
-  try{renderWeatherSuite();}catch(error){console.warn('Weather suite initialisatie mislukt:',error);}
 });
 
 
@@ -16888,7 +15954,7 @@ function renderLiveTripMetricBalloons(metrics){
       ?['🛞',metrics.rudder]
       :null,
     metrics.weather
-      ?[weatherIconFromText(metrics.weather),metrics.weather]
+      ?['🌤️',metrics.weather]
       :null,
     metrics.routePois
       ?['🧭',metrics.routePois]
@@ -19367,16 +18433,13 @@ function ms660RenderCommandCenter(){
   if(Number.isFinite(wind)){
     ms660SetText(
       'ms660Wind',
-      `${weatherCodeIcon(weather.weatherCode)} ${windKmhToBeaufort(wind)} Bft${direction?` ${direction}`:''}`
+      `${windKmhToBeaufort(wind)} Bft${direction?` ${direction}`:''}`
     );
     ms660SetText(
       'ms660WindDetail',
-      [
-        weatherCodeDescription(weather.weatherCode),
-        Number.isFinite(gusts)
-          ?`windstoten ${windKmhToBeaufort(gusts)} Bft`
-          :`${ms660Number(wind,1)} km/u`
-      ].filter(Boolean).join(' · ')
+      Number.isFinite(gusts)
+        ?`windstoten ${windKmhToBeaufort(gusts)} Bft`
+        :`${ms660Number(wind,1)} km/u`
     );
   }else{
     ms660SetText('ms660Wind','–');
@@ -19649,103 +18712,26 @@ function ms670ProfileKey(){
 }
 
 function ms670Number(value){
-  const number=Number(String(value??'').replace(',','.'));
+  const number=Number(value);
   return Number.isFinite(number)&&number>0
     ?number
     :null;
 }
 
-function ms711ReadStoredProfile(){
-  try{
-    return JSON.parse(
-      localStorage.getItem(ms670ProfileKey())||'null'
-    )||{};
-  }catch{
-    return {};
-  }
-}
-
-function ms711BoatDimensionsComplete(profile=ms670BoatProfile()){
-  return ['length','width','draft','airDraft'].every(
-    key=>Number.isFinite(Number(profile?.[key]))&&Number(profile[key])>0
-  );
-}
-
-function ms711BoatDimensionsText(profile=ms670BoatProfile()){
-  if(!ms711BoatDimensionsComplete(profile))return 'Nog niet volledig ingevuld';
-  return `${plannerNumber(profile.length,2)} × ${plannerNumber(profile.width,2)} m · diepgang ${plannerNumber(profile.draft,2)} m · hoogte ${plannerNumber(profile.airDraft,2)} m`;
-}
-
-function ms711RenderBoatDimensionsState(){
-  const profile=ms670BoatProfile();
-  const complete=ms711BoatDimensionsComplete(profile);
-  const summary=$('ms711PlannerBoatProfileSummary');
-  const plannerStatus=$('ms711PlannerBoatProfileStatus');
-  const status=$('settingBoatDimensionsStatus');
-  const badge=$('settingBoatDimensionsBadge');
-
-  if(summary)summary.textContent=ms711BoatDimensionsText(profile);
-  if(plannerStatus){
-    plannerStatus.textContent=complete
-      ?'Deze maten worden automatisch gebruikt bij iedere Smart Route-check.'
-      :'Vul de ontbrekende bootmaten in bij Instellingen voordat je een route berekent.';
-    plannerStatus.className=complete?'success':'warning';
-  }
-  if(status){
-    status.textContent=complete
-      ?'Scheepsmaten compleet en beschikbaar voor Smart Route ✅'
-      :'Vul lengte, breedte, diepgang en doorvaarthoogte volledig in.';
-    status.className=`status small ${complete?'success':'warning'}`;
-  }
-  if(badge){
-    badge.textContent=complete?'Compleet':'Verplicht';
-    badge.className=`ms711-dimensions-badge ${complete?'complete':'warning'}`;
-  }
-  return complete;
-}
-
-function ms711SaveBoatDimensionsFromSettings({quiet=false}={}){
-  const profile=ms670BoatProfile();
-  const complete=ms711BoatDimensionsComplete(profile);
-  if(!complete){
-    ms711RenderBoatDimensionsState();
-    if(!quiet)showAppToast('Vul eerst alle bootafmetingen in.');
-    return false;
-  }
-
-  try{
-    localStorage.setItem(ms670ProfileKey(),JSON.stringify(profile));
-  }catch(error){
-    console.warn('Bootafmetingen lokaal bewaren mislukt:',error);
-  }
-  ms711RenderBoatDimensionsState();
-  return true;
-}
-
-function ms711OpenBoatSettings(){
-  captainNavigate('settings');
-  setPanelCollapsed('settingsFormWrap','settingsFormToggle',false);
-  setTimeout(()=>{
-    $('settingBoatLength')?.scrollIntoView({behavior:'smooth',block:'center'});
-    $('settingBoatWidth')?.focus();
-  },160);
-}
-
 function ms670BoatProfile(){
-  const saved=ms711ReadStoredProfile();
   return {
-    length:ms670Number($('settingBoatLength')?.value)||ms670Number(saved?.length)||11.2,
-    width:ms670Number($('settingBoatWidth')?.value)||ms670Number(saved?.width),
-    draft:ms670Number($('settingBoatDraft')?.value)||ms670Number(saved?.draft),
-    airDraft:ms670Number($('settingBoatAirDraft')?.value)||ms670Number(saved?.airDraft),
+    length:ms670Number($('ms670BoatLength')?.value),
+    width:ms670Number($('ms670BoatWidth')?.value),
+    draft:ms670Number($('ms670BoatDraft')?.value),
+    airDraft:ms670Number($('ms670BoatAirDraft')?.value),
     dailyHours:
-      ms670Number($('ms670DailyHours')?.value)||ms670Number(saved?.dailyHours)||6,
+      ms670Number($('ms670DailyHours')?.value)||6,
     startTime:
-      String($('ms670StartTime')?.value||saved?.startTime||'09:00'),
+      String($('ms670StartTime')?.value||'09:00'),
     bridgeDelayMinutes:
-      Number($('ms670BridgeDelay')?.value||saved?.bridgeDelayMinutes||15),
+      Number($('ms670BridgeDelay')?.value||15),
     lockDelayMinutes:
-      Number($('ms670LockDelay')?.value||saved?.lockDelayMinutes||30)
+      Number($('ms670LockDelay')?.value||30)
   };
 }
 
@@ -19784,10 +18770,10 @@ function ms670LoadProfile(){
   }catch{}
 
   const values={
-    settingBoatLength:saved?.length||11.2,
-    settingBoatWidth:saved?.width||'',
-    settingBoatDraft:saved?.draft||'',
-    settingBoatAirDraft:saved?.airDraft||'',
+    ms670BoatLength:saved?.length||11.2,
+    ms670BoatWidth:saved?.width||'',
+    ms670BoatDraft:saved?.draft||'',
+    ms670BoatAirDraft:saved?.airDraft||'',
     ms670DailyHours:saved?.dailyHours||6,
     ms670StartTime:saved?.startTime||'09:00',
     ms670BridgeDelay:saved?.bridgeDelayMinutes||15,
@@ -19803,12 +18789,10 @@ function ms670LoadProfile(){
 
   if(badge){
     badge.textContent=saved
-      ?'Voorkeuren geladen'
-      :'Voorkeuren opslaan';
+      ?'Profiel geladen'
+      :'Vul maten aan';
     badge.classList.toggle('saved',Boolean(saved));
   }
-
-  ms711RenderBoatDimensionsState();
 }
 
 function ms670PlannerProfileChanged(){
@@ -19913,8 +18897,7 @@ function ms670ObjectCategory(tags={}){
   )return 'Sluis';
 
   if(
-    tags.bridge||
-    tags.man_made==='bridge'||
+    tags.bridge==='movable'||
     tags['seamark:type']==='bridge'||
     tags['bridge:movable']||
     tags.maxheight||
@@ -19937,7 +18920,6 @@ function ms670ObjectCategory(tags={}){
   if(tags.leisure==='slipway')return 'Trailerhelling';
   if(tags.mooring)return 'Aanlegplaats';
   if(tags.tourism==='attraction')return 'Bezienswaardigheid';
-  if(tags.boat==='no'||tags.waterway==='weir')return 'Vaarbeperking';
 
   return 'Vaarobject';
 }
@@ -19959,8 +18941,7 @@ function ms670ObjectName(tags,category){
       Drinkwater:'Drinkwaterpunt',
       Trailerhelling:'Trailerhelling',
       Aanlegplaats:'Aanlegplaats',
-      Bezienswaardigheid:'Bezienswaardigheid',
-      Vaarbeperking:'Vaarbeperking'
+      Bezienswaardigheid:'Bezienswaardigheid'
     }[category]||
     'Vaarobject'
   );
@@ -19993,81 +18974,30 @@ function ms670InfrastructureQuery(bounds){
     bounds.east
   ].map(value=>Number(value).toFixed(6)).join(',');
 
-  return `[out:json][timeout:25];
+  return `[out:json][timeout:32];
 (
   nwr["waterway"="lock_gate"](${box});
   nwr["waterway"="lock"](${box});
-  nwr["lock"](${box});
-  nwr["bridge"](${box});
-  nwr["man_made"="bridge"](${box});
+  nwr["lock"="yes"](${box});
+  nwr["bridge"="movable"](${box});
   nwr["seamark:type"="bridge"](${box});
-  nwr["maxheight"](${box});
-  nwr["maxheight:physical"](${box});
-  nwr["maxwidth"](${box});
-  nwr["maxlength"](${box});
-  nwr["maxdraft"](${box});
-  nwr["maxdraught"](${box});
-  nwr["boat"="no"](${box});
-  nwr["waterway"="weir"](${box});
+  nwr["bridge"]["maxheight"](${box});
+  nwr["bridge"]["maxheight:physical"](${box});
   nwr["leisure"="marina"](${box});
   nwr["harbour"="yes"](${box});
   nwr["seamark:type"="harbour"](${box});
   nwr["amenity"="fuel"](${box});
+  nwr["amenity"="restaurant"](${box});
+  nwr["amenity"="cafe"](${box});
+  nwr["shop"="supermarket"](${box});
+  nwr["amenity"="toilets"](${box});
   nwr["amenity"="drinking_water"](${box});
+  nwr["leisure"="slipway"](${box});
   nwr["mooring"](${box});
+  nwr["tourism"="attraction"](${box});
 );
 out center tags;`;
 }
-
-function ms711RouteCorridorBounds(coordinates){
-  const route=(Array.isArray(coordinates)?coordinates:[])
-    .map(ms650Coordinate)
-    .filter(ms650ValidCoordinate);
-  if(route.length<2)return [];
-
-  const boxes=[];
-  let group=[route[0]];
-  let travelled=0;
-
-  const pushGroup=()=>{
-    if(group.length<2)return;
-    const lats=group.map(point=>point.lat);
-    const lons=group.map(point=>point.lon);
-    const margin=.018;
-    boxes.push({
-      south:Math.min(...lats)-margin,
-      west:Math.min(...lons)-margin,
-      north:Math.max(...lats)+margin,
-      east:Math.max(...lons)+margin
-    });
-  };
-
-  for(let index=1;index<route.length;index+=1){
-    const previous=route[index-1];
-    const point=route[index];
-    travelled+=haversineKm(previous,point);
-    group.push(point);
-
-    if(travelled>=12){
-      pushGroup();
-      group=[point];
-      travelled=0;
-    }
-  }
-
-  if(group.length>1)pushGroup();
-
-  return boxes.slice(0,32);
-}
-
-let ms711LastRouteObjectMeta={
-  status:'idle',
-  requested:0,
-  completed:0,
-  failed:0,
-  objects:0,
-  error:''
-};
 
 async function ms670FetchOverpass(query){
   let lastError=null;
@@ -20164,19 +19094,6 @@ function ms670ObjectWidth(tags={}){
   return null;
 }
 
-function ms670ObjectLength(tags={}){
-  for(const candidate of [
-    tags.maxlength,
-    tags['maxlength:physical'],
-    tags['seamark:lock:chamber_length']
-  ]){
-    const value=ms670ParseMeasurement(candidate);
-    if(Number.isFinite(value))return value;
-  }
-
-  return null;
-}
-
 function ms670ObjectDepth(tags={}){
   for(const candidate of [
     tags.maxdraft,
@@ -20235,10 +19152,8 @@ function ms670ProcessObjects(
       Trailerhelling:1.5,
       Aanlegplaats:1,
       Bezienswaardigheid:2.5,
-      Vaarbeperking:.25,
-      Vaarobject:.25,
-      Brug:.35,
-      Sluis:.35
+      Brug:.8,
+      Sluis:.8
     }[category]||.8;
 
     if(nearest.distanceKm>maxDistance)return;
@@ -20262,7 +19177,6 @@ function ms670ProcessObjects(
       distanceFromRouteKm:nearest.distanceKm,
       clearanceHeight:ms670ObjectClearance(tags),
       clearanceWidth:ms670ObjectWidth(tags),
-      maxLength:ms670ObjectLength(tags),
       maxDepth:ms670ObjectDepth(tags),
       movable:
         category==='Brug'&&
@@ -20295,67 +19209,23 @@ async function ms670LoadInfrastructure(plan){
     !Array.isArray(plan?.routeCoordinates)||
     plan.routeCoordinates.length<2
   ){
-    ms711LastRouteObjectMeta={status:'unavailable',requested:0,completed:0,failed:0,objects:0,error:'Geen volledige waterwegroute beschikbaar.'};
     return [];
   }
 
-  const boxes=ms711RouteCorridorBounds(plan.routeCoordinates);
-  if(!boxes.length){
-    ms711LastRouteObjectMeta={status:'unavailable',requested:0,completed:0,failed:0,objects:0,error:'Geen vaarcorridor berekend.'};
-    return [];
-  }
+  const bounds=ms670RouteBounds(
+    plan.routeCoordinates
+  );
 
-  const elementMap=new Map();
-  let completed=0;
-  let failed=0;
-  let lastError='';
+  if(!bounds)return [];
 
-  ms711LastRouteObjectMeta={status:'loading',requested:boxes.length,completed:0,failed:0,objects:0,error:''};
-  ms711RenderRouteObjectStatus(plan,ms711LastRouteObjectMeta);
+  const elements=await ms670FetchOverpass(
+    ms670InfrastructureQuery(bounds)
+  );
 
-  for(let index=0;index<boxes.length;index+=1){
-    try{
-      const elements=await ms670FetchOverpass(ms670InfrastructureQuery(boxes[index]));
-      elements.forEach(element=>{
-        const key=`${element.type}:${element.id}`;
-        if(!elementMap.has(key))elementMap.set(key,element);
-      });
-      completed+=1;
-    }catch(error){
-      failed+=1;
-      lastError=error?.message||'Kaartdienst niet bereikbaar.';
-      console.warn(`Smart Route corridor ${index+1}/${boxes.length} mislukt:`,error);
-    }
-
-    ms711LastRouteObjectMeta={
-      status:'loading',
-      requested:boxes.length,
-      completed,
-      failed,
-      objects:elementMap.size,
-      error:lastError
-    };
-    ms711RenderRouteObjectStatus(plan,ms711LastRouteObjectMeta);
-  }
-
-  const objects=ms670ProcessObjects([...elementMap.values()],plan.routeCoordinates);
-  const status=completed===0
-    ?'unavailable'
-    :failed>0
-      ?'partial'
-      :objects.length
-        ?'online'
-        :'empty';
-
-  ms711LastRouteObjectMeta={
-    status,
-    requested:boxes.length,
-    completed,
-    failed,
-    objects:objects.length,
-    error:lastError
-  };
-  return objects;
+  return ms670ProcessObjects(
+    elements,
+    plan.routeCoordinates
+  );
 }
 
 function ms670CheckResult(
@@ -20465,60 +19335,6 @@ function ms670AnalysePlan(plan){
   });
 
   objects.forEach(object=>{
-    if(
-      object.category!=='Brug'&&
-      profile.width&&
-      Number.isFinite(object.clearanceWidth)
-    ){
-      const margin=object.clearanceWidth-profile.width;
-      if(margin<0){
-        checks.push(ms670CheckResult(
-          'critical',
-          `${object.label} mogelijk te smal`,
-          `Bekende maximale breedte ${plannerNumber(object.clearanceWidth)} m · Serenity ${plannerNumber(profile.width)} m.`,
-          object
-        ));
-      }else if(margin<.6){
-        checks.push(ms670CheckResult(
-          'warning',
-          `Weinig breedtemarge bij ${object.label}`,
-          `Ongeveer ${plannerNumber(margin,2)} m bekende totale marge.`,
-          object
-        ));
-      }
-    }
-
-    if(
-      profile.length&&
-      Number.isFinite(object.maxLength)
-    ){
-      const margin=object.maxLength-profile.length;
-      if(margin<0){
-        checks.push(ms670CheckResult(
-          'critical',
-          `${object.label} mogelijk te kort`,
-          `Bekende maximale lengte ${plannerNumber(object.maxLength)} m · Serenity ${plannerNumber(profile.length)} m.`,
-          object
-        ));
-      }else if(margin<1){
-        checks.push(ms670CheckResult(
-          'warning',
-          `Weinig lengtemarge bij ${object.label}`,
-          `Ongeveer ${plannerNumber(margin,2)} m bekende marge.`,
-          object
-        ));
-      }
-    }
-
-    if(object.category==='Vaarbeperking'||object.tags?.boat==='no'){
-      checks.push(ms670CheckResult(
-        'critical',
-        `${object.label}: varen mogelijk niet toegestaan`,
-        'De kaartgegevens markeren dit routeobject met een vaarverbod of fysieke vaarbeperking.',
-        object
-      ));
-    }
-
     if(
       profile.draft&&
       Number.isFinite(object.maxDepth)
@@ -20771,8 +19587,7 @@ function ms670Icon(category){
     Drinkwater:'🚰',
     Trailerhelling:'🛥️',
     Aanlegplaats:'🪢',
-    Bezienswaardigheid:'⭐',
-    Vaarbeperking:'⛔'
+    Bezienswaardigheid:'⭐'
   }[category]||'📍';
 }
 
@@ -20798,12 +19613,6 @@ function ms670ObjectDetail(object){
   if(Number.isFinite(object.clearanceWidth)){
     details.push(
       `breedte ${plannerNumber(object.clearanceWidth)} m`
-    );
-  }
-
-  if(Number.isFinite(object.maxLength)){
-    details.push(
-      `lengte ${plannerNumber(object.maxLength)} m`
     );
   }
 
@@ -20850,16 +19659,11 @@ function ms670RenderSmartRoute(plan){
   if(badge){
     badge.className=
       `ms670-route-badge ${analysis.status}`;
-    const unknown=(analysis.checks||[]).filter(check=>check.level==='unknown').length;
     badge.textContent=analysis.critical
-      ?`ROUTE GEBLOKKEERD · ${analysis.critical}`
-      :plan.smartDataStatus==='unavailable'||plan.smartDataStatus==='empty'
-        ?'NIET GEVERIFIEERD'
-        :analysis.warnings
-          ?`${analysis.warnings} aandachtspunt${analysis.warnings===1?'':'en'}`
-          :unknown
-            ?'HANDMATIG CONTROLEREN'
-            :'Geen bekende blokkade';
+      ?`${analysis.critical} blokkade${analysis.critical===1?'':'s'}`
+      :analysis.warnings
+        ?`${analysis.warnings} aandachtspunt${analysis.warnings===1?'':'en'}`
+        :'Onvolledig gecontroleerd';
   }
 
   $('ms670RouteChecks').innerHTML=
@@ -20910,9 +19714,8 @@ function ms670RenderSmartRoute(plan){
         </article>
       `).join('')
       :`
-        <div class="ms670-empty ms711-route-objects-empty">
-          <b>Routeobjecten niet beschikbaar</b>
-          <span>Deze route is niet geverifieerd voor de afmetingen van Serenity. Tik op Opnieuw of kies een andere route.</span>
+        <div class="ms670-empty">
+          Nog geen bruggen, sluizen, havens of tankpunten ontvangen.
         </div>
       `;
 
@@ -21058,8 +19861,7 @@ calculatePlannerRoute=async function(options={}){
     try{
       plan.routeObjects=
         await ms670LoadInfrastructure(plan);
-      plan.smartDataStatus=ms711LastRouteObjectMeta.status;
-      plan.smartDataMeta={...ms711LastRouteObjectMeta};
+      plan.smartDataStatus='online';
     }catch(error){
       console.warn(
         'Smart Route-objecten konden niet worden geladen:',
@@ -21202,7 +20004,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.1.1 Smart Route"
+ creator="MijnSerenity 7.0.1 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -21592,12 +20394,8 @@ function ms673RouteCandidateScore(candidate){
   const unknown=(analysis.checks||[])
     .filter(check=>check.level==='unknown')
     .length;
-  const verified=
-    candidate.smartDataStatus==='online'&&
-    Number(candidate.routeObjects?.length||0)>0;
 
   return (
-    (verified?0:250000)+
     Number(analysis.critical||0)*100000+
     Number(analysis.warnings||0)*10000+
     unknown*500+
@@ -21762,8 +20560,6 @@ function ms673VariantFromPlan(
     ],
     smartAnalysis:plan.smartAnalysis,
     dayPlan:plan.dayPlan,
-    smartDataStatus:plan.smartDataStatus||'unavailable',
-    smartDataMeta:plan.smartDataMeta||null,
     score:ms673RouteCandidateScore(plan)
   };
 }
@@ -21771,8 +20567,7 @@ function ms673VariantFromPlan(
 function ms673BuildCandidate(
   basePlan,
   variant,
-  elements,
-  dataStatus='online'
+  elements
 ){
   const distanceKm=
     ms650RouteDistanceKm(
@@ -21806,16 +20601,6 @@ function ms673BuildCandidate(
     )
   };
 
-  candidate.smartDataStatus=routeObjects.length
-    ?dataStatus
-    :'unavailable';
-  candidate.smartDataMeta={
-    status:candidate.smartDataStatus,
-    objects:routeObjects.length,
-    requested:1,
-    completed:elements?.length?1:0,
-    failed:elements?.length?0:1
-  };
   candidate.smartAnalysis=
     ms670AnalysePlan(candidate);
   candidate.dayPlan=
@@ -21835,8 +20620,6 @@ function ms673BuildCandidate(
     segments:candidate.segments,
     smartAnalysis:candidate.smartAnalysis,
     dayPlan:candidate.dayPlan,
-    smartDataStatus:candidate.smartDataStatus,
-    smartDataMeta:candidate.smartDataMeta,
     score:ms673RouteCandidateScore(candidate)
   };
 }
@@ -21868,10 +20651,6 @@ function ms673ApplyVariantData(
     variant.smartAnalysis;
   plan.dayPlan=
     variant.dayPlan;
-  plan.smartDataStatus=
-    variant.smartDataStatus||'unavailable';
-  plan.smartDataMeta=
-    variant.smartDataMeta||null;
   plan.selectedRouteVariant=
     variant.id;
   plan.updatedAt=
@@ -21899,10 +20678,7 @@ function ms673VariantDescription(variant){
       :'geen bekende blokkade',
     warnings
       ?`${warnings} aandachtspunt${warnings===1?'':'en'}`
-      :'',
-    variant.smartDataStatus==='online'&&Number(variant.routeObjects?.length||0)>0
-      ?'objecten gecontroleerd'
-      :'niet geverifieerd'
+      :''
   ].filter(Boolean).join(' · ');
 }
 
@@ -22007,15 +20783,6 @@ function ms673SelectRouteVariant(id){
 
   if(!plan||!variant)return;
 
-  if(
-    variant.smartDataStatus!=='online'||
-    !Number(variant.routeObjects?.length||0)
-  ){
-    setPlannerStatus('Dit alternatief is niet volledig gecontroleerd op routeobjecten en wordt daarom niet gekozen.','warning');
-    showAppToast('Alternatieve route niet geverifieerd.');
-    return;
-  }
-
   ms673ApplyVariantData(
     plan,
     variant
@@ -22117,61 +20884,36 @@ async function ms673FindSaferAlternative(
       return plan;
     }
 
-    const alternativeBoxes=[];
-    const boxKeys=new Set();
+    const bounds=ms673UnionBounds([
+      plan.routeCoordinates,
+      ...rawVariants.map(
+        variant=>variant.coordinates
+      )
+    ]);
 
-    rawVariants.slice(0,3).forEach(variant=>{
-      ms711RouteCorridorBounds(variant.coordinates).forEach(box=>{
-        const key=[box.south,box.west,box.north,box.east]
-          .map(value=>Number(value).toFixed(3))
-          .join(':');
-        if(boxKeys.has(key))return;
-        boxKeys.add(key);
-        alternativeBoxes.push(box);
-      });
-    });
+    let elements=[];
 
-    const alternativeElementMap=new Map();
-    let alternativeCompleted=0;
-    let alternativeFailed=0;
-
-    for(const box of alternativeBoxes.slice(0,36)){
+    if(bounds){
       try{
-        const found=await ms670FetchOverpass(
-          ms670InfrastructureQuery(box)
+        elements=await ms670FetchOverpass(
+          ms670InfrastructureQuery(bounds)
         );
-        found.forEach(element=>{
-          const key=`${element.type}:${element.id}`;
-          if(!alternativeElementMap.has(key)){
-            alternativeElementMap.set(key,element);
-          }
-        });
-        alternativeCompleted+=1;
       }catch(error){
-        alternativeFailed+=1;
         console.warn(
-          'Routeobjecten voor een alternatieve vaarcorridor niet beschikbaar:',
+          'Objecten voor alternatieve route niet beschikbaar:',
           error
         );
       }
     }
 
-    const elements=[...alternativeElementMap.values()];
-    const alternativeDataStatus=alternativeCompleted===0
-      ?'unavailable'
-      :alternativeFailed
-        ?'partial'
-        :'online';
-
     const baseVariant=
       ms673VariantFromPlan(plan);
-    const alternatives=rawVariants.slice(0,3).map(
+    const alternatives=rawVariants.map(
       variant=>
         ms673BuildCandidate(
           plan,
           variant,
-          elements,
-          alternativeDataStatus
+          elements
         )
     );
 
@@ -22187,8 +20929,6 @@ async function ms673FindSaferAlternative(
 
     if(
       safest&&
-      safest.smartDataStatus==='online'&&
-      Number(safest.routeObjects?.length||0)>0&&
       safest.score<baseVariant.score
     ){
       ms673ApplyVariantData(
@@ -22276,228 +21016,6 @@ initPlanner=function(){
   return result;
 };
 
-
-
-/* ============================================================
-   MijnSerenity Cloud 7.1.1 — Smart Route Safety Fix
-   Bootmaten in Instellingen + corridor-objectcontrole
-   ============================================================ */
-
-function ms711RenderRouteObjectStatus(plan=plannerCurrentPlan,meta=ms711LastRouteObjectMeta){
-  const panel=$('ms711RouteObjectStatus');
-  const icon=$('ms711RouteObjectStatusIcon');
-  const title=$('ms711RouteObjectStatusTitle');
-  const text=$('ms711RouteObjectStatusText');
-  if(!panel||!icon||!title||!text)return;
-
-  const status=meta?.status||plan?.smartDataStatus||'idle';
-  const objectCount=Number(meta?.objects??plan?.routeObjects?.length??0);
-  panel.className=`ms711-route-object-status ${status}`;
-
-  if(status==='loading'){
-    icon.textContent='⟳';
-    title.textContent='Routeobjecten worden opgehaald';
-    text.textContent=`${Number(meta.completed||0)} van ${Number(meta.requested||0)} vaarcorridors gecontroleerd${meta.failed?` · ${meta.failed} tijdelijk mislukt`:''}.`;
-    return;
-  }
-
-  if(status==='online'){
-    icon.textContent='✅';
-    title.textContent=`${objectCount} routeobjecten gecontroleerd`;
-    text.textContent='Bruggen, sluizen en bekende maatbeperkingen zijn langs de volledige waterwegroute opgehaald.';
-    return;
-  }
-
-  if(status==='partial'){
-    icon.textContent='⚠️';
-    title.textContent=`Gedeeltelijke routecontrole · ${objectCount} objecten`;
-    text.textContent=`${Number(meta.completed||0)} van ${Number(meta.requested||0)} corridors geladen. Controleer ontbrekende delen handmatig.`;
-    return;
-  }
-
-  if(status==='empty'){
-    icon.textContent='⚠️';
-    title.textContent='Geen routeobjecten ontvangen';
-    text.textContent='De route is niet veilig geverifieerd voor de bootafmetingen. Probeer opnieuw of kies andere tussenstops.';
-    return;
-  }
-
-  if(status==='estimate'){
-    icon.textContent='⛔';
-    title.textContent='Geen echte waterwegroute';
-    text.textContent='Bij een noodschatting kunnen bruggen, sluizen en dieptebeperkingen niet betrouwbaar worden gecontroleerd.';
-    return;
-  }
-
-  icon.textContent='⛔';
-  title.textContent='Routeobjectcontrole niet beschikbaar';
-  text.textContent=meta?.error||plan?.smartDataError||'De openbare kaartdienst reageerde niet. Deze route is niet geverifieerd.';
-}
-
-function ms711SetRouteSafety(plan){
-  if(!plan)return 'unverified';
-  const critical=Number(plan.smartAnalysis?.critical||0);
-  const dataStatus=plan.smartDataStatus||'unavailable';
-  const complete=ms711BoatDimensionsComplete(plan.boatProfile||ms670BoatProfile());
-
-  plan.routeSafetyStatus=!complete
-    ?'profile-incomplete'
-    :critical>0
-      ?'blocked'
-      :['online','partial'].includes(dataStatus)&&Number(plan.routeObjects?.length||0)>0
-        ?(dataStatus==='partial'?'partial':'checked')
-        :'unverified';
-  return plan.routeSafetyStatus;
-}
-
-async function ms711ReloadSmartRouteObjects(){
-  const plan=plannerCurrentPlan;
-  if(!plan||plan.routingMode!=='waterway'||!Array.isArray(plan.routeCoordinates)||plan.routeCoordinates.length<2){
-    showAppToast('Bereken eerst een echte waterwegroute.');
-    return;
-  }
-
-  ms711RenderRouteObjectStatus(plan,{status:'loading',requested:1,completed:0,failed:0,objects:0});
-  setPlannerStatus('Routeobjecten opnieuw ophalen…');
-
-  try{
-    plan.routeObjects=await ms670LoadInfrastructure(plan);
-    plan.smartDataStatus=ms711LastRouteObjectMeta.status;
-    plan.smartDataMeta={...ms711LastRouteObjectMeta};
-    plan.boatProfile=ms670BoatProfile();
-    plan.smartAnalysis=ms670AnalysePlan(plan);
-    plan.dayPlan=ms670BuildDayPlan(plan);
-    ms711SetRouteSafety(plan);
-    plannerCurrentPlan=plan;
-    renderPlannerSummary(plan);
-
-    if(plan.smartAnalysis.critical){
-      await ms673FindSaferAlternative(plan);
-    }
-
-    const status=ms711SetRouteSafety(plannerCurrentPlan||plan);
-    setPlannerStatus(
-      status==='blocked'
-        ?'Route geblokkeerd: minimaal één bekend object past niet bij de afmetingen van Serenity.'
-        :status==='checked'
-          ?'Routeobjecten opnieuw geladen. Geen bekende blokkade gevonden.'
-          :'Route slechts gedeeltelijk of niet geverifieerd. Handmatige controle blijft nodig.',
-      status==='blocked'?'error':status==='checked'?'success':'warning'
-    );
-  }catch(error){
-    console.error('Routeobjecten opnieuw laden mislukt:',error);
-    plan.smartDataStatus='unavailable';
-    plan.smartDataError=error?.message||'Kaartdienst niet bereikbaar.';
-    ms711SetRouteSafety(plan);
-    renderPlannerSummary(plan);
-    setPlannerStatus('Routeobjecten konden niet worden geladen. De route is niet geverifieerd.','error');
-  }
-}
-
-const ms711PreviousRenderSmartRoute=ms670RenderSmartRoute;
-ms670RenderSmartRoute=function(plan){
-  ms711PreviousRenderSmartRoute(plan);
-  ms711SetRouteSafety(plan);
-  const routeMeta=plan?.smartDataMeta||{
-    status:plan?.smartDataStatus||'unavailable',
-    requested:0,
-    completed:0,
-    failed:0,
-    objects:Number(plan?.routeObjects?.length||0),
-    error:plan?.smartDataError||''
-  };
-  ms711RenderRouteObjectStatus(plan,routeMeta);
-  ms711RenderBoatDimensionsState();
-
-  const panel=$('ms670SmartRoute');
-  if(panel){
-    panel.classList.toggle('ms711-route-blocked',plan?.routeSafetyStatus==='blocked');
-    panel.classList.toggle('ms711-route-unverified',['unverified','partial','profile-incomplete'].includes(plan?.routeSafetyStatus));
-  }
-};
-
-const ms711PreviousCalculatePlannerRoute=calculatePlannerRoute;
-calculatePlannerRoute=async function(options={}){
-  const profile=ms670BoatProfile();
-  if(!ms711BoatDimensionsComplete(profile)){
-    ms711RenderBoatDimensionsState();
-    setPlannerStatus('Vul eerst lengte, breedte, diepgang en doorvaarthoogte in bij Bootinstellingen. Zonder deze maten wordt geen route gekozen.','error');
-    showAppToast('Bootafmetingen zijn nog niet compleet.');
-    return null;
-  }
-
-  ms670SaveProfile();
-  const plan=await ms711PreviousCalculatePlannerRoute(options);
-  if(!plan)return null;
-
-  plan.boatProfile=profile;
-  plan.smartAnalysis=ms670AnalysePlan(plan);
-  ms711SetRouteSafety(plan);
-  plannerCurrentPlan=plan;
-  renderPlannerSummary(plan);
-
-  if(plan.routeSafetyStatus==='blocked'){
-    setPlannerStatus('Deze route is geblokkeerd: bekende brughoogte, breedte of diepte past niet bij Serenity. Kies een alternatief of andere tussenstop.','error');
-  }else if(plan.routeSafetyStatus==='unverified'||plan.routeSafetyStatus==='partial'){
-    setPlannerStatus('De route is nog niet volledig geverifieerd voor de bootafmetingen. Gebruik hem niet als definitieve vaarroute zonder handmatige controle.','warning');
-  }
-
-  return plan;
-};
-
-const ms711PreviousSavePlannerDraft=savePlannerDraft;
-savePlannerDraft=async function(){
-  const plan=plannerCurrentPlan||await calculatePlannerRoute({silent:true});
-  if(!plan)return;
-  ms711SetRouteSafety(plan);
-  if(plan.routeSafetyStatus==='blocked'){
-    setPlannerStatus('Geblokkeerde route wordt niet als vaarplan opgeslagen. Kies eerst een passende route.','error');
-    return;
-  }
-  return ms711PreviousSavePlannerDraft();
-};
-
-const ms711PreviousSharePlannerRoute=sharePlannerRouteWithWaterkaarten;
-sharePlannerRouteWithWaterkaarten=async function(){
-  const plan=plannerCurrentPlan||await calculatePlannerRoute({silent:true});
-  if(!plan)return;
-  ms711SetRouteSafety(plan);
-  if(plan.routeSafetyStatus==='blocked'){
-    setPlannerStatus('Deze route bevat een bekende maatblokkade en wordt niet naar Waterkaarten geëxporteerd.','error');
-    showAppToast('Kies eerst een passende route.');
-    return;
-  }
-  if(['unverified','partial','profile-incomplete'].includes(plan.routeSafetyStatus)){
-    setPlannerStatus('Routeobjecten zijn niet volledig geverifieerd. Laad ze opnieuw voordat je de route exporteert.','warning');
-    showAppToast('Route nog niet volledig geverifieerd.');
-    return;
-  }
-  return ms711PreviousSharePlannerRoute();
-};
-
-const ms711PreviousInitPlanner=initPlanner;
-initPlanner=function(){
-  const result=ms711PreviousInitPlanner();
-  ms670LoadProfile();
-  ms711RenderBoatDimensionsState();
-  if(plannerCurrentPlan){
-    ms711SetRouteSafety(plannerCurrentPlan);
-    ms711RenderRouteObjectStatus(plannerCurrentPlan,plannerCurrentPlan.smartDataMeta||{
-      status:plannerCurrentPlan.smartDataStatus||'unavailable',
-      objects:Number(plannerCurrentPlan.routeObjects?.length||0),
-      error:plannerCurrentPlan.smartDataError||''
-    });
-  }
-  return result;
-};
-
-['settingBoatLength','settingBoatWidth','settingBoatDraft','settingBoatAirDraft'].forEach(id=>{
-  document.addEventListener('input',event=>{
-    if(event.target?.id===id){
-      ms711RenderBoatDimensionsState();
-    }
-  });
-});
 
 
 /* ============================================================
@@ -28227,1593 +26745,3 @@ loadPois=async function(){
   return result;
 };
 
-
-
-/* MijnSerenity 7.1.1 — uitgebreide interactieve weerkaarten */
-const MS710_WEATHER_VERSION='7.1.1';
-const ms710WeatherState={
-  initialized:false,
-  loading:false,
-  center:{lat:52.2215,lon:6.8937,label:'Enschede'},
-  forecast:null,
-  map:null,
-  mapLayer:null,
-  sampleData:[],
-  hourIndex:0,
-  layer:'temperature',
-  playbackTimer:null,
-  searchController:null,
-  mapRequestToken:0
-};
-
-function weatherCodeIcon(code,isDay=1){
-  const value=Number(code);
-  if(value===0)return Number(isDay)===0?'🌙':'☀️';
-  if(value===1)return Number(isDay)===0?'🌙':'🌤️';
-  if(value===2)return '⛅';
-  if(value===3)return '☁️';
-  if([45,48].includes(value))return '🌫️';
-  if([51,53,55,56,57].includes(value))return '🌦️';
-  if([61,63,65,66,67].includes(value))return '🌧️';
-  if([71,73,75,77].includes(value))return '🌨️';
-  if([80,81,82].includes(value))return '🌧️';
-  if([85,86].includes(value))return '🌨️';
-  if([95,96,99].includes(value))return '⛈️';
-  return '🌦️';
-}
-
-function weatherIconFromText(value){
-  const text=String(value||'').toLowerCase();
-  if(/onweer|bliksem/.test(text))return '⛈️';
-  if(/sneeuw|hagel/.test(text))return '🌨️';
-  if(/mist|nevel/.test(text))return '🌫️';
-  if(/regen|bui|motregen/.test(text))return '🌧️';
-  if(/bewolkt|wolk/.test(text))return '☁️';
-  if(/helder|zonnig|zon/.test(text))return '☀️';
-  return '🌦️';
-}
-
-function weatherDirectionText(degrees){
-  if(!Number.isFinite(Number(degrees)))return '–';
-  const names=['N','NO','O','ZO','Z','ZW','W','NW'];
-  return names[Math.round((((Number(degrees)%360)+360)%360)/45)%8];
-}
-
-function weatherVisibilityText(meters){
-  const value=Number(meters);
-  if(!Number.isFinite(value))return '–';
-  if(value<1000)return `${Math.round(value)} m`;
-  return `${(value/1000).toLocaleString('nl-NL',{maximumFractionDigits:1})} km`;
-}
-
-function weatherTimeText(value,withDate=false){
-  const date=new Date(value);
-  if(Number.isNaN(date.getTime()))return '–';
-  return date.toLocaleString('nl-NL',withDate
-    ?{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}
-    :{hour:'2-digit',minute:'2-digit'}
-  );
-}
-
-function weatherHourData(forecast,index){
-  const hourly=forecast?.hourly;
-  if(!hourly?.time?.length)return null;
-  const safe=Math.max(0,Math.min(Number(index)||0,hourly.time.length-1));
-  const get=name=>Array.isArray(hourly[name])?hourly[name][safe]:null;
-  return {
-    index:safe,
-    time:hourly.time[safe],
-    temperature:Number(get('temperature_2m')),
-    apparentTemperature:Number(get('apparent_temperature')),
-    humidity:Number(get('relative_humidity_2m')),
-    precipitationProbability:Number(get('precipitation_probability')),
-    precipitation:Number(get('precipitation')),
-    weatherCode:Number(get('weather_code')),
-    cloudCover:Number(get('cloud_cover')),
-    visibility:Number(get('visibility')),
-    pressure:Number(get('pressure_msl')),
-    windSpeed:Number(get('wind_speed_10m')),
-    windGusts:Number(get('wind_gusts_10m')),
-    windDirection:Number(get('wind_direction_10m')),
-    uvIndex:Number(get('uv_index')),
-    isDay:Number(get('is_day'))
-  };
-}
-
-function weatherNearestHourIndex(times,date=new Date()){
-  if(!Array.isArray(times)||!times.length)return 0;
-  const target=date.getTime();
-  let best=0;
-  let bestDistance=Infinity;
-  times.forEach((value,index)=>{
-    const distance=Math.abs(new Date(value).getTime()-target);
-    if(distance<bestDistance){bestDistance=distance;best=index;}
-  });
-  return best;
-}
-
-function buildMarineWeatherWarnings(forecast,current=null,hours=24){
-  const warnings=[];
-  const add=(level,icon,title,text,time='')=>{
-    const key=`${level}:${title}`;
-    if(warnings.some(item=>item.key===key))return;
-    warnings.push({key,level,icon,title,text,time});
-  };
-
-  const points=[];
-  if(current){
-    points.push({
-      time:'Nu',
-      weatherCode:Number(current.weather_code??current.weatherCode),
-      temperature:Number(current.temperature_2m??current.temperature),
-      precipitation:Number(current.precipitation),
-      precipitationProbability:Number(current.precipitation_probability),
-      visibility:Number(current.visibility),
-      windSpeed:Number(current.wind_speed_10m??current.windSpeed),
-      windGusts:Number(current.wind_gusts_10m??current.windGusts)
-    });
-  }
-
-  const hourly=forecast?.hourly;
-  if(hourly?.time?.length){
-    const start=weatherNearestHourIndex(hourly.time);
-    for(let i=start;i<Math.min(hourly.time.length,start+hours);i+=1){
-      points.push({
-        time:weatherTimeText(hourly.time[i],true),
-        weatherCode:Number(hourly.weather_code?.[i]),
-        temperature:Number(hourly.temperature_2m?.[i]),
-        precipitation:Number(hourly.precipitation?.[i]),
-        precipitationProbability:Number(hourly.precipitation_probability?.[i]),
-        visibility:Number(hourly.visibility?.[i]),
-        windSpeed:Number(hourly.wind_speed_10m?.[i]),
-        windGusts:Number(hourly.wind_gusts_10m?.[i])
-      });
-    }
-  }
-
-  points.forEach(point=>{
-    const when=point.time&&point.time!=='Nu'?` · ${point.time}`:'';
-    if([95,96,99].includes(point.weatherCode)){
-      add('critical','⛈️','Onweerswaarschuwing',`Blijf uit open water en zoek tijdig een veilige ligplaats${when}.`,point.time);
-    }
-    if(point.windGusts>=75){
-      add('critical','🌪️','Zeer zware windstoten',`${windKmhToBeaufort(point.windGusts)} Bft / ${Math.round(point.windGusts)} km/u. Niet uitvaren of direct beschutting zoeken${when}.`,point.time);
-    }else if(point.windGusts>=50){
-      add('warning','🌬️','Stevige windstoten',`${windKmhToBeaufort(point.windGusts)} Bft / ${Math.round(point.windGusts)} km/u. Extra voorzichtig bij sluizen, bruggen en afmeren${when}.`,point.time);
-    }
-    if(point.windSpeed>=62){
-      add('critical','💨','Stormachtige wind',`${windKmhToBeaufort(point.windSpeed)} Bft aanhoudende wind. Doorvaren wordt afgeraden${when}.`,point.time);
-    }else if(point.windSpeed>=39){
-      add('warning','💨','Harde wind',`${windKmhToBeaufort(point.windSpeed)} Bft. Controleer vaargebied en manoeuvreerruimte${when}.`,point.time);
-    }
-    if(point.precipitation>=8){
-      add('critical','🌧️','Zware neerslag',`${point.precipitation.toFixed(1)} mm in één uur. Slecht zicht en plotselinge windstoten mogelijk${when}.`,point.time);
-    }else if(point.precipitation>=3||point.precipitationProbability>=80){
-      add('warning','☔','Grote kans op regen',`${Number.isFinite(point.precipitationProbability)?Math.round(point.precipitationProbability)+'% kans · ':''}${Number.isFinite(point.precipitation)?point.precipitation.toFixed(1)+' mm':''}${when}.`,point.time);
-    }
-    if(point.visibility>0&&point.visibility<1000){
-      add('critical','🌫️','Zeer slecht zicht',`${weatherVisibilityText(point.visibility)} zicht. Gebruik navigatieverlichting en vaar alleen wanneer verantwoord${when}.`,point.time);
-    }else if(point.visibility>0&&point.visibility<3000){
-      add('warning','🌫️','Beperkt zicht',`${weatherVisibilityText(point.visibility)} zicht. Verminder snelheid en houd extra uitkijk${when}.`,point.time);
-    }
-    if(point.temperature<=1&&point.precipitation>0){
-      add('warning','🧊','Kans op gladheid',`Neerslag bij ongeveer ${point.temperature.toFixed(1)} °C. Let op gladde dekken en steigers${when}.`,point.time);
-    }
-    if(point.temperature>=30){
-      add('warning','🥵','Hoge temperatuur',`${point.temperature.toFixed(1)} °C. Zorg voor drinkwater, schaduw en ventilatie${when}.`,point.time);
-    }
-  });
-
-  const order={critical:3,warning:2,info:1};
-  return warnings.sort((a,b)=>order[b.level]-order[a.level]);
-}
-
-function weatherSailingAdvice(warnings,hour){
-  const critical=warnings.filter(item=>item.level==='critical');
-  const caution=warnings.filter(item=>item.level==='warning');
-  if(critical.length){
-    return `<div class="weather-advice-level critical"><span>🛑</span><div><b>Uitvaren wordt afgeraden</b><p>${esc(critical[0].text)}</p></div></div>`;
-  }
-  if(caution.length){
-    return `<div class="weather-advice-level warning"><span>⚠️</span><div><b>Varen met extra aandacht</b><p>${esc(caution[0].text)}</p></div></div>`;
-  }
-  const wind=Number(hour?.windSpeed);
-  const rain=Number(hour?.precipitationProbability);
-  return `<div class="weather-advice-level good"><span>✅</span><div><b>Geen directe weersbelemmering</b><p>${Number.isFinite(wind)?`Wind ${formatWindBeaufort(wind,true)}. `:''}${Number.isFinite(rain)?`Regenkans ${Math.round(rain)}%.`:''} Blijf lokale omstandigheden en scheepvaartberichten volgen.</p></div></div>`;
-}
-
-// Bestaande Live-weerweergave verrijken met actuele pictogrammen.
-const ms710BaseWeatherSummary=weatherSummary;
-weatherSummary=function(weather){
-  if(!weather)return 'Wachten op GPS';
-  const icon=weatherCodeIcon(weather.weatherCode,weather.isDay);
-  const description=weatherCodeDescription(weather.weatherCode);
-  const wind=Number.isFinite(Number(weather.windSpeed))?formatWindBeaufort(weather.windSpeed,false):'';
-  return [icon,description,wind].filter(Boolean).join(' · ');
-};
-
-const ms710BaseRenderLiveWeather=renderLiveWeather;
-renderLiveWeather=function(){
-  ms710BaseRenderLiveWeather();
-  const weather=liveNavState.weather;
-  if(!weather)return;
-  const icon=weatherCodeIcon(weather.weatherCode,weather.isDay);
-  if($('liveWeatherTemp'))$('liveWeatherTemp').textContent=`${icon} ${Number(weather.temperature).toFixed(1)}°`;
-  if($('liveWeatherDescription'))$('liveWeatherDescription').textContent=`${icon} ${weatherCodeDescription(weather.weatherCode)}`;
-  if($('liveWeatherWind'))$('liveWeatherWind').textContent=`💨 ${formatWindBeaufort(weather.windSpeed,true)}`;
-  if($('liveWeatherGusts'))$('liveWeatherGusts').textContent=`🌬️ ${formatWindBeaufort(weather.windGusts,true)}`;
-  if($('liveWeatherRain'))$('liveWeatherRain').textContent=`🌧️ ${Number(weather.precipitation||0).toFixed(1)} mm`;
-  if($('liveWeatherTemperature'))$('liveWeatherTemperature').textContent=`🌡️ ${Number(weather.temperature).toFixed(1)} °C`;
-  if($('liveWeatherFeels'))$('liveWeatherFeels').textContent=`🧥 ${Number(weather.apparentTemperature).toFixed(1)} °C`;
-};
-
-// Uitgebreidere live fetch: huidige situatie + 48 uur voor waarschuwingen.
-fetchLiveWeather=async function(lat,lon,force=false){
-  if(!Number.isFinite(Number(lat))||!Number.isFinite(Number(lon)))return;
-  const age=Date.now()-Number(liveNavState.weatherUpdatedAt||0);
-  const movedKm=liveWeatherDistanceKm(lat,lon);
-  if(!force&&liveNavState.weather&&age<15*60*1000&&movedKm<5)return;
-  if($('liveWeatherStatus'))$('liveWeatherStatus').textContent='Actueel weer en waarschuwingen ophalen…';
-
-  try{
-    const params=new URLSearchParams({
-      latitude:String(Number(lat).toFixed(6)),
-      longitude:String(Number(lon).toFixed(6)),
-      current:[
-        'temperature_2m','apparent_temperature','relative_humidity_2m','precipitation',
-        'weather_code','cloud_cover','pressure_msl','visibility','is_day',
-        'wind_speed_10m','wind_gusts_10m','wind_direction_10m'
-      ].join(','),
-      hourly:[
-        'temperature_2m','apparent_temperature','relative_humidity_2m',
-        'precipitation_probability','precipitation','weather_code','cloud_cover',
-        'visibility','pressure_msl','wind_speed_10m','wind_gusts_10m',
-        'wind_direction_10m','uv_index','is_day'
-      ].join(','),
-      forecast_hours:'48',
-      wind_speed_unit:'kmh',
-      timezone:'auto',
-      cell_selection:'nearest'
-    });
-    const response=await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`,{headers:{Accept:'application/json'}});
-    if(!response.ok)throw new Error(`Weerservice gaf fout ${response.status}`);
-    const payload=await response.json();
-    const current=payload?.current;
-    if(!current)throw new Error('Geen actuele weergegevens ontvangen.');
-
-    liveNavState.weather={
-      temperature:Number(current.temperature_2m),
-      apparentTemperature:Number(current.apparent_temperature),
-      humidity:Number(current.relative_humidity_2m),
-      precipitation:Number(current.precipitation),
-      weatherCode:Number(current.weather_code),
-      cloudCover:Number(current.cloud_cover),
-      pressure:Number(current.pressure_msl),
-      visibility:Number(current.visibility),
-      isDay:Number(current.is_day),
-      windSpeed:Number(current.wind_speed_10m),
-      windGusts:Number(current.wind_gusts_10m),
-      windDirection:Number(current.wind_direction_10m)
-    };
-    liveNavState.weatherForecast={hourly:payload.hourly,timezone:payload.timezone};
-    liveNavState.weatherWarnings=buildMarineWeatherWarnings(payload,current,24);
-    liveNavState.weatherUpdatedAt=Date.now();
-    liveNavState.lastWeatherLat=Number(lat);
-    liveNavState.lastWeatherLon=Number(lon);
-    persistLiveState();
-    renderLiveWeather();
-    if(typeof ms660RenderCommandCenter==='function')ms660RenderCommandCenter();
-    if(ms710WeatherState.initialized&&haversineKm({lat:Number(lat),lon:Number(lon)},ms710WeatherState.center)<2){
-      ms710WeatherState.forecast={...payload,label:ms710WeatherState.center.label};
-      renderWeatherDashboard();
-    }
-  }catch(error){
-    console.error('Live weer ophalen mislukt:',error);
-    if($('liveWeatherStatus'))$('liveWeatherStatus').textContent='Weer kon niet worden opgehaald. Tik op Weer om opnieuw te proberen.';
-  }
-};
-
-const ms710BaseMs660Alerts=ms660Alerts;
-ms660Alerts=function(){
-  const alerts=ms710BaseMs660Alerts();
-  const future=Array.isArray(liveNavState.weatherWarnings)?liveNavState.weatherWarnings:[];
-  future.slice(0,3).forEach(item=>{
-    if(!alerts.some(alert=>alert.title===item.title)){
-      alerts.push({level:item.level,title:`${item.icon} ${item.title}`,text:item.text});
-    }
-  });
-  const order={critical:3,warning:2,info:1};
-  return alerts.sort((a,b)=>order[b.level]-order[a.level]);
-};
-
-const ms710BaseCommandCenter=ms660RenderCommandCenter;
-ms660RenderCommandCenter=function(){
-  ms710BaseCommandCenter();
-  const weather=liveNavState.weather;
-  if(weather&&Number.isFinite(Number(weather.windSpeed))){
-    const direction=weatherDirectionText(weather.windDirection);
-    ms660SetText('ms660Wind',`💨 ${windKmhToBeaufort(weather.windSpeed)} Bft${direction?` ${direction}`:''}`);
-    ms660SetText('ms660WindDetail',`${weatherCodeIcon(weather.weatherCode,weather.isDay)} ${weatherCodeDescription(weather.weatherCode)} · stoten ${windKmhToBeaufort(weather.windGusts)} Bft`);
-  }
-};
-
-function setWeatherPageStatus(message,state=''){
-  const element=$('weatherPageStatus');
-  if(!element)return;
-  element.textContent=message||'';
-  element.className=`status small${state?' '+state:''}`;
-}
-
-function weatherCurrentPoint(){
-  const latest=liveNavState.points?.at(-1);
-  if(latest&&Number.isFinite(Number(latest.lat))&&Number.isFinite(Number(latest.lon))){
-    return {lat:Number(latest.lat),lon:Number(latest.lon),label:'Huidige vaarpositie'};
-  }
-  if(Number.isFinite(Number(liveNavState.lastWeatherLat))&&Number.isFinite(Number(liveNavState.lastWeatherLon))){
-    return {lat:Number(liveNavState.lastWeatherLat),lon:Number(liveNavState.lastWeatherLon),label:'Laatste vaarpositie'};
-  }
-  return null;
-}
-
-function initWeatherMap(){
-  const container=$('weatherMapCanvas');
-  if(!container||ms710WeatherState.map)return;
-  ms710WeatherState.map=L.map(container,{zoomControl:true,attributionControl:true}).setView([ms710WeatherState.center.lat,ms710WeatherState.center.lon],8);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap · weerdata Open-Meteo'}).addTo(ms710WeatherState.map);
-  ms710WeatherState.mapLayer=L.layerGroup().addTo(ms710WeatherState.map);
-  ms710WeatherState.map.on('click',event=>{
-    const point={lat:event.latlng.lat,lon:event.latlng.lng,label:`Kaartpunt ${event.latlng.lat.toFixed(3)}, ${event.latlng.lng.toFixed(3)}`};
-    setWeatherLocation(point,true);
-  });
-}
-
-async function initWeatherDashboard(){
-  initWeatherMap();
-  setTimeout(()=>ms710WeatherState.map?.invalidateSize({pan:false}),100);
-  if(ms710WeatherState.loading)return;
-  if(ms710WeatherState.initialized&&ms710WeatherState.forecast){
-    renderWeatherDashboard();
-    return;
-  }
-  ms710WeatherState.initialized=true;
-  const existing=weatherCurrentPoint();
-  if(existing){
-    ms710WeatherState.center=existing;
-    await refreshWeatherDashboard(false);
-    return;
-  }
-  await useCurrentLocationForWeather(true);
-}
-
-function weatherGeolocation(){
-  return new Promise((resolve,reject)=>{
-    if(!navigator.geolocation){reject(new Error('GPS-locatie wordt niet ondersteund.'));return;}
-    navigator.geolocation.getCurrentPosition(position=>resolve({
-      lat:Number(position.coords.latitude),lon:Number(position.coords.longitude),label:'Mijn huidige locatie'
-    }),error=>reject(new Error(error?.message||'Locatie kon niet worden opgehaald.')),{enableHighAccuracy:true,maximumAge:120000,timeout:15000});
-  });
-}
-
-async function useCurrentLocationForWeather(silent=false){
-  setWeatherPageStatus('GPS-locatie ophalen…');
-  try{
-    const point=await weatherGeolocation();
-    await setWeatherLocation(point,true);
-  }catch(error){
-    if(!silent)showAppToast(error.message);
-    setWeatherPageStatus(`${error.message} Daarom wordt Enschede getoond.`,'warning');
-    await setWeatherLocation(ms710WeatherState.center,true);
-  }
-}
-
-async function usePlannerDestinationForWeather(){
-  try{
-    let point=plannerCurrentPlan?.points?.at(-1)||null;
-    if(!point){
-      const ref=String($('plannerTo')?.value||'');
-      if(ref)point=await resolvePlannerPoint(ref);
-    }
-    if(!point)throw new Error('Kies eerst een bestemming in de Reisplanner.');
-    await setWeatherLocation({lat:Number(point.lat),lon:Number(point.lon),label:point.label||point.place||'Routebestemming'},true);
-  }catch(error){
-    showAppToast(error.message);
-    setWeatherPageStatus(error.message,'warning');
-  }
-}
-
-async function setWeatherLocation(point,refresh=true){
-  if(!Number.isFinite(Number(point?.lat))||!Number.isFinite(Number(point?.lon)))return;
-  ms710WeatherState.center={lat:Number(point.lat),lon:Number(point.lon),label:String(point.label||point.name||'Gekozen locatie')};
-  if(ms710WeatherState.map){
-    ms710WeatherState.map.setView([ms710WeatherState.center.lat,ms710WeatherState.center.lon],Math.max(ms710WeatherState.map.getZoom(),8));
-  }
-  if(refresh)await refreshWeatherDashboard(true);
-}
-
-function handleWeatherSearchEnter(event){
-  if(event.key==='Enter'){event.preventDefault();searchWeatherLocation();}
-}
-
-async function searchWeatherLocation(){
-  const query=String($('weatherLocationSearch')?.value||'').trim();
-  if(query.length<2){setWeatherPageStatus('Typ minimaal twee tekens.','warning');return;}
-  ms710WeatherState.searchController?.abort();
-  ms710WeatherState.searchController=new AbortController();
-  setWeatherPageStatus('Locaties zoeken…');
-  try{
-    const params=new URLSearchParams({name:query,count:'8',language:'nl',format:'json'});
-    const response=await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`,{signal:ms710WeatherState.searchController.signal});
-    if(!response.ok)throw new Error(`Zoeken gaf fout ${response.status}`);
-    const payload=await response.json();
-    const items=Array.isArray(payload?.results)?payload.results:[];
-    renderWeatherSearchResults(items);
-    setWeatherPageStatus(items.length?`${items.length} locatie${items.length===1?'':'s'} gevonden.`:'Geen locaties gevonden.',items.length?'success':'warning');
-  }catch(error){
-    if(error.name==='AbortError')return;
-    setWeatherPageStatus(`Zoeken mislukt: ${error.message}`,'error');
-  }
-}
-
-function renderWeatherSearchResults(items){
-  const container=$('weatherSearchResults');
-  if(!container)return;
-  if(!items.length){container.classList.add('hidden');container.innerHTML='';return;}
-  container.innerHTML=items.map((item,index)=>{
-    const region=[item.admin1,item.country].filter(Boolean).join(', ');
-    return `<button type="button" onclick="chooseWeatherSearchResult(${index})"><span>📍</span><div><b>${esc(item.name||'Locatie')}</b><small>${esc(region)}${item.elevation?` · ${Math.round(item.elevation)} m`:''}</small></div></button>`;
-  }).join('');
-  container._weatherItems=items;
-  container.classList.remove('hidden');
-}
-
-async function chooseWeatherSearchResult(index){
-  const container=$('weatherSearchResults');
-  const item=container?._weatherItems?.[index];
-  if(!item)return;
-  container.classList.add('hidden');
-  const label=[item.name,item.admin1].filter(Boolean).join(', ');
-  await setWeatherLocation({lat:Number(item.latitude),lon:Number(item.longitude),label},true);
-}
-
-function weatherApiParams(point){
-  return new URLSearchParams({
-    latitude:String(Number(point.lat).toFixed(6)),
-    longitude:String(Number(point.lon).toFixed(6)),
-    current:[
-      'temperature_2m','apparent_temperature','relative_humidity_2m','precipitation',
-      'weather_code','cloud_cover','pressure_msl','visibility','is_day',
-      'wind_speed_10m','wind_gusts_10m','wind_direction_10m'
-    ].join(','),
-    hourly:[
-      'temperature_2m','apparent_temperature','relative_humidity_2m','precipitation_probability',
-      'precipitation','weather_code','cloud_cover','visibility','pressure_msl',
-      'wind_speed_10m','wind_gusts_10m','wind_direction_10m','uv_index','is_day'
-    ].join(','),
-    daily:[
-      'weather_code','temperature_2m_max','temperature_2m_min','sunrise','sunset',
-      'precipitation_sum','precipitation_probability_max','wind_speed_10m_max',
-      'wind_gusts_10m_max','wind_direction_10m_dominant','uv_index_max'
-    ].join(','),
-    forecast_days:'7',wind_speed_unit:'kmh',timezone:'auto',cell_selection:'nearest'
-  });
-}
-
-async function refreshWeatherDashboard(force=false){
-  if(ms710WeatherState.loading)return;
-  ms710WeatherState.loading=true;
-  setWeatherPageStatus(`Weer voor ${ms710WeatherState.center.label} ophalen…`);
-  try{
-    const response=await fetch(`https://api.open-meteo.com/v1/forecast?${weatherApiParams(ms710WeatherState.center)}`,{headers:{Accept:'application/json'}});
-    if(!response.ok)throw new Error(`Weerservice gaf fout ${response.status}`);
-    const payload=await response.json();
-    payload.label=ms710WeatherState.center.label;
-    ms710WeatherState.forecast=payload;
-    ms710WeatherState.hourIndex=weatherNearestHourIndex(payload?.hourly?.time);
-    renderWeatherDashboard();
-    await fetchWeatherMapSamples();
-    setWeatherPageStatus(`Weer bijgewerkt voor ${ms710WeatherState.center.label}.`,'success');
-  }catch(error){
-    console.error(error);
-    setWeatherPageStatus(`Weer ophalen mislukt: ${error.message}`,'error');
-  }finally{
-    ms710WeatherState.loading=false;
-  }
-}
-
-function currentWeatherAsHour(payload){
-  const current=payload?.current||{};
-  return {
-    time:current.time||new Date().toISOString(),
-    temperature:Number(current.temperature_2m),
-    apparentTemperature:Number(current.apparent_temperature),
-    humidity:Number(current.relative_humidity_2m),
-    precipitation:Number(current.precipitation),
-    precipitationProbability:null,
-    weatherCode:Number(current.weather_code),
-    cloudCover:Number(current.cloud_cover),
-    visibility:Number(current.visibility),
-    pressure:Number(current.pressure_msl),
-    windSpeed:Number(current.wind_speed_10m),
-    windGusts:Number(current.wind_gusts_10m),
-    windDirection:Number(current.wind_direction_10m),
-    uvIndex:null,
-    isDay:Number(current.is_day)
-  };
-}
-
-function renderWeatherDashboard(){
-  const payload=ms710WeatherState.forecast;
-  if(!payload)return;
-  const selected=weatherHourData(payload,ms710WeatherState.hourIndex)||currentWeatherAsHour(payload);
-  renderWeatherHero(selected);
-  renderWeatherWarnings(payload);
-  renderWeatherTimeline(payload);
-  renderWeatherDetails(selected);
-  renderWeatherDaily(payload);
-  renderWeatherMap();
-  const range=$('weatherTimelineRange');
-  if(range){range.max=String(Math.max(0,(payload.hourly?.time?.length||1)-1));range.value=String(ms710WeatherState.hourIndex);}
-  const label=$('weatherTimelineLabel');
-  if(label)label.textContent=weatherTimeText(selected.time,true);
-}
-
-function renderWeatherHero(hour){
-  if(!hour)return;
-  const icon=weatherCodeIcon(hour.weatherCode,hour.isDay);
-  $('weatherHeroIcon').textContent=icon;
-  $('weatherHeroTemp').textContent=Number.isFinite(hour.temperature)?`${hour.temperature.toFixed(1)}°`:'–';
-  $('weatherHeroDescription').textContent=weatherCodeDescription(hour.weatherCode);
-  $('weatherHeroLocation').textContent=ms710WeatherState.center.label;
-  $('weatherHeroFeels').textContent=Number.isFinite(hour.apparentTemperature)?`${hour.apparentTemperature.toFixed(1)} °C`:'–';
-  $('weatherHeroWind').textContent=Number.isFinite(hour.windSpeed)?formatWindBeaufort(hour.windSpeed,true):'–';
-  $('weatherHeroRain').textContent=Number.isFinite(hour.precipitation)?`${hour.precipitation.toFixed(1)} mm`:'–';
-  $('weatherHeroTime').textContent=ms710WeatherState.hourIndex===weatherNearestHourIndex(ms710WeatherState.forecast?.hourly?.time)?'Actueel / dichtstbijzijnde uur':weatherTimeText(hour.time,true);
-  $('weatherHeroUpdated').textContent=`Modeltijd ${weatherTimeText(hour.time,true)}`;
-  const card=$('weatherHeroCard');
-  card.dataset.weather=String(hour.weatherCode);
-  card.dataset.day=String(hour.isDay);
-}
-
-function renderWeatherWarnings(payload){
-  const warnings=buildMarineWeatherWarnings(payload,payload.current,24);
-  const container=$('weatherWarnings');
-  const badge=$('weatherWarningBadge');
-  if(!warnings.length){
-    container.innerHTML='<div class="weather-warning-item good"><span>✅</span><div><b>Geen directe waarschuwingen</b><small>Wind, zicht, neerslag, temperatuur en onweer geven voor de komende 24 uur geen directe waarschuwing.</small></div></div>';
-    badge.textContent='Rustig';badge.className='weather-warning-badge good';
-  }else{
-    const level=warnings[0].level;
-    badge.textContent=level==='critical'?'Niet uitvaren':`${warnings.length} melding${warnings.length===1?'':'en'}`;
-    badge.className=`weather-warning-badge ${level}`;
-    container.innerHTML=warnings.slice(0,6).map(item=>`<div class="weather-warning-item ${item.level}"><span>${item.icon}</span><div><b>${esc(item.title)}</b><small>${esc(item.text)}</small></div></div>`).join('');
-  }
-  const selected=weatherHourData(payload,ms710WeatherState.hourIndex);
-  $('weatherSailingAdvice').innerHTML=weatherSailingAdvice(warnings,selected);
-}
-
-function renderWeatherTimeline(payload){
-  const container=$('weatherHourlyTimeline');
-  const hourly=payload?.hourly;
-  if(!container||!hourly?.time?.length)return;
-  const start=weatherNearestHourIndex(hourly.time);
-  const end=Math.min(hourly.time.length,start+72);
-  let previousDay='';
-  const cards=[];
-  for(let i=start;i<end;i+=1){
-    const hour=weatherHourData(payload,i);
-    const date=new Date(hour.time);
-    const day=date.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric'});
-    const dayLabel=day!==previousDay?`<span class="weather-hour-day">${day}</span>`:'';
-    previousDay=day;
-    cards.push(`<button type="button" class="weather-hour-card ${i===ms710WeatherState.hourIndex?'active':''}" data-index="${i}" onclick="setWeatherTimelineHour(${i},false)">${dayLabel}<b>${weatherTimeText(hour.time)}</b><span class="weather-hour-icon">${weatherCodeIcon(hour.weatherCode,hour.isDay)}</span><strong>${Number.isFinite(hour.temperature)?Math.round(hour.temperature)+'°':'–'}</strong><small>💨 ${Number.isFinite(hour.windSpeed)?windKmhToBeaufort(hour.windSpeed)+' Bft':'–'}</small><small>🌧️ ${Number.isFinite(hour.precipitationProbability)?Math.round(hour.precipitationProbability)+'%':'–'}</small></button>`);
-  }
-  container.innerHTML=cards.join('');
-  $('weatherTimelineSummary').textContent=`${end-start} uur vooruit`;
-  requestAnimationFrame(()=>container.querySelector('.weather-hour-card.active')?.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'}));
-}
-
-function setWeatherTimelineHour(value,fromSlider=false){
-  const max=(ms710WeatherState.forecast?.hourly?.time?.length||1)-1;
-  ms710WeatherState.hourIndex=Math.max(0,Math.min(Number(value)||0,max));
-  renderWeatherDashboard();
-  if(!fromSlider){
-    const range=$('weatherTimelineRange');if(range)range.value=String(ms710WeatherState.hourIndex);
-  }
-}
-
-function toggleWeatherTimelinePlayback(){
-  const button=$('weatherTimelinePlay');
-  if(ms710WeatherState.playbackTimer){
-    clearInterval(ms710WeatherState.playbackTimer);ms710WeatherState.playbackTimer=null;
-    if(button)button.textContent='▶';
-    return;
-  }
-  if(button)button.textContent='⏸';
-  ms710WeatherState.playbackTimer=setInterval(()=>{
-    const max=(ms710WeatherState.forecast?.hourly?.time?.length||1)-1;
-    const next=ms710WeatherState.hourIndex>=max?0:ms710WeatherState.hourIndex+1;
-    setWeatherTimelineHour(next,true);
-  },900);
-}
-
-function renderWeatherDetails(hour){
-  if(!hour)return;
-  $('weatherDetailHumidity').textContent=Number.isFinite(hour.humidity)?`${Math.round(hour.humidity)}%`:'–';
-  $('weatherDetailVisibility').textContent=weatherVisibilityText(hour.visibility);
-  $('weatherDetailClouds').textContent=Number.isFinite(hour.cloudCover)?`${Math.round(hour.cloudCover)}%`:'–';
-  $('weatherDetailDirection').textContent=Number.isFinite(hour.windDirection)?`${weatherDirectionText(hour.windDirection)} · ${Math.round(hour.windDirection)}°`:'–';
-  $('weatherDetailGusts').textContent=Number.isFinite(hour.windGusts)?formatWindBeaufort(hour.windGusts,true):'–';
-  $('weatherDetailRainChance').textContent=Number.isFinite(hour.precipitationProbability)?`${Math.round(hour.precipitationProbability)}%`:'–';
-  $('weatherDetailUv').textContent=Number.isFinite(hour.uvIndex)?hour.uvIndex.toFixed(1):'–';
-  $('weatherDetailPressure').textContent=Number.isFinite(hour.pressure)?`${Math.round(hour.pressure)} hPa`:'–';
-}
-
-function renderWeatherDaily(payload){
-  const daily=payload?.daily;
-  const container=$('weatherDailyForecast');
-  if(!container||!daily?.time?.length)return;
-  container.innerHTML=daily.time.map((time,index)=>{
-    const date=new Date(`${time}T12:00`);
-    const day=date.toLocaleDateString('nl-NL',{weekday:'long'});
-    const dateText=date.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
-    const code=Number(daily.weather_code?.[index]);
-    return `<article class="weather-day-card"><span>${day}</span><small>${dateText}</small><div class="weather-day-icon">${weatherCodeIcon(code,1)}</div><b>${weatherCodeDescription(code)}</b><strong>${Math.round(Number(daily.temperature_2m_max?.[index]))}° <em>${Math.round(Number(daily.temperature_2m_min?.[index]))}°</em></strong><small>🌧️ ${Math.round(Number(daily.precipitation_probability_max?.[index])||0)}% · ${Number(daily.precipitation_sum?.[index]||0).toFixed(1)} mm</small><small>💨 ${windKmhToBeaufort(Number(daily.wind_speed_10m_max?.[index])||0)} Bft · stoten ${windKmhToBeaufort(Number(daily.wind_gusts_10m_max?.[index])||0)} Bft</small></article>`;
-  }).join('');
-}
-
-function weatherSamplePoints(center){
-  const latStep=.34;
-  const lonStep=.52/Math.max(.45,Math.cos(Number(center.lat)*Math.PI/180));
-  const points=[];
-  [-1,0,1].forEach(y=>[-1,0,1].forEach(x=>points.push({lat:center.lat+y*latStep,lon:center.lon+x*lonStep,label:x===0&&y===0?center.label:'Omgeving'})));
-  return points;
-}
-
-async function fetchWeatherMapSamples(){
-  const token=++ms710WeatherState.mapRequestToken;
-  const points=weatherSamplePoints(ms710WeatherState.center);
-  setWeatherPageStatus('Weerkaartpunten berekenen…');
-  try{
-    const params=new URLSearchParams({
-      latitude:points.map(point=>point.lat.toFixed(5)).join(','),
-      longitude:points.map(point=>point.lon.toFixed(5)).join(','),
-      hourly:['temperature_2m','precipitation_probability','precipitation','weather_code','cloud_cover','wind_speed_10m','wind_gusts_10m','wind_direction_10m','is_day'].join(','),
-      forecast_hours:'72',wind_speed_unit:'kmh',timezone:'auto',cell_selection:'nearest'
-    });
-    const response=await fetch(`https://api.open-meteo.com/v1/forecast?${params}`,{headers:{Accept:'application/json'}});
-    if(!response.ok)throw new Error(`Kaartservice gaf fout ${response.status}`);
-    const payload=await response.json();
-    if(token!==ms710WeatherState.mapRequestToken)return;
-    const list=Array.isArray(payload)?payload:[payload];
-    ms710WeatherState.sampleData=list.map((item,index)=>({...item,label:points[index]?.label||'Omgeving'}));
-    renderWeatherMap();
-  }catch(error){
-    console.error(error);
-    setWeatherPageStatus(`Weerkaart kon niet volledig worden opgebouwd: ${error.message}`,'warning');
-  }
-}
-
-function weatherMapValue(sample,index){
-  const hourly=sample?.hourly||{};
-  const safe=Math.max(0,Math.min(index,(hourly.time?.length||1)-1));
-  return {
-    time:hourly.time?.[safe],temperature:Number(hourly.temperature_2m?.[safe]),
-    precipitationProbability:Number(hourly.precipitation_probability?.[safe]),precipitation:Number(hourly.precipitation?.[safe]),
-    weatherCode:Number(hourly.weather_code?.[safe]),cloudCover:Number(hourly.cloud_cover?.[safe]),
-    windSpeed:Number(hourly.wind_speed_10m?.[safe]),windGusts:Number(hourly.wind_gusts_10m?.[safe]),
-    windDirection:Number(hourly.wind_direction_10m?.[safe]),isDay:Number(hourly.is_day?.[safe])
-  };
-}
-
-function weatherTemperatureColor(value){
-  if(value<=0)return '#7dd3fc';if(value<=10)return '#38bdf8';if(value<=18)return '#22c55e';if(value<=25)return '#facc15';if(value<=30)return '#fb923c';return '#ef4444';
-}
-function weatherWindColor(value){
-  const bft=windKmhToBeaufort(value);if(bft<=2)return '#34d399';if(bft<=4)return '#facc15';if(bft<=6)return '#fb923c';return '#ef4444';
-}
-function weatherRainColor(value){
-  if(value<.2)return '#64748b';if(value<1)return '#38bdf8';if(value<4)return '#2563eb';return '#7c3aed';
-}
-
-function weatherMapMarkerHtml(data,layer){
-  if(layer==='wind'){
-    const color=weatherWindColor(data.windSpeed);
-    return `<div class="weather-map-marker wind" style="--weather-color:${color}"><span class="weather-wind-arrow" style="transform:rotate(${Number(data.windDirection)||0}deg)">↑</span><b>${windKmhToBeaufort(data.windSpeed)} Bft</b></div>`;
-  }
-  if(layer==='rain'){
-    const color=weatherRainColor(data.precipitation);
-    return `<div class="weather-map-marker" style="--weather-color:${color}"><span>🌧️</span><b>${Number(data.precipitation||0).toFixed(1)} mm</b><small>${Math.round(Number(data.precipitationProbability)||0)}%</small></div>`;
-  }
-  if(layer==='clouds'){
-    const darkness=Math.max(25,Math.min(90,Number(data.cloudCover)||0));
-    return `<div class="weather-map-marker clouds" style="--weather-cloud:${darkness}%"><span>${weatherCodeIcon(data.weatherCode,data.isDay)}</span><b>${Math.round(Number(data.cloudCover)||0)}%</b></div>`;
-  }
-  const color=weatherTemperatureColor(data.temperature);
-  return `<div class="weather-map-marker" style="--weather-color:${color}"><span>${weatherCodeIcon(data.weatherCode,data.isDay)}</span><b>${Number(data.temperature).toFixed(1)}°</b></div>`;
-}
-
-function renderWeatherMap(){
-  initWeatherMap();
-  if(!ms710WeatherState.map||!ms710WeatherState.mapLayer)return;
-  ms710WeatherState.mapLayer.clearLayers();
-  const samples=ms710WeatherState.sampleData;
-  const mainTimes=ms710WeatherState.forecast?.hourly?.time||[];
-  const selectedTime=mainTimes[ms710WeatherState.hourIndex];
-  samples.forEach(sample=>{
-    let index=ms710WeatherState.hourIndex;
-    if(selectedTime&&sample.hourly?.time?.length){index=weatherNearestHourIndex(sample.hourly.time,new Date(selectedTime));}
-    const data=weatherMapValue(sample,index);
-    const icon=L.divIcon({className:'weather-leaflet-icon',html:weatherMapMarkerHtml(data,ms710WeatherState.layer),iconSize:[92,64],iconAnchor:[46,32]});
-    L.marker([Number(sample.latitude),Number(sample.longitude)],{icon}).addTo(ms710WeatherState.mapLayer).bindPopup(`<b>${weatherCodeIcon(data.weatherCode,data.isDay)} ${esc(sample.label||'Weerpunt')}</b><br>${esc(weatherTimeText(data.time,true))}<br>Temperatuur ${Number(data.temperature).toFixed(1)} °C<br>Wind ${esc(formatWindBeaufort(data.windSpeed,true))}<br>Stoten ${esc(formatWindBeaufort(data.windGusts,true))}<br>Neerslag ${Number(data.precipitation||0).toFixed(1)} mm (${Math.round(Number(data.precipitationProbability)||0)}%)`);
-  });
-  L.circleMarker([ms710WeatherState.center.lat,ms710WeatherState.center.lon],{radius:9,weight:3,fillOpacity:.85}).addTo(ms710WeatherState.mapLayer).bindTooltip(`📍 ${ms710WeatherState.center.label}`);
-  renderWeatherMapLegend();
-}
-
-function setWeatherMapLayer(layer,button){
-  ms710WeatherState.layer=layer;
-  document.querySelectorAll('[data-weather-layer]').forEach(item=>item.classList.toggle('active',item.dataset.weatherLayer===layer));
-  renderWeatherMap();
-}
-
-function renderWeatherMapLegend(){
-  const legends={
-    temperature:'🌡️ Blauw = koud · groen = mild · geel/oranje = warm · rood = heet',
-    wind:'💨 Groen = rustig · geel = matig · oranje = krachtig · rood = gevaarlijk',
-    rain:'🌧️ Getal = mm per uur · percentage = regenkans',
-    clouds:'☁️ Percentage = totale bewolking op het gekozen tijdstip'
-  };
-  $('weatherMapLegend').textContent=legends[ms710WeatherState.layer]||'';
-}
-
-function openExternalWeatherMap(){
-  window.open('https://maps.open-meteo.com/','_blank','noopener,noreferrer');
-}
-
-window.addEventListener('resize',()=>{
-  if(!$('weather')?.classList.contains('hidden'))setTimeout(()=>ms710WeatherState.map?.invalidateSize({pan:false}),100);
-});
-
-
-/* ============================================================
-   MijnSerenity Cloud 7.2.0 — Snelle Smart Route-objectcontrole
-   Parallelle corridorcontrole, cache en achtergrondverrijking
-   ============================================================ */
-
-const MS712_ROUTE_OBJECT_CACHE_PREFIX='mijnserenity-routeobjects-712-';
-const MS712_ROUTE_OBJECT_CACHE_TTL=12*60*60*1000;
-const MS712_ROUTE_OBJECT_BATCH_SIZE=6;
-const MS712_ROUTE_OBJECT_CONCURRENCY=3;
-const MS712_ROUTE_OBJECT_ENDPOINT_TIMEOUT=14000;
-const MS712_OVERPASS_MEMORY_CACHE=new Map();
-const MS712_OVERPASS_INFLIGHT=new Map();
-
-function ms712SimpleHash(value){
-  let hash=2166136261;
-  const text=String(value||'');
-  for(let index=0;index<text.length;index+=1){
-    hash^=text.charCodeAt(index);
-    hash=Math.imul(hash,16777619);
-  }
-  return (hash>>>0).toString(36);
-}
-
-function ms712RouteSignature(coordinates){
-  const points=(Array.isArray(coordinates)?coordinates:[])
-    .map(ms650Coordinate)
-    .filter(ms650ValidCoordinate);
-  if(points.length<2)return '';
-
-  const step=Math.max(1,Math.floor(points.length/40));
-  const sampled=[];
-  for(let index=0;index<points.length;index+=step){
-    const point=points[index];
-    sampled.push(`${point.lat.toFixed(4)},${point.lon.toFixed(4)}`);
-  }
-  const last=points.at(-1);
-  const lastKey=`${last.lat.toFixed(4)},${last.lon.toFixed(4)}`;
-  if(sampled.at(-1)!==lastKey)sampled.push(lastKey);
-  return ms712SimpleHash(sampled.join('|'));
-}
-
-function ms712Chunk(items,size){
-  const chunks=[];
-  for(let index=0;index<items.length;index+=size){
-    chunks.push(items.slice(index,index+size));
-  }
-  return chunks;
-}
-
-function ms712BoundsKey(bounds){
-  return [bounds.south,bounds.west,bounds.north,bounds.east]
-    .map(value=>Number(value).toFixed(4))
-    .join(':');
-}
-
-ms711RouteCorridorBounds=function(coordinates){
-  const route=(Array.isArray(coordinates)?coordinates:[])
-    .map(ms650Coordinate)
-    .filter(ms650ValidCoordinate);
-  if(route.length<2)return [];
-
-  const boxes=[];
-  let group=[route[0]];
-  let travelled=0;
-
-  const pushGroup=()=>{
-    if(group.length<2)return;
-    const lats=group.map(point=>point.lat);
-    const lons=group.map(point=>point.lon);
-    const margin=.012;
-    boxes.push({
-      south:Math.min(...lats)-margin,
-      west:Math.min(...lons)-margin,
-      north:Math.max(...lats)+margin,
-      east:Math.max(...lons)+margin
-    });
-  };
-
-  for(let index=1;index<route.length;index+=1){
-    const previous=route[index-1];
-    const point=route[index];
-    travelled+=haversineKm(previous,point);
-    group.push(point);
-
-    if(travelled>=24){
-      pushGroup();
-      group=[point];
-      travelled=0;
-    }
-  }
-  if(group.length>1)pushGroup();
-
-  const unique=[];
-  const seen=new Set();
-  boxes.forEach(box=>{
-    const key=ms712BoundsKey(box);
-    if(seen.has(key))return;
-    seen.add(key);
-    unique.push(box);
-  });
-  return unique.slice(0,20);
-};
-
-function ms712InfrastructureBatchQuery(boxes,{services=false}={}){
-  const statements=[];
-  boxes.forEach(bounds=>{
-    const box=[bounds.south,bounds.west,bounds.north,bounds.east]
-      .map(value=>Number(value).toFixed(6)).join(',');
-
-    if(services){
-      statements.push(
-        `nwr["leisure"="marina"](${box});`,
-        `nwr["harbour"="yes"](${box});`,
-        `nwr["seamark:type"="harbour"](${box});`,
-        `nwr["amenity"="fuel"](${box});`,
-        `nwr["amenity"="drinking_water"](${box});`,
-        `nwr["mooring"](${box});`
-      );
-      return;
-    }
-
-    statements.push(
-      `nwr["waterway"="lock_gate"](${box});`,
-      `nwr["waterway"="lock"](${box});`,
-      `nwr["lock"](${box});`,
-      `nwr["bridge"](${box});`,
-      `nwr["man_made"="bridge"](${box});`,
-      `nwr["seamark:type"="bridge"](${box});`,
-      `nwr["boat"="no"](${box});`,
-      `nwr["waterway"="weir"](${box});`,
-      `nwr["waterway"]["maxheight"](${box});`,
-      `nwr["waterway"]["maxwidth"](${box});`,
-      `nwr["waterway"]["maxlength"](${box});`,
-      `nwr["waterway"]["maxdraft"](${box});`,
-      `nwr["waterway"]["maxdraught"](${box});`
-    );
-  });
-
-  return `[out:json][timeout:18];\n(\n${statements.join('\n')}\n);\nout center tags;`;
-}
-
-ms670InfrastructureQuery=function(bounds){
-  return ms712InfrastructureBatchQuery([bounds],{services:false});
-};
-
-function ms712CachedElements(query){
-  const hash=ms712SimpleHash(query);
-  const memory=MS712_OVERPASS_MEMORY_CACHE.get(hash);
-  if(memory&&Date.now()-memory.savedAt<MS712_ROUTE_OBJECT_CACHE_TTL){
-    const copy=memory.elements.slice();
-    copy.__ms712Cached=true;
-    return copy;
-  }
-
-  try{
-    const raw=localStorage.getItem(MS712_ROUTE_OBJECT_CACHE_PREFIX+hash);
-    if(!raw)return null;
-    const parsed=JSON.parse(raw);
-    if(!parsed||Date.now()-Number(parsed.savedAt||0)>=MS712_ROUTE_OBJECT_CACHE_TTL){
-      localStorage.removeItem(MS712_ROUTE_OBJECT_CACHE_PREFIX+hash);
-      return null;
-    }
-    if(!Array.isArray(parsed.elements))return null;
-    MS712_OVERPASS_MEMORY_CACHE.set(hash,parsed);
-    const copy=parsed.elements.slice();
-    copy.__ms712Cached=true;
-    return copy;
-  }catch{
-    return null;
-  }
-}
-
-function ms712StoreElements(query,elements){
-  if(!Array.isArray(elements)||elements.length>2500)return;
-  const hash=ms712SimpleHash(query);
-  const payload={savedAt:Date.now(),elements};
-  MS712_OVERPASS_MEMORY_CACHE.set(hash,payload);
-  try{
-    localStorage.setItem(
-      MS712_ROUTE_OBJECT_CACHE_PREFIX+hash,
-      JSON.stringify(payload)
-    );
-  }catch(error){
-    // Opslag vol: verwijder alleen oude Smart Route-cache en probeer één keer opnieuw.
-    try{
-      Object.keys(localStorage)
-        .filter(key=>key.startsWith(MS712_ROUTE_OBJECT_CACHE_PREFIX))
-        .slice(0,8)
-        .forEach(key=>localStorage.removeItem(key));
-      localStorage.setItem(
-        MS712_ROUTE_OBJECT_CACHE_PREFIX+hash,
-        JSON.stringify(payload)
-      );
-    }catch{}
-  }
-}
-
-function ms712EndpointOrder(){
-  const preferred=sessionStorage.getItem('mijnserenity-overpass-preferred')||'';
-  return [...MS670_OVERPASS_ENDPOINTS]
-    .sort((a,b)=>(a===preferred?-1:0)-(b===preferred?-1:0));
-}
-
-async function ms712FetchEndpoint(endpoint,query,externalSignal){
-  const controller=new AbortController();
-  const abort=()=>controller.abort();
-  if(externalSignal){
-    if(externalSignal.aborted)controller.abort();
-    else externalSignal.addEventListener('abort',abort,{once:true});
-  }
-  const timeout=setTimeout(()=>controller.abort(),MS712_ROUTE_OBJECT_ENDPOINT_TIMEOUT);
-
-  try{
-    const target=endpoint.startsWith('http')
-      ?endpoint
-      :new URL(endpoint,location.origin).toString();
-    const response=await fetch(target,{
-      method:'POST',
-      headers:{
-        'content-type':'application/x-www-form-urlencoded;charset=UTF-8',
-        accept:'application/json'
-      },
-      body:new URLSearchParams({data:query}).toString(),
-      signal:controller.signal,
-      cache:'no-store'
-    });
-    if(!response.ok)throw new Error(`Kaartdienst gaf HTTP ${response.status}.`);
-    const data=await response.json();
-    if(!Array.isArray(data?.elements)){
-      throw new Error('Kaartdienst gaf geen geldige objectenlijst terug.');
-    }
-    try{sessionStorage.setItem('mijnserenity-overpass-preferred',endpoint);}catch{}
-    return data.elements;
-  }finally{
-    clearTimeout(timeout);
-    externalSignal?.removeEventListener?.('abort',abort);
-  }
-}
-
-ms670FetchOverpass=async function(query,options={}){
-  const force=Boolean(options?.force);
-  const signal=options?.signal||null;
-  const hash=ms712SimpleHash(query);
-
-  if(!force){
-    const cached=ms712CachedElements(query);
-    if(cached)return cached;
-    if(MS712_OVERPASS_INFLIGHT.has(hash)){
-      return MS712_OVERPASS_INFLIGHT.get(hash);
-    }
-  }
-
-  const request=(async()=>{
-    let lastError=null;
-    for(const endpoint of ms712EndpointOrder()){
-      try{
-        const elements=await ms712FetchEndpoint(endpoint,query,signal);
-        ms712StoreElements(query,elements);
-        return elements;
-      }catch(error){
-        lastError=error;
-        if(signal?.aborted)throw error;
-        console.warn('Smart Route kaartdienst niet bereikbaar:',endpoint,error);
-      }
-    }
-    throw lastError||new Error('Geen kaartdienst bereikbaar.');
-  })();
-
-  MS712_OVERPASS_INFLIGHT.set(hash,request);
-  try{
-    return await request;
-  }finally{
-    MS712_OVERPASS_INFLIGHT.delete(hash);
-  }
-};
-
-async function ms712ParallelBatches(batches,worker,concurrency=MS712_ROUTE_OBJECT_CONCURRENCY){
-  let nextIndex=0;
-  const results=new Array(batches.length);
-  const runners=Array.from(
-    {length:Math.min(concurrency,batches.length)},
-    async()=>{
-      while(true){
-        const index=nextIndex++;
-        if(index>=batches.length)return;
-        results[index]=await worker(batches[index],index);
-      }
-    }
-  );
-  await Promise.all(runners);
-  return results;
-}
-
-async function ms712FetchBoxes(boxes,{services=false,signal=null,force=false,onProgress=null,concurrency=MS712_ROUTE_OBJECT_CONCURRENCY}={}){
-  const batches=ms712Chunk(boxes,MS712_ROUTE_OBJECT_BATCH_SIZE);
-  const elementMap=new Map();
-  let completed=0;
-  let failed=0;
-  let cachedBatches=0;
-  let lastError='';
-
-  await ms712ParallelBatches(
-    batches,
-    async batch=>{
-      try{
-        const query=ms712InfrastructureBatchQuery(batch,{services});
-        const elements=await ms670FetchOverpass(query,{signal,force});
-        if(elements.__ms712Cached)cachedBatches+=1;
-        elements.forEach(element=>{
-          const key=`${element.type}:${element.id}`;
-          if(!elementMap.has(key))elementMap.set(key,element);
-        });
-        completed+=batch.length;
-      }catch(error){
-        failed+=batch.length;
-        lastError=error?.message||'Kaartdienst niet bereikbaar.';
-        console.warn('Smart Route routegedeelte niet beschikbaar:',error);
-      }
-      onProgress?.({completed,failed,cachedBatches,elements:elementMap.size,lastError,batches:batches.length});
-    },
-    concurrency
-  );
-
-  return {
-    elements:[...elementMap.values()],
-    completed,
-    failed,
-    cachedBatches,
-    batches:batches.length,
-    error:lastError
-  };
-}
-
-async function ms712EnrichRouteServices(plan,boxes,routeSignature){
-  if(!plan||!Array.isArray(boxes)||!boxes.length)return;
-  try{
-    const result=await ms712FetchBoxes(boxes,{
-      services:true,
-      concurrency:2
-    });
-    if(!result.completed||!result.elements.length)return;
-    if(ms712RouteSignature(plan.routeCoordinates)!==routeSignature)return;
-
-    const serviceObjects=ms670ProcessObjects(result.elements,plan.routeCoordinates)
-      .filter(object=>['Haven','Tankstation','Drinkwater','Aanlegplaats'].includes(object.category));
-    if(!serviceObjects.length)return;
-
-    const merged=new Map();
-    [...(plan.routeObjects||[]),...serviceObjects].forEach(object=>{
-      if(object?.id&&!merged.has(object.id))merged.set(object.id,object);
-    });
-    plan.routeObjects=[...merged.values()].sort((a,b)=>a.alongRouteKm-b.alongRouteKm);
-    plan.smartAnalysis=ms670AnalysePlan(plan);
-    plan.dayPlan=ms670BuildDayPlan(plan);
-    plan.serviceDataStatus=result.failed?'partial':'online';
-    if(plan.smartDataMeta)plan.smartDataMeta.objects=plan.routeObjects.length;
-
-    if(plannerCurrentPlan===plan){
-      renderPlannerSummary(plan);
-    }
-  }catch(error){
-    console.warn('Havens en voorzieningen op de achtergrond laden mislukt:',error);
-  }
-}
-
-ms670LoadInfrastructure=async function(plan){
-  if(!Array.isArray(plan?.routeCoordinates)||plan.routeCoordinates.length<2){
-    ms711LastRouteObjectMeta={status:'unavailable',requested:0,completed:0,failed:0,objects:0,error:'Geen volledige waterwegroute beschikbaar.'};
-    return [];
-  }
-
-  const boxes=ms711RouteCorridorBounds(plan.routeCoordinates);
-  if(!boxes.length){
-    ms711LastRouteObjectMeta={status:'unavailable',requested:0,completed:0,failed:0,objects:0,error:'Geen vaarcorridor berekend.'};
-    return [];
-  }
-
-  if(ms670InfrastructureController){
-    try{ms670InfrastructureController.abort();}catch{}
-  }
-  const controller=new AbortController();
-  ms670InfrastructureController=controller;
-  const startedAt=performance.now();
-  const force=Boolean(plan.ms712ForceRouteObjectRefresh);
-  delete plan.ms712ForceRouteObjectRefresh;
-
-  ms711LastRouteObjectMeta={
-    status:'loading',requested:boxes.length,completed:0,failed:0,
-    objects:0,error:'',batches:Math.ceil(boxes.length/MS712_ROUTE_OBJECT_BATCH_SIZE),cachedBatches:0
-  };
-  ms711RenderRouteObjectStatus(plan,ms711LastRouteObjectMeta);
-
-  const result=await ms712FetchBoxes(boxes,{
-    services:false,
-    signal:controller.signal,
-    force,
-    onProgress:progress=>{
-      ms711LastRouteObjectMeta={
-        status:'loading',
-        requested:boxes.length,
-        completed:progress.completed,
-        failed:progress.failed,
-        objects:progress.elements,
-        error:progress.lastError,
-        batches:progress.batches,
-        cachedBatches:progress.cachedBatches,
-        elapsedMs:Math.round(performance.now()-startedAt)
-      };
-      ms711RenderRouteObjectStatus(plan,ms711LastRouteObjectMeta);
-    }
-  });
-
-  const objects=ms670ProcessObjects(result.elements,plan.routeCoordinates);
-  const status=result.completed===0
-    ?'unavailable'
-    :result.failed>0
-      ?'partial'
-      :objects.length
-        ?'online'
-        :'empty';
-
-  ms711LastRouteObjectMeta={
-    status,
-    requested:boxes.length,
-    completed:result.completed,
-    failed:result.failed,
-    objects:objects.length,
-    error:result.error,
-    batches:result.batches,
-    cachedBatches:result.cachedBatches,
-    elapsedMs:Math.round(performance.now()-startedAt)
-  };
-
-  const signature=ms712RouteSignature(plan.routeCoordinates);
-  setTimeout(()=>ms712EnrichRouteServices(plan,boxes,signature),0);
-  return objects;
-};
-
-ms711RenderRouteObjectStatus=function(plan=plannerCurrentPlan,meta=ms711LastRouteObjectMeta){
-  const panel=$('ms711RouteObjectStatus');
-  const icon=$('ms711RouteObjectStatusIcon');
-  const title=$('ms711RouteObjectStatusTitle');
-  const text=$('ms711RouteObjectStatusText');
-  if(!panel||!icon||!title||!text)return;
-
-  const status=meta?.status||plan?.smartDataStatus||'idle';
-  const objectCount=Number(meta?.objects??plan?.routeObjects?.length??0);
-  const seconds=Number(meta?.elapsedMs)>0?Math.max(.1,Number(meta.elapsedMs)/1000):null;
-  const cacheText=Number(meta?.cachedBatches||0)>0
-    ?` · ${Number(meta.cachedBatches)} snelle cachebatch${Number(meta.cachedBatches)===1?'':'es'}`
-    :'';
-  panel.className=`ms711-route-object-status ${status}`;
-
-  if(status==='loading'){
-    icon.textContent='⚡';
-    title.textContent='Routeobjecten snel controleren';
-    text.textContent=`${Number(meta.completed||0)} van ${Number(meta.requested||0)} routegedeelten gereed${cacheText}. Meerdere gedeelten worden tegelijk verwerkt.`;
-    return;
-  }
-  if(status==='online'){
-    icon.textContent='✅';
-    title.textContent=`${objectCount} veiligheidsobjecten gecontroleerd`;
-    text.textContent=`Bruggen, sluizen en maatbeperkingen zijn langs de route gecontroleerd${seconds?` in ${seconds.toFixed(1)} sec`:''}${cacheText}. Havens en voorzieningen worden op de achtergrond aangevuld.`;
-    return;
-  }
-  if(status==='partial'){
-    icon.textContent='⚠️';
-    title.textContent=`Gedeeltelijke routecontrole · ${objectCount} objecten`;
-    text.textContent=`${Number(meta.completed||0)} van ${Number(meta.requested||0)} routegedeelten geladen. Controleer de ontbrekende delen handmatig.`;
-    return;
-  }
-  if(status==='empty'){
-    icon.textContent='⚠️';
-    title.textContent='Geen veiligheidsobjecten ontvangen';
-    text.textContent='Er zijn geen bruggen, sluizen of maatbeperkingen teruggekomen. De route blijft daarom niet volledig geverifieerd.';
-    return;
-  }
-  if(status==='estimate'){
-    icon.textContent='⛔';
-    title.textContent='Geen echte waterwegroute';
-    text.textContent='Bij een noodschatting kunnen bruggen, sluizen en dieptebeperkingen niet betrouwbaar worden gecontroleerd.';
-    return;
-  }
-  icon.textContent='⛔';
-  title.textContent='Routeobjectcontrole niet beschikbaar';
-  text.textContent=meta?.error||plan?.smartDataError||'De openbare kaartdienst reageerde niet. Deze route is niet geverifieerd.';
-};
-
-const ms712PreviousReloadSmartRouteObjects=ms711ReloadSmartRouteObjects;
-ms711ReloadSmartRouteObjects=async function(){
-  if(plannerCurrentPlan)plannerCurrentPlan.ms712ForceRouteObjectRefresh=true;
-  return ms712PreviousReloadSmartRouteObjects();
-};
-
-
-/* ============================================================
-   MijnSerenity 7.2.0 — Waterkaarten direct delen
-   ============================================================ */
-
-let ms720DirectImportBusy=false;
-let ms720DirectImportTimer=null;
-let ms720DirectImportReady=false;
-const MS720_IMPORT_POLL_MS=30000;
-const MS720_RECEIVE_RPC='receive_waterkaarten_route';
-const MS720_CLAIM_RPC='claim_waterkaarten_route';
-const MS720_RELEASE_RPC='release_waterkaarten_route';
-
-function ms720SetDirectStatus(message,type='info'){
-  ['waterkaartenDirectStatus','waterkaartenDirectLogbookStatus'].forEach(id=>{
-    const element=$(id);
-    if(!element)return;
-    element.textContent=message;
-    element.className=`status small ${type||''}`.trim();
-  });
-}
-
-function ms720SetDirectBadge(text,state=''){
-  ['waterkaartenDirectBadge','waterkaartenDirectLogbookBadge'].forEach(id=>{
-    const badge=$(id);
-    if(!badge)return;
-    badge.textContent=text;
-    badge.className=`ms720-direct-badge ${state}`.trim();
-  });
-}
-
-function ms720RandomToken(){
-  const bytes=new Uint8Array(30);
-  crypto.getRandomValues(bytes);
-  const raw=btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g,'-')
-    .replace(/\//g,'_')
-    .replace(/=+$/,'');
-  return `MSR-${raw}`;
-}
-
-function ms720ImportCode(){
-  return String(
-    settingsCache?.waterkaarten_import_token||
-    $('waterkaartenImportCode')?.value||
-    ''
-  ).trim();
-}
-
-function ms720RenderDirectImportSettings(){
-  const code=ms720ImportCode();
-  const input=$('waterkaartenImportCode');
-  if(input&&code)input.value=code;
-
-  if(code){
-    ms720SetDirectBadge('Gereed','ready');
-    if(!ms720DirectImportBusy){
-      ms720SetDirectStatus(
-        'Direct delen is gereed. MijnSerenity controleert automatisch op nieuwe Waterkaarten-routes.',
-        'success'
-      );
-    }
-  }else{
-    ms720SetDirectBadge('Instellen');
-  }
-}
-
-function ms720IsMissingDatabaseFeature(error){
-  const text=String(error?.message||error?.details||'').toLowerCase();
-  return error?.code==='42883'||
-    error?.code==='42703'||
-    error?.code==='PGRST202'||
-    error?.code==='PGRST204'||
-    text.includes('waterkaarten_route')||
-    text.includes('waterkaarten_import_token');
-}
-
-async function ms720EnsureImportCode(){
-  if(!currentBoat||!currentUser)return null;
-  let code=ms720ImportCode();
-  if(code){
-    ms720RenderDirectImportSettings();
-    return code;
-  }
-
-  code=ms720RandomToken();
-  const update={
-    waterkaarten_import_token:code,
-    updated_at:new Date().toISOString()
-  };
-
-  let result=await sb
-    .from('boat_settings')
-    .update(update)
-    .eq('boat_id',currentBoat.id)
-    .select('waterkaarten_import_token')
-    .maybeSingle();
-
-  if(!result.error&&!result.data){
-    result=await sb.from('boat_settings').upsert({
-      boat_id:currentBoat.id,
-      boat_name:settingsCache?.boat_name||currentBoat.name||'Serenity',
-      ...update
-    },{onConflict:'boat_id'}).select('waterkaarten_import_token').maybeSingle();
-  }
-
-  if(result.error){
-    console.warn('Waterkaarten-importcode opslaan mislukt:',result.error);
-    if(ms720IsMissingDatabaseFeature(result.error)){
-      ms720DirectImportReady=false;
-      ms720SetDirectBadge('SQL nodig','error');
-      ms720SetDirectStatus(
-        'Voer eerst SQL_WATERKAARTEN_DIRECT_IMPORT_7_2_0.sql uit in Supabase.',
-        'warning'
-      );
-      return null;
-    }
-    ms720SetDirectBadge('Fout','error');
-    ms720SetDirectStatus('Importcode kon niet worden opgeslagen.','error');
-    return null;
-  }
-
-  settingsCache={...(settingsCache||{}),waterkaarten_import_token:code};
-  ms720DirectImportReady=true;
-  ms720RenderDirectImportSettings();
-  return code;
-}
-
-function toggleWaterkaartenImportCode(){
-  const input=$('waterkaartenImportCode');
-  if(!input)return;
-  input.type=input.type==='password'?'text':'password';
-}
-
-async function ms720CopyText(text,success){
-  try{
-    await navigator.clipboard.writeText(text);
-    showAppToast(success);
-  }catch{
-    const area=document.createElement('textarea');
-    area.value=text;
-    area.style.position='fixed';
-    area.style.opacity='0';
-    document.body.append(area);
-    area.select();
-    document.execCommand('copy');
-    area.remove();
-    showAppToast(success);
-  }
-}
-
-async function copyWaterkaartenImportCode(){
-  const code=await ms720EnsureImportCode();
-  if(code)await ms720CopyText(code,'Waterkaarten-importcode gekopieerd ✅');
-}
-
-function ms720ShortcutSetupText(code){
-  return [
-    'MIJNSERENITY — BEWAAR IN MIJNSERENITY',
-    '',
-    `Endpoint: ${SUPABASE_URL}/rest/v1/rpc/${MS720_RECEIVE_RPC}`,
-    `Header apikey: ${SUPABASE_KEY}`,
-    `Header Authorization: Bearer ${SUPABASE_KEY}`,
-    'Header Content-Type: application/json',
-    '',
-    `p_token: ${code}`,
-    'p_file_name: naam van de gedeelde GPX/KML/KMZ',
-    'p_file_base64: Base64-gecodeerde inhoud van het gedeelde bestand',
-    'p_content_type: application/gpx+xml',
-    '',
-    'Open daarna:',
-    `${location.origin}/?open=logbook&waterkaarten=check`
-  ].join('\n');
-}
-
-async function copyWaterkaartenShortcutSetup(){
-  const code=await ms720EnsureImportCode();
-  if(!code)return;
-  await ms720CopyText(
-    ms720ShortcutSetupText(code),
-    'Alle gegevens voor de Apple Opdracht zijn gekopieerd ✅'
-  );
-}
-
-async function rotateWaterkaartenImportCode(){
-  if(!currentBoat)return;
-  if(!confirm('Nieuwe importcode maken? De bestaande Apple Opdracht moet daarna één keer worden bijgewerkt.'))return;
-
-  const code=ms720RandomToken();
-  const {error}=await sb.from('boat_settings').update({
-    waterkaarten_import_token:code,
-    updated_at:new Date().toISOString()
-  }).eq('boat_id',currentBoat.id);
-
-  if(error){
-    if(ms720IsMissingDatabaseFeature(error)){
-      ms720SetDirectBadge('SQL nodig','error');
-      ms720SetDirectStatus('Voer eerst het meegeleverde Supabase SQL-bestand uit.','warning');
-      return;
-    }
-    alert('Nieuwe importcode opslaan mislukt: '+error.message);
-    return;
-  }
-
-  settingsCache={...(settingsCache||{}),waterkaarten_import_token:code};
-  const input=$('waterkaartenImportCode');
-  if(input)input.value=code;
-  ms720RenderDirectImportSettings();
-  showAppToast('Nieuwe importcode gemaakt. Werk de Apple Opdracht bij.');
-}
-
-function ms720Base64ToFile(row){
-  const clean=String(row?.file_base64||'').replace(/\s+/g,'');
-  if(!clean)throw new Error('Het gedeelde routebestand is leeg.');
-  const binary=atob(clean);
-  const bytes=new Uint8Array(binary.length);
-  for(let index=0;index<binary.length;index+=1){
-    bytes[index]=binary.charCodeAt(index);
-  }
-  const name=String(row?.file_name||'waterkaarten-route.gpx')
-    .replace(/[\\/:*?"<>|]/g,'_');
-  const type=String(row?.content_type||getRouteContentType({name}));
-  return new File([bytes],name,{type,lastModified:Date.now()});
-}
-
-async function ms720ReleaseImport(code,id){
-  if(!code||!id)return;
-  try{
-    await sb.rpc(MS720_RELEASE_RPC,{p_token:code,p_route_id:id});
-  }catch(error){
-    console.warn('Waterkaarten-route vrijgeven mislukt:',error);
-  }
-}
-
-async function checkWaterkaartenDirectImports(silent=true){
-  if(ms720DirectImportBusy||!currentUser||!currentBoat)return false;
-  const code=await ms720EnsureImportCode();
-  if(!code)return false;
-
-  ms720DirectImportBusy=true;
-  if(!silent){
-    ms720SetDirectBadge('Controleren…');
-    ms720SetDirectStatus('Controleren op een nieuwe gedeelde Waterkaarten-route…','info');
-  }
-
-  let claimed=null;
-  try{
-    const {data,error}=await sb.rpc(MS720_CLAIM_RPC,{p_token:code});
-    if(error)throw error;
-    claimed=Array.isArray(data)?data[0]:data;
-
-    if(!claimed?.id){
-      ms720DirectImportReady=true;
-      ms720SetDirectBadge('Gereed','ready');
-      if(!silent)ms720SetDirectStatus('Geen nieuwe gedeelde route gevonden.','success');
-      return false;
-    }
-
-    ms720SetDirectBadge('Ontvangen','received');
-    ms720SetDirectStatus(`${claimed.file_name} ontvangen. Route wordt ingelezen…`,'info');
-
-    const file=ms720Base64ToFile(claimed);
-    captainNavigate('logbook');
-    await handleTripRouteImport(file,'Waterkaarten deelmenu');
-    setTripFormCollapsed(false);
-
-    const query=new URL(location.href);
-    query.searchParams.delete('waterkaarten');
-    history.replaceState({},'',query.pathname+query.search+query.hash);
-
-    ms720SetDirectBadge('Route klaar','received');
-    ms720SetDirectStatus(
-      `${file.name} staat klaar. Controleer de gegevens en tik op ‘Vaartocht opslaan’.`,
-      'success'
-    );
-    showAppToast('Waterkaarten-route rechtstreeks ontvangen ✅');
-    return true;
-  }catch(error){
-    console.error('Directe Waterkaarten-import mislukt:',error);
-    if(claimed?.id)await ms720ReleaseImport(code,claimed.id);
-
-    if(ms720IsMissingDatabaseFeature(error)){
-      ms720DirectImportReady=false;
-      ms720SetDirectBadge('SQL nodig','error');
-      ms720SetDirectStatus(
-        'Direct delen is nog niet geactiveerd. Voer SQL_WATERKAARTEN_DIRECT_IMPORT_7_2_0.sql uit in Supabase.',
-        'warning'
-      );
-    }else{
-      ms720SetDirectBadge('Fout','error');
-      ms720SetDirectStatus(
-        'De gedeelde route kon niet worden opgehaald: '+(error?.message||'onbekende fout'),
-        'error'
-      );
-    }
-    return false;
-  }finally{
-    ms720DirectImportBusy=false;
-  }
-}
-
-function ms720StartDirectImportPolling(){
-  clearInterval(ms720DirectImportTimer);
-  ms720DirectImportTimer=setInterval(()=>{
-    if(!document.hidden&&navigator.onLine){
-      checkWaterkaartenDirectImports(true);
-    }
-  },MS720_IMPORT_POLL_MS);
-}
-
-async function ms720InitDirectImport(){
-  if(!currentUser||!currentBoat)return;
-  await ms720EnsureImportCode();
-  ms720StartDirectImportPolling();
-
-  const params=new URLSearchParams(location.search);
-  const shouldCheck=params.get('waterkaarten')==='check';
-  if(shouldCheck){
-    captainNavigate('logbook');
-    setTimeout(()=>checkWaterkaartenDirectImports(false),250);
-  }else{
-    setTimeout(()=>checkWaterkaartenDirectImports(true),1000);
-  }
-}
-
-const ms720OriginalLoadSettings=loadSettings;
-loadSettings=async function(){
-  const result=await ms720OriginalLoadSettings();
-  await ms720InitDirectImport();
-  return result;
-};
-
-const ms720OriginalLoadSettingsForm=loadSettingsForm;
-loadSettingsForm=function(){
-  const result=ms720OriginalLoadSettingsForm();
-  ms720RenderDirectImportSettings();
-  return result;
-};
-
-window.addEventListener('focus',()=>{
-  if(currentUser&&currentBoat)checkWaterkaartenDirectImports(true);
-});
-
-document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden&&currentUser&&currentBoat){
-    checkWaterkaartenDirectImports(true);
-  }
-});
