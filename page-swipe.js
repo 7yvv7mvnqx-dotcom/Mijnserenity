@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.1.1 — native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.1.2 — native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -10,6 +10,7 @@ const ms708PageOrder=[
   'weather',
   'map',
   'planner',
+  'entertainment',
   'technical',
   'logbook',
   'pois',
@@ -24,6 +25,7 @@ const ms708PageLabels={
   weather:'Weer',
   map:'Kaart',
   planner:'Reisplanner',
+  entertainment:'Entertainment',
   technical:'Techniek',
   logbook:'Logboek',
   pois:'POI',
@@ -92,11 +94,12 @@ function ms708SetNavigationState(id){
     weather:3,
     map:4,
     planner:5,
-    technical:6,
-    pois:7,
-    logbook:8,
-    finance:10,
-    settings:11
+    entertainment:6,
+    technical:7,
+    pois:8,
+    logbook:9,
+    finance:11,
+    settings:12
   };
 
   document.querySelectorAll('.tab')
@@ -184,6 +187,10 @@ function ms708ActivatePage(
           pan:false
         });
       }catch{}
+    }
+
+    if(id==='entertainment'&&typeof initEntertainmentPage==='function'){
+      initEntertainmentPage();
     }
 
     if(id==='planner'){

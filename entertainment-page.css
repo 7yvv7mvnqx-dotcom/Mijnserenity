@@ -1,0 +1,397 @@
+/* ============================================================
+   MijnSerenity Cloud 7.1.2 — Entertainment via Home Assistant
+   ============================================================ */
+
+.entertainment-page{
+  display:grid;
+  gap:16px;
+  padding-bottom:30px;
+}
+
+.entertainment-hero{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  padding:20px;
+  border-radius:24px;
+  background:
+    radial-gradient(circle at top right,rgba(67,208,255,.22),transparent 42%),
+    linear-gradient(145deg,rgba(9,37,68,.98),rgba(4,19,38,.98));
+  border:1px solid rgba(129,218,255,.22);
+  box-shadow:0 18px 45px rgba(0,0,0,.2);
+}
+
+.entertainment-hero h2{
+  margin:3px 0 6px;
+}
+
+.entertainment-hero p{
+  margin:0;
+  max-width:680px;
+}
+
+.entertainment-badges{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:8px;
+}
+
+.entertainment-cloud-badge,
+.entertainment-connection-badge{
+  display:inline-flex;
+  align-items:center;
+  min-height:34px;
+  padding:7px 11px;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:800;
+  white-space:nowrap;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.08);
+}
+
+.entertainment-cloud-badge.online,
+.entertainment-connection-badge.online{
+  color:#bfffd9;
+  background:rgba(25,170,91,.14);
+  border-color:rgba(65,225,132,.28);
+}
+
+.entertainment-cloud-badge.warning,
+.entertainment-connection-badge.offline{
+  color:#ffe4a3;
+  background:rgba(218,147,28,.13);
+  border-color:rgba(255,194,71,.25);
+}
+
+.entertainment-control-card{
+  padding:18px;
+  border-radius:24px;
+  background:linear-gradient(155deg,rgba(14,43,73,.96),rgba(5,23,42,.98));
+  border:1px solid rgba(139,215,255,.18);
+}
+
+.entertainment-control-top{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:end;
+  gap:14px;
+}
+
+.entertainment-control-top label{
+  margin:0;
+}
+
+.entertainment-control-top select{
+  margin-top:6px;
+}
+
+.entertainment-open-ha{
+  width:48px;
+  min-width:48px;
+  height:48px;
+  padding:0;
+  border-radius:16px;
+  font-size:1.2rem;
+}
+
+.entertainment-main-controls{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(44px,1fr));
+  gap:9px;
+  margin-top:18px;
+}
+
+.entertainment-icon-button{
+  display:grid;
+  place-items:center;
+  min-width:44px;
+  min-height:54px;
+  padding:0;
+  border-radius:17px;
+  font-size:1.25rem;
+}
+
+.entertainment-icon-button.primary{
+  min-height:62px;
+  font-size:1.45rem;
+  background:linear-gradient(145deg,#2ba9ff,#0c6fe8);
+}
+
+.entertainment-icon-button:disabled{
+  opacity:.38;
+  filter:grayscale(.7);
+}
+
+.entertainment-volume{
+  display:grid;
+  grid-template-columns:auto minmax(100px,1fr) auto;
+  align-items:center;
+  gap:12px;
+  margin-top:16px;
+  padding:12px 14px;
+  border-radius:18px;
+  background:rgba(255,255,255,.055);
+}
+
+.entertainment-volume input{
+  width:100%;
+  margin:0;
+}
+
+.entertainment-volume strong{
+  min-width:42px;
+  text-align:right;
+}
+
+.entertainment-grid-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:4px 2px -4px;
+}
+
+.entertainment-grid-title h3{
+  margin:0;
+}
+
+.entertainment-grid-title button{
+  min-height:42px;
+}
+
+.entertainment-player-grid,
+.entertainment-favorites-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+
+.entertainment-player-card,
+.entertainment-favorite{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  grid-template-areas:
+    "icon title"
+    "icon detail";
+  align-items:center;
+  gap:2px 11px;
+  min-height:82px;
+  padding:14px;
+  text-align:left;
+  border-radius:20px;
+  background:linear-gradient(145deg,rgba(16,49,80,.94),rgba(8,29,51,.96));
+  border:1px solid rgba(147,215,255,.15);
+}
+
+.entertainment-player-card>span,
+.entertainment-favorite>span{
+  grid-area:icon;
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  background:rgba(58,175,255,.14);
+  font-size:1.15rem;
+}
+
+.entertainment-player-card strong,
+.entertainment-favorite strong{
+  grid-area:title;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.entertainment-player-card small,
+.entertainment-favorite small{
+  grid-area:detail;
+  opacity:.72;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.entertainment-player-card.active{
+  border-color:rgba(72,190,255,.72);
+  box-shadow:0 0 0 2px rgba(38,164,255,.17) inset;
+}
+
+.entertainment-empty-state{
+  grid-column:1/-1;
+  display:grid;
+  justify-items:center;
+  gap:5px;
+  padding:28px 18px;
+  border-radius:20px;
+  text-align:center;
+  background:rgba(255,255,255,.045);
+  border:1px dashed rgba(170,220,255,.22);
+}
+
+.entertainment-empty-state>span{
+  font-size:1.6rem;
+}
+
+.entertainment-empty-state.compact{
+  padding:20px 16px;
+}
+
+.entertainment-note{
+  display:flex;
+  gap:10px;
+  padding:13px 15px;
+  border-radius:18px;
+  background:rgba(255,184,63,.09);
+  border:1px solid rgba(255,192,80,.18);
+}
+
+.entertainment-note p{
+  margin:0;
+}
+
+.entertainment-settings{
+  padding:18px;
+  border-radius:24px;
+  background:linear-gradient(155deg,rgba(12,40,69,.98),rgba(5,23,42,.98));
+  border:1px solid rgba(139,215,255,.18);
+}
+
+.entertainment-settings h3,
+.entertainment-settings h4{
+  margin-top:0;
+}
+
+.entertainment-settings-step{
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr);
+  gap:12px;
+  align-items:start;
+  margin:16px 0 10px;
+}
+
+.entertainment-settings-step>span{
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  background:rgba(48,174,255,.18);
+  border:1px solid rgba(93,194,255,.34);
+  font-weight:900;
+}
+
+.entertainment-settings-step p{
+  margin:4px 0 0;
+}
+
+.entertainment-webhook-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  gap:8px;
+}
+
+.entertainment-webhook-row input{
+  min-width:0;
+}
+
+.entertainment-players-settings,
+.entertainment-favorites-settings{
+  display:grid;
+  gap:10px;
+}
+
+.entertainment-player-setting{
+  display:grid;
+  grid-template-columns:minmax(110px,.7fr) minmax(190px,1.3fr);
+  gap:10px;
+}
+
+.entertainment-favorite-setting{
+  display:grid;
+  grid-template-columns:minmax(120px,.75fr) minmax(190px,1.4fr) minmax(110px,.55fr);
+  gap:10px;
+}
+
+.entertainment-settings textarea{
+  min-height:310px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:.77rem;
+  line-height:1.45;
+}
+
+.entertainment-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:14px;
+}
+
+#entertainmentStatus{
+  margin-top:12px;
+}
+
+@media (max-width:800px){
+  .entertainment-hero{
+    display:grid;
+  }
+
+  .entertainment-badges{
+    justify-content:flex-start;
+  }
+
+  .entertainment-player-grid,
+  .entertainment-favorites-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .entertainment-main-controls{
+    grid-template-columns:repeat(4,minmax(44px,1fr));
+  }
+
+  .entertainment-icon-button.primary{
+    grid-column:span 2;
+  }
+
+  .entertainment-favorite-setting{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:560px){
+  .entertainment-page{
+    gap:12px;
+  }
+
+  .entertainment-hero,
+  .entertainment-control-card,
+  .entertainment-settings{
+    border-radius:20px;
+    padding:15px;
+  }
+
+  .entertainment-control-top{
+    grid-template-columns:minmax(0,1fr) 48px;
+  }
+
+  .entertainment-player-grid,
+  .entertainment-favorites-grid{
+    grid-template-columns:1fr;
+  }
+
+  .entertainment-main-controls{
+    grid-template-columns:repeat(4,1fr);
+  }
+
+  .entertainment-player-setting,
+  .entertainment-webhook-row{
+    grid-template-columns:1fr;
+  }
+
+  .entertainment-webhook-row button{
+    width:100%;
+  }
+}
