@@ -14088,7 +14088,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.0.2"
+<gpx version="1.1" creator="MijnSerenity 7.0.3"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14340,7 +14340,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.0.2';
+const APP_VERSION='7.0.3';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14417,7 +14417,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=7020',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=7030',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -16112,8 +16112,7 @@ function closeLightbox(){
 }
 
 
-/* Cloud 5.6.3 — automatisch verbergende onderste navigatie */
-const BOTTOM_NAV_IDLE_MS=4000;
+/* MijnSerenity Cloud 7.0.3 — vaste onderste navigatie */
 let bottomNavHideTimer=null;
 let bottomNavActivityFrame=null;
 
@@ -16137,17 +16136,15 @@ function scrollActiveBottomNavigationIntoView(
 
   const itemCenter=
     item.offsetLeft+
-    (item.offsetWidth/2);
-
+    item.offsetWidth/2;
   const maxLeft=Math.max(
     0,
     nav.scrollWidth-nav.clientWidth
   );
-
   const targetLeft=Math.max(
     0,
     Math.min(
-      itemCenter-(nav.clientWidth/2),
+      itemCenter-nav.clientWidth/2,
       maxLeft
     )
   );
@@ -16159,25 +16156,51 @@ function scrollActiveBottomNavigationIntoView(
   });
 }
 
-function hideBottomNavigation(){
+function forceBottomNavigationVisible(
+  focusActive=false,
+  smooth=false
+){
   const nav=bottomNavigationElement();
   if(!nav)return;
 
-  if(nav.matches(':focus-within')){
-    scheduleBottomNavigationHide();
-    return;
-  }
+  clearTimeout(bottomNavHideTimer);
 
-  nav.classList.add('bottom-nav-auto-hidden');
-  nav.setAttribute('aria-hidden','true');
+  nav.classList.remove(
+    'bottom-nav-auto-hidden'
+  );
+  nav.classList.add(
+    'bottom-nav-always-visible',
+    'bottom-nav-viewport-fixed'
+  );
+  nav.dataset.autoHide='false';
+  nav.setAttribute(
+    'aria-hidden',
+    'false'
+  );
+
+  if(focusActive){
+    requestAnimationFrame(()=>{
+      scrollActiveBottomNavigationIntoView(
+        null,
+        smooth
+      );
+    });
+  }
+}
+
+/* Bestaande aanroepen mogen de navigatie niet meer verbergen. */
+function hideBottomNavigation(){
+  forceBottomNavigationVisible(
+    false,
+    false
+  );
 }
 
 function scheduleBottomNavigationHide(){
   clearTimeout(bottomNavHideTimer);
-
-  bottomNavHideTimer=setTimeout(
-    hideBottomNavigation,
-    BOTTOM_NAV_IDLE_MS
+  forceBottomNavigationVisible(
+    false,
+    false
   );
 }
 
@@ -16185,25 +16208,10 @@ function showBottomNavigation(
   focusActive=true,
   smooth=true
 ){
-  const nav=bottomNavigationElement();
-  if(!nav)return;
-
-  const wasHidden=nav.classList.contains(
-    'bottom-nav-auto-hidden'
+  forceBottomNavigationVisible(
+    focusActive,
+    smooth
   );
-
-  nav.classList.remove('bottom-nav-auto-hidden');
-  nav.setAttribute('aria-hidden','false');
-  scheduleBottomNavigationHide();
-
-  if(focusActive){
-    requestAnimationFrame(()=>{
-      scrollActiveBottomNavigationIntoView(
-        null,
-        smooth&&wasHidden
-      );
-    });
-  }
 }
 
 function bottomNavigationActivity(
@@ -16211,112 +16219,58 @@ function bottomNavigationActivity(
 ){
   if(bottomNavActivityFrame)return;
 
-  bottomNavActivityFrame=requestAnimationFrame(()=>{
-    bottomNavActivityFrame=null;
-    showBottomNavigation(focusActive,true);
-  });
+  bottomNavActivityFrame=
+    requestAnimationFrame(()=>{
+      bottomNavActivityFrame=null;
+      forceBottomNavigationVisible(
+        focusActive,
+        false
+      );
+    });
 }
 
 function initAutoHideBottomNavigation(){
   const nav=bottomNavigationElement();
 
-  if(!nav||nav.dataset.autoHideReady==='true'){
-    return;
-  }
+  if(!nav)return;
 
-  nav.dataset.autoHideReady='true';
+  nav.dataset.autoHideReady='fixed';
+  nav.dataset.autoHide='false';
 
-  const revealWithoutRecentering=()=>{
-    bottomNavigationActivity(false);
-  };
-
-  document.addEventListener(
-    'pointerdown',
-    revealWithoutRecentering,
-    {passive:true,capture:true}
+  forceBottomNavigationVisible(
+    true,
+    false
   );
 
-  document.addEventListener(
-    'touchstart',
-    revealWithoutRecentering,
-    {passive:true,capture:true}
-  );
+  if(
+    nav.dataset.fixedClickReady!=='true'
+  ){
+    nav.dataset.fixedClickReady='true';
 
-  document.addEventListener(
-    'mousemove',
-    revealWithoutRecentering,
-    {passive:true}
-  );
+    nav.addEventListener(
+      'click',
+      event=>{
+        const item=
+          event.target.closest(
+            '.bottom-nav-item'
+          );
 
-  document.addEventListener(
-    'scroll',
-    revealWithoutRecentering,
-    {passive:true,capture:true}
-  );
-
-  document.addEventListener(
-    'wheel',
-    revealWithoutRecentering,
-    {passive:true}
-  );
-
-  document.addEventListener(
-    'keydown',
-    revealWithoutRecentering,
-    {capture:true}
-  );
-
-  nav.addEventListener(
-    'pointerenter',
-    revealWithoutRecentering,
-    {passive:true}
-  );
-
-  nav.addEventListener(
-    'pointermove',
-    revealWithoutRecentering,
-    {passive:true}
-  );
-
-  nav.addEventListener(
-    'scroll',
-    revealWithoutRecentering,
-    {passive:true}
-  );
-
-  nav.addEventListener('focusin',()=>{
-    showBottomNavigation(false,false);
-  });
-
-  nav.addEventListener('focusout',()=>{
-    scheduleBottomNavigationHide();
-  });
-
-  nav.addEventListener('click',event=>{
-    const item=event.target.closest('.bottom-nav-item');
-
-    showBottomNavigation(false,false);
-
-    if(item){
-      requestAnimationFrame(()=>{
-        scrollActiveBottomNavigationIntoView(
-          item,
-          true
+        forceBottomNavigationVisible(
+          false,
+          false
         );
-      });
-    }
-  });
 
-  document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){
-      clearTimeout(bottomNavHideTimer);
-      return;
-    }
-
-    showBottomNavigation(true,false);
-  });
-
-  showBottomNavigation(true,false);
+        if(item){
+          requestAnimationFrame(()=>{
+            scrollActiveBottomNavigationIntoView(
+              item,
+              true
+            );
+          });
+        }
+      }
+    );
+  }
 }
 
 if(document.readyState==='loading'){
@@ -16329,8 +16283,32 @@ if(document.readyState==='loading'){
   initAutoHideBottomNavigation();
 }
 
+window.addEventListener(
+  'pageshow',
+  ()=>{
+    forceBottomNavigationVisible(
+      true,
+      false
+    );
+  },
+  {passive:true}
+);
 
-/* MijnSerenity Cloud 7.0.2 — Waterkaarten Bridge + gedeelde live vaarkaart */
+document.addEventListener(
+  'visibilitychange',
+  ()=>{
+    if(!document.hidden){
+      forceBottomNavigationVisible(
+        false,
+        false
+      );
+    }
+  }
+);
+
+
+
+/* MijnSerenity Cloud 7.0.3 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16719,7 +16697,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2
+   MijnSerenity Cloud 7.0.3
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17656,7 +17634,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.0.2"
+ creator="MijnSerenity 7.0.3"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17682,7 +17660,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.0.2 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 7.0.3 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17720,7 +17698,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2 — Next Level Live Cockpit
+   MijnSerenity Cloud 7.0.3 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18694,7 +18672,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2 — Smart Route
+   MijnSerenity Cloud 7.0.3 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -20004,7 +19982,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.0.2 Smart Route"
+ creator="MijnSerenity 7.0.3 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -20033,7 +20011,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.0.2 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 7.0.3 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20100,7 +20078,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 7.0.3 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -21019,7 +20997,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2 — Auto Logbook
+   MijnSerenity Cloud 7.0.3 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22227,7 +22205,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2 — Routefoto’s met GPS en omschrijving
+   MijnSerenity Cloud 7.0.3 — Routefoto’s met GPS en omschrijving
    ============================================================ */
 
 let ms681PendingPhotos=[];
@@ -23056,7 +23034,7 @@ initLiveMode=async function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2 — Boat Intelligence
+   MijnSerenity Cloud 7.0.3 — Boat Intelligence
    ============================================================ */
 
 function ms690Clamp(value,min=0,max=100){
@@ -24356,7 +24334,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2 — Gewaardeerde havenimporteur
+   MijnSerenity Cloud 7.0.3 — Gewaardeerde havenimporteur
    ============================================================ */
 
 let ms692HarbourImportBusy=false;
@@ -25013,7 +24991,7 @@ async function ms692ImportRatedHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2 — Havens binnen straal van locatie
+   MijnSerenity Cloud 7.0.3 — Havens binnen straal van locatie
    ============================================================ */
 
 let ms693NearbyBusy=false;
@@ -25366,7 +25344,7 @@ async function ms693ImportNearbyHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.2 — POI Data Service
+   MijnSerenity Cloud 7.0.3 — POI Data Service
    ============================================================ */
 
 let ms694EnrichmentBusy=false;
