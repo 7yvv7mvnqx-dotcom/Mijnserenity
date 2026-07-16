@@ -1,12 +1,14 @@
-# MijnSerenity 7.1.1 — complete GitHub-upload
+# MijnSerenity Cloud 7.1.1 — GitHub-upload
 
-1. Upload alle bestanden en mappen naar de hoofdmap van GitHub.
-2. Bewaar de mapstructuur `netlify/functions/ais.mjs`.
-3. Open Netlify.
-4. Ga naar Project configuration → Environment variables.
-5. Voeg `VESSELAPI_KEY` toe.
-6. Start een nieuwe deploy.
-7. Sluit MijnSerenity volledig en open opnieuw.
-8. Open 📡 AIS en geef locatietoegang.
+Deze ZIP is plat opgebouwd: alle bestanden staan direct in de hoofdmap.
 
-Geen nieuwe Supabase-SQL nodig.
+## Uploaden
+
+1. Open de bestaande MijnSerenity-repository in GitHub.
+2. Kies **Add file → Upload files**.
+3. Verwijder zo nodig de oude bestanden en upload daarna alle losse bestanden uit deze ZIP.
+4. Kies **Commit changes**.
+5. Wacht tot Netlify de nieuwe versie heeft gepubliceerd.
+6. Sluit MijnSerenity volledig en open de app opnieuw.
+
+Voor AIS is geen account, API-sleutel, betaalde API, Supabase-SQL of eigen AIS-ontvanger nodig. Geef op iPhone of iPad wel locatietoegang en zorg voor een internetverbinding.

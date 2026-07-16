@@ -2202,21 +2202,23 @@ function goToTab(id){
   const map={
     dashboard:0,
     live:1,
-    weather:2,
-    map:3,
-    planner:4,
-    technical:5,
-    pois:6,
-    logbook:7,
-    costs:8,
-    finance:9,
-    settings:10,
-    boat:11
+    ais:2,
+    weather:3,
+    map:4,
+    planner:5,
+    technical:6,
+    pois:7,
+    logbook:8,
+    costs:9,
+    finance:10,
+    settings:11,
+    boat:12
   };
   const button=buttons[map[id]];
 
   if(button)showTab(id,button);
   if(id==='live')initLiveMode();
+  if(id==='ais'&&typeof initAisPage==='function')initAisPage();
   if(id==='map')initMap();
   if(id==='planner')initPlanner();
   if(id==='technical')initTechnicalDashboard();

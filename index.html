@@ -7,23 +7,23 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="mijnserenity-build" content="7.1.1">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=7110">
+<link rel="manifest" href="manifest.json?v=7111">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7110">
-  <link rel="stylesheet" href="mission-control.css?v=7110">
-  <link rel="stylesheet" href="easy-auto.css?v=7110">
-  <link rel="stylesheet" href="live-split.css?v=7110">
-  <link rel="stylesheet" href="route-control.css?v=7110">
-  <link rel="stylesheet" href="page-swipe.css?v=7110">
-  <link rel="stylesheet" href="weather-page.css?v=7110">
-  <link rel="stylesheet" href="weather-radar.css?v=7110">
-  <link rel="stylesheet" href="ais-page.css?v=7110">
+<link rel="stylesheet" href="styles.css?v=7111">
+  <link rel="stylesheet" href="mission-control.css?v=7111">
+  <link rel="stylesheet" href="easy-auto.css?v=7111">
+  <link rel="stylesheet" href="live-split.css?v=7111">
+  <link rel="stylesheet" href="route-control.css?v=7111">
+  <link rel="stylesheet" href="page-swipe.css?v=7111">
+  <link rel="stylesheet" href="weather-page.css?v=7111">
+  <link rel="stylesheet" href="weather-radar.css?v=7111">
+  <link rel="stylesheet" href="ais-page.css?v=7111">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7110">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7110">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7111">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7111">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -32,7 +32,7 @@
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7110" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7111" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -71,7 +71,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7110" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7111" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -489,7 +489,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7110" alt="">
+          <img src="waterkaarten-dashboard.png?v=7111" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -1313,168 +1313,90 @@
     <div class="card ms711-ais-hero">
       <div class="ms711-ais-head">
         <div>
-          <span class="eyebrow">AIS VERKEERSBEELD · RONDOM SERENITY</span>
-          <h2>Boten volgen</h2>
-          <p id="ms711AisStatus" class="small">
-            AIS-verbinding en huidige positie worden gecontroleerd…
+          <span class="eyebrow">GRATIS INTERNET-AIS · MYSHIPTRACKING</span>
+          <h2>📡 Boten rond Serenity</h2>
+          <p id="ms711AisStatus" class="small" aria-live="polite">
+            Huidige GPS-locatie wordt bepaald…
           </p>
         </div>
 
-        <div class="ms711-ais-head-actions" aria-label="AIS bediening">
-          <button type="button" aria-label="Centreren op Serenity"
-            title="Centreren op Serenity" onclick="ms711Locate()">◎</button>
+        <div class="ms711-ais-head-actions" aria-label="AIS-bediening">
+          <button id="ms711LocateButton" type="button"
+            aria-label="Centreer AIS-kaart op Serenity"
+            title="Centreer AIS-kaart op Serenity"
+            onclick="ms711CenterAis()">◎</button>
           <button id="ms711RefreshButton" type="button"
-            aria-label="AIS verversen" title="AIS verversen"
-            onclick="ms711RefreshAll(true)">↻</button>
-          <button type="button" aria-label="Gevolgde boten tonen"
-            title="Gevolgde boten tonen"
-            onclick="ms711ScrollToWatchlist()">★</button>
+            aria-label="Ververs AIS-kaart"
+            title="Ververs AIS-kaart"
+            onclick="ms711RefreshAis()">↻</button>
+          <button id="ms711FullscreenButton" type="button"
+            aria-label="AIS-kaart volledig scherm"
+            title="AIS-kaart volledig scherm"
+            onclick="ms711ToggleAisFullscreen()">⛶</button>
         </div>
       </div>
 
-      <div class="ms711-ais-summary">
-        <article>
-          <span>In beeld</span>
-          <strong id="ms711NearbyCount">0</strong>
-          <small id="ms711NearbyCountDetail">boten rond Serenity</small>
-        </article>
-        <article>
-          <span>Gevolgd</span>
-          <strong id="ms711WatchedCount">0</strong>
-          <small>op naam of MMSI</small>
-        </article>
-        <article>
-          <span>Dichtstbij</span>
-          <strong id="ms711NearestDistance">–</strong>
-          <small id="ms711NearestName">nog geen AIS-data</small>
-        </article>
-        <article>
-          <span>Laatste update</span>
-          <strong id="ms711LastUpdate">–</strong>
-          <small id="ms711RefreshCountdown">automatisch verversen</small>
-        </article>
+      <div class="ms711-ais-meta">
+        <span id="ms711AisConnection" class="ms711-ais-pill" data-state="loading">
+          <i aria-hidden="true"></i> Verbinden
+        </span>
+        <span id="ms711AisPosition">GPS: nog niet beschikbaar</span>
+        <span id="ms711AisUpdated">Laatste verversing: –</span>
       </div>
-    </div>
-
-    <div id="ms711SetupCard" class="card ms711-ais-setup hidden">
-      <div class="ms711-setup-icon">🔐</div>
-      <div>
-        <span class="eyebrow">EENMALIG INSTELLEN</span>
-        <h2>AIS-databron nog niet gekoppeld</h2>
-        <p>
-          Maak een VesselAPI-sleutel en voeg die in Netlify toe als
-          <code>VESSELAPI_KEY</code>. De sleutel blijft veilig in de
-          Netlify Function en komt niet in MijnSerenity of GitHub terecht.
-        </p>
-      </div>
-      <button type="button" onclick="ms711ShowSetupHelp()">?</button>
-    </div>
-
-    <div class="card ms711-ais-controls">
-      <div class="ms711-control-row">
-        <label>
-          <span>Zoekgebied</span>
-          <select id="ms711Radius" onchange="ms711RadiusChanged()">
-            <option value="5">5 km</option>
-            <option value="10">10 km</option>
-            <option value="20" selected>20 km</option>
-            <option value="50">50 km</option>
-            <option value="100">100 km</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Alarmafstand</span>
-          <select id="ms711AlertDistance" onchange="ms711SavePreferences();ms711RenderAll()">
-            <option value="0.5">500 m</option>
-            <option value="1" selected>1 km</option>
-            <option value="2">2 km</option>
-            <option value="5">5 km</option>
-          </select>
-        </label>
-
-        <label class="ms711-auto-refresh">
-          <span>Automatisch</span>
-          <select id="ms711RefreshSeconds" onchange="ms711RefreshRateChanged()">
-            <option value="15">15 sec</option>
-            <option value="30" selected>30 sec</option>
-            <option value="60">1 min</option>
-            <option value="120">2 min</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="ms711-search-row">
-        <input id="ms711SearchInput" type="search"
-          placeholder="Zoek bootnaam of MMSI"
-          autocomplete="off"
-          onkeydown="ms711SearchKey(event)">
-        <button type="button" aria-label="Boten zoeken"
-          title="Boten zoeken" onclick="ms711Search()">⌕</button>
-        <button type="button" aria-label="Zoekresultaten wissen"
-          title="Zoekresultaten wissen" onclick="ms711ClearSearch()">×</button>
-      </div>
-
-      <div id="ms711SearchResults" class="ms711-search-results hidden"></div>
     </div>
 
     <div class="card ms711-ais-map-card">
-      <div class="ms711-section-head">
+      <div class="ms711-ais-map-title">
         <div>
-          <span class="eyebrow">LIVE VERKEERSBEELD</span>
-          <h2>Kaart rond Serenity</h2>
+          <span class="eyebrow">ACTUEEL VERKEERSBEELD</span>
+          <h2>MyShipTracking-kaart</h2>
         </div>
-        <div class="ms711-map-legend">
-          <span><i class="own"></i>Serenity</span>
-          <span><i class="normal"></i>AIS</span>
-          <span><i class="watched"></i>Gevolgd</span>
-          <span><i class="alert"></i>Dichtbij</span>
+        <button type="button"
+          aria-label="Open volledige externe AIS-kaart"
+          title="Open volledige externe AIS-kaart"
+          onclick="ms711OpenExternalAis()">↗</button>
+      </div>
+
+      <div id="ms711AisMapShell" class="ms711-ais-map-shell">
+        <iframe id="ms711AisWidget"
+          title="MyShipTracking AIS-kaart met schepen rond Serenity"
+          aria-label="MyShipTracking AIS-kaart met schepen rond Serenity"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="fullscreen"
+          loading="eager"></iframe>
+
+        <button id="ms711FullscreenExitButton" type="button"
+          class="ms711-fullscreen-exit hidden"
+          aria-label="Sluit volledig scherm"
+          title="Sluit volledig scherm"
+          onclick="ms711ToggleAisFullscreen()">×</button>
+
+        <div id="ms711AisNotice" class="ms711-ais-notice" role="status" aria-live="polite">
+          <div id="ms711AisNoticeIcon" class="ms711-ais-notice-icon" aria-hidden="true">◌</div>
+          <strong id="ms711AisNoticeTitle">AIS-kaart laden…</strong>
+          <p id="ms711AisNoticeText">De actuele GPS-locatie van Serenity wordt opgevraagd.</p>
+          <div id="ms711AisNoticeActions" class="ms711-ais-notice-actions">
+            <button type="button" aria-label="Opnieuw proberen"
+              title="Opnieuw proberen" onclick="ms711CenterAis()">↻</button>
+            <button type="button" aria-label="Open volledige externe AIS-kaart"
+              title="Open volledige externe AIS-kaart"
+              onclick="ms711OpenExternalAis()">↗</button>
+          </div>
         </div>
       </div>
 
-      <div class="ms711-map-wrap">
-        <div id="ms711AisMap" aria-label="AIS-kaart met boten rondom Serenity"></div>
-        <div id="ms711AisMapMessage" class="ms711-map-message">
-          AIS-kaart laden…
-        </div>
-      </div>
+      <p class="small ms711-ais-map-help">
+        Scheepsnamen worden op de kaart getoond. Tik op een schip voor de beschikbare details van MyShipTracking.
+      </p>
     </div>
 
-    <div class="ms711-ais-columns">
-      <div class="card ms711-ais-list-card">
-        <div class="ms711-section-head">
-          <div>
-            <span class="eyebrow">IN DE BUURT</span>
-            <h2>Boten op afstand</h2>
-          </div>
-          <span id="ms711NearbyBadge" class="ms711-badge">0</span>
-        </div>
-        <div id="ms711NearbyList" class="ms711-vessel-list">
-          <div class="ms711-empty">Nog geen AIS-posities opgehaald.</div>
-        </div>
-      </div>
-
-      <div id="ms711WatchlistCard" class="card ms711-ais-list-card">
-        <div class="ms711-section-head">
-          <div>
-            <span class="eyebrow">VOLGEN</span>
-            <h2>Mijn boten</h2>
-          </div>
-          <button type="button" aria-label="Gevolgde boten verversen"
-            title="Gevolgde boten verversen" onclick="ms711RefreshWatched(true)">↻</button>
-        </div>
-        <div id="ms711WatchList" class="ms711-vessel-list">
-          <div class="ms711-empty">Zoek een boot en tik op ★ om deze te volgen.</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card ms711-ais-disclaimer">
-      <strong>⚠ AIS is ondersteunende informatie</strong>
+    <div class="card ms711-ais-disclaimer" role="note">
+      <strong>⚠ Internet-AIS is uitsluitend informatief</strong>
       <p>
-        Niet iedere boot heeft AIS en posities kunnen vertraagd, onvolledig of
-        onjuist zijn. Gebruik altijd zicht, goed zeemanschap en de officiële
-        navigatiemiddelen aan boord.
+        Gebruik deze kaart niet voor navigatie, koersbeslissingen of het voorkomen
+        van aanvaringen. Niet ieder schip zendt AIS uit en internetposities kunnen
+        vertraagd, onvolledig of onjuist zijn. Blijf altijd zelf goed uitkijken en
+        gebruik de officiële navigatiemiddelen aan boord.
       </p>
     </div>
   </section>
@@ -3994,58 +3916,6 @@
   </div>
 
 
-<div id="ms711VesselModal" class="ms711-vessel-modal hidden"
-  role="dialog" aria-modal="true" aria-label="AIS bootdetails"
-  onclick="ms711CloseVesselModal(event)">
-  <div class="ms711-vessel-panel" onclick="event.stopPropagation()">
-    <div class="ms711-vessel-modal-head">
-      <div>
-        <span class="eyebrow">AIS BOOTDETAILS</span>
-        <h2 id="ms711ModalName">Onbekende boot</h2>
-        <p id="ms711ModalIdentity" class="small">MMSI –</p>
-      </div>
-      <button type="button" aria-label="Sluiten" title="Sluiten"
-        onclick="ms711CloseVesselModal(event,true)">×</button>
-    </div>
-    <div id="ms711ModalBody" class="ms711-vessel-modal-body"></div>
-    <div class="ms711-vessel-modal-actions">
-      <button id="ms711ModalWatchButton" type="button"
-        aria-label="Boot volgen" title="Boot volgen"
-        onclick="ms711ToggleModalWatch()">★</button>
-      <button type="button" aria-label="Boot op kaart tonen"
-        title="Boot op kaart tonen" onclick="ms711FocusModalVessel()">◎</button>
-      <button type="button" aria-label="Actuele positie verversen"
-        title="Actuele positie verversen" onclick="ms711RefreshModalVessel()">↻</button>
-    </div>
-  </div>
-</div>
-
-<div id="ms711SetupModal" class="ms711-vessel-modal hidden"
-  role="dialog" aria-modal="true" aria-label="AIS instellen"
-  onclick="ms711CloseSetupHelp(event)">
-  <div class="ms711-vessel-panel ms711-setup-panel"
-    onclick="event.stopPropagation()">
-    <div class="ms711-vessel-modal-head">
-      <div>
-        <span class="eyebrow">AIS EENMALIG INSTELLEN</span>
-        <h2>Veilige VesselAPI-koppeling</h2>
-      </div>
-      <button type="button" aria-label="Sluiten" title="Sluiten"
-        onclick="ms711CloseSetupHelp(event,true)">×</button>
-    </div>
-    <div class="ms711-setup-steps">
-      <p><b>1.</b> Maak bij VesselAPI een account en API-sleutel.</p>
-      <p><b>2.</b> Open in Netlify: <b>Project configuration → Environment variables</b>.</p>
-      <p><b>3.</b> Voeg de variabele <code>VESSELAPI_KEY</code> toe met jouw sleutel.</p>
-      <p><b>4.</b> Start daarna een nieuwe deploy.</p>
-      <p>
-        De sleutel wordt uitsluitend door <code>netlify/functions/ais.mjs</code>
-        gelezen en nooit naar de browser gestuurd.
-      </p>
-    </div>
-  </div>
-</div>
-
 <div id="plannerMapFullscreen"
     class="planner-map-fullscreen hidden"
     role="dialog"
@@ -4172,14 +4042,14 @@
   </div>
 </div>
 
-<script src="app.js?v=7110"></script>
-<script src="mission-control.js?v=7110"></script>
-<script src="easy-auto.js?v=7110"></script>
-<script src="live-split.js?v=7110"></script>
-<script src="route-control.js?v=7110"></script>
-<script src="weather-page.js?v=7110"></script>
-<script src="weather-radar.js?v=7110"></script>
-<script src="ais-page.js?v=7110"></script>
-<script src="page-swipe.js?v=7110"></script>
+<script src="app.js?v=7111"></script>
+<script src="mission-control.js?v=7111"></script>
+<script src="easy-auto.js?v=7111"></script>
+<script src="live-split.js?v=7111"></script>
+<script src="route-control.js?v=7111"></script>
+<script src="weather-page.js?v=7111"></script>
+<script src="weather-radar.js?v=7111"></script>
+<script src="ais-page.js?v=7111"></script>
+<script src="page-swipe.js?v=7111"></script>
 </body>
 </html>

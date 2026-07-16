@@ -1,54 +1,15 @@
-# MijnSerenity Cloud 7.1.1 — AIS boten volgen
+# MijnSerenity Cloud 7.1.1
 
-## Nieuw AIS-scherm
+## Nieuw: 📡 AIS-scherm
 
-De nieuwe pagina `📡 AIS` toont boten rond de actuele positie van Serenity.
+- Officiële gratis MyShipTracking embed-widget.
+- Geen account, abonnement, API-sleutel of eigen AIS-ontvanger.
+- Automatische centrering op de actuele GPS-locatie van Serenity.
+- Scheepsnamen zichtbaar en schepen aanklikbaar binnen MyShipTracking.
+- Icoonknoppen voor centreren, verversen, volledig scherm en extern openen.
+- AIS toegevoegd aan de vaste onderste navigatie en het zijwaarts vegen.
+- Duidelijke meldingen bij ontbrekende GPS, internetverbinding of externe widget.
+- Uitwijkknop naar de volledige MyShipTracking-kaart.
+- Waarschuwing dat internet-AIS alleen informatief is en niet voor navigatie of aanvaringspreventie gebruikt mag worden.
 
-Functies:
-
-- interactieve OpenStreetMap-kaart;
-- actuele AIS-posities binnen 5, 10, 20, 50 of 100 kilometer;
-- automatisch verversen per 15, 30, 60 of 120 seconden;
-- sorteren op afstand tot Serenity;
-- naam, MMSI, snelheid, koers, heading en navigatiestatus;
-- alarmmarkering voor boten binnen een instelbare afstand;
-- boten zoeken op naam of MMSI;
-- boten toevoegen aan `Mijn boten`;
-- gevolgde boten blijven op de kaart en worden apart bijgewerkt;
-- details met vlag, type, roepnaam, bestemming en ETA wanneer beschikbaar;
-- Serenity-marker beweegt mee met de bekende GPS-positie.
-
-## Veilige API-koppeling
-
-AIS-gegevens worden via VesselAPI opgehaald door:
-
-`netlify/functions/ais.mjs`
-
-De API-sleutel wordt uitsluitend server-side gelezen uit:
-
-`VESSELAPI_KEY`
-
-De sleutel staat dus niet in de browsercode, de PWA of GitHub.
-
-## Belangrijk
-
-AIS is ondersteunende informatie. Niet iedere boot zendt AIS uit en gegevens
-kunnen vertraagd of onjuist zijn. Gebruik altijd zicht, goed zeemanschap en
-de officiële navigatiemiddelen aan boord.
-
-## Installatie
-
-Deze ZIP bevat voor het eerst een vereiste map:
-
-`netlify/functions/ais.mjs`
-
-Upload daarom de volledige mappenstructuur naar GitHub.
-
-Daarna:
-
-1. Maak een VesselAPI-account en API-sleutel.
-2. Voeg in Netlify de omgevingsvariabele `VESSELAPI_KEY` toe.
-3. Start een nieuwe deploy.
-4. Sluit MijnSerenity volledig en open versie 7.1.1 opnieuw.
-
-Geen nieuwe Supabase-SQL nodig.
+Alle bestaande functies zijn behouden. Er is geen nieuwe Supabase-SQL toegevoegd en er staan geen AIS-sleutels in de openbare code.
