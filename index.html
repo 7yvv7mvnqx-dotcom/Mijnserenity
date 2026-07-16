@@ -5,20 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.0.4">
+<meta name="mijnserenity-build" content="7.0.5">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=7040">
+<link rel="manifest" href="manifest.json?v=7050">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7040">
-  <link rel="stylesheet" href="mission-control.css?v=7040">
-  <link rel="stylesheet" href="easy-auto.css?v=7040">
-  <link rel="stylesheet" href="live-split.css?v=7040">
+<link rel="stylesheet" href="styles.css?v=7050">
+  <link rel="stylesheet" href="mission-control.css?v=7050">
+  <link rel="stylesheet" href="easy-auto.css?v=7050">
+  <link rel="stylesheet" href="live-split.css?v=7050">
+  <link rel="stylesheet" href="route-control.css?v=7050">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7040">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7040">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7050">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7050">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -27,7 +28,7 @@
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7040" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7050" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -66,7 +67,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7040" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7050" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -449,7 +450,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7040" alt="">
+          <img src="waterkaarten-dashboard.png?v=7050" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -543,7 +544,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.0.4</div>
+          <div class="label">Sync · v7.0.5</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -659,62 +660,92 @@
         <div>
           <span class="eyebrow">DIGITALE SCHIPPER</span>
           <h2>Route, bereik en waarschuwingen</h2>
+          <p class="small ms705-command-hint">
+            Tik op een tegel om te openen, bekijken of bewerken.
+          </p>
         </div>
         <span id="ms660ControlRole" class="ms660-role-badge">Besturing</span>
       </div>
 
       <div class="ms660-command-grid">
-        <div class="ms660-command-metric">
+        <button type="button"
+          class="ms660-command-metric ms705-command-button"
+          onclick="ms705OpenRouteControl('route')">
           <span>Bestemming</span>
           <strong id="ms660Destination">Nog niet gekozen</strong>
-          <small id="ms660RouteSource">Kies een planning of vul aankomst in</small>
-        </div>
-        <div class="ms660-command-metric">
+          <small id="ms660RouteSource">Tik om route te openen of bewerken</small>
+          <i>›</i>
+        </button>
+        <button type="button"
+          class="ms660-command-metric ms705-command-button"
+          onclick="ms705OpenRouteControl('route')">
           <span>Resterend</span>
           <strong id="ms660Remaining">– km</strong>
-          <small id="ms660RemainingDetail">Wachten op GPS</small>
-        </div>
-        <div class="ms660-command-metric">
+          <small id="ms660RemainingDetail">Tik voor route-instellingen</small>
+          <i>›</i>
+        </button>
+        <button type="button"
+          class="ms660-command-metric ms705-command-button"
+          onclick="ms705OpenRouteControl('route')">
           <span>Verwachte aankomst</span>
           <strong id="ms660Eta">–</strong>
-          <small id="ms660EtaSpeed">Nog geen snelheid</small>
-        </div>
-        <div class="ms660-command-metric">
+          <small id="ms660EtaSpeed">Tik om snelheid te bewerken</small>
+          <i>›</i>
+        </button>
+        <button type="button"
+          class="ms660-command-metric ms705-command-button"
+          onclick="ms705OpenRouteControl('route')">
           <span>Volgende route-POI</span>
           <strong id="ms660NextPoi">–</strong>
-          <small id="ms660NextPoiDistance">Geen POI op actieve route</small>
-        </div>
-        <div class="ms660-command-metric">
+          <small id="ms660NextPoiDistance">Tik om route of POI te openen</small>
+          <i>›</i>
+        </button>
+        <button type="button"
+          class="ms660-command-metric ms705-command-button"
+          onclick="ms705OpenRouteControl('warnings')">
           <span>Wind</span>
           <strong id="ms660Wind">–</strong>
-          <small id="ms660WindDetail">Wachten op weer</small>
-        </div>
-        <div class="ms660-command-metric">
+          <small id="ms660WindDetail">Tik voor waarschuwinggrenzen</small>
+          <i>›</i>
+        </button>
+        <button type="button"
+          class="ms660-command-metric ms705-command-button"
+          onclick="captainNavigate('technical')">
           <span>Diepte</span>
           <strong id="ms660Depth">– m</strong>
-          <small id="ms660DepthDetail">NMEA/HA-sensor nog niet gekoppeld</small>
-        </div>
-        <div class="ms660-command-metric">
+          <small id="ms660DepthDetail">Tik om techniek te openen</small>
+          <i>›</i>
+        </button>
+        <button type="button"
+          class="ms660-command-metric ms705-command-button ms705-range-button"
+          onclick="ms705OpenRouteControl('range')">
           <span>Geschat brandstofbereik</span>
           <strong id="ms660FuelRange">– km</strong>
-          <small id="ms660FuelRangeDetail">Tank- en verbruiksgegevens nodig</small>
-        </div>
-        <div class="ms660-command-metric">
+          <small id="ms660FuelRangeDetail">Tik om bereik te berekenen of bewerken</small>
+          <i>›</i>
+        </button>
+        <button type="button"
+          class="ms660-command-metric ms705-command-button"
+          onclick="ms700OpenMissionControl('diagnostics')">
           <span>Verbinding</span>
           <strong id="ms660Connection">Online</strong>
-          <small id="ms660ConnectionDetail">Live synchronisatie controleren…</small>
-        </div>
+          <small id="ms660ConnectionDetail">Tik voor systeemdiagnose</small>
+          <i>›</i>
+        </button>
       </div>
 
-      <div id="ms660AlertPanel" class="ms660-alert-panel good">
+      <button id="ms660AlertPanel" type="button"
+        class="ms660-alert-panel ms705-alert-button good"
+        onclick="ms705OpenRouteControl('warnings')">
         <span id="ms660AlertIcon">✓</span>
         <div>
           <strong id="ms660AlertTitle">Alles rustig aan boord</strong>
           <small id="ms660AlertText">
-            MijnSerenity bewaakt GPS, accu, brandstof, motor, bilge en weer.
+            Tik om waarschuwingen te bekijken en grenzen te bewerken.
           </small>
         </div>
-      </div>
+        <i>›</i>
+      </button>
 
       <div class="ms660-quick-actions">
         <button type="button" onclick="ms702ShowSplitView()">
@@ -1248,7 +1279,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.0.4</span>
+        <span class="planner-version-badge">7.0.5</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -3329,6 +3360,240 @@
     </div>
   </div>
 
+<div id="ms705RouteControlModal"
+    class="ms705-route-control-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Route, bereik en waarschuwingen"
+    onclick="ms705CloseRouteControl(event)">
+    <div class="ms705-route-control-panel"
+      onclick="event.stopPropagation()">
+
+      <div class="ms705-modal-head">
+        <div>
+          <span class="eyebrow">DIGITALE SCHIPPER</span>
+          <h2>Route, bereik en waarschuwingen</h2>
+          <p class="small">Bekijk de actuele waarden en pas de instellingen direct aan.</p>
+        </div>
+        <button type="button" class="ms705-modal-close"
+          aria-label="Sluiten"
+          onclick="ms705CloseRouteControl(event,true)">×</button>
+      </div>
+
+      <div class="ms705-modal-tabs">
+        <button id="ms705TabRoute" type="button"
+          onclick="ms705ShowControlTab('route')">🧭 Route</button>
+        <button id="ms705TabRange" type="button"
+          onclick="ms705ShowControlTab('range')">⛽ Bereik</button>
+        <button id="ms705TabWarnings" type="button"
+          onclick="ms705ShowControlTab('warnings')">⚠️ Waarschuwingen</button>
+      </div>
+
+      <div class="ms705-modal-body">
+        <section id="ms705SectionRoute" class="ms705-control-section">
+          <div class="ms705-section-head">
+            <div>
+              <span class="eyebrow">ACTIEVE BESTEMMING</span>
+              <h3>Route openen en bewerken</h3>
+            </div>
+            <span id="ms705RouteBadge" class="ms705-badge">Geen route</span>
+          </div>
+
+          <div class="ms705-route-summary">
+            <div><span>Bestemming</span><strong id="ms705CurrentDestination">–</strong></div>
+            <div><span>Resterend</span><strong id="ms705CurrentRemaining">– km</strong></div>
+            <div><span>ETA</span><strong id="ms705CurrentEta">–</strong></div>
+          </div>
+
+          <label for="ms705Destination">Bestemming of aankomstplaats</label>
+          <input id="ms705Destination" list="ms705DestinationList"
+            placeholder="Bijv. Blokzijl">
+          <datalist id="ms705DestinationList"></datalist>
+
+          <div class="row">
+            <div>
+              <label for="ms705CruiseSpeed">Gemiddelde vaarsnelheid km/u</label>
+              <input id="ms705CruiseSpeed" type="number"
+                min="1" max="30" step="0.1">
+            </div>
+            <div>
+              <label for="ms705PoiRadius">POI’s langs route</label>
+              <select id="ms705PoiRadius">
+                <option value="0.5">Binnen 500 meter</option>
+                <option value="1">Binnen 1 kilometer</option>
+                <option value="2">Binnen 2 kilometer</option>
+                <option value="3">Binnen 3 kilometer</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="ms705-actions">
+            <button type="button" onclick="ms705SaveRouteSettings()">
+              Opslaan en activeren
+            </button>
+            <button type="button" class="secondary"
+              onclick="ms705OpenFullPlanner()">
+              Open volledige reisplanner
+            </button>
+            <button type="button" class="secondary"
+              onclick="ms705ClearDestination()">
+              Bestemming wissen
+            </button>
+          </div>
+          <div id="ms705RouteStatus" class="ms705-status"></div>
+        </section>
+
+        <section id="ms705SectionRange"
+          class="ms705-control-section hidden">
+          <div class="ms705-section-head">
+            <div>
+              <span class="eyebrow">BRANDSTOFBEREIK</span>
+              <h3>Berekening bekijken en bewerken</h3>
+            </div>
+            <span id="ms705RangeBadge" class="ms705-badge">Berekenen</span>
+          </div>
+
+          <div class="ms705-range-result">
+            <div>
+              <span>Geschat bruikbaar bereik</span>
+              <strong id="ms705RangeKm">– km</strong>
+            </div>
+            <div>
+              <span>Geschatte vaartijd</span>
+              <strong id="ms705RangeHours">– uur</strong>
+            </div>
+            <div>
+              <span>Bruikbare diesel</span>
+              <strong id="ms705UsableLitres">– liter</strong>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="ms705FuelPct">Actuele tankstand %</label>
+              <input id="ms705FuelPct" type="number"
+                min="0" max="100" step="1">
+            </div>
+            <div>
+              <label for="ms705TankCapacity">Tankinhoud liter</label>
+              <input id="ms705TankCapacity" type="number"
+                min="1" step="1">
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="ms705FuelPerHour">Gemiddeld verbruik liter/uur</label>
+              <input id="ms705FuelPerHour" type="number"
+                min="0.1" step="0.1">
+            </div>
+            <div>
+              <label for="ms705ReservePct">Veilige reserve %</label>
+              <input id="ms705ReservePct" type="number"
+                min="0" max="50" step="1">
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="ms705RangeSpeed">Rekensnelheid km/u</label>
+              <input id="ms705RangeSpeed" type="number"
+                min="1" max="30" step="0.1">
+            </div>
+            <div class="ms705-live-calc-note">
+              <span>Formule</span>
+              <small>
+                Tankinhoud × bruikbaar percentage ÷ verbruik × snelheid
+              </small>
+            </div>
+          </div>
+
+          <div class="ms705-actions">
+            <button type="button" onclick="ms705SaveRangeSettings()">
+              Bereik opslaan
+            </button>
+            <button type="button" class="secondary"
+              onclick="ms705OpenTechnicalTanks()">
+              Open tanks bij Techniek
+            </button>
+          </div>
+          <div id="ms705RangeStatus" class="ms705-status"></div>
+        </section>
+
+        <section id="ms705SectionWarnings"
+          class="ms705-control-section hidden">
+          <div class="ms705-section-head">
+            <div>
+              <span class="eyebrow">WAARSCHUWINGSCENTRUM</span>
+              <h3>Actieve meldingen en grenswaarden</h3>
+            </div>
+            <span id="ms705WarningBadge" class="ms705-badge">Controleren</span>
+          </div>
+
+          <div id="ms705ActiveWarnings" class="ms705-active-warnings"></div>
+
+          <details class="ms705-threshold-details" open>
+            <summary>Waarschuwinggrenzen bewerken</summary>
+
+            <div class="ms705-threshold-grid">
+              <label>Diesel waarschuwing %
+                <input id="ms705FuelWarn" type="number" min="1" max="80" step="1">
+              </label>
+              <label>Diesel kritisch %
+                <input id="ms705FuelCritical" type="number" min="0" max="50" step="1">
+              </label>
+              <label>Drinkwater waarschuwing %
+                <input id="ms705WaterWarn" type="number" min="0" max="80" step="1">
+              </label>
+              <label>Motortemp. waarschuwing °C
+                <input id="ms705TempWarn" type="number" min="40" max="130" step="1">
+              </label>
+              <label>Motortemp. kritisch °C
+                <input id="ms705TempCritical" type="number" min="50" max="140" step="1">
+              </label>
+              <label>Windstoten waarschuwing Bft
+                <input id="ms705WindWarn" type="number" min="1" max="12" step="1">
+              </label>
+              <label>Windstoten kritisch Bft
+                <input id="ms705WindCritical" type="number" min="1" max="12" step="1">
+              </label>
+              <label>GPS waarschuwing meter
+                <input id="ms705GpsWarn" type="number" min="5" max="500" step="5">
+              </label>
+              <label>GPS kritisch meter
+                <input id="ms705GpsCritical" type="number" min="10" max="1000" step="5">
+              </label>
+              <label>Huishoudaccu waarschuwing V
+                <input id="ms705HouseWarn" type="number" min="8" max="15" step="0.1">
+              </label>
+              <label>Huishoudaccu kritisch V
+                <input id="ms705HouseCritical" type="number" min="8" max="15" step="0.1">
+              </label>
+              <label>Oliedruk kritisch bar
+                <input id="ms705OilCritical" type="number" min="0.1" max="5" step="0.1">
+              </label>
+            </div>
+          </details>
+
+          <div class="ms705-actions">
+            <button type="button" onclick="ms705SaveWarningSettings()">
+              Grenzen opslaan
+            </button>
+            <button type="button" class="secondary"
+              onclick="ms705ResetWarningSettings()">
+              Herstel standaard
+            </button>
+            <button type="button" class="secondary"
+              onclick="ms705OpenTechnicalSnapshot()">
+              Actuele waarden bewerken
+            </button>
+          </div>
+          <div id="ms705WarningStatus" class="ms705-status"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
 <div id="plannerMapFullscreen"
     class="planner-map-fullscreen hidden"
     role="dialog"
@@ -3441,9 +3706,10 @@
   </div>
 </div>
 
-<script src="app.js?v=7040"></script>
-<script src="mission-control.js?v=7040"></script>
-<script src="easy-auto.js?v=7040"></script>
-<script src="live-split.js?v=7040"></script>
+<script src="app.js?v=7050"></script>
+<script src="mission-control.js?v=7050"></script>
+<script src="easy-auto.js?v=7050"></script>
+<script src="live-split.js?v=7050"></script>
+<script src="route-control.js?v=7050"></script>
 </body>
 </html>
