@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.3 — Eenvoudig automatisch varen
+   MijnSerenity Cloud 7.0.4 — Eenvoudig automatisch varen
    ============================================================ */
 
 let ms701BootTimer=null;
@@ -11,7 +11,7 @@ function ms701Key(name){
   return `mijnserenity-701-${name}-${currentBoat?.id||'boat'}`;
 }
 
-function ms701ReadBoolean(name,defaultValue=true){
+function ms701ReadBoolean(name,defaultValue=false){
   try{
     const value=localStorage.getItem(ms701Key(name));
     return value===null?defaultValue:value==='1';
@@ -27,7 +27,31 @@ function ms701WriteBoolean(name,value){
 }
 
 function ms701AutomaticEnabled(){
-  return ms701ReadBoolean('automatic-ready',true);
+  return ms701ReadBoolean('automatic-ready',false);
+}
+
+function ms704DefaultOffKey(){
+  return `mijnserenity-704-default-off-${currentBoat?.id||'boat'}`;
+}
+
+function ms704ApplyDefaultOffOnce(){
+  if(!currentBoat)return;
+
+  try{
+    if(localStorage.getItem(ms704DefaultOffKey())==='1'){
+      return;
+    }
+
+    ms701WriteBoolean('automatic-ready',false);
+    localStorage.setItem(
+      `mijnserenity-auto-departure-armed-${currentBoat.id}`,
+      '0'
+    );
+    localStorage.setItem(
+      ms704DefaultOffKey(),
+      '1'
+    );
+  }catch{}
 }
 
 function ms701SimpleEnabled(){
@@ -160,12 +184,15 @@ function ms701Render(){
   const card=document.getElementById('ms701AutoCard');
 
   card?.classList.toggle('disabled',!enabled);
+  card?.classList.toggle('expanded',enabled);
+  card?.classList.toggle('collapsed',!enabled);
+  card?.setAttribute('aria-expanded',enabled?'true':'false');
 
   if(!enabled){
-    ms701SetText('ms701AutoTitle','Automatisch varen staat uit');
+    ms701SetText('ms701AutoTitle','Eenvoudig automatisch varen');
     ms701SetText(
       'ms701AutoDetail',
-      'Gebruik de schakelaar om vertrekdetectie, live delen en automatisch opslaan weer te activeren.'
+      'Zet de schakelaar aan om de instellingen en actuele status te openen.'
     );
     ms701SetText('ms701DepartureStatus','Uitgeschakeld');
     ms701SetText('ms701ShareStatus','Uitgeschakeld');
@@ -327,6 +354,18 @@ function ms701DisableAutomaticMode(){
   showAppToast('Automatisch varen staat uit');
 }
 
+function ms704HeaderClicked(event){
+  if(
+    event.target.closest('.ms701-switch')||
+    event.target.closest('button')||
+    event.target.closest('a')
+  ){
+    return;
+  }
+
+  document.getElementById('ms701AutoToggle')?.focus();
+}
+
 function ms701AutoToggleChanged(input){
   if(input.checked){
     ms701EnableAutomaticMode(true);
@@ -337,6 +376,7 @@ function ms701AutoToggleChanged(input){
 
 async function ms701AutoBoot(){
   ms701ApplySimpleMode();
+  ms704ApplyDefaultOffOnce();
 
   if(
     !ms701AutomaticEnabled()||
@@ -466,6 +506,7 @@ document.addEventListener(
   'DOMContentLoaded',
   ()=>{
     ms701ApplySimpleMode();
+    ms704ApplyDefaultOffOnce();
     ms701Render();
 
     clearInterval(ms701BootTimer);

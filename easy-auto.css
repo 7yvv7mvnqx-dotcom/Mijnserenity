@@ -1,6 +1,6 @@
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.3 — Eenvoudig automatisch varen
+   MijnSerenity Cloud 7.0.4 — Eenvoudig automatisch varen
    ========================================================= */
 
 .ms701-auto-card{
@@ -192,5 +192,93 @@ body.ms701-simple-mode #live .live-controls{
 
   .ms701-auto-actions button{
     width:100%;
+  }
+}
+
+
+/* =========================================================
+   MijnSerenity Cloud 7.0.4 — automatische kaart inklappen
+   ========================================================= */
+
+.ms701-auto-card{
+  transition:
+    opacity .2s ease,
+    border-color .2s ease,
+    padding .25s ease;
+}
+
+.ms701-auto-head{
+  cursor:default;
+}
+
+.ms704-auto-expanded-content{
+  display:grid;
+  grid-template-rows:1fr;
+  opacity:1;
+  overflow:hidden;
+  transition:
+    grid-template-rows .28s ease,
+    opacity .2s ease,
+    margin-top .28s ease;
+}
+
+.ms701-auto-card.collapsed{
+  padding-top:12px;
+  padding-bottom:12px;
+}
+
+.ms701-auto-card.collapsed .ms704-auto-expanded-content{
+  display:none;
+}
+
+.ms701-auto-card.collapsed .ms701-auto-head{
+  align-items:center;
+}
+
+.ms701-auto-card.collapsed .ms701-auto-icon{
+  width:44px;
+  height:44px;
+  border-radius:14px;
+  font-size:23px;
+}
+
+.ms701-auto-card.collapsed #ms701AutoDetail{
+  display:none;
+}
+
+.ms701-auto-card.collapsed #ms701AutoTitle{
+  margin:2px 0 0;
+  font-size:18px;
+}
+
+.ms701-auto-card.collapsed .ms701-switch{
+  flex:0 0 auto;
+}
+
+.ms701-auto-card.expanded .ms704-auto-expanded-content{
+  display:block;
+  animation:ms704AutoExpand .24s ease both;
+}
+
+@keyframes ms704AutoExpand{
+  from{
+    opacity:0;
+    transform:translateY(-5px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+@media(max-width:700px){
+  .ms701-auto-card.collapsed .ms701-auto-head{
+    grid-template-columns:auto minmax(0,1fr) auto;
+  }
+
+  .ms701-auto-card.collapsed .ms701-switch{
+    grid-column:auto;
+    justify-self:end;
+    margin-top:0;
   }
 }
