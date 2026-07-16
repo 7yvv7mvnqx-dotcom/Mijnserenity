@@ -5,22 +5,23 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.0.8">
+<meta name="mijnserenity-build" content="7.0.9">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=7080">
+<link rel="manifest" href="manifest.json?v=7090">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7080">
-  <link rel="stylesheet" href="mission-control.css?v=7080">
-  <link rel="stylesheet" href="easy-auto.css?v=7080">
-  <link rel="stylesheet" href="live-split.css?v=7080">
-  <link rel="stylesheet" href="route-control.css?v=7080">
-  <link rel="stylesheet" href="page-swipe.css?v=7080">
+<link rel="stylesheet" href="styles.css?v=7090">
+  <link rel="stylesheet" href="mission-control.css?v=7090">
+  <link rel="stylesheet" href="easy-auto.css?v=7090">
+  <link rel="stylesheet" href="live-split.css?v=7090">
+  <link rel="stylesheet" href="route-control.css?v=7090">
+  <link rel="stylesheet" href="page-swipe.css?v=7090">
+  <link rel="stylesheet" href="weather-page.css?v=7090">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7080">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7080">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7090">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7090">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -29,7 +30,7 @@
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7080" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7090" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -68,7 +69,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7080" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7090" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -93,6 +94,7 @@
   <div class="tabs">
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
     <button class="tab" onclick="showTab('live',this);initLiveMode()">Live varen</button>
+    <button class="tab" onclick="showTab('weather',this);initWeatherPage()">Weer</button>
     <button class="tab" onclick="showTab('map',this);initMap()">Kaart</button>
     <button class="tab" onclick="showTab('planner',this);initPlanner()">Reisplanner</button>
     <button class="tab" onclick="showTab('technical',this);initTechnicalDashboard()">Techniek</button>
@@ -239,55 +241,88 @@
         </div>
       </div>
 
-      <div class="card ms700-mission-card">
-        <div class="ms700-mission-head">
+      <div class="card ms700-mission-card ms709-mission-card">
+        <div class="ms709-mission-top">
           <div>
-            <span class="eyebrow">MIJNSERENITY 7.0 · MISSION CONTROL</span>
-            <h2>Serenity volledig onder controle</h2>
-            <p class="small">
-              Vertrekcheck, datakwaliteit, systeemdiagnose en complete
-              backup in één professioneel controlecentrum.
+            <span class="eyebrow">MISSION CONTROL</span>
+            <h2>Serenity gereedheid</h2>
+            <strong id="ms709MissionHeadline">Status wordt opgebouwd</strong>
+            <p id="ms709MissionSummary" class="small">
+              Veiligheid, techniek, data, weer en backup in één overzicht.
             </p>
           </div>
           <div id="ms700MissionRing" class="ms700-mission-ring">
             <strong id="ms700MissionScore">–</strong>
-            <small>gereedheid</small>
+            <small>gereed</small>
           </div>
         </div>
 
-        <div class="ms700-status-grid">
-          <button type="button" onclick="ms700OpenMissionControl('readiness')">
-            <span>Vertrekcheck</span>
-            <strong id="ms700ReadinessStatus">Controleren…</strong>
-            <small id="ms700ReadinessDetail">Veiligheid en techniek</small>
-          </button>
-          <button type="button" onclick="ms700OpenMissionControl('data')">
-            <span>Datakwaliteit</span>
-            <strong id="ms700DataStatus">Controleren…</strong>
-            <small id="ms700DataDetail">POI’s, logboek en instellingen</small>
-          </button>
-          <button type="button" onclick="ms700OpenMissionControl('diagnostics')">
-            <span>Systeemstatus</span>
-            <strong id="ms700SystemStatus">Controleren…</strong>
-            <small id="ms700SystemDetail">Cloud, app en koppelingen</small>
-          </button>
-          <button type="button" onclick="ms700OpenMissionControl('backup')">
-            <span>Laatste backup</span>
-            <strong id="ms700BackupStatus">Nog geen backup</strong>
-            <small id="ms700BackupDetail">Volledige data-export</small>
-          </button>
+        <div class="ms709-control-grid">
+          <article>
+            <button type="button" aria-label="Vertrekcheck openen"
+              title="Vertrekcheck" onclick="ms700OpenMissionControl('readiness')">✓</button>
+            <div>
+              <span>Vertrek</span>
+              <strong id="ms700ReadinessStatus">Controleren…</strong>
+              <small id="ms700ReadinessDetail">Veiligheid en techniek</small>
+            </div>
+          </article>
+
+          <article>
+            <button type="button" aria-label="Datakwaliteit openen"
+              title="Datakwaliteit" onclick="ms700OpenMissionControl('data')">▦</button>
+            <div>
+              <span>Data</span>
+              <strong id="ms700DataStatus">Controleren…</strong>
+              <small id="ms700DataDetail">Logboek, POI en instellingen</small>
+            </div>
+          </article>
+
+          <article>
+            <button type="button" aria-label="Weerpagina openen"
+              title="Weer" onclick="captainNavigate('weather')">☀</button>
+            <div>
+              <span>Weer</span>
+              <strong id="ms709MissionWeatherStatus">Nog ophalen</strong>
+              <small id="ms709MissionWeatherDetail">Live positie van Serenity</small>
+            </div>
+          </article>
+
+          <article>
+            <button type="button" aria-label="Systeemdiagnose openen"
+              title="Systeemdiagnose" onclick="ms700OpenMissionControl('diagnostics')">⌁</button>
+            <div>
+              <span>Systeem</span>
+              <strong id="ms700SystemStatus">Controleren…</strong>
+              <small id="ms700SystemDetail">Cloud, app en koppelingen</small>
+            </div>
+          </article>
+
+          <article>
+            <button type="button" aria-label="Backup openen"
+              title="Backup" onclick="ms700OpenMissionControl('backup')">⇧</button>
+            <div>
+              <span>Backup</span>
+              <strong id="ms700BackupStatus">Nog geen backup</strong>
+              <small id="ms700BackupDetail">Volledige data-export</small>
+            </div>
+          </article>
         </div>
 
-        <div class="ms700-mission-actions">
-          <button type="button" onclick="ms700OpenMissionControl('readiness')">
-            ✓ Open vertrekcheck
-          </button>
-          <button type="button" class="secondary" onclick="ms700RunDiagnostics(true)">
-            ⌁ Systeemdiagnose
-          </button>
-          <button type="button" class="secondary" onclick="ms700CreateAndShareBackup()">
-            ⬆︎ Maak & deel backup
-          </button>
+        <div class="ms700-mission-actions ms709-icon-actions"
+          aria-label="Mission Control acties">
+          <button type="button" aria-label="Vertrekcheck"
+            title="Vertrekcheck"
+            onclick="ms700OpenMissionControl('readiness')">✓</button>
+          <button type="button" aria-label="Weer"
+            title="Weer"
+            onclick="captainNavigate('weather')">☀</button>
+          <button type="button" aria-label="Systeemdiagnose"
+            title="Systeemdiagnose"
+            onclick="ms700RunDiagnostics(true)">⌁</button>
+          <button type="button" aria-label="Backup maken en delen"
+            title="Backup maken en delen"
+            onclick="ms700CreateAndShareBackup()">⇧</button>
         </div>
 
         <div id="ms700MissionInsight" class="ms700-mission-insight">
@@ -451,7 +486,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7080" alt="">
+          <img src="waterkaarten-dashboard.png?v=7090" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -545,7 +580,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.0.8</div>
+          <div class="label">Sync · v7.0.9</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1269,7 +1304,121 @@
   </section>
 
 
-  <section id="planner" class="hidden">
+  
+  <section id="weather" class="hidden">
+    <div class="card ms709-weather-hero">
+      <div class="ms709-weather-hero-head">
+        <div>
+          <span class="eyebrow">LIVE WEER OP DE POSITIE VAN SERENITY</span>
+          <h2 id="ms709WeatherLocation">Huidige positie</h2>
+          <p id="ms709WeatherUpdated" class="small">
+            Weer wordt direct opgehaald zodra deze pagina opent.
+          </p>
+        </div>
+        <div class="ms709-weather-actions">
+          <button type="button" aria-label="Weer verversen"
+            title="Weer verversen" onclick="ms709RefreshWeather(true)">↻</button>
+          <button type="button" aria-label="Huidige locatie gebruiken"
+            title="Huidige locatie gebruiken" onclick="ms709UseCurrentLocation()">◎</button>
+          <button type="button" aria-label="Live varen openen"
+            title="Live varen openen" onclick="captainNavigate('live')">⛵</button>
+        </div>
+      </div>
+
+      <div class="ms709-weather-now">
+        <div id="ms709WeatherSymbol" class="ms709-weather-symbol">◌</div>
+        <div class="ms709-weather-temperature">
+          <strong id="ms709WeatherTemp">–°</strong>
+          <span id="ms709WeatherDescription">Weer laden…</span>
+          <small id="ms709WeatherFeels">Gevoelstemperatuur –</small>
+        </div>
+        <div id="ms709WeatherRisk" class="ms709-weather-risk checking">
+          <span>VAARADVIES</span>
+          <strong>Controleren…</strong>
+          <small>Wind, zicht en neerslag worden beoordeeld.</small>
+        </div>
+      </div>
+
+      <div class="ms709-weather-metrics">
+        <article>
+          <span>Wind</span>
+          <strong id="ms709WeatherWind">–</strong>
+          <small id="ms709WeatherDirection">–</small>
+        </article>
+        <article>
+          <span>Windstoten</span>
+          <strong id="ms709WeatherGusts">–</strong>
+          <small id="ms709WeatherGustRisk">–</small>
+        </article>
+        <article>
+          <span>Neerslag</span>
+          <strong id="ms709WeatherRain">–</strong>
+          <small id="ms709WeatherRainChance">–</small>
+        </article>
+        <article>
+          <span>Zicht</span>
+          <strong id="ms709WeatherVisibility">–</strong>
+          <small id="ms709WeatherCloud">–</small>
+        </article>
+        <article>
+          <span>Luchtdruk</span>
+          <strong id="ms709WeatherPressure">–</strong>
+          <small id="ms709WeatherHumidity">–</small>
+        </article>
+        <article>
+          <span>Zon</span>
+          <strong id="ms709WeatherSunrise">–</strong>
+          <small id="ms709WeatherSunset">–</small>
+        </article>
+      </div>
+    </div>
+
+    <div class="card ms709-weather-card">
+      <div class="ms709-weather-section-head">
+        <div>
+          <span class="eyebrow">KOMENDE 12 UUR</span>
+          <h2>Uurverwachting</h2>
+        </div>
+        <span id="ms709WeatherCountdown" class="ms709-weather-badge">
+          Verversing voorbereiden
+        </span>
+      </div>
+      <div id="ms709HourlyForecast" class="ms709-hourly-forecast">
+        <div class="ms709-weather-empty">Uurverwachting wordt geladen…</div>
+      </div>
+    </div>
+
+    <div class="card ms709-weather-card">
+      <div class="ms709-weather-section-head">
+        <div>
+          <span class="eyebrow">KOMENDE 7 DAGEN</span>
+          <h2>Vaarweer per dag</h2>
+        </div>
+        <span class="ms709-weather-badge">Open-Meteo</span>
+      </div>
+      <div id="ms709DailyForecast" class="ms709-daily-forecast">
+        <div class="ms709-weather-empty">Weekverwachting wordt geladen…</div>
+      </div>
+    </div>
+
+    <div class="card ms709-weather-card">
+      <div class="ms709-weather-section-head">
+        <div>
+          <span class="eyebrow">VAARCONDITIES</span>
+          <h2>Aandachtspunten</h2>
+        </div>
+      </div>
+      <div id="ms709WeatherAdvice" class="ms709-weather-advice">
+        <div class="ms709-weather-empty">Advies wordt opgebouwd…</div>
+      </div>
+      <p class="small ms709-weather-source">
+        Actuele weerschatting op basis van GPS en Open-Meteo. Controleer voor
+        belangrijke beslissingen ook officiële vaar- en weerberichten.
+      </p>
+    </div>
+  </section>
+
+<section id="planner" class="hidden">
     <div class="card hero planner-hero">
       <div class="planner-hero-head">
         <div>
@@ -1280,7 +1429,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.0.8</span>
+        <span class="planner-version-badge">7.0.9</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -3272,15 +3421,23 @@
           aria-label="Sluiten" onclick="ms700CloseMissionControl(event,true)">×</button>
       </div>
 
-      <div class="ms700-modal-tabs">
+      <div class="ms700-modal-tabs ms709-modal-icon-tabs"
+        aria-label="Mission Control onderdelen">
         <button id="ms700TabReadiness" type="button"
-          onclick="ms700ShowMissionSection('readiness')">Vertrekcheck</button>
+          aria-label="Vertrekcheck" title="Vertrekcheck"
+          onclick="ms700ShowMissionSection('readiness')">✓</button>
         <button id="ms700TabData" type="button"
-          onclick="ms700ShowMissionSection('data')">Datakwaliteit</button>
+          aria-label="Datakwaliteit" title="Datakwaliteit"
+          onclick="ms700ShowMissionSection('data')">▦</button>
+        <button type="button"
+          aria-label="Weerpagina" title="Weer"
+          onclick="ms700CloseMissionControl(null,true);captainNavigate('weather')">☀</button>
         <button id="ms700TabDiagnostics" type="button"
-          onclick="ms700ShowMissionSection('diagnostics')">Diagnose</button>
+          aria-label="Systeemdiagnose" title="Systeemdiagnose"
+          onclick="ms700ShowMissionSection('diagnostics')">⌁</button>
         <button id="ms700TabBackup" type="button"
-          onclick="ms700ShowMissionSection('backup')">Backup</button>
+          aria-label="Backup" title="Backup"
+          onclick="ms700ShowMissionSection('backup')">⇧</button>
       </div>
 
       <div class="ms700-modal-body">
@@ -3329,14 +3486,18 @@
           <div class="ms700-section-head">
             <div><span class="eyebrow">SYSTEEMDIAGNOSE</span>
               <h3>Werken cloud, GPS, opslag en koppelingen?</h3></div>
-            <button id="ms700DiagnosticButton" type="button" class="secondary"
-              onclick="ms700RunDiagnostics(false)">Start diagnose</button>
+            <button id="ms700DiagnosticButton" type="button"
+              class="secondary ms709-icon-button"
+              aria-label="Systeemdiagnose starten" title="Systeemdiagnose starten"
+              onclick="ms700RunDiagnostics(false)">⌁</button>
           </div>
           <div id="ms700DiagnosticList" class="ms700-diagnostic-list">
             <div class="ms700-empty-state">Start de diagnose voor een actuele controle.</div>
           </div>
-          <button type="button" class="secondary ms700-copy-report"
-            onclick="ms700CopySystemReport()">Kopieer systeemrapport</button>
+          <button type="button"
+            class="secondary ms700-copy-report ms709-icon-button"
+            aria-label="Systeemrapport kopiëren" title="Systeemrapport kopiëren"
+            onclick="ms700CopySystemReport()">⧉</button>
         </section>
 
         <section id="ms700SectionBackup" class="ms700-mission-section hidden">
@@ -3350,7 +3511,9 @@
               <small>Bootinstellingen, POI’s, vaartochten, kosten, techniek,
                 onderhoud, foto-metadata en live navigatiestatus.</small></div>
             <button id="ms700BackupButton" type="button"
-              onclick="ms700CreateAndShareBackup()">⬆︎ Maak & deel backup</button>
+              class="ms709-icon-button"
+              aria-label="Backup maken en delen" title="Backup maken en delen"
+              onclick="ms700CreateAndShareBackup()">⇧</button>
           </div>
           <div id="ms700BackupSummary" class="ms700-backup-summary"></div>
           <div class="ms700-backup-warning">
@@ -3630,34 +3793,38 @@
     <span>→</span>
   </div>
 
-<nav class="bottom-nav bottom-nav-always-visible" aria-label="Hoofdnavigatie" aria-hidden="false" data-auto-hide="false">
-    <button class="bottom-nav-item active" data-target="dashboard" onclick="captainNavigate('dashboard',this)">
-      <span>🏠</span><small>Start</small>
-    </button>
-    <button class="bottom-nav-item live-nav-button" data-target="live" onclick="captainNavigate('live',this)">
-      <span>⛵</span><small>Live</small>
-    </button>
-    <button class="bottom-nav-item" data-target="map" onclick="captainNavigate('map',this)">
-      <span>🗺️</span><small>Kaart</small>
-    </button>
-    <button class="bottom-nav-item" data-target="planner" onclick="captainNavigate('planner',this)">
-      <span>🧭</span><small>Plan</small>
-    </button>
-    <button class="bottom-nav-item" data-target="technical" onclick="captainNavigate('technical',this)">
-      <span>⚙️</span><small>Techniek</small>
-    </button>
-    <button class="bottom-nav-item" data-target="logbook" onclick="captainNavigate('logbook',this)">
-      <span>📖</span><small>Logboek</small>
-    </button>
-    <button class="bottom-nav-item" data-target="pois" onclick="captainNavigate('pois',this)">
-      <span>📍</span><small>POI</small>
-    </button>
-    <button class="bottom-nav-item" data-target="finance" onclick="captainNavigate('finance',this)">
-      <span>💶</span><small>Financieel</small>
-    </button>
-    <button class="bottom-nav-item" data-target="settings" onclick="captainNavigate('settings',this)">
-      <span>🚤</span><small>Boot</small>
-    </button>
+<nav class="bottom-nav bottom-nav-always-visible ms709-icon-nav"
+    aria-label="Hoofdnavigatie" aria-hidden="false" data-auto-hide="false">
+    <button class="bottom-nav-item active" data-target="dashboard"
+      aria-label="Start" title="Start"
+      onclick="captainNavigate('dashboard',this)"><span>🏠</span></button>
+    <button class="bottom-nav-item live-nav-button" data-target="live"
+      aria-label="Live varen" title="Live varen"
+      onclick="captainNavigate('live',this)"><span>⛵</span></button>
+    <button class="bottom-nav-item" data-target="weather"
+      aria-label="Weer" title="Weer"
+      onclick="captainNavigate('weather',this)"><span>☀️</span></button>
+    <button class="bottom-nav-item" data-target="map"
+      aria-label="Kaart" title="Kaart"
+      onclick="captainNavigate('map',this)"><span>🗺️</span></button>
+    <button class="bottom-nav-item" data-target="planner"
+      aria-label="Reisplanner" title="Reisplanner"
+      onclick="captainNavigate('planner',this)"><span>🧭</span></button>
+    <button class="bottom-nav-item" data-target="technical"
+      aria-label="Techniek" title="Techniek"
+      onclick="captainNavigate('technical',this)"><span>⚙️</span></button>
+    <button class="bottom-nav-item" data-target="logbook"
+      aria-label="Logboek" title="Logboek"
+      onclick="captainNavigate('logbook',this)"><span>📖</span></button>
+    <button class="bottom-nav-item" data-target="pois"
+      aria-label="POI" title="POI"
+      onclick="captainNavigate('pois',this)"><span>📍</span></button>
+    <button class="bottom-nav-item" data-target="finance"
+      aria-label="Financieel" title="Financieel"
+      onclick="captainNavigate('finance',this)"><span>💶</span></button>
+    <button class="bottom-nav-item" data-target="settings"
+      aria-label="Boot" title="Boot"
+      onclick="captainNavigate('settings',this)"><span>🚤</span></button>
   </nav>
 
 
@@ -3714,11 +3881,12 @@
   </div>
 </div>
 
-<script src="app.js?v=7080"></script>
-<script src="mission-control.js?v=7080"></script>
-<script src="easy-auto.js?v=7080"></script>
-<script src="live-split.js?v=7080"></script>
-<script src="route-control.js?v=7080"></script>
-<script src="page-swipe.js?v=7080"></script>
+<script src="app.js?v=7090"></script>
+<script src="mission-control.js?v=7090"></script>
+<script src="easy-auto.js?v=7090"></script>
+<script src="live-split.js?v=7090"></script>
+<script src="route-control.js?v=7090"></script>
+<script src="weather-page.js?v=7090"></script>
+<script src="page-swipe.js?v=7090"></script>
 </body>
 </html>

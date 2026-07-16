@@ -1,5 +1,5 @@
 
-/* MijnSerenity 7.0.8 — Mission Control */
+/* MijnSerenity 7.0.9 — Mission Control */
 let ms700DiagnosticResults=[];
 let ms700DiagnosticsBusy=false;
 let ms700BackupBusy=false;
@@ -178,6 +178,15 @@ function ms700RenderMissionControl(){
   if(!document.getElementById('ms700MissionScore'))return;
   const s=ms700Snapshot(),level=ms700Level(s.score),ring=document.getElementById('ms700MissionRing');
   ms700SetText('ms700MissionScore',s.score);ms700SetText('ms700ModalScore',s.score);
+  ms700SetText('ms709MissionHeadline',ms700Status(s.score));
+  ms700SetText(
+    'ms709MissionSummary',
+    s.score>=85
+      ?'De belangrijkste systemen en gegevens zijn op orde.'
+      :s.score>=65
+        ?'Enkele onderdelen vragen nog aandacht.'
+        :'Open Mission Control en controleer de gemarkeerde onderdelen.'
+  );
   if(ring){ring.className=`ms700-mission-ring ${level}`;ring.style.setProperty('--score',`${s.score*3.6}deg`)}
   ms700SetText('ms700ReadinessStatus',ms700Status(s.readiness));
   ms700SetText('ms700ReadinessDetail',`${s.manual.completed}/${s.manual.total} handmatig afgevinkt`);
@@ -247,7 +256,7 @@ async function ms700RunDiagnostics(open=false){
   if(open)ms700OpenMissionControl('diagnostics');
   ms700DiagnosticsBusy=true;
   const button=document.getElementById('ms700DiagnosticButton');
-  if(button){button.disabled=true;button.textContent='Controleren…'}
+  if(button){button.disabled=true;button.textContent='⌁';button.setAttribute('aria-label','Systeemdiagnose bezig')}
   const r=[];
   r.push(ms700Diag('Internetverbinding',navigator.onLine?'good':'info',navigator.onLine?'Apparaat is online.':'Offline; lokale functies blijven beschikbaar.'));
   r.push(ms700Diag('Aanmelding en boot',currentUser&&currentBoat?'good':'critical',currentUser&&currentBoat?`Aangemeld bij ${currentBoat.name||'Serenity'}.`:'Geen geldige gebruiker of boot actief.'));
@@ -261,7 +270,7 @@ async function ms700RunDiagnostics(open=false){
   const haOnline=ha?.last_status==='connected'||(typeof homeAssistantIsRecentlyOnline==='function'&&homeAssistantIsRecentlyOnline(ha?.last_seen_at));
   r.push(ms700Diag('Home Assistant',!ha?.enabled?'info':haOnline?'good':'warning',!ha?.enabled?'Niet geconfigureerd; dit is optioneel.':haOnline?`Verbonden · ${Number(ha.field_count||0)} waarden ontvangen.`:'Geconfigureerd, maar niet recent verbonden.'));
   ms700DiagnosticResults=r;ms700RenderDiagnostics();ms700DiagnosticsBusy=false;
-  if(button){button.disabled=false;button.textContent='Opnieuw controleren'}
+  if(button){button.disabled=false;button.textContent='⌁';button.setAttribute('aria-label','Systeemdiagnose opnieuw uitvoeren')}
   ms700RenderMissionControl();
 }
 function ms700RenderDiagnostics(){
@@ -271,7 +280,7 @@ function ms700RenderDiagnostics(){
 }
 function ms700SystemReport(){
   const s=ms700Snapshot();
-  return [`MijnSerenity 7.0.8 systeemrapport`,`Datum: ${new Date().toLocaleString('nl-NL')}`,
+  return [`MijnSerenity 7.0.9 systeemrapport`,`Datum: ${new Date().toLocaleString('nl-NL')}`,
     `Boot: ${currentBoat?.name||'Serenity'}`,`Mission-score: ${s.score}/100`,
     `Vertrekcheck: ${s.readiness}/100`,`Datakwaliteit: ${s.data.score}/100`,
     `Online: ${navigator.onLine?'ja':'nee'}`,'','Diagnose:',
@@ -289,7 +298,7 @@ async function ms700BuildBackup(){
   const tables=['boat_settings','pois','poi_photos','trips','trip_photos','costs','cost_receipts','technical_state','technical_events','live_navigation_state'];
   const database={},errors=[];
   for(const table of tables){const result=await ms700FetchBackupTable(table);database[table]=result.rows;if(result.error)errors.push({table,error:result.error})}
-  return {format:'mijnserenity-backup',format_version:1,app_version:'7.0.8',created_at:new Date().toISOString(),
+  return {format:'mijnserenity-backup',format_version:1,app_version:'7.0.9',created_at:new Date().toISOString(),
     boat:{id:currentBoat.id,name:currentBoat.name||settingsCache?.boat_name||'Serenity'},
     user:{id:currentUser?.id||null,email:currentUser?.email||null,role:currentRole||null},
     database,local:{smart_route_profile:ms700BoatProfile(),departure_check_today:ms700ManualChecks(),technical_cache:technicalStateCache||null,settings_cache:settingsCache||null},
