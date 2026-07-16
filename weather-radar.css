@@ -1,0 +1,256 @@
+
+/* =========================================================
+   MijnSerenity Cloud 7.1.0 — live neerslagradar
+   ========================================================= */
+
+.ms710-radar-card{
+  margin-top:12px;
+  overflow:hidden;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      rgba(116,82,255,.13),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(7,37,51,.98),
+      rgba(4,20,31,.99)
+    );
+  border-color:rgba(98,163,255,.19);
+}
+
+.ms710-radar-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.ms710-radar-actions{
+  display:flex;
+  flex:0 0 auto;
+  gap:7px;
+}
+
+.ms710-radar-actions button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:46px;
+  min-width:46px;
+  height:46px;
+  min-height:46px;
+  padding:0;
+  border-radius:50%;
+  font-size:21px;
+}
+
+.ms710-radar-actions button.loading{
+  animation:ms710RadarSpin 1s linear infinite;
+}
+
+@keyframes ms710RadarSpin{
+  to{transform:rotate(360deg)}
+}
+
+.ms710-radar-map-wrap{
+  position:relative;
+  margin-top:12px;
+  overflow:hidden;
+  border-radius:18px;
+  background:#061823;
+  border:1px solid rgba(255,255,255,.09);
+}
+
+#ms710RadarMap{
+  width:100%;
+  height:min(55vh,560px);
+  min-height:360px;
+  background:#061823;
+}
+
+.ms710-radar-map-wrap .leaflet-control-attribution{
+  max-width:70%;
+  overflow:hidden;
+  font-size:8px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.ms710-radar-live-badge,
+.ms710-radar-time{
+  position:absolute;
+  z-index:600;
+  top:10px;
+  padding:7px 9px;
+  border-radius:999px;
+  color:#eefbff;
+  background:rgba(3,18,29,.88);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 5px 18px rgba(0,0,0,.28);
+  backdrop-filter:blur(10px);
+  pointer-events:none;
+}
+
+.ms710-radar-live-badge{
+  left:50px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.ms710-radar-live-badge span{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#ff5757;
+  box-shadow:0 0 0 4px rgba(255,87,87,.17);
+  animation:ms710RadarLive 1.4s ease-in-out infinite;
+}
+
+@keyframes ms710RadarLive{
+  50%{opacity:.45}
+}
+
+.ms710-radar-live-badge strong{
+  font-size:10px;
+}
+
+.ms710-radar-time{
+  right:10px;
+  text-align:right;
+}
+
+.ms710-radar-time strong,
+.ms710-radar-time small{
+  display:block;
+}
+
+.ms710-radar-time strong{
+  font-size:14px;
+}
+
+.ms710-radar-time small{
+  margin-top:1px;
+  color:#91abb5;
+  font-size:8px;
+}
+
+.ms710-radar-timeline{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:9px;
+  margin-top:10px;
+  padding:9px 11px;
+  border-radius:14px;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.065);
+}
+
+.ms710-radar-timeline > span{
+  color:#9eb7c0;
+  font-size:10px;
+  font-weight:850;
+}
+
+.ms710-radar-timeline input{
+  width:100%;
+  margin:0;
+  accent-color:#59d1f4;
+}
+
+.ms710-radar-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:9px;
+}
+
+.ms710-radar-footer > small{
+  color:#809ca7;
+  text-align:right;
+}
+
+.ms710-radar-footer a{
+  color:#7bdcf7;
+}
+
+.ms710-radar-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.ms710-radar-legend span{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  color:#91abb5;
+  font-size:9px;
+}
+
+.ms710-radar-legend i{
+  width:14px;
+  height:7px;
+  border-radius:999px;
+}
+
+.ms710-radar-legend i.dry{
+  background:rgba(255,255,255,.13);
+}
+
+.ms710-radar-legend i.light{
+  background:#4bb4ff;
+}
+
+.ms710-radar-legend i.medium{
+  background:#ffe65a;
+}
+
+.ms710-radar-legend i.heavy{
+  background:#f44964;
+}
+
+@media(max-width:700px){
+  .ms710-radar-head{
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .ms710-radar-actions{
+    justify-content:flex-end;
+  }
+
+  #ms710RadarMap{
+    height:48vh;
+    min-height:320px;
+  }
+
+  .ms710-radar-footer{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .ms710-radar-footer > small{
+    text-align:left;
+  }
+}
+
+@media(max-width:430px){
+  #ms710RadarMap{
+    min-height:290px;
+  }
+
+  .ms710-radar-live-badge{
+    left:44px;
+  }
+
+  .ms710-radar-time{
+    top:auto;
+    right:8px;
+    bottom:24px;
+  }
+}

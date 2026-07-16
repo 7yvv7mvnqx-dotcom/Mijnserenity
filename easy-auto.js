@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.9 — Eenvoudig automatisch varen
+   MijnSerenity Cloud 7.1.0 — Eenvoudig automatisch varen
    ============================================================ */
 
 let ms701BootTimer=null;
