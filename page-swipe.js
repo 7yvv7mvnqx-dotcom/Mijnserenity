@@ -1,9 +1,9 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.0.7 — pagina volgt de vinger
+   MijnSerenity Cloud 7.0.8 — native iPhone/iPad paginavegen
    ============================================================ */
 
-const ms707PageOrder=[
+const ms708PageOrder=[
   'dashboard',
   'live',
   'map',
@@ -15,7 +15,7 @@ const ms707PageOrder=[
   'settings'
 ];
 
-const ms707PageLabels={
+const ms708PageLabels={
   dashboard:'Start',
   live:'Live varen',
   map:'Kaart',
@@ -27,730 +27,351 @@ const ms707PageLabels={
   settings:'Boot'
 };
 
-let ms707Gesture=null;
-let ms707Frame=null;
-let ms707Busy=false;
-let ms707HintTimer=null;
+let ms708Pager=null;
+let ms708OriginalShowTab=null;
+let ms708OriginalCaptainNavigate=null;
+let ms708SuppressScroll=false;
+let ms708ActiveId='dashboard';
+let ms708ScrollTimer=null;
+let ms708Frame=null;
+let ms708ResizeFrame=null;
+let ms708PreparingId=null;
+let ms708Initialised=false;
 
-function ms707CurrentPage(){
-  const active=document.querySelector(
-    '.bottom-nav-item.active[data-target]'
+function ms708PageIndex(id){
+  return ms708PageOrder.indexOf(id);
+}
+
+function ms708PageElement(id){
+  return document.getElementById(id);
+}
+
+function ms708ClosestPageIndex(){
+  if(!ms708Pager)return 0;
+
+  const width=Math.max(
+    1,
+    ms708Pager.clientWidth
   );
-  const id=active?.dataset.target;
 
-  if(ms707PageOrder.includes(id)){
-    return id;
-  }
-
-  return ms707PageOrder.find(pageId=>
-    !document.getElementById(pageId)
-      ?.classList.contains('hidden')
-  )||'dashboard';
-}
-
-function ms707ModalOpen(){
-  return Boolean(
-    document.querySelector(
-      '.ms700-mission-modal:not(.hidden),'+
-      '.ms705-route-control-modal:not(.hidden),'+
-      '.planner-map-fullscreen:not(.hidden),'+
-      '.radar-camera-fullscreen:not(.hidden),'+
-      '.map-picker:not(.hidden),'+
-      '.lightbox:not(.hidden),'+
-      '.poi-detail-modal:not(.hidden),'+
-      '.install-help:not(.hidden)'
-    )
-  );
-}
-
-function ms707HorizontalScroller(target){
-  let element=target;
-
-  while(
-    element&&
-    element!==document.body&&
-    element!==document.documentElement
-  ){
-    const style=getComputedStyle(element);
-    const scrollable=
-      element.scrollWidth>
-      element.clientWidth+8&&
-      ['auto','scroll'].includes(
-        style.overflowX
-      );
-
-    if(scrollable)return element;
-
-    element=element.parentElement;
-  }
-
-  return null;
-}
-
-function ms707IgnoredTarget(target){
-  if(!target?.closest)return true;
-
-  if(target.closest(
-    'input,textarea,select,option,'+
-    '[contenteditable="true"],'+
-    '.bottom-nav,'+
-    '.tabs,'+
-    '.leaflet-container,'+
-    '.live-radar-camera-viewport,'+
-    '.radar-camera-actions,'+
-    '.photo-grid,'+
-    '.poi-web-photo-results,'+
-    '.ms692-harbour-preview,'+
-    '.ms700-modal-tabs,'+
-    '.ms705-modal-tabs,'+
-    '.ms702-split-buttons,'+
-    '.route-import-preview,'+
-    '.planner-map-card,'+
-    '.map-picker,'+
-    '.lightbox,'+
-    '.poi-detail-modal,'+
-    '.install-help'
-  )){
-    return true;
-  }
-
-  return Boolean(
-    ms707HorizontalScroller(target)
-  );
-}
-
-function ms707ViewportWidth(){
   return Math.max(
-    320,
-    document.documentElement.clientWidth||
-    window.innerWidth||
-    320
-  );
-}
-
-function ms707TargetForDirection(
-  currentId,
-  direction
-){
-  const currentIndex=
-    ms707PageOrder.indexOf(currentId);
-
-  if(currentIndex<0)return null;
-
-  const targetIndex=
-    currentIndex+direction;
-
-  if(
-    targetIndex<0||
-    targetIndex>=ms707PageOrder.length
-  ){
-    return null;
-  }
-
-  return ms707PageOrder[targetIndex];
-}
-
-function ms707PrepareTarget(direction){
-  const gesture=ms707Gesture;
-
-  if(!gesture)return false;
-
-  const targetId=
-    ms707TargetForDirection(
-      gesture.currentId,
-      direction
-    );
-
-  if(!targetId){
-    ms707ReleaseTarget();
-    gesture.direction=direction;
-    gesture.targetId=null;
-    gesture.targetSection=null;
-    return false;
-  }
-
-  if(
-    gesture.targetId===targetId&&
-    gesture.targetSection
-  ){
-    gesture.direction=direction;
-    return true;
-  }
-
-  ms707ReleaseTarget();
-
-  const target=
-    document.getElementById(targetId);
-  const current=
-    gesture.currentSection;
-
-  if(!target||!current)return false;
-
-  gesture.direction=direction;
-  gesture.targetId=targetId;
-  gesture.targetSection=target;
-  gesture.targetWasHidden=
-    target.classList.contains('hidden');
-
-  target.classList.remove('hidden');
-  target.classList.add(
-    'ms707-swipe-preview'
-  );
-
-  target.style.top=
-    `${current.offsetTop}px`;
-  target.style.left='0';
-  target.style.width='100%';
-  target.style.zIndex='31';
-  target.style.willChange=
-    'transform,opacity';
-
-  current.classList.add(
-    'ms707-swipe-current'
-  );
-  current.style.zIndex='32';
-  current.style.willChange=
-    'transform,opacity';
-
-  ms707ApplyDrag(
-    gesture.lastX-
-    gesture.startX
-  );
-
-  return true;
-}
-
-function ms707ReleaseTarget(){
-  const gesture=ms707Gesture;
-  if(!gesture)return;
-
-  const target=gesture.targetSection;
-
-  if(target){
-    target.classList.remove(
-      'ms707-swipe-preview',
-      'ms707-swipe-animating'
-    );
-
-    target.style.removeProperty('top');
-    target.style.removeProperty('left');
-    target.style.removeProperty('width');
-    target.style.removeProperty('z-index');
-    target.style.removeProperty('will-change');
-    target.style.removeProperty('transform');
-    target.style.removeProperty('opacity');
-    target.style.removeProperty('transition');
-
-    if(gesture.targetWasHidden){
-      target.classList.add('hidden');
-    }
-  }
-
-  gesture.targetSection=null;
-  gesture.targetId=null;
-  gesture.targetWasHidden=false;
-}
-
-function ms707Resistance(dx){
-  const width=ms707ViewportWidth();
-  const sign=Math.sign(dx)||1;
-  const distance=Math.abs(dx);
-
-  return sign*(
-    width*
-    (
-      1-
-      Math.exp(
-        -distance/
-        Math.max(1,width*.9)
+    0,
+    Math.min(
+      ms708PageOrder.length-1,
+      Math.round(
+        ms708Pager.scrollLeft/width
       )
     )
   );
 }
 
-function ms707ScheduleDrag(dx){
-  if(!ms707Gesture)return;
+function ms708CurrentPageId(){
+  return ms708PageOrder[
+    ms708ClosestPageIndex()
+  ]||'dashboard';
+}
 
-  ms707Gesture.pendingDx=dx;
-
-  if(ms707Frame)return;
-
-  ms707Frame=requestAnimationFrame(()=>{
-    ms707Frame=null;
-
-    if(!ms707Gesture)return;
-
-    ms707ApplyDrag(
-      ms707Gesture.pendingDx
+function ms708SetNavigationState(id){
+  document.querySelectorAll(
+    '.bottom-nav-item'
+  ).forEach(button=>{
+    button.classList.toggle(
+      'active',
+      button.dataset.target===id
     );
+  });
+
+  const desktopMap={
+    dashboard:0,
+    live:1,
+    map:2,
+    planner:3,
+    technical:4,
+    pois:5,
+    logbook:6,
+    finance:8,
+    settings:9
+  };
+
+  document.querySelectorAll('.tab')
+    .forEach((tab,index)=>{
+      tab.classList.toggle(
+        'active',
+        index===desktopMap[id]
+      );
+    });
+
+  const activeButton=
+    document.querySelector(
+      `.bottom-nav-item[data-target="${id}"]`
+    );
+
+  if(
+    typeof scrollActiveBottomNavigationIntoView==='function'
+  ){
+    scrollActiveBottomNavigationIntoView(
+      activeButton,
+      false
+    );
+  }
+}
+
+function ms708PreparePage(id){
+  if(ms708PreparingId===id)return;
+
+  ms708PreparingId=id;
+
+  const page=ms708PageElement(id);
+  if(page&&page.dataset.ms708Prepared!=='true'){
+    page.scrollTop=0;
+    page.dataset.ms708Prepared='true';
+  }
+
+  requestAnimationFrame(()=>{
+    ms708PreparingId=null;
   });
 }
 
-function ms707ApplyDrag(rawDx){
-  const gesture=ms707Gesture;
-  if(!gesture)return;
+function ms708ActivatePage(
+  id,
+  runPageActions=true
+){
+  if(!ms708PageOrder.includes(id))return;
 
-  const width=ms707ViewportWidth();
-  const direction=rawDx<0?1:-1;
-  const hasTarget=
-    ms707PrepareTarget(direction);
+  ms708ActiveId=id;
+  ms708SetNavigationState(id);
 
-  let dx=rawDx;
+  if(!runPageActions)return;
 
-  if(!hasTarget){
-    dx=ms707Resistance(rawDx)*.22;
-  }else{
-    dx=Math.max(
-      -width,
-      Math.min(width,dx)
-    );
+  ms708SuppressScroll=true;
+
+  try{
+    ms708OriginalCaptainNavigate?.(id);
+  }finally{
+    ms708SuppressScroll=false;
   }
 
-  gesture.renderedDx=dx;
+  requestAnimationFrame(()=>{
+    if(id==='live'){
+      try{
+        liveMap?.invalidateSize({
+          pan:false
+        });
+      }catch{}
 
-  const progress=Math.min(
-    1,
-    Math.abs(dx)/width
-  );
-
-  const current=gesture.currentSection;
-  const target=gesture.targetSection;
-
-  if(current){
-    current.style.transform=
-      `translate3d(${dx}px,0,0)`;
-    current.style.opacity=
-      String(1-progress*.12);
-  }
-
-  if(target){
-    const startX=
-      direction>0
-        ?width
-        :-width;
-    const targetX=startX+dx;
-
-    target.style.transform=
-      `translate3d(${targetX}px,0,0)`;
-    target.style.opacity=
-      String(.86+progress*.14);
-  }
-
-  document.documentElement.style.setProperty(
-    '--ms707-progress',
-    String(progress)
-  );
-}
-
-function ms707PointerDown(event){
-  if(
-    ms707Busy||
-    ms707ModalOpen()||
-    ms707IgnoredTarget(event.target)
-  ){
-    return;
-  }
-
-  if(
-    event.pointerType&&
-    !['touch','pen'].includes(
-      event.pointerType
-    )
-  ){
-    return;
-  }
-
-  const edge=24;
-
-  if(
-    event.clientX<=edge||
-    event.clientX>=window.innerWidth-edge
-  ){
-    return;
-  }
-
-  const currentId=
-    ms707CurrentPage();
-  const currentSection=
-    document.getElementById(currentId);
-
-  if(!currentSection)return;
-
-  ms707Gesture={
-    pointerId:event.pointerId,
-    currentId,
-    currentSection,
-    targetId:null,
-    targetSection:null,
-    targetWasHidden:false,
-    direction:0,
-    startX:event.clientX,
-    startY:event.clientY,
-    lastX:event.clientX,
-    lastY:event.clientY,
-    startedAt:performance.now(),
-    horizontal:false,
-    cancelled:false,
-    renderedDx:0,
-    pendingDx:0
-  };
-}
-
-function ms707PointerMove(event){
-  const gesture=ms707Gesture;
-
-  if(
-    !gesture||
-    event.pointerId!==gesture.pointerId
-  ){
-    return;
-  }
-
-  gesture.lastX=event.clientX;
-  gesture.lastY=event.clientY;
-
-  const dx=
-    event.clientX-
-    gesture.startX;
-  const dy=
-    event.clientY-
-    gesture.startY;
-
-  if(!gesture.horizontal){
-    if(
-      Math.abs(dy)>18&&
-      Math.abs(dy)>Math.abs(dx)*1.12
-    ){
-      gesture.cancelled=true;
-      ms707CancelGesture(false);
-      return;
+      if(typeof ms702RestoreSplitView==='function'){
+        ms702RestoreSplitView();
+      }
     }
 
-    if(
-      Math.abs(dx)>=12&&
-      Math.abs(dx)>Math.abs(dy)*1.12
-    ){
-      gesture.horizontal=true;
+    if(id==='map'){
+      try{
+        map?.invalidateSize?.({
+          pan:false
+        });
+      }catch{}
+    }
 
-      document.body.classList.add(
-        'ms707-swipe-dragging'
+    if(id==='planner'){
+      try{
+        plannerMap?.invalidateSize({
+          pan:false
+        });
+      }catch{}
+    }
+  });
+}
+
+function ms708ScrollToPage(
+  id,
+  smooth=true
+){
+  if(
+    !ms708Pager||
+    !ms708PageOrder.includes(id)
+  ){
+    return;
+  }
+
+  const index=ms708PageIndex(id);
+  const page=ms708PageElement(id);
+
+  page?.scrollTo({
+    top:0,
+    left:0,
+    behavior:'auto'
+  });
+
+  ms708SetPagerVisibility(true);
+
+  ms708Pager.scrollTo({
+    left:index*ms708Pager.clientWidth,
+    top:0,
+    behavior:smooth?'smooth':'auto'
+  });
+
+  ms708SetNavigationState(id);
+
+  if(!smooth){
+    ms708ActivatePage(id,true);
+  }
+}
+
+function ms708SetPagerVisibility(visible){
+  if(!ms708Pager)return;
+
+  ms708Pager.classList.toggle(
+    'hidden',
+    !visible
+  );
+
+  document.querySelectorAll(
+    '#appView > section'
+  ).forEach(section=>{
+    if(
+      !ms708PageOrder.includes(section.id)
+    ){
+      section.classList.add('hidden');
+    }
+  });
+}
+
+function ms708ResizePager(){
+  if(!ms708Pager)return;
+
+  cancelAnimationFrame(
+    ms708ResizeFrame
+  );
+
+  ms708ResizeFrame=requestAnimationFrame(()=>{
+    const nav=document.querySelector(
+      '.bottom-nav'
+    );
+    const pagerRect=
+      ms708Pager.getBoundingClientRect();
+    const navTop=
+      nav?.getBoundingClientRect().top||
+      (
+        window.visualViewport?.height||
+        window.innerHeight
       );
+    const height=Math.max(
+      260,
+      Math.floor(
+        navTop-pagerRect.top-8
+      )
+    );
+    const currentIndex=
+      ms708PageIndex(ms708ActiveId);
+
+    ms708Pager.style.height=
+      `${height}px`;
+
+    if(currentIndex>=0){
+      ms708Pager.scrollTo({
+        left:
+          currentIndex*
+          ms708Pager.clientWidth,
+        top:0,
+        behavior:'auto'
+      });
+    }
+
+    requestAnimationFrame(()=>{
+      try{
+        liveMap?.invalidateSize({
+          pan:false
+        });
+      }catch{}
 
       try{
-        event.currentTarget
-          ?.setPointerCapture?.(
-            event.pointerId
-          );
+        plannerMap?.invalidateSize({
+          pan:false
+        });
       }catch{}
-    }else{
-      return;
-    }
-  }
-
-  event.preventDefault();
-  ms707ScheduleDrag(dx);
+    });
+  });
 }
 
-function ms707PointerUp(event){
-  const gesture=ms707Gesture;
+function ms708HandleScroll(){
+  if(!ms708Pager)return;
 
-  if(
-    !gesture||
-    event.pointerId!==gesture.pointerId
-  ){
-    return;
-  }
+  if(!ms708Frame){
+    ms708Frame=requestAnimationFrame(()=>{
+      ms708Frame=null;
 
-  if(
-    !gesture.horizontal||
-    gesture.cancelled
-  ){
-    ms707CancelGesture(false);
-    return;
-  }
+      const index=
+        ms708ClosestPageIndex();
+      const id=
+        ms708PageOrder[index];
 
-  event.preventDefault();
+      ms708SetNavigationState(id);
 
-  const dx=
-    event.clientX-
-    gesture.startX;
-  const duration=
-    Math.max(
-      1,
-      performance.now()-
-      gesture.startedAt
-    );
-  const velocity=dx/duration;
-  const width=ms707ViewportWidth();
-  const direction=dx<0?1:-1;
-  const targetId=
-    ms707TargetForDirection(
-      gesture.currentId,
-      direction
-    );
-
-  const commit=Boolean(
-    targetId&&
-    (
-      Math.abs(dx)>=width*.24||
-      (
-        Math.abs(dx)>=44&&
-        Math.abs(velocity)>=.48
-      )
-    )
-  );
-
-  if(commit){
-    ms707CompleteGesture(
-      direction,
-      targetId,
-      velocity
-    );
-  }else{
-    ms707CancelGesture(true);
-  }
-}
-
-function ms707PointerCancel(){
-  if(ms707Gesture){
-    ms707CancelGesture(true);
-  }
-}
-
-function ms707TransitionDuration(
-  remaining,
-  velocity
-){
-  const speed=Math.max(
-    .45,
-    Math.abs(velocity)
-  );
-
-  return Math.max(
-    150,
-    Math.min(
-      300,
-      remaining/speed*.42
-    )
-  );
-}
-
-function ms707CompleteGesture(
-  direction,
-  targetId,
-  velocity
-){
-  const gesture=ms707Gesture;
-  if(!gesture)return;
-
-  if(
-    !gesture.targetSection||
-    gesture.targetId!==targetId
-  ){
-    ms707PrepareTarget(direction);
-  }
-
-  const width=ms707ViewportWidth();
-  const currentX=
-    Number(gesture.renderedDx)||0;
-  const endX=
-    direction>0
-      ?-width
-      :width;
-  const remaining=
-    Math.max(
-      0,
-      Math.abs(endX-currentX)
-    );
-  const duration=
-    ms707TransitionDuration(
-      remaining,
-      velocity
-    );
-  const transition=
-    `transform ${duration}ms cubic-bezier(.22,.78,.24,1), opacity ${duration}ms ease`;
-
-  ms707Busy=true;
-
-  gesture.currentSection
-    ?.classList.add(
-      'ms707-swipe-animating'
-    );
-  gesture.targetSection
-    ?.classList.add(
-      'ms707-swipe-animating'
-    );
-
-  if(gesture.currentSection){
-    gesture.currentSection.style.transition=
-      transition;
-    gesture.currentSection.style.transform=
-      `translate3d(${endX}px,0,0)`;
-    gesture.currentSection.style.opacity='0.84';
-  }
-
-  if(gesture.targetSection){
-    gesture.targetSection.style.transition=
-      transition;
-    gesture.targetSection.style.transform=
-      'translate3d(0,0,0)';
-    gesture.targetSection.style.opacity='1';
-  }
-
-  setTimeout(()=>{
-    const currentSection=
-      gesture.currentSection;
-    const targetSection=
-      gesture.targetSection;
-
-    if(targetSection){
-      gesture.targetWasHidden=false;
-    }
-
-    captainNavigate(targetId);
-
-    ms707CleanupSection(
-      currentSection
-    );
-    ms707CleanupSection(
-      targetSection
-    );
-
-    document.body.classList.remove(
-      'ms707-swipe-dragging'
-    );
-    document.documentElement.style
-      .removeProperty(
-        '--ms707-progress'
+      const width=Math.max(
+        1,
+        ms708Pager.clientWidth
       );
-
-    ms707Gesture=null;
-    ms707Busy=false;
-
-    ms707ShowPageToast(
-      direction>0
-        ?'Volgende pagina'
-        :'Vorige pagina',
-      ms707PageLabels[targetId]||
-      targetId
-    );
-
-    ms707MarkSwipeUsed();
-
-    const activeButton=
-      document.querySelector(
-        `.bottom-nav-item[data-target="${targetId}"]`
-      );
-
-    if(
-      typeof scrollActiveBottomNavigationIntoView==='function'
-    ){
-      setTimeout(()=>{
-        scrollActiveBottomNavigationIntoView(
-          activeButton,
-          true
-        );
-      },35);
-    }
-  },duration+20);
-}
-
-function ms707CancelGesture(animated=true){
-  const gesture=ms707Gesture;
-  if(!gesture)return;
-
-  const current=gesture.currentSection;
-  const target=gesture.targetSection;
-
-  if(
-    animated&&
-    gesture.horizontal
-  ){
-    const duration=190;
-    const transition=
-      `transform ${duration}ms cubic-bezier(.22,.78,.24,1), opacity ${duration}ms ease`;
-    const width=ms707ViewportWidth();
-    const direction=
-      gesture.direction||
-      (
-        gesture.renderedDx<0
+      const progress=
+        ms708Pager.scrollLeft/width;
+      const direction=
+        progress>
+        ms708PageIndex(ms708ActiveId)
           ?1
-          :-1
+          :-1;
+      const candidateIndex=Math.max(
+        0,
+        Math.min(
+          ms708PageOrder.length-1,
+          ms708PageIndex(ms708ActiveId)+
+          direction
+        )
       );
 
-    if(current){
-      current.style.transition=transition;
-      current.style.transform=
-        'translate3d(0,0,0)';
-      current.style.opacity='1';
-    }
-
-    if(target){
-      target.style.transition=transition;
-      target.style.transform=
-        `translate3d(${
-          direction>0
-            ?width
-            :-width
-        }px,0,0)`;
-      target.style.opacity='.86';
-    }
-
-    setTimeout(()=>{
-      ms707CleanupSection(current);
-      ms707ReleaseTarget();
-      document.body.classList.remove(
-        'ms707-swipe-dragging'
-      );
-      document.documentElement.style
-        .removeProperty(
-          '--ms707-progress'
+      if(
+        Math.abs(
+          progress-
+          ms708PageIndex(ms708ActiveId)
+        )>.08
+      ){
+        ms708PreparePage(
+          ms708PageOrder[candidateIndex]
         );
-      ms707Gesture=null;
-    },duration+20);
-  }else{
-    ms707CleanupSection(current);
-    ms707ReleaseTarget();
-    document.body.classList.remove(
-      'ms707-swipe-dragging'
+      }
+    });
+  }
+
+  clearTimeout(ms708ScrollTimer);
+
+  ms708ScrollTimer=setTimeout(
+    ms708HandleScrollSettled,
+    95
+  );
+}
+
+function ms708HandleScrollSettled(){
+  if(!ms708Pager)return;
+
+  const id=ms708CurrentPageId();
+
+  ms708Pager.scrollTo({
+    left:
+      ms708PageIndex(id)*
+      ms708Pager.clientWidth,
+    top:0,
+    behavior:'auto'
+  });
+
+  if(id!==ms708ActiveId){
+    ms708ActivatePage(id,true);
+    ms708ShowPageToast(
+      ms708PageLabels[id]||id
     );
-    document.documentElement.style
-      .removeProperty(
-        '--ms707-progress'
-      );
-    ms707Gesture=null;
+  }else{
+    ms708SetNavigationState(id);
   }
 }
 
-function ms707CleanupSection(section){
-  if(!section)return;
-
-  section.classList.remove(
-    'ms707-swipe-current',
-    'ms707-swipe-preview',
-    'ms707-swipe-animating'
-  );
-
-  [
-    'top',
-    'left',
-    'width',
-    'z-index',
-    'will-change',
-    'transform',
-    'opacity',
-    'transition'
-  ].forEach(property=>
-    section.style.removeProperty(
-      property
-    )
-  );
-}
-
-function ms707ShowPageToast(
-  title,
-  page
-){
+function ms708ShowPageToast(page){
   let toast=document.getElementById(
     'ms706PageToast'
   );
@@ -763,7 +384,7 @@ function ms707ShowPageToast(
   }
 
   toast.innerHTML=`
-    <small>${esc(title)}</small>
+    <small>Pagina</small>
     <strong>${esc(page)}</strong>
   `;
 
@@ -775,39 +396,29 @@ function ms707ShowPageToast(
 
   toast._hideTimer=setTimeout(()=>{
     toast.classList.remove('show');
-  },900);
+  },750);
 }
 
-function ms707HintKey(){
-  return 'mijnserenity-707-swipe-hint-seen';
-}
-
-function ms707MarkSwipeUsed(){
+function ms708MarkHintSeen(){
   try{
     localStorage.setItem(
-      ms707HintKey(),
+      'mijnserenity-708-native-swipe-seen',
       '1'
     );
   }catch{}
-
-  ms707HideHint();
-}
-
-function ms707HideHint(){
-  clearTimeout(ms707HintTimer);
 
   document.getElementById(
     'ms706SwipeHint'
   )?.classList.add('hidden');
 }
 
-function ms707MaybeShowHint(){
+function ms708ShowHint(){
   let seen=false;
 
   try{
     seen=
       localStorage.getItem(
-        ms707HintKey()
+        'mijnserenity-708-native-swipe-seen'
       )==='1';
   }catch{}
 
@@ -820,82 +431,205 @@ function ms707MaybeShowHint(){
   if(!hint)return;
 
   hint.querySelector('strong').textContent=
-    'Veeg: de pagina volgt je hand';
+    'Veeg soepel: pagina volgt je vinger';
 
   setTimeout(()=>{
     hint.classList.remove('hidden');
   },1500);
 
-  ms707HintTimer=setTimeout(
-    ms707HideHint,
-    7500
-  );
+  setTimeout(()=>{
+    hint.classList.add('hidden');
+  },7500);
 }
 
-function ms707Attach(){
+function ms708CreatePager(){
   const appView=document.getElementById(
     'appView'
   );
 
-  if(
-    !appView||
-    appView.dataset.ms707SwipeReady==='true'
-  ){
+  if(!appView||ms708Initialised)return;
+
+  const pages=ms708PageOrder
+    .map(ms708PageElement)
+    .filter(Boolean);
+
+  if(pages.length!==ms708PageOrder.length){
+    setTimeout(ms708CreatePager,500);
     return;
   }
 
-  appView.dataset.ms707SwipeReady='true';
+  ms708OriginalShowTab=showTab;
+  ms708OriginalCaptainNavigate=
+    captainNavigate;
 
-  appView.addEventListener(
+  const pager=document.createElement('div');
+  pager.id='ms708NativePager';
+  pager.className='ms708-native-pager';
+  pager.setAttribute(
+    'aria-label',
+    'MijnSerenity pagina’s'
+  );
+
+  pages[0].parentNode.insertBefore(
+    pager,
+    pages[0]
+  );
+
+  pages.forEach((page,index)=>{
+    page.classList.remove('hidden');
+    page.classList.add(
+      'ms708-native-page'
+    );
+    page.dataset.ms708Index=
+      String(index);
+    page.setAttribute(
+      'aria-label',
+      ms708PageLabels[page.id]||
+      page.id
+    );
+    pager.appendChild(page);
+  });
+
+  ms708Pager=pager;
+  ms708Initialised=true;
+
+  showTab=function(id,button){
+    if(ms708PageOrder.includes(id)){
+      ms708OriginalShowTab(id,button);
+
+      document.querySelectorAll(
+        '#ms708NativePager > section'
+      ).forEach(section=>
+        section.classList.remove('hidden')
+      );
+
+      ms708SetPagerVisibility(true);
+
+      if(!ms708SuppressScroll){
+        ms708ScrollToPage(id,true);
+      }
+
+      return;
+    }
+
+    ms708Pager.classList.add('hidden');
+    ms708OriginalShowTab(id,button);
+  };
+
+  captainNavigate=function(
+    id,
+    sourceButton=null
+  ){
+    const result=
+      ms708OriginalCaptainNavigate(
+        id,
+        sourceButton
+      );
+
+    if(
+      ms708PageOrder.includes(id)&&
+      !ms708SuppressScroll
+    ){
+      ms708ScrollToPage(id,true);
+    }
+
+    return result;
+  };
+
+  pager.addEventListener(
+    'scroll',
+    ms708HandleScroll,
+    {passive:true}
+  );
+
+  pager.addEventListener(
     'pointerdown',
-    ms707PointerDown,
-    {passive:true}
+    ms708MarkHintSeen,
+    {passive:true,once:true}
   );
 
-  appView.addEventListener(
-    'pointermove',
-    ms707PointerMove,
-    {passive:false}
+  if('onscrollend' in window){
+    pager.addEventListener(
+      'scrollend',
+      ms708HandleScrollSettled,
+      {passive:true}
+    );
+  }
+
+  const observer=new MutationObserver(()=>{
+    const appVisible=
+      !appView.classList.contains(
+        'hidden'
+      );
+
+    document.body.classList.toggle(
+      'ms708-native-pages-active',
+      appVisible
+    );
+
+    if(appVisible){
+      ms708SetPagerVisibility(true);
+      ms708ResizePager();
+    }
+  });
+
+  observer.observe(appView,{
+    attributes:true,
+    attributeFilter:['class']
+  });
+
+  document.body.classList.toggle(
+    'ms708-native-pages-active',
+    !appView.classList.contains(
+      'hidden'
+    )
   );
 
-  appView.addEventListener(
-    'pointerup',
-    ms707PointerUp,
-    {passive:false}
+  ms708ActiveId='dashboard';
+  ms708SetNavigationState(
+    ms708ActiveId
   );
-
-  appView.addEventListener(
-    'pointercancel',
-    ms707PointerCancel,
-    {passive:true}
+  ms708ResizePager();
+  ms708ScrollToPage(
+    ms708ActiveId,
+    false
   );
-
-  appView.addEventListener(
-    'lostpointercapture',
-    ms707PointerCancel,
-    {passive:true}
-  );
-
-  ms707MaybeShowHint();
+  ms708ShowHint();
 }
 
 document.addEventListener(
   'DOMContentLoaded',
-  ms707Attach
+  ()=>{
+    setTimeout(
+      ms708CreatePager,
+      80
+    );
+  }
 );
 
 window.addEventListener(
   'pageshow',
-  ms707Attach,
+  ()=>{
+    ms708CreatePager();
+    ms708ResizePager();
+  },
   {passive:true}
 );
 
 window.addEventListener(
   'resize',
-  ()=>{
-    if(ms707Gesture){
-      ms707CancelGesture(false);
-    }
-  },
+  ms708ResizePager,
+  {passive:true}
+);
+
+window.visualViewport?.addEventListener(
+  'resize',
+  ms708ResizePager,
+  {passive:true}
+);
+
+window.visualViewport?.addEventListener(
+  'scroll',
+  ms708ResizePager,
   {passive:true}
 );

@@ -1,6 +1,6 @@
 
 /* =========================================================
-   MijnSerenity Cloud 7.0.7 — pagina volgt de vinger
+   MijnSerenity Cloud 7.0.8 — native iPhone/iPad paginavegen
    ========================================================= */
 
 html,
@@ -8,69 +8,112 @@ body{
   overflow-x:hidden;
 }
 
+body.ms708-native-pages-active{
+  overflow:hidden !important;
+}
+
 #appView{
+  min-height:0;
+}
+
+.ms708-native-pager{
   position:relative;
-  overflow-x:clip;
-  overscroll-behavior-x:none;
-  touch-action:pan-y pinch-zoom;
+  display:flex;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  min-height:260px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  overscroll-behavior-x:contain;
+  overscroll-behavior-y:none;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x pan-y pinch-zoom;
+  scrollbar-width:none;
+  background:transparent;
 }
 
-#appView > section{
-  transform:translate3d(0,0,0);
-  backface-visibility:hidden;
-  transform-origin:center center;
+.ms708-native-pager::-webkit-scrollbar{
+  display:none;
+  width:0;
+  height:0;
 }
 
-#appView > section.ms707-swipe-current{
+.ms708-native-pager > .ms708-native-page{
   position:relative;
-  isolation:isolate;
-  box-shadow:
-    14px 0 36px rgba(0,0,0,.24);
-}
-
-#appView > section.ms707-swipe-preview{
-  position:absolute !important;
-  margin:0 !important;
-  min-height:100vh;
-  background:
-    radial-gradient(
-      circle at 100% 0,
-      rgba(61,183,229,.08),
-      transparent 28%
-    ),
-    linear-gradient(
-      180deg,
-      #071e2a,
-      #04151f
+  flex:0 0 100%;
+  width:100%;
+  min-width:100%;
+  max-width:100%;
+  height:100%;
+  min-height:0;
+  max-height:100%;
+  margin:0;
+  padding:
+    0 1px
+    calc(
+      var(--nav-height,92px) +
+      env(safe-area-inset-bottom) +
+      18px
     );
-  box-shadow:
-    -14px 0 36px rgba(0,0,0,.22);
-  pointer-events:none;
+  overflow-x:hidden;
+  overflow-y:auto;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x pan-y pinch-zoom;
+  transform:translateZ(0);
+  backface-visibility:hidden;
 }
 
-#appView > section.ms707-swipe-animating{
-  pointer-events:none;
+.ms708-native-pager > .ms708-native-page.hidden{
+  display:block !important;
 }
 
-body.ms707-swipe-dragging{
-  user-select:none;
-  -webkit-user-select:none;
-  cursor:grabbing;
-  overscroll-behavior:none;
+.ms708-native-pager > .ms708-native-page::after{
+  content:'';
+  display:block;
+  height:8px;
 }
 
-body.ms707-swipe-dragging .bottom-nav{
-  box-shadow:
-    0 -12px 34px rgba(0,0,0,.34),
-    0 -1px 0 rgba(91,210,244,.16);
+body.ms708-native-pages-active main{
+  overflow:hidden;
+}
+
+body.ms708-native-pages-active #appView{
+  overflow:hidden;
+}
+
+/* Kaarten en camerabeeld houden hun eigen aanrakingen. */
+.ms708-native-page .leaflet-container,
+.ms708-native-page .live-radar-camera-viewport,
+.ms708-native-page input,
+.ms708-native-page textarea,
+.ms708-native-page select{
+  touch-action:manipulation;
+}
+
+/* De navigatie blijft tijdens native vegen vast en helder. */
+body.ms708-native-pages-active .bottom-nav{
+  transform:translateZ(0) !important;
+  contain:layout paint;
 }
 
 .ms706-swipe-hint strong{
-  max-width:min(68vw,300px);
+  max-width:min(72vw,330px);
+}
+
+@media(min-width:761px){
+  .ms708-native-pager{
+    scroll-padding-inline:0;
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
-  #appView > section{
-    transition:none !important;
+  .ms708-native-pager{
+    scroll-behavior:auto;
   }
 }
