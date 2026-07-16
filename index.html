@@ -5,19 +5,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.0.1">
+<meta name="mijnserenity-build" content="7.0.2">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=7010">
+<link rel="manifest" href="manifest.json?v=7020">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7010">
-  <link rel="stylesheet" href="mission-control.css?v=7010">
-  <link rel="stylesheet" href="easy-auto.css?v=7010">
+<link rel="stylesheet" href="styles.css?v=7020">
+  <link rel="stylesheet" href="mission-control.css?v=7020">
+  <link rel="stylesheet" href="easy-auto.css?v=7020">
+  <link rel="stylesheet" href="live-split.css?v=7020">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7010">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7010">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7020">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7020">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -26,7 +27,7 @@
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7010" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7020" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -65,7 +66,7 @@
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7010" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7020" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -446,7 +447,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7010" alt="">
+          <img src="waterkaarten-dashboard.png?v=7020" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -540,7 +541,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.0.1</div>
+          <div class="label">Sync · v7.0.2</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -714,11 +715,11 @@
       </div>
 
       <div class="ms660-quick-actions">
-        <button type="button" onclick="ms660ShowLivePanel('map')">
-          🗺 Kaart
+        <button type="button" onclick="ms702ShowSplitView()">
+          🗺 Kaart + camera
         </button>
         <button type="button" class="secondary"
-          onclick="ms660ShowLivePanel('camera')">📹 Camera</button>
+          onclick="ms702SetSplitMode('equal')">50 / 50</button>
         <button type="button" class="secondary"
           onclick="openWaterkaarten()">🧭 Waterkaarten</button>
         <button type="button" class="secondary"
@@ -726,8 +727,31 @@
       </div>
     </div>
 
-    <div class="live-navigation-grid">
+    <div class="ms702-split-toolbar">
+      <div>
+        <span class="eyebrow">LIVE SPLIT VIEW</span>
+        <strong>OpenStreetMap en camera naast elkaar</strong>
+      </div>
+      <div class="ms702-split-buttons">
+        <button id="ms702EqualButton" type="button"
+          onclick="ms702SetSplitMode('equal')">50 / 50</button>
+        <button id="ms702MapButton" type="button" class="secondary"
+          onclick="ms702SetSplitMode('map')">Kaart groter</button>
+        <button id="ms702CameraButton" type="button" class="secondary"
+          onclick="ms702SetSplitMode('camera')">Camera groter</button>
+      </div>
+    </div>
+
+    <div id="ms702LiveSplit" class="live-navigation-grid ms702-live-split mode-equal">
     <div class="card live-map-card">
+      <div class="ms702-panel-head">
+        <div>
+          <span class="eyebrow">OPENSTREETMAP · LIVE POSITIE</span>
+          <strong>Kaart en vaarroute</strong>
+        </div>
+        <button type="button" class="secondary"
+          onclick="centerLiveMap()">◎ Volg</button>
+      </div>
       <div id="liveMapCanvas"></div>
       <button class="live-follow-button" onclick="centerLiveMap()">◎ Volg Serenity</button>
     </div>
@@ -735,11 +759,10 @@
     <div class="card live-radar-camera-card">
       <div class="live-radar-camera-head">
         <div>
-          <span class="eyebrow">LIVE CAMERA RADARBEUGEL</span>
-          <h2>Zicht tijdens het varen</h2>
+          <span class="eyebrow">HOME ASSISTANT · LIVE CAMERA</span>
+          <h2>Camera radarbeugel</h2>
           <p class="small">
-            Actueel camerabeeld via Home Assistant, ongeveer één beeld per seconde.
-            De camera start automatisch wanneer je Live varen opent.
+            Start automatisch naast de OpenStreetMap-kaart.
           </p>
         </div>
         <span id="liveRadarCameraBadge"
@@ -1223,7 +1246,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.0.1</span>
+        <span class="planner-version-badge">7.0.2</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -3416,8 +3439,9 @@
   </div>
 </div>
 
-<script src="app.js?v=7010"></script>
-<script src="mission-control.js?v=7010"></script>
-<script src="easy-auto.js?v=7010"></script>
+<script src="app.js?v=7020"></script>
+<script src="mission-control.js?v=7020"></script>
+<script src="easy-auto.js?v=7020"></script>
+<script src="live-split.js?v=7020"></script>
 </body>
 </html>
