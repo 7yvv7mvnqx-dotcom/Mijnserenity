@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.1.0 — live neerslagradar
+   MijnSerenity Cloud 7.1.1 — live neerslagradar
    ============================================================ */
 
 const MS710_RADAR_REFRESH_MS=5*60*1000;

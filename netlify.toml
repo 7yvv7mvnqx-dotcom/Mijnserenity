@@ -39,6 +39,14 @@
   status = 200
   force = true
 
+
+# MijnSerenity 7.1.1 — veilige AIS-proxy
+[[redirects]]
+  from = "/api/ais"
+  to = "/.netlify/functions/ais"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

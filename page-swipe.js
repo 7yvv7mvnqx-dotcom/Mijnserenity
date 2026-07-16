@@ -1,11 +1,12 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.1.0 — native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.1.1 — native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
   'dashboard',
   'live',
+  'ais',
   'weather',
   'map',
   'planner',
@@ -19,6 +20,7 @@ const ms708PageOrder=[
 const ms708PageLabels={
   dashboard:'Start',
   live:'Live varen',
+  ais:'AIS',
   weather:'Weer',
   map:'Kaart',
   planner:'Reisplanner',
@@ -86,14 +88,15 @@ function ms708SetNavigationState(id){
   const desktopMap={
     dashboard:0,
     live:1,
-    weather:2,
-    map:3,
-    planner:4,
-    technical:5,
-    pois:6,
-    logbook:7,
-    finance:9,
-    settings:10
+    ais:2,
+    weather:3,
+    map:4,
+    planner:5,
+    technical:6,
+    pois:7,
+    logbook:8,
+    finance:10,
+    settings:11
   };
 
   document.querySelectorAll('.tab')
@@ -155,6 +158,10 @@ function ms708ActivatePage(
   }
 
   requestAnimationFrame(()=>{
+    if(id==='ais'&&typeof initAisPage==='function'){
+      initAisPage();
+    }
+
     if(id==='weather'&&typeof initWeatherPage==='function'){
       initWeatherPage();
     }
