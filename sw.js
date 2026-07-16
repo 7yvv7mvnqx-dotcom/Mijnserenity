@@ -1,22 +1,24 @@
-const CACHE_NAME='mijnserenity-7.0.5';
+const CACHE_NAME='mijnserenity-7.0.6';
 const APP_SHELL=[
   '/',
   '/index.html',
-  '/styles.css?v=7050',
-  '/mission-control.css?v=7050',
-  '/easy-auto.css?v=7050',
-  '/live-split.css?v=7050',
-  '/route-control.css?v=7050',
-  '/app.js?v=7050',
-  '/mission-control.js?v=7050',
-  '/easy-auto.js?v=7050',
-  '/live-split.js?v=7050',
-  '/route-control.js?v=7050',
-  '/manifest.json?v=7050',
-  '/icon-192.png?v=7050',
-  '/icon-512.png?v=7050',
-  '/waterkaarten-dashboard.png?v=7050',
-  '/mijnserenity-logo.png?v=7050'
+  '/styles.css?v=7060',
+  '/mission-control.css?v=7060',
+  '/easy-auto.css?v=7060',
+  '/live-split.css?v=7060',
+  '/route-control.css?v=7060',
+  '/page-swipe.css?v=7060',
+  '/app.js?v=7060',
+  '/mission-control.js?v=7060',
+  '/easy-auto.js?v=7060',
+  '/live-split.js?v=7060',
+  '/route-control.js?v=7060',
+  '/page-swipe.js?v=7060',
+  '/manifest.json?v=7060',
+  '/icon-192.png?v=7060',
+  '/icon-512.png?v=7060',
+  '/waterkaarten-dashboard.png?v=7060',
+  '/mijnserenity-logo.png?v=7060'
 ];
 
 self.addEventListener('install',event=>{
