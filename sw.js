@@ -1,37 +1,49 @@
-const CACHE_NAME='mijnserenity-7.1.2-embed';
+const CACHE_NAME='mijnserenity-7.2.1-embed';
 const APP_SHELL=[
   '/',
   '/index.html',
-  '/styles.css?v=7112',
-  '/mission-control.css?v=7112',
-  '/easy-auto.css?v=7112',
-  '/live-split.css?v=7112',
-  '/route-control.css?v=7112',
-  '/page-swipe.css?v=7112',
-  '/weather-page.css?v=7112',
-  '/weather-radar.css?v=7112',
-  '/ais-page.css?v=7112',
-  '/entertainment-page.css?v=7112',
-  '/app.js?v=7112',
-  '/mission-control.js?v=7112',
-  '/easy-auto.js?v=7112',
-  '/live-split.js?v=7112',
-  '/route-control.js?v=7112',
-  '/weather-page.js?v=7112',
-  '/weather-radar.js?v=7112',
-  '/ais-page.js?v=7112',
-  '/entertainment-page.js?v=7112',
-  '/page-swipe.js?v=7112',
-  '/manifest.json?v=7112',
-  '/icon-192.png?v=7112',
-  '/icon-512.png?v=7112',
-  '/waterkaarten-dashboard.png?v=7112',
-  '/mijnserenity-logo.png?v=7112'
+  '/styles.css?v=7210',
+  '/mission-control.css?v=7210',
+  '/easy-auto.css?v=7210',
+  '/live-split.css?v=7210',
+  '/route-control.css?v=7210',
+  '/page-swipe.css?v=7210',
+  '/weather-page.css?v=7210',
+  '/weather-radar.css?v=7210',
+  '/ais-page.css?v=7210',
+  '/entertainment-page.css?v=7210',
+  '/auth-bootstrap.js?v=7210',
+  '/app.js?v=7210',
+  '/mission-control.js?v=7210',
+  '/easy-auto.js?v=7210',
+  '/live-split.js?v=7210',
+  '/route-control.js?v=7210',
+  '/weather-page.js?v=7210',
+  '/weather-radar.js?v=7210',
+  '/ais-page.js?v=7210',
+  '/entertainment-page.js?v=7210',
+  '/page-swipe.js?v=7210',
+  '/manifest.json?v=7210',
+  '/icon-192.png?v=7210',
+  '/icon-512.png?v=7210',
+  '/waterkaarten-dashboard.png?v=7210',
+  '/mijnserenity-logo.png?v=7210'
 ];
+
+async function cacheFile(cache,path){
+  try{
+    const response=await fetch(path,{cache:'reload'});
+    if(response.ok)await cache.put(path,response);
+  }catch(error){
+    console.warn('Bestand niet vooraf gecachet:',path,error);
+  }
+}
 
 self.addEventListener('install',event=>{
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME)
+      .then(cache=>Promise.all(APP_SHELL.map(path=>cacheFile(cache,path))))
+      .then(()=>self.skipWaiting())
   );
 });
 
@@ -56,15 +68,16 @@ self.addEventListener('fetch',event=>{
   if(request.method!=='GET')return;
 
   const url=new URL(request.url);
-
   if(url.origin!==self.location.origin)return;
 
   if(request.mode==='navigate'){
     event.respondWith(
-      fetch(request)
+      fetch(request,{cache:'no-store'})
         .then(response=>{
-          const copy=response.clone();
-          caches.open(CACHE_NAME).then(cache=>cache.put('/index.html',copy));
+          if(response.ok){
+            const copy=response.clone();
+            caches.open(CACHE_NAME).then(cache=>cache.put('/index.html',copy));
+          }
           return response;
         })
         .catch(()=>caches.match('/index.html'))
@@ -73,7 +86,7 @@ self.addEventListener('fetch',event=>{
   }
 
   event.respondWith(
-    fetch(request)
+    fetch(request,{cache:'no-cache'})
       .then(response=>{
         if(response.ok){
           const copy=response.clone();

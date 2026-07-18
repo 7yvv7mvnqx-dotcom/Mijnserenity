@@ -43,3 +43,19 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# MijnSerenity 7.2.1 — voorkom gemengde PWA-versies
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/auth-bootstrap.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

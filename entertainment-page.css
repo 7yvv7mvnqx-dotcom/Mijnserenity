@@ -1,22 +1,23 @@
 /* ============================================================
-   MijnSerenity Cloud 7.1.2 — Entertainment via Home Assistant
+   MijnSerenity Cloud 7.2.1 — Home Assistant Smart Home
    ============================================================ */
 
 .entertainment-page{
   display:grid;
   gap:16px;
-  padding-bottom:30px;
+  padding-bottom:34px;
 }
 
 .entertainment-hero{
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  gap:16px;
-  padding:20px;
+  gap:18px;
+  padding:21px;
   border-radius:24px;
   background:
-    radial-gradient(circle at top right,rgba(67,208,255,.22),transparent 42%),
+    radial-gradient(circle at top right,rgba(93,213,255,.22),transparent 42%),
+    radial-gradient(circle at bottom left,rgba(127,93,255,.16),transparent 38%),
     linear-gradient(145deg,rgba(9,37,68,.98),rgba(4,19,38,.98));
   border:1px solid rgba(129,218,255,.22);
   box-shadow:0 18px 45px rgba(0,0,0,.2);
@@ -28,7 +29,7 @@
 
 .entertainment-hero p{
   margin:0;
-  max-width:680px;
+  max-width:730px;
 }
 
 .entertainment-badges{
@@ -39,13 +40,14 @@
 }
 
 .entertainment-cloud-badge,
-.entertainment-connection-badge{
+.entertainment-connection-badge,
+.smart-home-device-state{
   display:inline-flex;
   align-items:center;
-  min-height:34px;
-  padding:7px 11px;
+  min-height:32px;
+  padding:6px 10px;
   border-radius:999px;
-  font-size:.78rem;
+  font-size:.76rem;
   font-weight:800;
   white-space:nowrap;
   border:1px solid rgba(255,255,255,.12);
@@ -53,24 +55,206 @@
 }
 
 .entertainment-cloud-badge.online,
-.entertainment-connection-badge.online{
+.entertainment-connection-badge.online,
+.smart-home-device-state.online{
   color:#bfffd9;
   background:rgba(25,170,91,.14);
   border-color:rgba(65,225,132,.28);
 }
 
 .entertainment-cloud-badge.warning,
-.entertainment-connection-badge.offline{
+.entertainment-connection-badge.offline,
+.smart-home-device-state.offline{
   color:#ffe4a3;
   background:rgba(218,147,28,.13);
   border-color:rgba(255,194,71,.25);
 }
 
-.entertainment-control-card{
-  padding:18px;
+.smart-home-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.smart-home-integration-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+
+.smart-home-integration-card,
+.smart-home-section-card,
+.entertainment-settings{
   border-radius:24px;
   background:linear-gradient(155deg,rgba(14,43,73,.96),rgba(5,23,42,.98));
   border:1px solid rgba(139,215,255,.18);
+  box-shadow:0 16px 38px rgba(0,0,0,.12);
+}
+
+.smart-home-integration-card{
+  display:grid;
+  align-content:space-between;
+  gap:14px;
+  min-height:172px;
+  padding:16px;
+}
+
+.smart-home-integration-card.ring-card{
+  background:
+    radial-gradient(circle at top right,rgba(65,150,255,.18),transparent 42%),
+    linear-gradient(155deg,rgba(14,43,73,.96),rgba(5,23,42,.98));
+}
+
+.smart-home-integration-card.hue-card{
+  background:
+    radial-gradient(circle at top right,rgba(255,210,78,.17),transparent 42%),
+    linear-gradient(155deg,rgba(14,43,73,.96),rgba(5,23,42,.98));
+}
+
+.smart-home-integration-card.sonos-card{
+  background:
+    radial-gradient(circle at top right,rgba(107,226,194,.16),transparent 42%),
+    linear-gradient(155deg,rgba(14,43,73,.96),rgba(5,23,42,.98));
+}
+
+.smart-home-integration-card.apple-card{
+  background:
+    radial-gradient(circle at top right,rgba(220,220,255,.16),transparent 42%),
+    linear-gradient(155deg,rgba(14,43,73,.96),rgba(5,23,42,.98));
+}
+
+.smart-home-integration-head{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:11px;
+}
+
+.smart-home-integration-head>div{
+  display:grid;
+  gap:2px;
+  min-width:0;
+}
+
+.smart-home-integration-head small{
+  opacity:.72;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.smart-home-brand-icon{
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  border-radius:15px;
+  font-size:1.2rem;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.1);
+}
+
+.smart-home-card-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.smart-home-card-actions.three{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+.smart-home-card-actions button{
+  min-width:0;
+  padding-inline:8px;
+}
+
+.smart-home-card-actions button:disabled,
+.apple-tv-remote button:disabled,
+.apple-tv-media-controls button:disabled{
+  opacity:.34;
+  filter:grayscale(.7);
+}
+
+.smart-home-safety-note{
+  margin:0;
+  font-size:.72rem;
+  line-height:1.35;
+  opacity:.7;
+}
+
+.entertainment-grid-title,
+.smart-home-section-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.entertainment-grid-title h3,
+.entertainment-grid-title h4,
+.smart-home-section-head h3{
+  margin:2px 0 0;
+}
+
+.compact-title{
+  margin-top:18px;
+}
+
+.smart-home-scenes-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+
+.smart-home-scene-button{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  min-height:70px;
+  padding:14px;
+  text-align:left;
+  border-radius:20px;
+  background:linear-gradient(145deg,rgba(24,63,96,.96),rgba(9,31,54,.98));
+  border:1px solid rgba(147,215,255,.17);
+}
+
+.smart-home-scene-button span{
+  display:grid;
+  place-items:center;
+  width:40px;
+  height:40px;
+  border-radius:14px;
+  background:rgba(65,176,255,.14);
+  font-size:1.15rem;
+}
+
+.smart-home-section-card,
+.entertainment-settings{
+  padding:18px;
+}
+
+.smart-home-control-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:end;
+  gap:14px;
+  margin-top:14px;
+}
+
+.smart-home-control-row label{
+  margin:0;
+}
+
+.smart-home-control-row select{
+  margin-top:6px;
+}
+
+.smart-home-inline-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
 }
 
 .entertainment-control-top{
@@ -78,6 +262,7 @@
   grid-template-columns:minmax(0,1fr) auto;
   align-items:end;
   gap:14px;
+  margin-top:14px;
 }
 
 .entertainment-control-top label{
@@ -86,15 +271,6 @@
 
 .entertainment-control-top select{
   margin-top:6px;
-}
-
-.entertainment-open-ha{
-  width:48px;
-  min-width:48px;
-  height:48px;
-  padding:0;
-  border-radius:16px;
-  font-size:1.2rem;
 }
 
 .entertainment-main-controls{
@@ -146,36 +322,88 @@
   text-align:right;
 }
 
-.entertainment-grid-title{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  margin:4px 2px -4px;
-}
-
-.entertainment-grid-title h3{
-  margin:0;
-}
-
-.entertainment-grid-title button{
-  min-height:42px;
-}
-
+.smart-home-zone-grid,
 .entertainment-player-grid,
 .entertainment-favorites-grid{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:12px;
+  margin-top:14px;
+}
+
+.smart-home-zone-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+
+.smart-home-zone-card{
+  display:grid;
+  gap:10px;
+  padding:13px;
+  border-radius:20px;
+  background:linear-gradient(145deg,rgba(16,49,80,.94),rgba(8,29,51,.96));
+  border:1px solid rgba(147,215,255,.15);
+}
+
+.smart-home-zone-card.active{
+  border-color:rgba(255,213,85,.68);
+  box-shadow:0 0 0 2px rgba(255,206,61,.12) inset;
+}
+
+.smart-home-zone-select{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  grid-template-areas:"icon title" "icon detail";
+  align-items:center;
+  gap:2px 10px;
+  padding:0;
+  text-align:left;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+}
+
+.smart-home-zone-select:hover,
+.smart-home-zone-select:focus{
+  background:transparent;
+  box-shadow:none;
+}
+
+.smart-home-zone-select span{
+  grid-area:icon;
+  display:grid;
+  place-items:center;
+  width:40px;
+  height:40px;
+  border-radius:14px;
+  background:rgba(255,207,71,.13);
+}
+
+.smart-home-zone-select strong{
+  grid-area:title;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.smart-home-zone-select small{
+  grid-area:detail;
+  opacity:.67;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.smart-home-zone-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
 }
 
 .entertainment-player-card,
 .entertainment-favorite{
   display:grid;
   grid-template-columns:auto minmax(0,1fr);
-  grid-template-areas:
-    "icon title"
-    "icon detail";
+  grid-template-areas:"icon title" "icon detail";
   align-items:center;
   gap:2px 11px;
   min-height:82px;
@@ -240,6 +468,41 @@
   padding:20px 16px;
 }
 
+.apple-tv-control-card{
+  display:grid;
+  gap:16px;
+}
+
+.apple-tv-remote{
+  display:grid;
+  grid-template-columns:repeat(3,70px);
+  grid-template-rows:repeat(4,58px);
+  justify-content:center;
+  gap:8px;
+  padding:8px 0 2px;
+}
+
+.apple-tv-remote button{
+  min-width:0;
+  padding:0;
+  border-radius:18px;
+  font-size:1.05rem;
+}
+
+.apple-tv-menu{grid-column:1;grid-row:1}
+.apple-tv-home{grid-column:3;grid-row:1}
+.apple-tv-up{grid-column:2;grid-row:2}
+.apple-tv-left{grid-column:1;grid-row:3}
+.apple-tv-select{grid-column:2;grid-row:3}
+.apple-tv-right{grid-column:3;grid-row:3}
+.apple-tv-down{grid-column:2;grid-row:4}
+
+.apple-tv-media-controls{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(48px,1fr));
+  gap:9px;
+}
+
 .entertainment-note{
   display:flex;
   gap:10px;
@@ -253,16 +516,13 @@
   margin:0;
 }
 
-.entertainment-settings{
-  padding:18px;
-  border-radius:24px;
-  background:linear-gradient(155deg,rgba(12,40,69,.98),rgba(5,23,42,.98));
-  border:1px solid rgba(139,215,255,.18);
-}
-
-.entertainment-settings h3,
-.entertainment-settings h4{
-  margin-top:0;
+.entertainment-settings-close{
+  width:44px;
+  min-width:44px;
+  height:44px;
+  padding:0;
+  border-radius:15px;
+  font-size:1.25rem;
 }
 
 .entertainment-settings-step{
@@ -270,7 +530,7 @@
   grid-template-columns:36px minmax(0,1fr);
   gap:12px;
   align-items:start;
-  margin:16px 0 10px;
+  margin:20px 0 10px;
 }
 
 .entertainment-settings-step>span{
@@ -306,7 +566,7 @@
 
 .entertainment-player-setting{
   display:grid;
-  grid-template-columns:minmax(110px,.7fr) minmax(190px,1.3fr);
+  grid-template-columns:minmax(120px,.72fr) minmax(190px,1.28fr);
   gap:10px;
 }
 
@@ -316,10 +576,19 @@
   gap:10px;
 }
 
+.smart-home-settings-grid{
+  display:grid;
+  gap:10px;
+}
+
+.smart-home-settings-grid.three-columns{
+  grid-template-columns:minmax(120px,.7fr) minmax(180px,1.15fr) minmax(180px,1.15fr);
+}
+
 .entertainment-settings textarea{
-  min-height:310px;
+  min-height:420px;
   font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-  font-size:.77rem;
+  font-size:.75rem;
   line-height:1.45;
 }
 
@@ -331,7 +600,18 @@
 }
 
 #entertainmentStatus{
-  margin-top:12px;
+  margin-top:2px;
+}
+
+@media (max-width:1100px){
+  .smart-home-integration-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .smart-home-scenes-grid,
+  .smart-home-zone-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
 }
 
 @media (max-width:800px){
@@ -356,7 +636,8 @@
     grid-column:span 2;
   }
 
-  .entertainment-favorite-setting{
+  .entertainment-favorite-setting,
+  .smart-home-settings-grid.three-columns{
     grid-template-columns:1fr;
   }
 }
@@ -367,18 +648,40 @@
   }
 
   .entertainment-hero,
-  .entertainment-control-card,
+  .smart-home-integration-card,
+  .smart-home-section-card,
   .entertainment-settings{
     border-radius:20px;
     padding:15px;
   }
 
-  .entertainment-control-top{
-    grid-template-columns:minmax(0,1fr) 48px;
-  }
-
+  .smart-home-integration-grid,
+  .smart-home-scenes-grid,
+  .smart-home-zone-grid,
   .entertainment-player-grid,
   .entertainment-favorites-grid{
+    grid-template-columns:1fr;
+  }
+
+  .smart-home-integration-card{
+    min-height:0;
+  }
+
+  .smart-home-integration-head{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+
+  .smart-home-device-state{
+    grid-column:2;
+    justify-self:start;
+  }
+
+  .smart-home-card-actions.three{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+
+  .smart-home-control-row,
+  .entertainment-control-top{
     grid-template-columns:1fr;
   }
 
@@ -393,5 +696,13 @@
 
   .entertainment-webhook-row button{
     width:100%;
+  }
+
+  .apple-tv-remote{
+    grid-template-columns:repeat(3,64px);
+  }
+
+  .apple-tv-media-controls{
+    grid-template-columns:repeat(5,minmax(42px,1fr));
   }
 }

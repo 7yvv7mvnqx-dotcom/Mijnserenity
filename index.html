@@ -5,26 +5,47 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.1.2">
+<meta name="mijnserenity-build" content="7.2.1">
 <title>MijnSerenity Cloud</title>
-<link rel="manifest" href="manifest.json?v=7112">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+window.MIJSERENITY_BUILD='7.2.1';
+window.repairMijnSerenity=async function(){
+  const status=document.getElementById('authMsg');
+  if(status)status.textContent='App-cache wordt veilig vernieuwd…';
+  try{
+    if('serviceWorker' in navigator){
+      const registrations=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(registration=>registration.unregister()));
+    }
+    if('caches' in window){
+      const names=await caches.keys();
+      await Promise.all(names.filter(name=>name.startsWith('mijnserenity-')).map(name=>caches.delete(name)));
+    }
+  }catch(error){
+    console.warn('Herstelactie gedeeltelijk mislukt:',error);
+  }
+  const url=new URL(window.location.href);
+  url.searchParams.set('herstel',Date.now().toString());
+  window.location.replace(url.toString());
+};
+</script>
+<link rel="manifest" href="manifest.json?v=7210">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7112">
-  <link rel="stylesheet" href="mission-control.css?v=7112">
-  <link rel="stylesheet" href="easy-auto.css?v=7112">
-  <link rel="stylesheet" href="live-split.css?v=7112">
-  <link rel="stylesheet" href="route-control.css?v=7112">
-  <link rel="stylesheet" href="page-swipe.css?v=7112">
-  <link rel="stylesheet" href="weather-page.css?v=7112">
-  <link rel="stylesheet" href="weather-radar.css?v=7112">
-  <link rel="stylesheet" href="ais-page.css?v=7112">
-  <link rel="stylesheet" href="entertainment-page.css?v=7112">
+<link rel="stylesheet" href="styles.css?v=7210">
+  <link rel="stylesheet" href="mission-control.css?v=7210">
+  <link rel="stylesheet" href="easy-auto.css?v=7210">
+  <link rel="stylesheet" href="live-split.css?v=7210">
+  <link rel="stylesheet" href="route-control.css?v=7210">
+  <link rel="stylesheet" href="page-swipe.css?v=7210">
+  <link rel="stylesheet" href="weather-page.css?v=7210">
+  <link rel="stylesheet" href="weather-radar.css?v=7210">
+  <link rel="stylesheet" href="ais-page.css?v=7210">
+  <link rel="stylesheet" href="entertainment-page.css?v=7210">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7112">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7112">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7210">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7210">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -33,7 +54,7 @@
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7112" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7210" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -64,15 +85,18 @@
     <button type="button" class="auth-link-button" onclick="sendPasswordReset(false)">
       Wachtwoord vergeten?
     </button>
+    <button type="button" class="auth-link-button" onclick="repairMijnSerenity()">
+      App herstellen en vernieuwen
+    </button>
 
-    <div id="authMsg" class="status small">Nog niet ingelogd.</div>
+    <div id="authMsg" class="status small">Beveiligde inlog wordt geladen…</div>
   </div>
 </section>
 
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7112" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7210" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -101,7 +125,7 @@
     <button class="tab" onclick="showTab('weather',this);initWeatherPage()">Weer</button>
     <button class="tab" onclick="showTab('map',this);initMap()">Kaart</button>
     <button class="tab" onclick="showTab('planner',this);initPlanner()">Reisplanner</button>
-    <button class="tab" onclick="showTab('entertainment',this);initEntertainmentPage()">Entertainment</button>
+    <button class="tab" onclick="showTab('entertainment',this);initEntertainmentPage()">Home Assistant</button>
     <button class="tab" onclick="showTab('technical',this);initTechnicalDashboard()">Techniek</button>
     <button class="tab" onclick="showTab('pois',this)">POI's</button>
     <button class="tab" onclick="showTab('logbook',this)">Logboek</button>
@@ -491,7 +515,7 @@
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7112" alt="">
+          <img src="waterkaarten-dashboard.png?v=7210" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -585,7 +609,7 @@
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.1.2</div>
+          <div class="label">Sync · v7.2.1</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1588,7 +1612,7 @@
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.1.2</span>
+        <span class="planner-version-badge">7.2.1</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -2024,12 +2048,11 @@
   <section id="entertainment" class="hidden entertainment-page">
     <div class="entertainment-hero">
       <div>
-        <span class="eyebrow">ENTERTAINMENT VIA HOME ASSISTANT</span>
-        <h2>Muziek en media aan boord</h2>
+        <span class="eyebrow">HOME ASSISTANT AAN BOORD</span>
+        <h2>Slimme bediening van Serenity</h2>
         <p class="small">
-          Bedien de mediaspelers van Serenity vanaf ieder apparaat waarop je
-          bij MijnSerenity bent ingelogd. Er staat geen Home Assistant-token
-          in GitHub of in de webapp.
+          Bedien Ring, Philips Hue, Sonos, Apple TV en Home Assistant-scènes
+          vanuit één overzicht. De app bewaart geen Home Assistant-token.
         </p>
       </div>
       <div class="entertainment-badges">
@@ -2040,216 +2063,290 @@
       </div>
     </div>
 
-    <div class="entertainment-control-card">
-      <div class="entertainment-control-top">
-        <label for="entertainmentActivePlayer">
-          Actieve zone
-          <select id="entertainmentActivePlayer"
-            onchange="ms712PlayerChanged()">
-            <option value="">Nog geen mediaspeler ingesteld</option>
+    <div class="smart-home-toolbar">
+      <button type="button" onclick="ms712OpenHomeAssistant()">⌂ Open Home Assistant</button>
+      <button type="button" class="secondary" onclick="ms712ToggleSettings(true)">⚙️ Instellen</button>
+    </div>
+
+    <div class="smart-home-integration-grid" aria-label="Home Assistant-integraties">
+      <article class="smart-home-integration-card ring-card">
+        <div class="smart-home-integration-head">
+          <span class="smart-home-brand-icon">🔔</span>
+          <div><strong>Ring</strong><small>Camera en bewegingsdetectie</small></div>
+          <span id="ringDeviceState" class="smart-home-device-state offline">Nog instellen</span>
+        </div>
+        <div class="smart-home-card-actions three">
+          <button type="button" class="secondary" data-ring-command="motion_on"
+            onclick="ms712RingCommand('motion_on')">👁 Detectie aan</button>
+          <button type="button" class="secondary" data-ring-command="motion_off"
+            onclick="ms712RingCommand('motion_off')">🙈 Detectie uit</button>
+          <button type="button" class="secondary" onclick="ms712OpenRingCamera()">📷 Camera</button>
+        </div>
+        <p class="smart-home-safety-note">Live beeld en de laatste opname open je beveiligd in Home Assistant.</p>
+      </article>
+
+      <article class="smart-home-integration-card hue-card">
+        <div class="smart-home-integration-head">
+          <span class="smart-home-brand-icon">💡</span>
+          <div><strong>Philips Hue</strong><small>Verlichting per zone</small></div>
+          <span id="hueDeviceState" class="smart-home-device-state offline">Nog instellen</span>
+        </div>
+        <div class="smart-home-card-actions">
+          <button type="button" class="secondary" onclick="ms712AllHueOn()">Alles aan</button>
+          <button type="button" class="secondary" onclick="ms712AllHueOff()">Alles uit</button>
+        </div>
+      </article>
+
+      <article class="smart-home-integration-card sonos-card">
+        <div class="smart-home-integration-head">
+          <span class="smart-home-brand-icon">🔊</span>
+          <div><strong>Sonos</strong><small>Muziek en radio</small></div>
+          <span id="sonosDeviceState" class="smart-home-device-state offline">Nog instellen</span>
+        </div>
+        <div class="smart-home-card-actions three">
+          <button type="button" class="secondary" data-entertainment-command="previous"
+            onclick="ms712Command('previous')">⏮</button>
+          <button type="button" data-entertainment-command="play_pause"
+            onclick="ms712Command('play_pause')">⏯</button>
+          <button type="button" class="secondary" data-entertainment-command="next"
+            onclick="ms712Command('next')">⏭</button>
+        </div>
+      </article>
+
+      <article class="smart-home-integration-card apple-card">
+        <div class="smart-home-integration-head">
+          <span class="smart-home-brand-icon">📺</span>
+          <div><strong>Apple TV</strong><small>Media en afstandsbediening</small></div>
+          <span id="appleTvDeviceState" class="smart-home-device-state offline">Nog instellen</span>
+        </div>
+        <div class="smart-home-card-actions three">
+          <button type="button" class="secondary" data-appletv-command="toggle" data-appletv-type="media"
+            onclick="ms712AppleTvCommand('toggle','media')">⏻</button>
+          <button type="button" data-appletv-command="play_pause" data-appletv-type="media"
+            onclick="ms712AppleTvCommand('play_pause','media')">⏯</button>
+          <button type="button" class="secondary" data-appletv-command="home" data-appletv-type="remote"
+            onclick="ms712AppleTvCommand('home','remote')">⌂</button>
+        </div>
+      </article>
+    </div>
+
+    <div class="entertainment-grid-title">
+      <div><span class="eyebrow">SNELACTIES</span><h3>Scènes</h3></div>
+    </div>
+    <div id="homeAssistantScenes" class="smart-home-scenes-grid"></div>
+
+    <div class="smart-home-section-card hue-control-card">
+      <div class="smart-home-section-head">
+        <div><span class="eyebrow">PHILIPS HUE</span><h3>Verlichting</h3></div>
+        <button type="button" class="secondary" onclick="ms712AllHueOff()">Alles uit</button>
+      </div>
+      <div class="smart-home-control-row">
+        <label for="hueActiveLight">Actieve zone
+          <select id="hueActiveLight" onchange="ms712LightChanged()">
+            <option value="">Nog geen Hue-zone ingesteld</option>
           </select>
         </label>
-        <button type="button" class="secondary entertainment-open-ha"
-          aria-label="Open Home Assistant" title="Open Home Assistant"
-          onclick="ms712OpenHomeAssistant()">⌂</button>
+        <div class="smart-home-inline-actions">
+          <button type="button" class="secondary" onclick="ms712HueCommand('toggle')">Aan / uit</button>
+        </div>
       </div>
-
-      <div class="entertainment-main-controls"
-        aria-label="Entertainmentbediening">
-        <button type="button" class="secondary entertainment-icon-button"
-          data-entertainment-command="toggle"
-          aria-label="Mediaspeler aan of uit" title="Aan of uit"
-          onclick="ms712Command('toggle')">⏻</button>
-        <button type="button" class="secondary entertainment-icon-button"
-          data-entertainment-command="previous"
-          aria-label="Vorige track" title="Vorige track"
-          onclick="ms712Command('previous')">⏮</button>
-        <button type="button" class="entertainment-icon-button primary"
-          data-entertainment-command="play_pause"
-          aria-label="Afspelen of pauzeren" title="Afspelen of pauzeren"
-          onclick="ms712Command('play_pause')">⏯</button>
-        <button type="button" class="secondary entertainment-icon-button"
-          data-entertainment-command="next"
-          aria-label="Volgende track" title="Volgende track"
-          onclick="ms712Command('next')">⏭</button>
-        <button type="button" class="secondary entertainment-icon-button"
-          data-entertainment-command="stop"
-          aria-label="Stop afspelen" title="Stop afspelen"
-          onclick="ms712Command('stop')">⏹</button>
-        <button type="button" class="secondary entertainment-icon-button"
-          data-entertainment-command="volume_down"
-          aria-label="Volume lager" title="Volume lager"
-          onclick="ms712Command('volume_down')">🔉</button>
-        <button type="button" class="secondary entertainment-icon-button"
-          data-entertainment-command="volume_up"
-          aria-label="Volume hoger" title="Volume hoger"
-          onclick="ms712Command('volume_up')">🔊</button>
-      </div>
-
       <div class="entertainment-volume">
-        <span aria-hidden="true">🔈</span>
-        <input id="entertainmentVolume" type="range" min="0" max="100"
-          step="1" value="35"
-          aria-label="Entertainmentvolume"
-          oninput="ms712VolumeLabel()"
-          onchange="ms712VolumeChanged()">
+        <span>☀️</span>
+        <input id="hueBrightness" type="range" min="1" max="100" step="1" value="70"
+          aria-label="Hue-helderheid" oninput="ms712BrightnessLabel()" onchange="ms712BrightnessChanged()">
+        <strong id="hueBrightnessValue">70%</strong>
+      </div>
+      <div id="hueLightCards" class="smart-home-zone-grid"></div>
+    </div>
+
+    <div class="smart-home-section-card sonos-control-card">
+      <div class="smart-home-section-head">
+        <div><span class="eyebrow">SONOS</span><h3>Muziek aan boord</h3></div>
+        <button type="button" class="secondary" onclick="ms712OpenHomeAssistant()">⌂</button>
+      </div>
+      <div class="entertainment-control-top">
+        <label for="entertainmentActivePlayer">Actieve Sonos-zone
+          <select id="entertainmentActivePlayer" onchange="ms712PlayerChanged()">
+            <option value="">Nog geen Sonos-speler ingesteld</option>
+          </select>
+        </label>
+      </div>
+      <div class="entertainment-main-controls" aria-label="Sonos-bediening">
+        <button type="button" class="secondary entertainment-icon-button" data-entertainment-command="toggle"
+          onclick="ms712Command('toggle')" aria-label="Aan of uit">⏻</button>
+        <button type="button" class="secondary entertainment-icon-button" data-entertainment-command="previous"
+          onclick="ms712Command('previous')" aria-label="Vorige">⏮</button>
+        <button type="button" class="entertainment-icon-button primary" data-entertainment-command="play_pause"
+          onclick="ms712Command('play_pause')" aria-label="Afspelen of pauzeren">⏯</button>
+        <button type="button" class="secondary entertainment-icon-button" data-entertainment-command="next"
+          onclick="ms712Command('next')" aria-label="Volgende">⏭</button>
+        <button type="button" class="secondary entertainment-icon-button" data-entertainment-command="stop"
+          onclick="ms712Command('stop')" aria-label="Stoppen">⏹</button>
+        <button type="button" class="secondary entertainment-icon-button" data-entertainment-command="volume_down"
+          onclick="ms712Command('volume_down')" aria-label="Zachter">🔉</button>
+        <button type="button" class="secondary entertainment-icon-button" data-entertainment-command="volume_up"
+          onclick="ms712Command('volume_up')" aria-label="Harder">🔊</button>
+      </div>
+      <div class="entertainment-volume">
+        <span>🔈</span>
+        <input id="entertainmentVolume" type="range" min="0" max="100" step="1" value="35"
+          aria-label="Sonos-volume" oninput="ms712VolumeLabel()" onchange="ms712VolumeChanged()">
         <strong id="entertainmentVolumeValue">35%</strong>
       </div>
+      <div id="entertainmentPlayerCards" class="entertainment-player-grid"></div>
+      <div class="entertainment-grid-title compact-title"><h4>Favorieten</h4></div>
+      <div id="entertainmentFavorites" class="entertainment-favorites-grid"></div>
     </div>
 
-    <div class="entertainment-grid-title">
-      <h3>Zones</h3>
-      <button type="button" class="secondary"
-        onclick="ms712ToggleSettings(true)">⚙️ Instellen</button>
+    <div class="smart-home-section-card apple-tv-control-card">
+      <div class="smart-home-section-head">
+        <div><span class="eyebrow">APPLE TV</span><h3>Afstandsbediening</h3></div>
+        <div class="smart-home-inline-actions">
+          <button type="button" class="secondary" data-appletv-command="wakeup" data-appletv-type="remote"
+            onclick="ms712AppleTvCommand('wakeup','remote')">Aan</button>
+          <button type="button" class="secondary" data-appletv-command="suspend" data-appletv-type="remote"
+            onclick="ms712AppleTvCommand('suspend','remote')">Slaap</button>
+        </div>
+      </div>
+      <div class="apple-tv-remote">
+        <button type="button" class="secondary apple-tv-menu" data-appletv-command="menu" data-appletv-type="remote"
+          onclick="ms712AppleTvCommand('menu','remote')">Menu</button>
+        <button type="button" class="secondary apple-tv-home" data-appletv-command="home" data-appletv-type="remote"
+          onclick="ms712AppleTvCommand('home','remote')">⌂</button>
+        <button type="button" class="secondary apple-tv-up" data-appletv-command="up" data-appletv-type="remote"
+          onclick="ms712AppleTvCommand('up','remote')">▲</button>
+        <button type="button" class="secondary apple-tv-left" data-appletv-command="left" data-appletv-type="remote"
+          onclick="ms712AppleTvCommand('left','remote')">◀</button>
+        <button type="button" class="apple-tv-select" data-appletv-command="select" data-appletv-type="remote"
+          onclick="ms712AppleTvCommand('select','remote')">OK</button>
+        <button type="button" class="secondary apple-tv-right" data-appletv-command="right" data-appletv-type="remote"
+          onclick="ms712AppleTvCommand('right','remote')">▶</button>
+        <button type="button" class="secondary apple-tv-down" data-appletv-command="down" data-appletv-type="remote"
+          onclick="ms712AppleTvCommand('down','remote')">▼</button>
+      </div>
+      <div class="apple-tv-media-controls">
+        <button type="button" class="secondary" data-appletv-command="previous" data-appletv-type="media"
+          onclick="ms712AppleTvCommand('previous','media')">⏮</button>
+        <button type="button" data-appletv-command="play_pause" data-appletv-type="media"
+          onclick="ms712AppleTvCommand('play_pause','media')">⏯</button>
+        <button type="button" class="secondary" data-appletv-command="next" data-appletv-type="media"
+          onclick="ms712AppleTvCommand('next','media')">⏭</button>
+        <button type="button" class="secondary" data-appletv-command="volume_down" data-appletv-type="media"
+          onclick="ms712AppleTvCommand('volume_down','media')">🔉</button>
+        <button type="button" class="secondary" data-appletv-command="volume_up" data-appletv-type="media"
+          onclick="ms712AppleTvCommand('volume_up','media')">🔊</button>
+      </div>
     </div>
-    <div id="entertainmentPlayerCards"
-      class="entertainment-player-grid"></div>
-
-    <div class="entertainment-grid-title">
-      <h3>Favorieten</h3>
-    </div>
-    <div id="entertainmentFavorites"
-      class="entertainment-favorites-grid"></div>
 
     <div class="entertainment-note">
-      <span aria-hidden="true">ℹ️</span>
+      <span>🔐</span>
       <p class="small">
-        De beveiligde webhook kan uitsluitend de mediaspelers bedienen die in
-        de Home Assistant-automatisering staan. De instellingen worden via de
-        bestaande MijnSerenity-cloud synchroniseerd met je andere apparaten.
+        Alleen de entiteiten die in de gegenereerde Home Assistant-automatisering staan kunnen worden bediend.
+        Vervang de webhookcode wanneer je vermoedt dat deze bekend is geworden.
       </p>
     </div>
 
-    <div id="entertainmentSettingsPanel"
-      class="entertainment-settings hidden">
-      <div class="technical-card-heading">
-        <div>
-          <span class="eyebrow">EENMALIG INSTELLEN</span>
-          <h3>Home Assistant entertainment</h3>
-          <p class="small">
-            Stel dit één keer in. Daarna werkt dezelfde bediening automatisch
-            op alle apparaten die toegang hebben tot Serenity.
-          </p>
-        </div>
-        <button type="button" class="secondary"
-          aria-label="Entertainmentinstellingen sluiten"
-          title="Entertainmentinstellingen sluiten"
+    <div id="entertainmentSettingsPanel" class="entertainment-settings hidden">
+      <div class="smart-home-section-head">
+        <div><span class="eyebrow">CONFIGURATIE</span><h3>Home Assistant instellen</h3></div>
+        <button type="button" class="secondary entertainment-settings-close"
+          aria-label="Home Assistant-instellingen sluiten" title="Sluiten"
           onclick="ms712ToggleSettings(false)">×</button>
       </div>
 
-      <div class="entertainment-settings-step">
-        <span>1</span>
-        <div>
-          <strong>Extern Home Assistant-adres</strong>
-          <p class="small">Gebruik bij voorkeur je HTTPS-adres van Home Assistant Cloud.</p>
-        </div>
-      </div>
+      <div class="entertainment-settings-step"><span>1</span><div>
+        <strong>Home Assistant Cloud of extern HTTPS-adres</strong>
+        <p class="small">Gebruik bij voorkeur je beveiligde Home Assistant Cloud-adres.</p>
+      </div></div>
       <label for="entertainmentHaBaseUrl">Home Assistant HTTPS-adres</label>
       <input id="entertainmentHaBaseUrl" type="url" inputmode="url"
-        placeholder="https://jouw-adres.ui.nabu.casa"
+        placeholder="https://jouw-adres.ui.nabu.casa" oninput="ms712RefreshYamlPreview()">
+
+      <label for="entertainmentDashboardPath">Dashboardpad voor camera en volledig Home Assistant</label>
+      <input id="entertainmentDashboardPath" placeholder="/lovelace/mijnserenity"
         oninput="ms712RefreshYamlPreview()">
 
       <label for="entertainmentWebhookId">Beveiligde webhookcode</label>
       <div class="entertainment-webhook-row">
         <input id="entertainmentWebhookId" autocomplete="off"
-          placeholder="Wordt automatisch gemaakt"
-          oninput="ms712RefreshYamlPreview()">
-        <button type="button" class="secondary"
-          onclick="ms712GenerateWebhookId()">Nieuwe code</button>
-        <button type="button" class="secondary"
-          onclick="ms712CopyWebhookUrl()">Kopieer URL</button>
+          placeholder="Wordt automatisch gemaakt" oninput="ms712RefreshYamlPreview()">
+        <button type="button" class="secondary" onclick="ms712GenerateWebhookId()">Nieuwe code</button>
+        <button type="button" class="secondary" onclick="ms712CopyWebhookUrl()">Kopieer URL</button>
       </div>
 
-      <div class="entertainment-settings-step">
-        <span>2</span>
-        <div>
-          <strong>Kies maximaal drie mediaspelers</strong>
-          <p class="small">
-            De entiteit vind je in Home Assistant onder
-            Instellingen › Apparaten & diensten › Entiteiten.
-          </p>
-        </div>
+      <div class="entertainment-settings-step"><span>2</span><div>
+        <strong>Ring koppelen</strong>
+        <p class="small">Gebruik de live-view camera en optioneel de switch voor bewegingsdetectie.</p>
+      </div></div>
+      <div class="smart-home-settings-grid three-columns">
+        <input id="ringName" placeholder="Ring beveiliging" aria-label="Naam Ring">
+        <input id="ringCameraEntity" placeholder="camera.voordeur_live_view"
+          aria-label="Ring camera-entiteit" oninput="ms712RefreshYamlPreview()">
+        <input id="ringMotionSwitchEntity" placeholder="switch.voordeur_motion_detection"
+          aria-label="Ring bewegingsdetectie-entiteit" oninput="ms712RefreshYamlPreview()">
       </div>
+
+      <div class="entertainment-settings-step"><span>3</span><div>
+        <strong>Philips Hue-zones</strong>
+        <p class="small">Gebruik light-entiteiten of lichtgroepen uit Home Assistant.</p>
+      </div></div>
       <div class="entertainment-players-settings">
-        <div class="entertainment-player-setting">
-          <input id="entertainmentPlayerName1" placeholder="Salon"
-            aria-label="Naam mediaspeler 1" oninput="ms712RefreshYamlPreview()">
-          <input id="entertainmentPlayerEntity1"
-            placeholder="media_player.salon"
-            aria-label="Home Assistant-entiteit mediaspeler 1"
-            oninput="ms712RefreshYamlPreview()">
-        </div>
-        <div class="entertainment-player-setting">
-          <input id="entertainmentPlayerName2" placeholder="Stuurstand"
-            aria-label="Naam mediaspeler 2" oninput="ms712RefreshYamlPreview()">
-          <input id="entertainmentPlayerEntity2"
-            placeholder="media_player.stuurstand"
-            aria-label="Home Assistant-entiteit mediaspeler 2"
-            oninput="ms712RefreshYamlPreview()">
-        </div>
-        <div class="entertainment-player-setting">
-          <input id="entertainmentPlayerName3" placeholder="Achterdek"
-            aria-label="Naam mediaspeler 3" oninput="ms712RefreshYamlPreview()">
-          <input id="entertainmentPlayerEntity3"
-            placeholder="media_player.achterdek"
-            aria-label="Home Assistant-entiteit mediaspeler 3"
-            oninput="ms712RefreshYamlPreview()">
-        </div>
+        <div class="entertainment-player-setting"><input id="hueLightName1" placeholder="Hue salon"><input id="hueLightEntity1" placeholder="light.salon" oninput="ms712RefreshYamlPreview()"></div>
+        <div class="entertainment-player-setting"><input id="hueLightName2" placeholder="Hue stuurstand"><input id="hueLightEntity2" placeholder="light.stuurstand" oninput="ms712RefreshYamlPreview()"></div>
+        <div class="entertainment-player-setting"><input id="hueLightName3" placeholder="Hue achterdek"><input id="hueLightEntity3" placeholder="light.achterdek" oninput="ms712RefreshYamlPreview()"></div>
+        <div class="entertainment-player-setting"><input id="hueLightName4" placeholder="Hue slaapruimte"><input id="hueLightEntity4" placeholder="light.slaapruimte" oninput="ms712RefreshYamlPreview()"></div>
       </div>
 
-      <div class="entertainment-settings-step">
-        <span>3</span>
-        <div>
-          <strong>Favorieten toevoegen</strong>
-          <p class="small">
-            Gebruik een radio-stream, afspeellijst-URI of andere media-ID die
-            jouw Home Assistant-mediaspeler ondersteunt.
-          </p>
-        </div>
+      <div class="entertainment-settings-step"><span>4</span><div>
+        <strong>Sonos-spelers</strong>
+        <p class="small">Maximaal drie media_player-entiteiten.</p>
+      </div></div>
+      <div class="entertainment-players-settings">
+        <div class="entertainment-player-setting"><input id="entertainmentPlayerName1" placeholder="Sonos salon"><input id="entertainmentPlayerEntity1" placeholder="media_player.sonos_salon" oninput="ms712RefreshYamlPreview()"></div>
+        <div class="entertainment-player-setting"><input id="entertainmentPlayerName2" placeholder="Sonos stuurstand"><input id="entertainmentPlayerEntity2" placeholder="media_player.sonos_stuurstand" oninput="ms712RefreshYamlPreview()"></div>
+        <div class="entertainment-player-setting"><input id="entertainmentPlayerName3" placeholder="Sonos achterdek"><input id="entertainmentPlayerEntity3" placeholder="media_player.sonos_achterdek" oninput="ms712RefreshYamlPreview()"></div>
       </div>
+
+      <div class="entertainment-settings-step"><span>5</span><div>
+        <strong>Apple TV</strong>
+        <p class="small">Home Assistant maakt meestal zowel een media_player- als remote-entiteit aan.</p>
+      </div></div>
+      <div class="smart-home-settings-grid three-columns">
+        <input id="appleTvName" placeholder="Apple TV salon" aria-label="Naam Apple TV">
+        <input id="appleTvMediaEntity" placeholder="media_player.apple_tv"
+          aria-label="Apple TV media-entiteit" oninput="ms712RefreshYamlPreview()">
+        <input id="appleTvRemoteEntity" placeholder="remote.apple_tv"
+          aria-label="Apple TV remote-entiteit" oninput="ms712RefreshYamlPreview()">
+      </div>
+
+      <div class="entertainment-settings-step"><span>6</span><div>
+        <strong>Home Assistant-scènes</strong>
+        <p class="small">Bijvoorbeeld avond, varen, slapen en alles uit.</p>
+      </div></div>
+      <div class="entertainment-players-settings">
+        <div class="entertainment-player-setting"><input id="homeAssistantSceneName1" placeholder="Avond aan boord"><input id="homeAssistantSceneEntity1" placeholder="scene.avond_aan_boord" oninput="ms712RefreshYamlPreview()"></div>
+        <div class="entertainment-player-setting"><input id="homeAssistantSceneName2" placeholder="Varen"><input id="homeAssistantSceneEntity2" placeholder="scene.varen" oninput="ms712RefreshYamlPreview()"></div>
+        <div class="entertainment-player-setting"><input id="homeAssistantSceneName3" placeholder="Slapen"><input id="homeAssistantSceneEntity3" placeholder="scene.slapen" oninput="ms712RefreshYamlPreview()"></div>
+        <div class="entertainment-player-setting"><input id="homeAssistantSceneName4" placeholder="Alles uit"><input id="homeAssistantSceneEntity4" placeholder="scene.alles_uit" oninput="ms712RefreshYamlPreview()"></div>
+      </div>
+
+      <div class="entertainment-settings-step"><span>7</span><div>
+        <strong>Sonos-favorieten</strong>
+        <p class="small">Radio-stream, afspeellijst-URI of andere media-ID.</p>
+      </div></div>
       <div class="entertainment-favorites-settings">
-        <div class="entertainment-favorite-setting">
-          <input id="entertainmentFavoriteName1" placeholder="Favoriet 1" aria-label="Naam favoriet 1">
-          <input id="entertainmentFavoriteUrl1" placeholder="Media-URL of media-ID" aria-label="Media-ID favoriet 1">
-          <input id="entertainmentFavoriteType1" value="music" placeholder="music" aria-label="Mediatype favoriet 1">
-        </div>
-        <div class="entertainment-favorite-setting">
-          <input id="entertainmentFavoriteName2" placeholder="Favoriet 2" aria-label="Naam favoriet 2">
-          <input id="entertainmentFavoriteUrl2" placeholder="Media-URL of media-ID" aria-label="Media-ID favoriet 2">
-          <input id="entertainmentFavoriteType2" value="music" placeholder="music" aria-label="Mediatype favoriet 2">
-        </div>
-        <div class="entertainment-favorite-setting">
-          <input id="entertainmentFavoriteName3" placeholder="Favoriet 3" aria-label="Naam favoriet 3">
-          <input id="entertainmentFavoriteUrl3" placeholder="Media-URL of media-ID" aria-label="Media-ID favoriet 3">
-          <input id="entertainmentFavoriteType3" value="music" placeholder="music" aria-label="Mediatype favoriet 3">
-        </div>
-        <div class="entertainment-favorite-setting">
-          <input id="entertainmentFavoriteName4" placeholder="Favoriet 4" aria-label="Naam favoriet 4">
-          <input id="entertainmentFavoriteUrl4" placeholder="Media-URL of media-ID" aria-label="Media-ID favoriet 4">
-          <input id="entertainmentFavoriteType4" value="music" placeholder="music" aria-label="Mediatype favoriet 4">
-        </div>
-        <div class="entertainment-favorite-setting">
-          <input id="entertainmentFavoriteName5" placeholder="Favoriet 5" aria-label="Naam favoriet 5">
-          <input id="entertainmentFavoriteUrl5" placeholder="Media-URL of media-ID" aria-label="Media-ID favoriet 5">
-          <input id="entertainmentFavoriteType5" value="music" placeholder="music" aria-label="Mediatype favoriet 5">
-        </div>
-        <div class="entertainment-favorite-setting">
-          <input id="entertainmentFavoriteName6" placeholder="Favoriet 6" aria-label="Naam favoriet 6">
-          <input id="entertainmentFavoriteUrl6" placeholder="Media-URL of media-ID" aria-label="Media-ID favoriet 6">
-          <input id="entertainmentFavoriteType6" value="music" placeholder="music" aria-label="Mediatype favoriet 6">
-        </div>
+        <div class="entertainment-favorite-setting"><input id="entertainmentFavoriteName1" placeholder="Favoriet 1"><input id="entertainmentFavoriteUrl1" placeholder="Media-URL of media-ID"><input id="entertainmentFavoriteType1" value="music" placeholder="music"></div>
+        <div class="entertainment-favorite-setting"><input id="entertainmentFavoriteName2" placeholder="Favoriet 2"><input id="entertainmentFavoriteUrl2" placeholder="Media-URL of media-ID"><input id="entertainmentFavoriteType2" value="music" placeholder="music"></div>
+        <div class="entertainment-favorite-setting"><input id="entertainmentFavoriteName3" placeholder="Favoriet 3"><input id="entertainmentFavoriteUrl3" placeholder="Media-URL of media-ID"><input id="entertainmentFavoriteType3" value="music" placeholder="music"></div>
+        <div class="entertainment-favorite-setting"><input id="entertainmentFavoriteName4" placeholder="Favoriet 4"><input id="entertainmentFavoriteUrl4" placeholder="Media-URL of media-ID"><input id="entertainmentFavoriteType4" value="music" placeholder="music"></div>
+        <div class="entertainment-favorite-setting"><input id="entertainmentFavoriteName5" placeholder="Favoriet 5"><input id="entertainmentFavoriteUrl5" placeholder="Media-URL of media-ID"><input id="entertainmentFavoriteType5" value="music" placeholder="music"></div>
+        <div class="entertainment-favorite-setting"><input id="entertainmentFavoriteName6" placeholder="Favoriet 6"><input id="entertainmentFavoriteUrl6" placeholder="Media-URL of media-ID"><input id="entertainmentFavoriteType6" value="music" placeholder="music"></div>
       </div>
 
-      <div class="entertainment-settings-step">
-        <span>4</span>
-        <div>
-          <strong>Automatisering in Home Assistant plaatsen</strong>
-          <p class="small">
-            Kopieer de YAML naar een nieuwe automatisering in Home Assistant.
-            De code bevat alleen de gekozen mediaspelers en geen accounttoken.
-          </p>
-        </div>
-      </div>
+      <div class="entertainment-settings-step"><span>8</span><div>
+        <strong>Automatisering in Home Assistant plaatsen</strong>
+        <p class="small">Kopieer deze YAML naar één nieuwe automatisering. Alleen de ingevulde entiteiten worden toegestaan.</p>
+      </div></div>
       <label for="entertainmentYaml">Home Assistant-automatisering</label>
       <textarea id="entertainmentYaml" readonly></textarea>
 
@@ -2261,8 +2358,7 @@
       </div>
     </div>
 
-    <div id="entertainmentStatus" class="status small hidden"
-      role="status" aria-live="polite"></div>
+    <div id="entertainmentStatus" class="status small hidden" role="status" aria-live="polite"></div>
   </section>
 
   <section id="technical" class="hidden">
@@ -4219,8 +4315,8 @@
       aria-label="Reisplanner" title="Reisplanner"
       onclick="captainNavigate('planner',this)"><span>🧭</span></button>
     <button class="bottom-nav-item" data-target="entertainment"
-      aria-label="Entertainment" title="Entertainment"
-      onclick="captainNavigate('entertainment',this)"><span>🎵</span></button>
+      aria-label="Home Assistant" title="Home Assistant"
+      onclick="captainNavigate('entertainment',this)"><span>🏡</span></button>
     <button class="bottom-nav-item" data-target="technical"
       aria-label="Techniek" title="Techniek"
       onclick="captainNavigate('technical',this)"><span>⚙️</span></button>
@@ -4292,15 +4388,6 @@
   </div>
 </div>
 
-<script src="app.js?v=7112"></script>
-<script src="mission-control.js?v=7112"></script>
-<script src="easy-auto.js?v=7112"></script>
-<script src="live-split.js?v=7112"></script>
-<script src="route-control.js?v=7112"></script>
-<script src="weather-page.js?v=7112"></script>
-<script src="weather-radar.js?v=7112"></script>
-<script src="ais-page.js?v=7112"></script>
-<script src="entertainment-page.js?v=7112"></script>
-<script src="page-swipe.js?v=7112"></script>
+<script src="auth-bootstrap.js?v=7210"></script>
 </body>
 </html>

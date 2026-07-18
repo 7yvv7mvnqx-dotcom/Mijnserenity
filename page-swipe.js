@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.1.2 — native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.2.1 — native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -25,7 +25,7 @@ const ms708PageLabels={
   weather:'Weer',
   map:'Kaart',
   planner:'Reisplanner',
-  entertainment:'Entertainment',
+  entertainment:'Home Assistant',
   technical:'Techniek',
   logbook:'Logboek',
   pois:'POI',

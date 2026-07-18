@@ -1,26 +1,35 @@
-# MijnSerenity 7.2.0 — complete GitHub-upload
+# MijnSerenity Cloud 7.2.1 — GitHub-upload
 
-Upload alle bestanden uit deze ZIP naar de hoofdmap van de MijnSerenity-repository
-en laat bestaande bestanden overschrijven.
+Deze ZIP is plat opgebouwd: alle bestanden staan direct in de hoofdmap.
 
-## Nieuw
+## Uploaden
 
-- Direct GPX/KML/KMZ ontvangen vanuit het iOS-deelmenu.
-- Dagelijkse route: Waterkaarten → Delen → Bewaar in MijnSerenity.
-- Geen tijdelijke map in Bestanden of iCloud Drive nodig.
-- Veilige persoonlijke importcode per boot.
-- Automatische controle bij openen, terugkeren naar de app en iedere 30 seconden.
-- Route wordt direct in het logboekformulier ingelezen.
-- Handmatige bestands- en iCloud-import blijven als ingeklapt alternatief bestaan.
+1. Open de bestaande MijnSerenity-repository in GitHub.
+2. Kies **Add file → Upload files**.
+3. Upload alle losse bestanden uit deze ZIP en laat bestaande bestanden vervangen.
+4. Kies **Commit changes**.
+5. Wacht tot Netlify de nieuwe versie heeft gepubliceerd.
+6. Sluit MijnSerenity volledig en open de app opnieuw.
 
-## Eenmalig uitvoeren
+## Home Assistant instellen
 
-1. Voer `SQL_WATERKAARTEN_DIRECT_IMPORT_7_2_0.sql` uit in Supabase SQL Editor.
-2. Volg `APPLE_OPDRACHT_WATERKAARTEN.md` om de Apple Opdracht te maken.
+Open na de update **🏡 Home Assistant → Instellen**.
 
-## Waarom nog één knop Vaartocht opslaan?
+1. Vul het externe HTTPS-adres van Home Assistant in, bij voorkeur Home Assistant Cloud.
+2. Vul alleen de apparaten in die je wilt bedienen:
+   - Ring `camera` en eventueel de `switch` voor bewegingsdetectie.
+   - Philips Hue `light`-entiteiten of lichtgroepen.
+   - Sonos `media_player`-entiteiten.
+   - Apple TV `media_player` en `remote`.
+   - Home Assistant `scene`-entiteiten.
+3. Laat MijnSerenity een beveiligde webhookcode maken.
+4. Kopieer de gegenereerde YAML naar één nieuwe automatisering in Home Assistant.
+5. Sla de instellingen op in MijnSerenity.
 
-Een Waterkaarten-route kan een planning voor later zijn. Automatisch als voltooide
-vaart opslaan zou de datum, brandstof en motoruren onbedoeld kunnen beïnvloeden.
-Daarom vult MijnSerenity alles automatisch in, maar blijft definitief opslaan een
-bewuste controlehandeling.
+De instellingen worden via de bestaande `technical_state`-cloudgegevens met alle apparaten van Serenity gesynchroniseerd. Er is geen nieuwe Supabase-SQL nodig. De openbare GitHub-code bevat geen Home Assistant-token, API-sleutel, Ring-pincode of vooraf ingevulde webhookcode.
+
+## Beveiliging
+
+- Deel de webhook-URL niet.
+- Maak een nieuwe webhookcode wanneer je vermoedt dat de huidige code bekend is geworden.
+- Ring livebeeld en opnamen blijven achter je beveiligde Home Assistant-login; MijnSerenity opent daarvoor je ingestelde dashboard.
