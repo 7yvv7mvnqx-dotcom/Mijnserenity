@@ -14,6 +14,286 @@ let pendingTripRouteFile=null;
 let pendingTripRouteFingerprint=null;
 let savedICloudRouteHandle=null;
 let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presenceHeartbeatTimer=null,adminAccountRefreshTimer=null,liveChannel=null,mapInstance=null,poiLayer=null,userMarker=null,poiCache=[],poiPhotoCache={},costCache=[],costReceiptCache={},tripCache=[],settingsCache=null,favoritesOnly=false,poiPickerMap=null,poiPickerMarker=null,poiPickerSelection=null,poiPickerTargetId=null,poiOnlineSuggestionResults=[],poiLocationSuggestionTimer=null,poiNameSuggestionTimer=null,poiLocationSuggestionController=null,poiHarbourSuggestionController=null,poiNearbyHarbourController=null,poiHarbourLastRequestAt=0,poiHarbourSuggestionCache=new Map(),poiNearbyHarbourCache=new Map(),poiLiveSuggestionResults={name:[],place:[],address:[]},poiWebPhotoResults=[],selectedPoiWebPhotos=[],poiWebPhotoController=null,poiNearbySearchController=null,poiNearbySearchCache=new Map(),plannerStops=[],plannerCurrentPlan=null,plannerCurrentPosition=null,plannerMap=null,plannerMapLayer=null,technicalStateCache=null,technicalEventsCache=[],technicalCloudReady=false,technicalLoading=false,homeAssistantStatusCache=null,homeAssistantStatusLoading=false,radarCameraRefreshTimer=null,radarCameraLiveActive=false,radarCameraLiveToken='',radarCameraLiveRefreshTimer=null,radarCameraFrameTimer=null,radarCameraFrameBusy=false,radarCameraFrameFailures=0;
+
+
+/* ============================================================
+   MijnSerenity Cloud 7.2.2 — Storage Safety
+   Foto's en documenten worden pas geladen wanneer ze zichtbaar
+   of bewust geopend worden. Signed URLs worden tijdelijk hergebruikt.
+   ============================================================ */
+const STORAGE_SAFE_PLACEHOLDER='data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+const STORAGE_SAFE_URL_TTL_MS=50*60*1000;
+const STORAGE_SAFE_SESSION_PREFIX='mijnserenity-storage-url-v722:';
+const storageSafeUrlCache=new Map();
+const storageSafeUrlPending=new Map();
+const storageSafeRealtimeTimers=new Map();
+const storageSafeStats={
+  signedRequests:0,
+  cacheHits:0,
+  imageAssignments:0,
+  documentOpens:0,
+  preventedReloads:0
+};
+let storageSafeImageObserver=null;
+let storageSafeMutationObserver=null;
+let storageSafeInitialiseKey='';
+let storageSafeInitialiseAt=0;
+let poiLastMetadataLoadAt=0;
+let costLastMetadataLoadAt=0;
+let tripLastMetadataLoadAt=0;
+
+function storageSafeKey(bucket,path){
+  return `${String(bucket||'')}::${String(path||'')}`;
+}
+
+function storageSafeSessionKey(bucket,path){
+  return STORAGE_SAFE_SESSION_PREFIX+encodeURIComponent(storageSafeKey(bucket,path));
+}
+
+function storageSafeReadSession(bucket,path){
+  try{
+    const raw=sessionStorage.getItem(storageSafeSessionKey(bucket,path));
+    if(!raw)return null;
+    const parsed=JSON.parse(raw);
+    if(!parsed?.url||Number(parsed.expiresAt||0)<=Date.now()+30000){
+      sessionStorage.removeItem(storageSafeSessionKey(bucket,path));
+      return null;
+    }
+    return parsed;
+  }catch{
+    return null;
+  }
+}
+
+function storageSafeWriteSession(bucket,path,value){
+  try{
+    sessionStorage.setItem(
+      storageSafeSessionKey(bucket,path),
+      JSON.stringify(value)
+    );
+  }catch{}
+}
+
+function storageSafeForgetUrl(bucket,path){
+  const key=storageSafeKey(bucket,path);
+  storageSafeUrlCache.delete(key);
+  storageSafeUrlPending.delete(key);
+  try{sessionStorage.removeItem(storageSafeSessionKey(bucket,path));}catch{}
+}
+
+function storageSafeRenderStatus(){
+  const target=document.getElementById('storageSafetyStatus');
+  if(!target)return;
+  target.innerHTML=`
+    <div class="storage-safety-heading">
+      <span>🛡️</span>
+      <div>
+        <strong>Storage Safety actief</strong>
+        <small>Foto’s worden alleen op aanvraag geladen.</small>
+      </div>
+    </div>
+    <div class="storage-safety-stats">
+      <span><b>${storageSafeStats.signedRequests}</b> nieuwe links</span>
+      <span><b>${storageSafeStats.cacheHits}</b> hergebruikt</span>
+      <span><b>${storageSafeStats.imageAssignments}</b> foto’s getoond</span>
+    </div>`;
+}
+
+function storageSafeEnsureStatusCard(){
+  const settings=document.getElementById('settings');
+  if(!settings||document.getElementById('storageSafetyStatus'))return;
+  const card=document.createElement('div');
+  card.id='storageSafetyStatus';
+  card.className='card storage-safety-card';
+  const firstCard=settings.querySelector('.card');
+  if(firstCard)firstCard.insertAdjacentElement('beforebegin',card);
+  else settings.prepend(card);
+  storageSafeRenderStatus();
+}
+
+async function getStorageSignedUrl(bucket,path,{force=false,expiresIn=3600}={}){
+  if(!bucket||!path)throw new Error('Opslaglocatie ontbreekt.');
+  const key=storageSafeKey(bucket,path);
+  const now=Date.now();
+
+  if(!force){
+    const memory=storageSafeUrlCache.get(key);
+    if(memory?.url&&Number(memory.expiresAt||0)>now+30000){
+      storageSafeStats.cacheHits++;
+      storageSafeRenderStatus();
+      return memory.url;
+    }
+
+    const stored=storageSafeReadSession(bucket,path);
+    if(stored){
+      storageSafeUrlCache.set(key,stored);
+      storageSafeStats.cacheHits++;
+      storageSafeRenderStatus();
+      return stored.url;
+    }
+
+    if(storageSafeUrlPending.has(key)){
+      storageSafeStats.preventedReloads++;
+      storageSafeRenderStatus();
+      return storageSafeUrlPending.get(key);
+    }
+  }
+
+  const task=(async()=>{
+    storageSafeStats.signedRequests++;
+    storageSafeRenderStatus();
+    const {data,error}=await sb.storage
+      .from(bucket)
+      .createSignedUrl(path,expiresIn);
+    if(error||!data?.signedUrl){
+      throw error||new Error('Tijdelijke bestandslink kon niet worden gemaakt.');
+    }
+    const value={
+      url:data.signedUrl,
+      expiresAt:Date.now()+Math.min(
+        STORAGE_SAFE_URL_TTL_MS,
+        Math.max(60000,expiresIn*1000-60000)
+      )
+    };
+    storageSafeUrlCache.set(key,value);
+    storageSafeWriteSession(bucket,path,value);
+    return value.url;
+  })();
+
+  storageSafeUrlPending.set(key,task);
+  try{
+    return await task;
+  }finally{
+    storageSafeUrlPending.delete(key);
+  }
+}
+
+async function ensureStorageImage(image){
+  if(!image)return '';
+  const bucket=image.dataset.storageBucket;
+  const path=image.dataset.storagePath;
+  if(!bucket||!path)return image.currentSrc||image.src||'';
+
+  if(image.dataset.storageLoaded==='1'&&image.src){
+    storageSafeStats.cacheHits++;
+    storageSafeRenderStatus();
+    return image.src;
+  }
+  if(image.dataset.storageLoading==='1')return '';
+
+  image.dataset.storageLoading='1';
+  image.classList.add('storage-safe-loading');
+  try{
+    const url=await getStorageSignedUrl(bucket,path);
+    if(!image.isConnected)return url;
+    image.onload=()=>{
+      image.classList.add('storage-safe-loaded');
+      image.classList.remove('storage-safe-loading','storage-safe-error');
+    };
+    image.onerror=()=>{
+      image.classList.remove('storage-safe-loading');
+      image.classList.add('storage-safe-error');
+    };
+    if(image.src!==url){
+      image.src=url;
+      storageSafeStats.imageAssignments++;
+      storageSafeRenderStatus();
+    }
+    image.dataset.storageLoaded='1';
+    return url;
+  }catch(error){
+    console.warn('Foto op aanvraag laden mislukt:',error);
+    image.classList.remove('storage-safe-loading');
+    image.classList.add('storage-safe-error');
+    return '';
+  }finally{
+    delete image.dataset.storageLoading;
+  }
+}
+
+function storageSafeObserveImages(root=document){
+  const images=[...root.querySelectorAll?.('img[data-storage-bucket][data-storage-path]')||[]];
+  images.forEach(image=>{
+    if(image.dataset.storageObserved==='1')return;
+    image.dataset.storageObserved='1';
+    if(storageSafeImageObserver){
+      storageSafeImageObserver.observe(image);
+    }
+  });
+}
+
+function initialiseStorageSafety(){
+  storageSafeEnsureStatusCard();
+
+  if('IntersectionObserver' in window){
+    storageSafeImageObserver=new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        if(!entry.isIntersecting)return;
+        storageSafeImageObserver.unobserve(entry.target);
+        ensureStorageImage(entry.target);
+      });
+    },{rootMargin:'160px 0px',threshold:0.01});
+  }
+
+  storageSafeMutationObserver=new MutationObserver(mutations=>{
+    if(mutations.some(item=>item.addedNodes?.length)){
+      requestAnimationFrame(()=>storageSafeObserveImages(document));
+    }
+  });
+  storageSafeMutationObserver.observe(document.body,{childList:true,subtree:true});
+  storageSafeObserveImages(document);
+}
+
+async function openStorageLightbox(bucket,path,image=null){
+  try{
+    showAppToast('Foto veilig laden…');
+    const url=image
+      ?(await ensureStorageImage(image)||await getStorageSignedUrl(bucket,path))
+      :await getStorageSignedUrl(bucket,path);
+    if(url)openLightbox(url);
+  }catch(error){
+    alert('Foto openen mislukt: '+(error?.message||'onbekende fout'));
+  }
+}
+
+async function openStorageDocument(bucket,path){
+  const popup=window.open('about:blank','_blank');
+  try{
+    const url=await getStorageSignedUrl(bucket,path);
+    storageSafeStats.documentOpens++;
+    storageSafeRenderStatus();
+    if(popup)popup.location.href=url;
+    else window.location.href=url;
+  }catch(error){
+    popup?.close();
+    alert('Document openen mislukt: '+(error?.message||'onbekende fout'));
+  }
+}
+
+async function rescanStoredReceiptPath(costId,bucket,path){
+  try{
+    const url=await getStorageSignedUrl(bucket,path);
+    await rescanStoredReceipt(costId,url);
+  }catch(error){
+    alert('Bon opnieuw lezen mislukt: '+(error?.message||'onbekende fout'));
+  }
+}
+
+function scheduleRealtimeRefresh(key,job,delay=900){
+  const existing=storageSafeRealtimeTimers.get(key);
+  if(existing)clearTimeout(existing);
+  storageSafeRealtimeTimers.set(key,setTimeout(async()=>{
+    storageSafeRealtimeTimers.delete(key);
+    try{await job();}
+    catch(error){console.error(`Realtime verversen (${key}) mislukt:`,error);}
+  },delay));
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',initialiseStorageSafety,{once:true});
+}else{
+  initialiseStorageSafety();
+}
 $('costDate').value=new Date().toISOString().slice(0,10);$('tripDate').value=new Date().toISOString().slice(0,10);
 
 
@@ -3046,6 +3326,17 @@ async function handleAuthStateChange(event,session){
 }
 
 async function initialise(session){
+  const initialiseKey=session?.user?.id||'anonymous';
+  if(
+    initialiseKey===storageSafeInitialiseKey&&
+    Date.now()-storageSafeInitialiseAt<5000
+  ){
+    storageSafeStats.preventedReloads++;
+    storageSafeRenderStatus();
+    return;
+  }
+  storageSafeInitialiseKey=initialiseKey;
+  storageSafeInitialiseAt=Date.now();
   currentUser=session?.user||null;
 
   $('authView').classList.add('hidden');
@@ -4076,7 +4367,7 @@ async function uploadPoiPhotos(poiId,files){
     setPoiProgress(`Foto ${i+1} van ${files.length} uploaden…`);
     const safeExt=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
     const path=`${currentBoat.id}/${poiId}/${crypto.randomUUID()}.${safeExt}`;
-    const {error:uploadError}=await sb.storage.from(PHOTO_BUCKET).upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type||'image/jpeg'});
+    const {error:uploadError}=await sb.storage.from(PHOTO_BUCKET).upload(path,file,{cacheControl:'31536000',upsert:false,contentType:file.type||'image/jpeg'});
     if(uploadError){alert('Foto uploaden mislukt: '+uploadError.message);continue}
     const {error:metaError}=await sb.from('poi_photos').insert({poi_id:poiId,boat_id:currentBoat.id,created_by:currentUser.id,storage_path:path,original_name:file.name});
     if(metaError){await sb.storage.from(PHOTO_BUCKET).remove([path]);alert('Foto registreren mislukt: '+metaError.message)}
@@ -4084,6 +4375,7 @@ async function uploadPoiPhotos(poiId,files){
 }
 async function deletePhoto(id,path){
   if(!confirm('Foto verwijderen?'))return;
+  storageSafeForgetUrl(PHOTO_BUCKET,path);
   const {error:storageError}=await sb.storage.from(PHOTO_BUCKET).remove([path]);
   if(storageError)return alert(storageError.message);
   const {error}=await sb.from('poi_photos').delete().eq('id',id);
@@ -4093,10 +4385,8 @@ async function loadPoiPhotos(){
   const {data,error}=await sb.from('poi_photos').select('*').eq('boat_id',currentBoat.id).order('created_at',{ascending:true});
   if(error){console.error(error);return {}}
   const grouped={};
-  for(const photo of data){
-    const {data:signed,error:signedError}=await sb.storage.from(PHOTO_BUCKET).createSignedUrl(photo.storage_path,3600);
-    if(signedError)continue;
-    (grouped[photo.poi_id]??=[]).push({...photo,url:signed.signedUrl});
+  for(const photo of data||[]){
+    (grouped[photo.poi_id]??=[]).push({...photo,url:null});
   }
   return grouped;
 }
@@ -4123,6 +4413,7 @@ async function loadPois(){
     is_favorite:isFavoritePoi(poi)
   }));
   poiPhotoCache=photos||{};
+  poiLastMetadataLoadAt=Date.now();
 
   $('dPois').textContent=poiCache.length;
   updatePoiSuggestionLists();
@@ -4998,7 +5289,7 @@ async function uploadCostReceipts(costId,files){
     const {error:uploadError}=await sb.storage
       .from(COST_RECEIPT_BUCKET)
       .upload(path,file,{
-        cacheControl:'3600',
+        cacheControl:'31536000',
         upsert:false,
         contentType:file.type||'image/jpeg'
       });
@@ -5161,19 +5452,9 @@ async function loadCostReceipts(){
   }
 
   const grouped={};
-
   for(const receipt of data||[]){
-    const {data:signed,error:signedError}=await sb.storage
-      .from(COST_RECEIPT_BUCKET)
-      .createSignedUrl(receipt.storage_path,3600);
-
-    if(signedError)continue;
-    (grouped[receipt.cost_id]??=[]).push({
-      ...receipt,
-      url:signed.signedUrl
-    });
+    (grouped[receipt.cost_id]??=[]).push({...receipt,url:null});
   }
-
   return grouped;
 }
 
@@ -5185,14 +5466,20 @@ function renderCostReceipts(costId){
     const isImage=String(receipt.mime_type||'').startsWith('image/');
     if(isImage){
       return `<div class="cost-receipt-item">
-        <img src="${esc(receipt.url)}" alt="Bonnetje" onclick="openLightbox(${JSON.stringify(receipt.url)})">
+        <img src="${STORAGE_SAFE_PLACEHOLDER}" class="storage-safe-image"
+          loading="lazy" decoding="async"
+          data-storage-bucket="${esc(COST_RECEIPT_BUCKET)}"
+          data-storage-path="${esc(receipt.storage_path)}"
+          alt="Bonnetje"
+          onclick='openStorageLightbox(${JSON.stringify(COST_RECEIPT_BUCKET)},${JSON.stringify(receipt.storage_path)},this)'>
         <button onclick="deleteCostReceipt('${receipt.id}','${esc(receipt.storage_path)}')">×</button>
         <small>🧾 Bekijk bon</small>
       </div>`;
     }
 
     return `<div class="cost-receipt-item cost-receipt-pdf">
-      <a href="${esc(receipt.url)}" target="_blank" rel="noopener">🧾 PDF-bon openen</a>
+      <button type="button" class="storage-document-button"
+        onclick='openStorageDocument(${JSON.stringify(COST_RECEIPT_BUCKET)},${JSON.stringify(receipt.storage_path)})'>🧾 PDF-bon openen</button>
       <button onclick="deleteCostReceipt('${receipt.id}','${esc(receipt.storage_path)}')">×</button>
     </div>`;
   }).join('')}</div>`;
@@ -5200,6 +5487,7 @@ function renderCostReceipts(costId){
 
 async function deleteCostReceipt(id,path){
   if(!confirm('Dit bonnetje verwijderen?'))return;
+  storageSafeForgetUrl(COST_RECEIPT_BUCKET,path);
 
   const {error:storageError}=await sb.storage
     .from(COST_RECEIPT_BUCKET)
@@ -5252,6 +5540,7 @@ async function loadCosts(){
 
   costCache=data||[];
   costReceiptCache=receipts||{};
+  costLastMetadataLoadAt=Date.now();
 
   $('dCosts').textContent='€'+costCache
     .reduce((sum,cost)=>sum+Number(cost.amount||0),0)
@@ -5316,37 +5605,37 @@ function subscribeRealtime(){
     .on(
       'postgres_changes',
       {event:'*',schema:'public',table:'pois',filter:`boat_id=eq.${currentBoat.id}`},
-      loadPois
+      ()=>scheduleRealtimeRefresh('pois',loadPois)
     )
     .on(
       'postgres_changes',
       {event:'*',schema:'public',table:'poi_photos',filter:`boat_id=eq.${currentBoat.id}`},
-      loadPois
+      ()=>scheduleRealtimeRefresh('poi-photos',loadPois)
     )
     .on(
       'postgres_changes',
       {event:'*',schema:'public',table:'costs',filter:`boat_id=eq.${currentBoat.id}`},
-      loadCosts
+      ()=>scheduleRealtimeRefresh('costs',loadCosts)
     )
     .on(
       'postgres_changes',
       {event:'*',schema:'public',table:'cost_receipts',filter:`boat_id=eq.${currentBoat.id}`},
-      loadCosts
+      ()=>scheduleRealtimeRefresh('cost-receipts',loadCosts)
     )
     .on(
       'postgres_changes',
       {event:'*',schema:'public',table:'trips',filter:`boat_id=eq.${currentBoat.id}`},
-      loadTrips
+      ()=>scheduleRealtimeRefresh('trips',loadTrips)
     )
     .on(
       'postgres_changes',
       {event:'*',schema:'public',table:'trip_photos',filter:`boat_id=eq.${currentBoat.id}`},
-      loadTrips
+      ()=>scheduleRealtimeRefresh('trip-photos',loadTrips)
     )
     .on(
       'postgres_changes',
       {event:'*',schema:'public',table:'boat_settings',filter:`boat_id=eq.${currentBoat.id}`},
-      loadSettings
+      ()=>scheduleRealtimeRefresh('settings',loadSettings)
     );
 
   if(technicalCloudReady){
@@ -5404,9 +5693,13 @@ function renderPoiList(){
     ?filtered.map(poi=>{
       const photos=(poiPhotoCache[poi.id]||[]).map(photo=>`
         <div class="photo-wrap">
-          <img src="${esc(photo.url)}"
+          <img src="${STORAGE_SAFE_PLACEHOLDER}"
+            class="storage-safe-image"
+            loading="lazy" decoding="async"
+            data-storage-bucket="${esc(PHOTO_BUCKET)}"
+            data-storage-path="${esc(photo.storage_path)}"
             alt="Foto van ${esc(poi.name||'POI')}"
-            onclick="openLightbox(${JSON.stringify(photo.url)})">
+            onclick='openStorageLightbox(${JSON.stringify(PHOTO_BUCKET)},${JSON.stringify(photo.storage_path)},this)'>
           ${photo.auto_imported
             ?`<span class="ms694-photo-source"
                 title="${esc(photo.source_attribution||'Wikimedia Commons')}">
@@ -5517,11 +5810,10 @@ async function loadDashboardPhoto(){
     return;
   }
 
-  const {data,error}=await sb.storage
-    .from(BOAT_PHOTO_BUCKET)
-    .createSignedUrl(photoPath,3600);
-
-  if(error||!data?.signedUrl){
+  let signedUrl='';
+  try{
+    signedUrl=await getStorageSignedUrl(BOAT_PHOTO_BUCKET,photoPath);
+  }catch(error){
     console.error('Dashboardfoto laden mislukt:',error);
     img.removeAttribute('src');
     img.classList.add('hidden');
@@ -5537,7 +5829,13 @@ async function loadDashboardPhoto(){
     img.classList.add('hidden');
     placeholder.classList.remove('hidden');
   };
-  img.src=data.signedUrl+(data.signedUrl.includes('?')?'&':'?')+'v='+Date.now();
+  if(img.dataset.storagePath===photoPath&&img.src===signedUrl){
+    storageSafeStats.preventedReloads++;
+    storageSafeRenderStatus();
+    return;
+  }
+  img.dataset.storagePath=photoPath;
+  img.src=signedUrl;
 }
 async function uploadDashboardPhoto(){
   const file=$('settingBoatPhoto').files[0];
@@ -5551,7 +5849,7 @@ async function uploadDashboardPhoto(){
   const {error:uploadError}=await sb.storage.from(BOAT_PHOTO_BUCKET).upload(path,file,{
     upsert:false,
     contentType:file.type||'image/jpeg',
-    cacheControl:'3600'
+    cacheControl:'31536000'
   });
   if(uploadError)return alert(uploadError.message);
 
@@ -5570,7 +5868,10 @@ async function uploadDashboardPhoto(){
     await sb.storage.from(BOAT_PHOTO_BUCKET).remove([path]);
     return alert(error.message);
   }
-  if(oldPath&&oldPath!==path)await sb.storage.from(BOAT_PHOTO_BUCKET).remove([oldPath]);
+  if(oldPath&&oldPath!==path){
+    storageSafeForgetUrl(BOAT_PHOTO_BUCKET,oldPath);
+    await sb.storage.from(BOAT_PHOTO_BUCKET).remove([oldPath]);
+  }
   settingsCache=row;
   $('dashboardPhotoMsg').textContent='Dashboardfoto opgeslagen ✅';
   $('settingBoatPhoto').value='';
@@ -5579,6 +5880,7 @@ async function uploadDashboardPhoto(){
 async function removeDashboardPhoto(){
   if(!settingsCache?.dashboard_photo_path)return;
   if(!confirm('Dashboardfoto verwijderen?'))return;
+  storageSafeForgetUrl(BOAT_PHOTO_BUCKET,settingsCache.dashboard_photo_path);
   await sb.storage.from(BOAT_PHOTO_BUCKET).remove([settingsCache.dashboard_photo_path]);
   const {error}=await sb.from('boat_settings').update({dashboard_photo_path:null,updated_at:new Date().toISOString()}).eq('boat_id',currentBoat.id);
   if(error)return alert(error.message);
@@ -11038,21 +11340,25 @@ function renderReadOnlyCostReceipts(costId){
     if(isImage){
       return `<div class="finance-receipt-card">
         <button type="button" class="finance-receipt-button"
-          onclick="openLightbox(${JSON.stringify(receipt.url)})">
-          <img src="${esc(receipt.url)}" alt="Bonnetje">
+          onclick='openStorageLightbox(${JSON.stringify(COST_RECEIPT_BUCKET)},${JSON.stringify(receipt.storage_path)},this.querySelector("img"))'>
+          <img src="${STORAGE_SAFE_PLACEHOLDER}" class="storage-safe-image"
+            loading="lazy" decoding="async"
+            data-storage-bucket="${esc(COST_RECEIPT_BUCKET)}"
+            data-storage-path="${esc(receipt.storage_path)}"
+            alt="Bonnetje">
           <span>Bekijk bon</span>
         </button>
         <button type="button" class="receipt-rescan-button"
-          onclick='rescanStoredReceipt(${JSON.stringify(costId)},${JSON.stringify(receipt.url)})'>
+          onclick='rescanStoredReceiptPath(${JSON.stringify(costId)},${JSON.stringify(COST_RECEIPT_BUCKET)},${JSON.stringify(receipt.storage_path)})'>
           ✨ Opnieuw lezen
         </button>
       </div>`;
     }
 
-    return `<a class="finance-receipt-button finance-receipt-pdf"
-      href="${esc(receipt.url)}" target="_blank" rel="noopener">
+    return `<button type="button" class="finance-receipt-button finance-receipt-pdf"
+      onclick='openStorageDocument(${JSON.stringify(COST_RECEIPT_BUCKET)},${JSON.stringify(receipt.storage_path)})'>
       <span>🧾 PDF-bon openen</span>
-    </a>`;
+    </button>`;
   }).join('')}</div>`;
 }
 
@@ -11724,9 +12030,13 @@ function showPoiDetails(id){
         </div>
         <div class="poi-detail-photos">
           ${photos.map(photo=>`
-            <img src="${esc(photo.url)}"
+            <img src="${STORAGE_SAFE_PLACEHOLDER}"
+              class="storage-safe-image"
+              loading="lazy" decoding="async"
+              data-storage-bucket="${esc(PHOTO_BUCKET)}"
+              data-storage-path="${esc(photo.storage_path)}"
               alt="Foto van ${esc(poi.name||'POI')}"
-              onclick="openLightbox(${JSON.stringify(photo.url)})">
+              onclick='openStorageLightbox(${JSON.stringify(PHOTO_BUCKET)},${JSON.stringify(photo.storage_path)},this)'>
           `).join('')}
         </div>
       </div>`
@@ -12214,7 +12524,7 @@ async function uploadTripPhotos(tripId,files){
     const safeExt=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
     const path=`${currentBoat.id}/${tripId}/${crypto.randomUUID()}.${safeExt}`;
     const {error:uploadError}=await sb.storage.from(TRIP_PHOTO_BUCKET).upload(path,file,{
-      cacheControl:'3600',upsert:false,contentType:file.type||'image/jpeg'
+      cacheControl:'31536000',upsert:false,contentType:file.type||'image/jpeg'
     });
     if(uploadError){alert('Foto uploaden mislukt: '+uploadError.message);continue}
     const {error:metaError}=await sb.from('trip_photos').insert({
@@ -12229,6 +12539,7 @@ async function uploadTripPhotos(tripId,files){
 }
 async function deleteTripPhoto(id,path){
   if(!confirm('Foto verwijderen?'))return;
+  storageSafeForgetUrl(TRIP_PHOTO_BUCKET,path);
   const {error:storageError}=await sb.storage.from(TRIP_PHOTO_BUCKET).remove([path]);
   if(storageError)return alert(storageError.message);
   const {error}=await sb.from('trip_photos').delete().eq('id',id);
@@ -12238,10 +12549,8 @@ async function loadTripPhotos(){
   const {data,error}=await sb.from('trip_photos').select('*').eq('boat_id',currentBoat.id).order('created_at',{ascending:true});
   if(error){console.error(error);return {}}
   const grouped={};
-  for(const photo of data){
-    const {data:signed,error:signedError}=await sb.storage.from(TRIP_PHOTO_BUCKET).createSignedUrl(photo.storage_path,3600);
-    if(signedError)continue;
-    (grouped[photo.trip_id]??=[]).push({...photo,url:signed.signedUrl});
+  for(const photo of data||[]){
+    (grouped[photo.trip_id]??=[]).push({...photo,url:null});
   }
   return grouped;
 }
@@ -12340,6 +12649,7 @@ async function loadTrips(){
   if(error){console.error(error);return}
   tripCache=data;
   window.tripPhotoCache=photos;
+  tripLastMetadataLoadAt=Date.now();
   $('dTrips').textContent=data.length;
   renderTripList();
   renderFinance();
@@ -12567,10 +12877,13 @@ function captainNavigate(id, sourceButton=null){
     resetPoiFilters(false);
     renderPoiList();
 
-    if(currentBoat){
+    if(currentBoat&&Date.now()-poiLastMetadataLoadAt>2*60*1000){
       loadPois().catch(error=>
         console.error('POI opnieuw laden mislukt:',error)
       );
+    }else{
+      storageSafeStats.preventedReloads++;
+      storageSafeRenderStatus();
     }
   }
 
@@ -14186,7 +14499,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.2.1"
+<gpx version="1.1" creator="MijnSerenity 7.2.2"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14438,7 +14751,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.2.1';
+const APP_VERSION='7.2.2';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14515,7 +14828,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=7210',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=7220',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -16097,9 +16410,13 @@ function renderTripList(){
   $('tripList').innerHTML=filtered.length?filtered.map(t=>{
     const photoHtml=(photos[t.id]||[]).map(ph=>`
       <div class="trip-photo-wrap ms681-saved-photo">
-        <img src="${esc(ph.url)}"
+        <img src="${STORAGE_SAFE_PLACEHOLDER}"
+          class="storage-safe-image"
+          loading="lazy" decoding="async"
+          data-storage-bucket="${esc(TRIP_PHOTO_BUCKET)}"
+          data-storage-path="${esc(ph.storage_path)}"
           alt="Foto van ${esc(t.title||'vaarttocht')}"
-          onclick="openLightbox(${JSON.stringify(ph.url)})">
+          onclick='openStorageLightbox(${JSON.stringify(TRIP_PHOTO_BUCKET)},${JSON.stringify(ph.storage_path)},this)'>
         ${Number.isFinite(Number(ph.latitude))&&Number.isFinite(Number(ph.longitude))
           ?'<span class="ms681-photo-location-badge">📍 Routefoto</span>'
           :''}
@@ -16210,7 +16527,7 @@ function closeLightbox(){
 }
 
 
-/* MijnSerenity Cloud 7.2.1 — vaste onderste navigatie */
+/* MijnSerenity Cloud 7.2.2 — vaste onderste navigatie */
 let bottomNavHideTimer=null;
 let bottomNavActivityFrame=null;
 
@@ -16406,7 +16723,7 @@ document.addEventListener(
 
 
 
-/* MijnSerenity Cloud 7.2.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 7.2.2 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -16795,7 +17112,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1
+   MijnSerenity Cloud 7.2.2
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -17732,7 +18049,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.2.1"
+ creator="MijnSerenity 7.2.2"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -17758,7 +18075,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.2.1 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 7.2.2 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -17796,7 +18113,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1 — Next Level Live Cockpit
+   MijnSerenity Cloud 7.2.2 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -18770,7 +19087,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1 — Smart Route
+   MijnSerenity Cloud 7.2.2 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -20080,7 +20397,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.2.1 Smart Route"
+ creator="MijnSerenity 7.2.2 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -20109,7 +20426,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.2.1 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 7.2.2 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20176,7 +20493,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 7.2.2 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -21095,7 +21412,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1 — Auto Logbook
+   MijnSerenity Cloud 7.2.2 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22303,7 +22620,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1 — Routefoto’s met GPS en omschrijving
+   MijnSerenity Cloud 7.2.2 — Routefoto’s met GPS en omschrijving
    ============================================================ */
 
 let ms681PendingPhotos=[];
@@ -22676,15 +22993,13 @@ function ms681RenderPhotoComposer(){
 }
 
 function ms681PhotoMarkerIcon(photo){
-  const image=photo.objectUrl||photo.url||'';
+  const localImage=photo.objectUrl||'';
 
   return L.divIcon({
     className:'ms681-photo-marker',
-    html:`
-      <span>
-        <img src="${esc(image)}" alt="">
-      </span>
-    `,
+    html:localImage
+      ?`<span><img src="${esc(localImage)}" alt=""></span>`
+      :`<span class="storage-safe-map-marker" aria-label="Routefoto">📷</span>`,
     iconSize:[46,46],
     iconAnchor:[23,42],
     popupAnchor:[0,-40]
@@ -22692,14 +23007,25 @@ function ms681PhotoMarkerIcon(photo){
 }
 
 function ms681PhotoPopup(photo){
-  const image=photo.objectUrl||photo.url||'';
+  const localImage=photo.objectUrl||'';
   const description=
     photo.description||
     'Foto onderweg';
+  const imageHtml=localImage
+    ?`<img src="${esc(localImage)}" alt="Routefoto">`
+    :photo.storage_path
+      ?`<img src="${STORAGE_SAFE_PLACEHOLDER}"
+          class="storage-safe-image"
+          loading="lazy" decoding="async"
+          data-storage-bucket="${esc(TRIP_PHOTO_BUCKET)}"
+          data-storage-path="${esc(photo.storage_path)}"
+          alt="Routefoto"
+          onclick='openStorageLightbox(${JSON.stringify(TRIP_PHOTO_BUCKET)},${JSON.stringify(photo.storage_path)},this)'>`
+      :'';
 
   return `
     <div class="ms681-map-photo-popup">
-      <img src="${esc(image)}" alt="Routefoto">
+      ${imageHtml}
       <strong>${esc(description)}</strong>
       <small>
         ${photo.capturedAt||photo.captured_at
@@ -22934,7 +23260,7 @@ uploadTripPhotos=async function(
     const {error:uploadError}=await sb.storage
       .from(TRIP_PHOTO_BUCKET)
       .upload(path,file,{
-        cacheControl:'3600',
+        cacheControl:'31536000',
         upsert:false,
         contentType:
           file.type||
@@ -23132,7 +23458,7 @@ initLiveMode=async function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1 — Boat Intelligence
+   MijnSerenity Cloud 7.2.2 — Boat Intelligence
    ============================================================ */
 
 function ms690Clamp(value,min=0,max=100){
@@ -24432,7 +24758,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1 — Gewaardeerde havenimporteur
+   MijnSerenity Cloud 7.2.2 — Gewaardeerde havenimporteur
    ============================================================ */
 
 let ms692HarbourImportBusy=false;
@@ -25089,7 +25415,7 @@ async function ms692ImportRatedHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1 — Havens binnen straal van locatie
+   MijnSerenity Cloud 7.2.2 — Havens binnen straal van locatie
    ============================================================ */
 
 let ms693NearbyBusy=false;
@@ -25442,7 +25768,7 @@ async function ms693ImportNearbyHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.1 — POI Data Service
+   MijnSerenity Cloud 7.2.2 — POI Data Service
    ============================================================ */
 
 let ms694EnrichmentBusy=false;
@@ -26278,7 +26604,7 @@ async function ms694UploadPhoto(
   const {error:uploadError}=await sb.storage
     .from(PHOTO_BUCKET)
     .upload(path,file,{
-      cacheControl:'3600',
+      cacheControl:'31536000',
       upsert:false,
       contentType:
         file.type||
@@ -26810,9 +27136,9 @@ async function ms694MaybeAutoRefresh(){
 const loadPoisOriginalForMs694=
   loadPois;
 
-loadPois=async function(){
+loadPois=async function(...args){
   const result=
-    await loadPoisOriginalForMs694();
+    await loadPoisOriginalForMs694(...args);
 
   ms694LoadSettings();
   ms694RenderOverview();
