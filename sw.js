@@ -1,33 +1,37 @@
-const CACHE_NAME='mijnserenity-7.2.2-storage-safety';
+const CACHE_NAME='mijnserenity-7.3.3-live-home-assistant';
 const APP_SHELL=[
   '/',
   '/index.html',
-  '/styles.css?v=7220',
-  '/mission-control.css?v=7220',
-  '/easy-auto.css?v=7220',
-  '/live-split.css?v=7220',
-  '/route-control.css?v=7220',
-  '/page-swipe.css?v=7220',
-  '/weather-page.css?v=7220',
-  '/weather-radar.css?v=7220',
-  '/ais-page.css?v=7220',
-  '/entertainment-page.css?v=7220',
-  '/auth-bootstrap.js?v=7220',
-  '/app.js?v=7220',
-  '/mission-control.js?v=7220',
-  '/easy-auto.js?v=7220',
-  '/live-split.js?v=7220',
-  '/route-control.js?v=7220',
-  '/weather-page.js?v=7220',
-  '/weather-radar.js?v=7220',
-  '/ais-page.js?v=7220',
-  '/entertainment-page.js?v=7220',
-  '/page-swipe.js?v=7220',
-  '/manifest.json?v=7220',
-  '/icon-192.png?v=7220',
-  '/icon-512.png?v=7220',
-  '/waterkaarten-dashboard.png?v=7220',
-  '/mijnserenity-logo.png?v=7220'
+  '/styles.css?v=7330',
+  '/ha-live-bridge.css?v=7330',
+  '/live-cameras.css?v=7330',
+  '/mission-control.css?v=7330',
+  '/easy-auto.css?v=7330',
+  '/live-split.css?v=7330',
+  '/route-control.css?v=7330',
+  '/page-swipe.css?v=7330',
+  '/weather-page.css?v=7330',
+  '/weather-radar.css?v=7330',
+  '/ais-page.css?v=7330',
+  '/entertainment-page.css?v=7330',
+  '/auth-bootstrap.js?v=7330',
+  '/app.js?v=7330',
+  '/mission-control.js?v=7330',
+  '/easy-auto.js?v=7330',
+  '/live-split.js?v=7330',
+  '/route-control.js?v=7330',
+  '/weather-page.js?v=7330',
+  '/weather-radar.js?v=7330',
+  '/ais-page.js?v=7330',
+  '/entertainment-page.js?v=7330',
+  '/ha-live-bridge.js?v=7330',
+  '/live-cameras.js?v=7330',
+  '/page-swipe.js?v=7330',
+  '/manifest.json?v=7330',
+  '/icon-192.png?v=7330',
+  '/icon-512.png?v=7330',
+  '/waterkaarten-dashboard.png?v=7330',
+  '/mijnserenity-logo.png?v=7330'
 ];
 
 async function cacheFile(cache,path){
@@ -69,6 +73,7 @@ self.addEventListener('fetch',event=>{
 
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
+  if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
 
   if(request.mode==='navigate'){
     event.respondWith(

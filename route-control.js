@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.2.2 — Route, bereik en waarschuwingen
+   MijnSerenity Cloud 7.3.3 — Route, bereik en waarschuwingen
    ============================================================ */
 
 let ms705ActiveTab='route';
