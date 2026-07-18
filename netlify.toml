@@ -44,7 +44,7 @@
   to = "/index.html"
   status = 200
 
-# MijnSerenity 7.2.1 — voorkom gemengde PWA-versies
+# MijnSerenity 7.2.2 — voorkom gemengde PWA-versies
 [[headers]]
   for = "/index.html"
   [headers.values]
