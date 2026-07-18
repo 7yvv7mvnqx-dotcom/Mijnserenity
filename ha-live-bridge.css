@@ -1,0 +1,29 @@
+/* MijnSerenity 7.3.0 DEV — eenvoudige Home Assistant-koppeling */
+#entertainmentSettingsPanel.ms730-simple-mode > :not(.smart-home-section-head):not(#ms730HomeAssistantWizard){display:none!important}
+#ms730HomeAssistantWizard{display:grid;gap:14px;margin-top:12px}
+.ms730-wizard-card{border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:16px;background:rgba(255,255,255,.045)}
+.ms730-wizard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.ms730-wizard-head h4{margin:2px 0 4px}
+.ms730-wizard-step{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+.ms730-wizard-step>span{display:grid;place-items:center;width:32px;height:32px;border-radius:999px;background:#8d3131;color:#fff;font-weight:800}
+.ms730-wizard-grid{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+.ms730-wizard-grid input{min-width:0}
+.ms730-wizard-actions{display:flex;gap:9px;flex-wrap:wrap}
+.ms730-connection-status{padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.06)}
+.ms730-connection-status.success{background:rgba(49,145,90,.18);border:1px solid rgba(82,202,127,.35)}
+.ms730-connection-status.error{background:rgba(181,48,48,.18);border:1px solid rgba(255,105,105,.35)}
+.ms730-connection-status.warning{background:rgba(181,132,48,.18);border:1px solid rgba(255,203,105,.35)}
+.ms730-device-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ms730-device-group{border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;background:rgba(0,0,0,.12)}
+.ms730-device-group h5{margin:0 0 9px}
+.ms730-device-list{display:grid;gap:7px;max-height:190px;overflow:auto}
+.ms730-device-option{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;padding:7px;border-radius:10px;background:rgba(255,255,255,.035)}
+.ms730-device-option input{margin-top:3px}
+.ms730-device-option small{display:block;opacity:.68;word-break:break-all}
+.ms730-empty{opacity:.7;padding:6px 0}
+.ms730-live-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;font-size:.75rem;font-weight:800;background:rgba(62,180,105,.18);border:1px solid rgba(83,218,133,.38)}
+.ms730-help{border-left:4px solid #b46d2d;padding:10px 12px;background:rgba(181,109,45,.12);border-radius:9px}
+.ms730-help code{word-break:break-all}
+.ms730-advanced-toggle{justify-self:start}
+.ms730-live-state{font-size:.72rem;opacity:.8;margin-top:4px}
+@media(max-width:760px){.ms730-device-groups{grid-template-columns:1fr}.ms730-wizard-grid{grid-template-columns:1fr}.ms730-wizard-grid button{width:100%}}

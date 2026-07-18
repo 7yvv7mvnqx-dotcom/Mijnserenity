@@ -1,9 +1,9 @@
-/* MijnSerenity 7.2.3 — Development Mode */
+/* MijnSerenity 7.3.0 — Development Mode */
 (()=>{
   'use strict';
 
-  const DEV_STATE_KEY='mijnserenity-dev-state-v723';
-  const DEV_AUTO_KEY='mijnserenity-dev-auto-open-v723';
+  const DEV_STATE_KEY='mijnserenity-dev-state-v730';
+  const DEV_AUTO_KEY='mijnserenity-dev-auto-open-v730';
   const clone=value=>JSON.parse(JSON.stringify(value));
   const today=new Date();
   const isoDate=offset=>{
@@ -90,7 +90,7 @@
     const card=document.createElement('div');
     card.id='developmentDashboardCard';
     card.className='card development-dashboard-card';
-    card.innerHTML=`<span class="development-local-pill">🧪 TESTOMGEVING</span><h3>Veilig verder bouwen</h3><p class="small">Deze branch gebruikt alleen lokale voorbeeldgegevens. Supabase, productieaccounts en echte foto-opslag worden niet benaderd.</p><div class="development-dashboard-grid"><div><span>Data</span><strong>Lokaal op dit apparaat</strong></div><div><span>Home Assistant</span><strong>Demo-bediening actief</strong></div><div><span>Opslagverkeer</span><strong>0 GB Supabase</strong></div><div><span>Versie</span><strong>7.2.3 DEV</strong></div></div>`;
+    card.innerHTML=`<span class="development-local-pill">🧪 TESTOMGEVING</span><h3>Veilig verder bouwen</h3><p class="small">Deze branch gebruikt alleen lokale voorbeeldgegevens. Supabase, productieaccounts en echte foto-opslag worden niet benaderd.</p><div class="development-dashboard-grid"><div><span>Data</span><strong>Lokaal op dit apparaat</strong></div><div><span>Home Assistant</span><strong>Demo of live-koppeling</strong></div><div><span>Opslagverkeer</span><strong>0 GB Supabase</strong></div><div><span>Versie</span><strong>7.3.0 DEV</strong></div></div>`;
     if(anchor)anchor.insertAdjacentElement('afterend',card);else dashboard.prepend(card);
   }
 
@@ -224,7 +224,7 @@
     document.getElementById('authView')?.classList.add('hidden');
     document.getElementById('approvalView')?.classList.add('hidden');
     document.getElementById('appView')?.classList.remove('hidden');
-    installOverrides();installDashboardCard();renderAll();collapseDefaultPanels?.();
+    installOverrides();window.ms730InstallLiveBridge?.();installDashboardCard();renderAll();collapseDefaultPanels?.();
     setTimeout(()=>{captainNavigate?.('dashboard');storageSafeObserveImages?.(document);},0);
     showAppToast?.('MijnSerenity DEV geopend — geen Supabase-verkeer ✅');
   };

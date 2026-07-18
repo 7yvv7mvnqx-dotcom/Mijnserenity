@@ -39,12 +39,13 @@
 
 
 
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# MijnSerenity 7.2.3 — voorkom gemengde PWA-versies
+# MijnSerenity 7.3.0 — voorkom gemengde PWA-versies
 [[headers]]
   for = "/index.html"
   [headers.values]
@@ -60,8 +61,13 @@
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
-# MijnSerenity 7.2.3 — development assets
+# MijnSerenity 7.3.0 — development assets
 [[headers]]
   for = "/development-mode.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/ha-live-bridge.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
