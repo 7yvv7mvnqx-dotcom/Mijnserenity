@@ -1,4 +1,4 @@
-/* MijnSerenity 7.3.0 DEV — officiële Home Assistant OAuth + WebSocket koppeling */
+/* MijnSerenity 7.3.1 DEV — officiële Home Assistant OAuth + WebSocket koppeling */
 (()=>{
   'use strict';
 
@@ -308,7 +308,7 @@
 
   async function testConnection(){
     if(!authData()){status('Koppel eerst met Home Assistant.','warning');return false}
-    status('Beveiligde verbinding testen…');
+    status('Beveiligde verbinding testen… even geduld.');
     try{
       await currentAccessToken();
       await ensureSocket();
@@ -447,6 +447,7 @@
 
   function install(){
     if(installed)return;installed=true;injectWizard();
+    window.MIJSERENITY_HA_BRIDGE_READY=true;
     window.ms730ConnectHomeAssistant=connect;
     window.ms730DisconnectHomeAssistant=disconnect;
     window.ms730TestConnection=testConnection;
@@ -475,5 +476,16 @@
   window.ms730InstallLiveBridge=install;
   const callbackPromise=processOAuthCallback().catch(error=>{window.MIJSERENITY_HA_CALLBACK_ERROR=error.message;console.error(error)});
   window.MIJSERENITY_HA_CALLBACK_PROMISE=callbackPromise;
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectWizard,{once:true});else injectWizard();
+
+  // 7.3.1: initialiseer de live bridge altijd zelf. De DEV-auto-open kon eerder
+  // sneller starten dan dit bestand was geladen, waardoor de wizard wel zichtbaar
+  // was maar de knoppen nog geen functies hadden.
+  function bootLiveBridge(){
+    try{install()}catch(error){
+      console.error('Home Assistant live bridge kon niet starten:',error);
+      status(`Home Assistant-koppeling kon niet starten: ${error.message}`,'error');
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootLiveBridge,{once:true});
+  else queueMicrotask(bootLiveBridge);
 })();

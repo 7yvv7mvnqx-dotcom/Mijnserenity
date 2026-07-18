@@ -1,4 +1,4 @@
-/* MijnSerenity 7.3.0 — Development Mode */
+/* MijnSerenity 7.3.1 — Development Mode */
 (()=>{
   'use strict';
 
@@ -90,7 +90,7 @@
     const card=document.createElement('div');
     card.id='developmentDashboardCard';
     card.className='card development-dashboard-card';
-    card.innerHTML=`<span class="development-local-pill">🧪 TESTOMGEVING</span><h3>Veilig verder bouwen</h3><p class="small">Deze branch gebruikt alleen lokale voorbeeldgegevens. Supabase, productieaccounts en echte foto-opslag worden niet benaderd.</p><div class="development-dashboard-grid"><div><span>Data</span><strong>Lokaal op dit apparaat</strong></div><div><span>Home Assistant</span><strong>Demo of live-koppeling</strong></div><div><span>Opslagverkeer</span><strong>0 GB Supabase</strong></div><div><span>Versie</span><strong>7.3.0 DEV</strong></div></div>`;
+    card.innerHTML=`<span class="development-local-pill">🧪 TESTOMGEVING</span><h3>Veilig verder bouwen</h3><p class="small">Deze branch gebruikt alleen lokale voorbeeldgegevens. Supabase, productieaccounts en echte foto-opslag worden niet benaderd.</p><div class="development-dashboard-grid"><div><span>Data</span><strong>Lokaal op dit apparaat</strong></div><div><span>Home Assistant</span><strong>Demo of live-koppeling</strong></div><div><span>Opslagverkeer</span><strong>0 GB Supabase</strong></div><div><span>Versie</span><strong>7.3.1 DEV</strong></div></div>`;
     if(anchor)anchor.insertAdjacentElement('afterend',card);else dashboard.prepend(card);
   }
 
