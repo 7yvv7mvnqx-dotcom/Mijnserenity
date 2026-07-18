@@ -15,3 +15,4 @@ Upload deze versie eerst naar een aparte GitHub-branch, bijvoorbeeld `developmen
 - De Home Assistant-uitbreiding uit 7.2.0 is behouden.
 
 Na herstel van Supabase: zet eerst alleen deze versie live en controleer daarna gedurende 24 uur `Usage > Egress`.
+Netlify development-deploy geactiveerd.
