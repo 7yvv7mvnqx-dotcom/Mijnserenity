@@ -1,4 +1,4 @@
-/* MijnSerenity 7.3.3 — twee Home Assistant-camera's met play/pauze */
+/* MijnSerenity 7.3.4 — twee Home Assistant-camera's met play/pauze */
 (()=>{
   'use strict';
   const KEY='mijnserenity-live-camera-config-v733';
@@ -53,7 +53,8 @@
 
   function clearTimer(rt){if(rt.timer){clearTimeout(rt.timer);rt.timer=null}}
   function revoke(rt){if(rt.objectUrl){URL.revokeObjectURL(rt.objectUrl);rt.objectUrl=''}}
-  function schedule(camera,delay=1200){
+  function refreshDelay(camera){return camera?.key==='radarbeugel'?5000:1200}
+  function schedule(camera,delay=refreshDelay(camera)){
     const rt=state(camera.key);clearTimer(rt);
     if(!rt.playing||document.hidden||!liveVisible())return;
     rt.timer=setTimeout(()=>loadFrame(camera),Math.max(850,delay));
@@ -109,7 +110,7 @@
       }
     }finally{
       rt.busy=false;el(camera.key,'loading')?.classList.add('hidden');updateButton(camera);
-      if(rt.playing)schedule(camera,rt.failures?3000:1200);
+      if(rt.playing)schedule(camera,rt.failures?3000:refreshDelay(camera));
     }
   }
 
@@ -147,12 +148,12 @@
   }
 
   function settingsHtml(list){return `<details class="ms732-camera-settings"><summary>⚙️ Camera’s instellen</summary><div class="ms732-camera-settings-grid">${list.map((camera,index)=>`<label>${escape(camera.name)}<input id="ms732-setting-name-${index}" value="${escape(camera.name)}"></label><label>Home Assistant-entiteit<input id="ms732-setting-entity-${index}" value="${escape(camera.entityId)}" placeholder="camera.naam_live_weergave"></label>`).join('')}</div><div class="actions"><button type="button" onclick="ms732SaveCameraSettings()">💾 Bewaren</button><button type="button" class="secondary" onclick="captainNavigate('entertainment')">🏠 Home Assistant koppelen</button></div><p class="ms732-camera-help">Standaard: <code>camera.serenity_live_weergave</code> en <code>camera.oprit_live_weergave</code>. De beelden lopen rechtstreeks via Home Assistant en gebruiken geen Supabase-opslag.</p></details>`}
-  function tile(camera){return `<article class="ms732-camera-tile"><div class="ms732-camera-title-row"><h3>${escape(camera.name)}</h3><span id="ms732-${escape(camera.key)}-badge" class="ms732-camera-badge">Gereed</span></div><div class="ms732-camera-viewport"><img id="ms732-${escape(camera.key)}-image" class="hidden" alt="${escape(camera.name)}"><div id="ms732-${escape(camera.key)}-placeholder" class="ms732-camera-placeholder"><span>📹</span><b>${escape(camera.name)}</b><small>Tik op Afspelen voor actueel beeld.</small></div><div id="ms732-${escape(camera.key)}-loading" class="ms732-camera-loading hidden">Beeld ophalen…</div></div><div class="ms732-camera-meta"><span id="ms732-${escape(camera.key)}-message">Nog niet gestart</span><span>${escape(camera.entityId)}</span></div><div class="ms732-camera-actions"><button id="ms732-${escape(camera.key)}-toggle" type="button" onclick="ms732ToggleCamera('${escape(camera.key)}')">▶ Afspelen</button><button type="button" class="secondary" onclick="ms732RefreshCamera('${escape(camera.key)}')">↻ Nu</button><button type="button" class="secondary" onclick="ms732OpenCameraFullscreen('${escape(camera.key)}')">⛶ Groot</button></div></article>`}
+  function tile(camera){return `<article class="ms732-camera-tile"><div class="ms732-camera-title-row"><h3>${escape(camera.name)}</h3><span id="ms732-${escape(camera.key)}-badge" class="ms732-camera-badge">Gereed</span></div><div class="ms732-camera-viewport"><img id="ms732-${escape(camera.key)}-image" class="hidden" alt="${escape(camera.name)}"><div id="ms732-${escape(camera.key)}-placeholder" class="ms732-camera-placeholder"><span>📹</span><b>${escape(camera.name)}</b><small>Tik op Afspelen voor actueel beeld.</small></div><div id="ms732-${escape(camera.key)}-loading" class="ms732-camera-loading hidden">Beeld ophalen…</div></div><div class="ms732-camera-meta"><span id="ms732-${escape(camera.key)}-message">Nog niet gestart</span><span>${escape(camera.entityId)}${camera.key==='radarbeugel'?' · 5 sec':''}</span></div><div class="ms732-camera-actions"><button id="ms732-${escape(camera.key)}-toggle" type="button" onclick="ms732ToggleCamera('${escape(camera.key)}')">▶ Afspelen</button><button type="button" class="secondary" onclick="ms732RefreshCamera('${escape(camera.key)}')">↻ Nu</button><button type="button" class="secondary" onclick="ms732OpenCameraFullscreen('${escape(camera.key)}')">⛶ Groot</button></div></article>`}
 
   function render(){
     const target=board();if(!target)return false;
     const list=cameras();target.classList.add('ms732-camera-board');
-    target.innerHTML=`<div class="ms732-camera-board-head"><div><span class="eyebrow">HOME ASSISTANT · LIVE CAMERA’S</span><h2>Radarbeugel en oprit</h2><p class="small">Twee beveiligde camera’s met afzonderlijke play- en pauzeknop.</p></div><div class="ms732-camera-board-actions"><button type="button" onclick="ms732PlayAllLiveCameras()">▶ Alles afspelen</button><button type="button" class="secondary" onclick="ms732PauseAllLiveCameras()">⏸ Alles pauzeren</button></div></div><div class="ms732-camera-grid">${list.map(tile).join('')}</div>${settingsHtml(list)}`;
+    target.innerHTML=`<div class="ms732-camera-board-head"><div><span class="eyebrow">HOME ASSISTANT · LIVE CAMERA’S</span><h2>Radarbeugel en oprit</h2><p class="small">Twee beveiligde camera’s met afzonderlijke play- en pauzeknop. De radarbeugel ververst iedere 5 seconden.</p></div><div class="ms732-camera-board-actions"><button type="button" onclick="ms732PlayAllLiveCameras()">▶ Alles afspelen</button><button type="button" class="secondary" onclick="ms732PauseAllLiveCameras()">⏸ Alles pauzeren</button></div></div><div class="ms732-camera-grid">${list.map(tile).join('')}</div>${settingsHtml(list)}`;
     for(const camera of list)updateButton(camera);
     return true;
   }

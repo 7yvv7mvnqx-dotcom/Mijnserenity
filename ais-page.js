@@ -1,5 +1,5 @@
 /* ============================================================
-   MijnSerenity Cloud 7.3.3 — gratis MyShipTracking AIS-widget
+   MijnSerenity Cloud 7.3.4 — gratis MyShipTracking AIS-widget
    ============================================================ */
 
 const MS711_WIDGET_SCRIPT='https://www.myshiptracking.com/js/widgetApi.js';

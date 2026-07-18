@@ -1,8 +1,8 @@
-/* MijnSerenity 7.3.3 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.3.4 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='7.3.3';
+  const BUILD='7.3.4';
   const VERSION='7330';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,

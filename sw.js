@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.3.3-live-home-assistant';
+const CACHE_NAME='mijnserenity-7.3.4-radar-5sec';
 const APP_SHELL=[
   '/',
   '/index.html',
