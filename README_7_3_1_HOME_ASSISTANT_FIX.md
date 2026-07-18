@@ -1,4 +1,4 @@
-# MijnSerenity 7.3.1 — Home Assistant verbindingsfix
+# MijnSerenity 7.3.2 — Home Assistant verbindingsfix
 
 Upload alle losse bestanden uitsluitend naar de GitHub-branch `development`.
 
@@ -10,4 +10,4 @@ Upload alle losse bestanden uitsluitend naar de GitHub-branch `development`.
 - De test toont meteen een voortgangs- of foutmelding.
 - Geen Supabase-verkeer in de DEV-omgeving.
 
-Gebruik als commitbericht: `MijnSerenity 7.3.1 Home Assistant verbindingsfix`.
+Gebruik als commitbericht: `MijnSerenity 7.3.2 Home Assistant verbindingsfix`.

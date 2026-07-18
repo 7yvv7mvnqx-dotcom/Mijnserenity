@@ -1,0 +1,59 @@
+/* MijnSerenity 7.3.2 — dubbele livecamera's in Live varen */
+.live-radar-camera-card.ms732-camera-board{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-width:0;
+}
+.ms732-camera-board-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.ms732-camera-board-head h2{margin:3px 0 4px}
+.ms732-camera-board-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.ms732-camera-grid{display:grid;grid-template-columns:1fr;gap:12px;min-height:0}
+.ms732-camera-tile{
+  background:linear-gradient(160deg,rgba(6,24,41,.96),rgba(13,54,76,.92));
+  border:1px solid rgba(128,210,238,.22);
+  border-radius:18px;
+  padding:12px;
+  min-width:0;
+  box-shadow:0 12px 28px rgba(0,0,0,.2);
+}
+.ms732-camera-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.ms732-camera-title-row h3{margin:0;font-size:1.03rem}
+.ms732-camera-badge{font-size:.72rem;font-weight:800;padding:5px 9px;border-radius:999px;background:#26384b;color:#c7d3de;white-space:nowrap}
+.ms732-camera-badge.live{background:#0f634f;color:#caffec}
+.ms732-camera-badge.loading{background:#73580c;color:#fff1b8}
+.ms732-camera-badge.error{background:#7d2630;color:#ffd8dc}
+.ms732-camera-viewport{
+  position:relative;
+  min-height:170px;
+  aspect-ratio:16/9;
+  border-radius:14px;
+  overflow:hidden;
+  background:#020b12;
+  display:grid;
+  place-items:center;
+}
+.ms732-camera-viewport img{width:100%;height:100%;object-fit:cover;display:block}
+.ms732-camera-placeholder{padding:18px;text-align:center;color:#aabecb;display:grid;gap:5px;place-items:center}
+.ms732-camera-placeholder span{font-size:2rem}
+.ms732-camera-loading{position:absolute;inset:auto 10px 10px 10px;background:rgba(3,15,25,.86);border-radius:10px;padding:8px 10px;font-size:.78rem;text-align:center}
+.ms732-camera-meta{display:flex;justify-content:space-between;gap:8px;margin:8px 2px 0;color:#9fb6c4;font-size:.72rem}
+.ms732-camera-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.ms732-camera-actions button{min-height:38px;padding:8px 11px}
+.ms732-camera-settings{border-top:1px solid rgba(128,210,238,.2);padding-top:12px}
+.ms732-camera-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ms732-camera-settings label{display:grid;gap:5px;font-size:.78rem;color:#b7cad5}
+.ms732-camera-settings input{width:100%}
+.ms732-camera-help{margin:8px 0 0;color:#9fb6c4;font-size:.75rem}
+.ms732-camera-fullscreen{position:fixed;inset:0;z-index:9999;background:rgba(0,7,12,.96);display:flex;flex-direction:column;padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));gap:10px}
+.ms732-camera-fullscreen.hidden{display:none}
+.ms732-camera-fullscreen-head{display:flex;align-items:center;justify-content:space-between;color:white}
+.ms732-camera-fullscreen img{flex:1;min-height:0;width:100%;object-fit:contain;border-radius:16px;background:black}
+.ms732-camera-fullscreen button{font-size:1.5rem;min-width:48px}
+@media(min-width:1100px){.ms732-camera-grid{grid-template-columns:1fr 1fr}.ms732-camera-viewport{min-height:150px}}
+@media(max-width:720px){.ms732-camera-board-head{display:block}.ms732-camera-board-actions{justify-content:flex-start;margin-top:10px}.ms732-camera-settings-grid{grid-template-columns:1fr}.ms732-camera-viewport{min-height:190px}}

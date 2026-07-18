@@ -1,9 +1,9 @@
-/* MijnSerenity 7.3.1 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.3.2 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='7.3.1';
-  const VERSION='7310';
+  const BUILD='7.3.2';
+  const VERSION='7320';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `mission-control.js?v=${VERSION}`,
@@ -16,6 +16,7 @@
     `entertainment-page.js?v=${VERSION}`,
     `development-mode.js?v=${VERSION}`,
     `ha-live-bridge.js?v=${VERSION}`,
+    `live-cameras.js?v=${VERSION}`,
     `page-swipe.js?v=${VERSION}`
   ];
   const SUPABASE_SOURCES=[

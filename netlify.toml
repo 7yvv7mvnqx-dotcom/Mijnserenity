@@ -45,7 +45,7 @@
   to = "/index.html"
   status = 200
 
-# MijnSerenity 7.3.1 — voorkom gemengde PWA-versies
+# MijnSerenity 7.3.2 — voorkom gemengde PWA-versies
 [[headers]]
   for = "/index.html"
   [headers.values]
@@ -61,7 +61,7 @@
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
-# MijnSerenity 7.3.1 — development assets
+# MijnSerenity 7.3.2 — development assets
 [[headers]]
   for = "/development-mode.js"
   [headers.values]
@@ -69,5 +69,15 @@
 
 [[headers]]
   for = "/ha-live-bridge.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/live-cameras.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/live-cameras.css"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"

@@ -1,10 +1,11 @@
-/* MijnSerenity 7.3.1 DEV — officiële Home Assistant OAuth + WebSocket koppeling */
+/* MijnSerenity 7.3.2 DEV — officiële Home Assistant OAuth + WebSocket koppeling */
 (()=>{
   'use strict';
 
   const AUTH_KEY='mijnserenity-ha-oauth-v730';
   const OAUTH_STATE_KEY='mijnserenity-ha-oauth-state-v730';
   const SELECT_KEY='mijnserenity-ha-selection-v730';
+  const LIVE_CAMERA_KEY='mijnserenity-ha-live-cameras-v732';
   const ALLOWED_DOMAINS=new Set(['light','media_player','remote','camera','switch','scene']);
   let installed=false;
   let discovered=[];
@@ -268,7 +269,8 @@
   }
   function defaultSelected(entity){
     if(entity.domain==='light'||entity.domain==='scene')return true;
-    if(entity.domain==='camera'||entity.domain==='switch')return contains(entity,['ring','doorbell','voordeur']);
+    if(entity.domain==='camera')return contains(entity,['ring','doorbell','voordeur','oprit','serenity','radarbeugel','live_weergave']);
+    if(entity.domain==='switch')return contains(entity,['ring','doorbell','voordeur']);
     if(entity.domain==='remote')return contains(entity,['apple','tv']);
     if(entity.domain==='media_player')return contains(entity,['sonos','apple tv','apple_tv']);
     return false;
@@ -293,7 +295,7 @@
       renderGroup('Hue / verlichting','💡','light',4),
       renderGroup('Sonos / mediaspelers','🔊','media_player',4),
       renderGroup('Apple TV afstandsbediening','📺','remote',1),
-      renderGroup('Ring-camera','🔔','camera',1),
+      renderGroup('Camera’s','📹','camera',4),
       renderGroup('Schakelaars','👁','switch',1),
       renderGroup('Scènes','✨','scene',4)
     ].join('');
@@ -341,15 +343,23 @@
     const lights=selectedByDomain('light').slice(0,4).map(entity).filter(Boolean);
     const media=selectedByDomain('media_player').map(entity).filter(Boolean);
     const remotes=selectedByDomain('remote').slice(0,1).map(entity).filter(Boolean);
-    const cameras=selectedByDomain('camera').slice(0,1).map(entity).filter(Boolean);
+    const cameras=selectedByDomain('camera').slice(0,4).map(entity).filter(Boolean);
     const switches=selectedByDomain('switch').slice(0,1).map(entity).filter(Boolean);
     const scenes=selectedByDomain('scene').slice(0,4).map(entity).filter(Boolean);
     const appleMedia=media.find(item=>contains(item,['apple tv','apple_tv','appletv']))||null;
     const players=media.filter(item=>item!==appleMedia).slice(0,3);
     const auth=authData();
+    const liveCameras=cameras.map((item,index)=>({
+      key:keyFor(item,index,'camera'),
+      name:item.name,
+      entityId:item.entity_id
+    }));
+    localStorage.setItem(LIVE_CAMERA_KEY,JSON.stringify(liveCameras));
+    window.dispatchEvent(new CustomEvent('mijnserenity-ha-cameras-updated',{detail:liveCameras}));
+    const ringCamera=cameras.find(item=>contains(item,['ring','doorbell','voordeur']))||cameras[0]||null;
     const config=ms712NormaliseConfig({
       ...ms712Config(),enabled:true,haBaseUrl:auth?.baseUrl||'',dashboardPath:'/',webhookId:'oauth_websocket',
-      ring:{name:cameras[0]?.name||'Ring beveiliging',cameraEntity:cameras[0]?.entity_id||'',motionSwitchEntity:switches[0]?.entity_id||''},
+      ring:{name:ringCamera?.name||'Ring beveiliging',cameraEntity:ringCamera?.entity_id||'',motionSwitchEntity:switches[0]?.entity_id||''},
       hue:{lights:ms712DefaultLights().map((slot,index)=>lights[index]?{key:keyFor(lights[index],index,'licht'),name:lights[index].name,entityId:lights[index].entity_id}:slot)},
       players:ms712DefaultPlayers().map((slot,index)=>players[index]?{key:keyFor(players[index],index,'speler'),name:players[index].name,entityId:players[index].entity_id}:slot),
       appleTv:{name:appleMedia?.name||remotes[0]?.name||'Apple TV',mediaEntity:appleMedia?.entity_id||'',remoteEntity:remotes[0]?.entity_id||''},
@@ -445,6 +455,35 @@
     }catch(error){ms712SetStatus?.(error.message,'error');return false}
   }
 
+  async function fetchCameraFrame(entityId){
+    const id=String(entityId||'').trim();
+    if(!id||!id.startsWith('camera.'))throw new Error('Kies een geldige Home Assistant-camera.');
+    const auth=authData();
+    if(!auth?.baseUrl)throw new Error('Home Assistant is nog niet gekoppeld.');
+    const token=await currentAccessToken();
+    const response=await fetch(`${auth.baseUrl}/api/camera_proxy/${encodeURIComponent(id)}`,{
+      method:'GET',
+      headers:{Authorization:`Bearer ${token}`},
+      cache:'no-store',
+      credentials:'omit'
+    });
+    if(!response.ok){
+      let message='';
+      try{message=await response.text()}catch{}
+      throw new Error(message||`Camerabeeld ophalen mislukt (${response.status}).`);
+    }
+    const blob=await response.blob();
+    if(!blob.size)throw new Error('Home Assistant leverde een leeg camerabeeld.');
+    return blob;
+  }
+
+  function selectedLiveCameras(){
+    try{
+      const list=JSON.parse(localStorage.getItem(LIVE_CAMERA_KEY)||'[]');
+      return Array.isArray(list)?list:[];
+    }catch{return []}
+  }
+
   function install(){
     if(installed)return;installed=true;injectWizard();
     window.MIJSERENITY_HA_BRIDGE_READY=true;
@@ -453,6 +492,9 @@
     window.ms730TestConnection=testConnection;
     window.ms730DiscoverDevices=discoverDevices;
     window.ms730ApplySelection=applySelection;
+    window.ms730FetchCameraFrame=fetchCameraFrame;
+    window.ms730GetSelectedLiveCameras=selectedLiveCameras;
+    window.ms730HomeAssistantConnected=()=>Boolean(authData());
     window.ms730ToggleAdvanced=toggleAdvanced;
     window.ms712SendCommand=sendCommand;
     window.ms712OpenHomeAssistant=()=>{
@@ -477,7 +519,7 @@
   const callbackPromise=processOAuthCallback().catch(error=>{window.MIJSERENITY_HA_CALLBACK_ERROR=error.message;console.error(error)});
   window.MIJSERENITY_HA_CALLBACK_PROMISE=callbackPromise;
 
-  // 7.3.1: initialiseer de live bridge altijd zelf. De DEV-auto-open kon eerder
+  // 7.3.2: initialiseer de live bridge altijd zelf. De DEV-auto-open kon eerder
   // sneller starten dan dit bestand was geladen, waardoor de wizard wel zichtbaar
   // was maar de knoppen nog geen functies hadden.
   function bootLiveBridge(){
