@@ -1,5 +1,5 @@
 
-/* MijnSerenity 7.4.6 — Mission Control */
+/* MijnSerenity 7.4.7 — Mission Control */
 let ms700DiagnosticResults=[];
 let ms700DiagnosticsBusy=false;
 let ms700BackupBusy=false;
@@ -280,7 +280,7 @@ function ms700RenderDiagnostics(){
 }
 function ms700SystemReport(){
   const s=ms700Snapshot();
-  return [`MijnSerenity 7.4.6 systeemrapport`,`Datum: ${new Date().toLocaleString('nl-NL')}`,
+  return [`MijnSerenity 7.4.7 systeemrapport`,`Datum: ${new Date().toLocaleString('nl-NL')}`,
     `Boot: ${currentBoat?.name||'Serenity'}`,`Mission-score: ${s.score}/100`,
     `Vertrekcheck: ${s.readiness}/100`,`Datakwaliteit: ${s.data.score}/100`,
     `Online: ${navigator.onLine?'ja':'nee'}`,'','Diagnose:',

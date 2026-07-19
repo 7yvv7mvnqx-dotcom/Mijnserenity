@@ -1,4 +1,4 @@
-/* MijnSerenity 7.4.6 — twee Home Assistant-camera's met play/pauze */
+/* MijnSerenity 7.4.7 — twee Home Assistant-camera's met play/pauze */
 (()=>{
   'use strict';
   const KEY='mijnserenity-live-camera-config-v733';

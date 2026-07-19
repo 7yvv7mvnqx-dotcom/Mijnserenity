@@ -29,29 +29,29 @@ window.repairMijnSerenity=async function(){
   window.location.replace(url.toString());
 };
 </script>
-<link rel="manifest" href="manifest.json?v=7440">
+<link rel="manifest" href="manifest.json?v=7470">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7440">
-  <link rel="stylesheet" href="ha-live-bridge.css?v=7440">
-  <link rel="stylesheet" href="live-cameras.css?v=7440">
-  <link rel="stylesheet" href="mission-control.css?v=7440">
-  <link rel="stylesheet" href="easy-auto.css?v=7440">
-<link rel="stylesheet" href="auto-track-reliability.css?v=7440">
-<link rel="stylesheet" href="gps-continuity-guard.css?v=7440">
-<link rel="stylesheet" href="waterkaarten-split-launch.css?v=7440">
-  <link rel="stylesheet" href="live-split.css?v=7440">
-  <link rel="stylesheet" href="route-control.css?v=7440">
-  <link rel="stylesheet" href="page-swipe.css?v=7440">
-  <link rel="stylesheet" href="weather-page.css?v=7440">
-  <link rel="stylesheet" href="weather-radar.css?v=7440">
-  <link rel="stylesheet" href="ais-page.css?v=7440">
-  <link rel="stylesheet" href="entertainment-page.css?v=7440">
-  <link rel="stylesheet" href="navigation-compact.css?v=7440">
+<link rel="stylesheet" href="styles.css?v=7470">
+  <link rel="stylesheet" href="ha-live-bridge.css?v=7470">
+  <link rel="stylesheet" href="live-cameras.css?v=7470">
+  <link rel="stylesheet" href="mission-control.css?v=7470">
+  <link rel="stylesheet" href="easy-auto.css?v=7470">
+<link rel="stylesheet" href="auto-track-reliability.css?v=7470">
+<link rel="stylesheet" href="gps-continuity-guard.css?v=7470">
+<link rel="stylesheet" href="waterkaarten-split-launch.css?v=7470">
+  <link rel="stylesheet" href="live-split.css?v=7470">
+  <link rel="stylesheet" href="route-control.css?v=7470">
+  <link rel="stylesheet" href="page-swipe.css?v=7470">
+  <link rel="stylesheet" href="weather-page.css?v=7470">
+  <link rel="stylesheet" href="weather-radar.css?v=7470">
+  <link rel="stylesheet" href="ais-page.css?v=7470">
+  <link rel="stylesheet" href="entertainment-page.css?v=7470">
+  <link rel="stylesheet" href="navigation-compact.css?v=7470">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7440">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7440">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7470">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7470">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -60,7 +60,7 @@ window.repairMijnSerenity=async function(){
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7440" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7470" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -102,7 +102,7 @@ window.repairMijnSerenity=async function(){
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7440" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7470" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -125,20 +125,20 @@ window.repairMijnSerenity=async function(){
 
 <section id="appView" class="hidden">
   <div class="tabs">
-    <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
-    <button class="tab" onclick="showTab('live',this);initLiveMode()">Live varen</button>
-    <button class="tab" onclick="showTab('ais',this);initAisPage()">AIS</button>
-    <button class="tab" onclick="showTab('weather',this);initWeatherPage()">Weer</button>
-    <button class="tab" onclick="showTab('map',this);initMap()">Kaart</button>
-    <button class="tab" onclick="showTab('planner',this);initPlanner()">Reisplanner</button>
-    <button class="tab" onclick="showTab('entertainment',this);initEntertainmentPage()">Home Assistant</button>
-    <button class="tab" onclick="showTab('technical',this);initTechnicalDashboard()">Techniek</button>
-    <button class="tab" onclick="showTab('pois',this)">POI's</button>
-    <button class="tab" onclick="showTab('logbook',this)">Logboek</button>
-    <button class="tab" onclick="showTab('costs',this)">Kosten</button>
-    <button class="tab" onclick="showTab('finance',this);renderFinance()">Financieel</button>
-    <button class="tab" onclick="showTab('settings',this);loadSettingsForm()">Instellingen</button>
-    <button id="boatManagementTab" class="tab admin-only"
+    <button class="tab active" data-target="dashboard" onclick="showTab('dashboard',this)">Dashboard</button>
+    <button class="tab" data-target="live" onclick="showTab('live',this);initLiveMode()">Live varen</button>
+    <button class="tab" data-target="ais" onclick="showTab('ais',this);initAisPage()">AIS</button>
+    <button class="tab" data-target="weather" onclick="showTab('weather',this);initWeatherPage()">Weer</button>
+    <button class="tab" data-target="map" onclick="showTab('map',this);initMap()">Kaart</button>
+    <button class="tab" data-target="planner" onclick="showTab('planner',this);initPlanner()">Reisplanner</button>
+    <button class="tab" data-target="entertainment" onclick="showTab('entertainment',this);initEntertainmentPage()">Home Assistant</button>
+    <button class="tab" data-target="technical" onclick="showTab('technical',this);initTechnicalDashboard()">Techniek</button>
+    <button class="tab" data-target="pois" onclick="showTab('pois',this)">POI's</button>
+    <button class="tab" data-target="logbook" onclick="showTab('logbook',this)">Logboek</button>
+    <button class="tab" data-target="costs" onclick="showTab('costs',this)">Kosten</button>
+    <button class="tab" data-target="finance" onclick="showTab('finance',this);renderFinance()">Financieel</button>
+    <button class="tab" data-target="settings" onclick="showTab('settings',this);loadSettingsForm()">Instellingen</button>
+    <button id="boatManagementTab" class="tab admin-only" data-target="boat"
       onclick="showTab('boat',this)">Boot & delen</button>
   </div>
 
@@ -530,65 +530,65 @@ window.repairMijnSerenity=async function(){
     </section>
 
     <div class="dashboard-actions">
-      <button class="dashboard-tile tile-live" onclick="captainNavigate('live')">
+      <button type="button" class="dashboard-tile tile-live" data-route="live" onclick="dashboardNavigate('live',event)">
         <span class="tile-icon-shell"><span class="tile-icon">⛵</span></span>
         <span class="tile-copy"><b>Live varen</b><small>GPS, snelheid en route</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
-      <button class="dashboard-tile tile-map" onclick="goToTab('map')">
+      <button type="button" class="dashboard-tile tile-map" data-route="map" onclick="dashboardNavigate('map',event)">
         <span class="tile-icon-shell"><span class="tile-icon">🗺️</span></span>
         <span class="tile-copy"><b>Kaart</b><small>POI’s en positie</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
-      <button class="dashboard-tile tile-waterkaarten" type="button"
+      <button class="dashboard-tile tile-waterkaarten" type="button" data-route="waterkaarten"
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7440" alt="">
+          <img src="waterkaarten-dashboard.png?v=7470" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
-      <button class="dashboard-tile tile-planner" onclick="captainNavigate('planner')">
+      <button type="button" class="dashboard-tile tile-planner" data-route="planner" onclick="dashboardNavigate('planner',event)">
         <span class="tile-icon-shell"><span class="tile-icon">🧭</span></span>
         <span class="tile-copy"><b>Reisplanner</b><small>Route, tijd en brandstof</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
-      <button class="dashboard-tile tile-technical" onclick="captainNavigate('technical')">
+      <button type="button" class="dashboard-tile tile-technical" data-route="technical" onclick="dashboardNavigate('technical',event)">
         <span class="tile-icon-shell"><span class="tile-icon">⚙️</span></span>
         <span class="tile-copy"><b>Techniek</b><small id="dashboardTechnicalStatus">Controleer Serenity</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
-      <button class="dashboard-tile tile-logbook" onclick="goToTab('logbook')">
+      <button type="button" class="dashboard-tile tile-logbook" data-route="logbook" onclick="dashboardNavigate('logbook',event)">
         <span class="tile-icon-shell"><span class="tile-icon">📖</span></span>
         <span class="tile-copy"><b>Logboek</b><small id="dTrips">0 vaartochten</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
-      <button class="dashboard-tile tile-poi" onclick="goToTab('pois')">
+      <button type="button" class="dashboard-tile tile-poi" data-route="pois" onclick="dashboardNavigate('pois',event)">
         <span class="tile-icon-shell"><span class="tile-icon">📍</span></span>
         <span class="tile-copy"><b>POI’s</b><small id="dPois">0 locaties</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
-      <button class="dashboard-tile tile-finance" onclick="openFinanceFromDashboard()">
+      <button type="button" class="dashboard-tile tile-finance" data-route="finance" onclick="dashboardNavigate('finance',event)">
         <span class="tile-icon-shell"><span class="tile-icon">💶</span></span>
         <span class="tile-copy"><b>Financieel</b><small id="dCosts">€0</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
-      <button class="dashboard-tile tile-costs" onclick="goToTab('costs')">
+      <button type="button" class="dashboard-tile tile-costs" data-route="costs" onclick="dashboardNavigate('costs',event)">
         <span class="tile-icon-shell"><span class="tile-icon">🧾</span></span>
         <span class="tile-copy"><b>Kosten</b><small>Toevoegen en bekijken</small></span>
         <span class="tile-arrow">›</span>
       </button>
 
-      <button class="dashboard-tile tile-settings" onclick="goToTab('settings')">
+      <button type="button" class="dashboard-tile tile-settings" data-route="settings" onclick="dashboardNavigate('settings',event)">
         <span class="tile-icon-shell"><span class="tile-icon">⚙️</span></span>
         <span class="tile-copy"><b>Instellingen</b><small>Brandstof en boot</small></span>
         <span class="tile-arrow">›</span>
@@ -1645,7 +1645,7 @@ window.repairMijnSerenity=async function(){
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.4.2</span>
+        <span class="planner-version-badge">7.4.7</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -4421,6 +4421,6 @@ window.repairMijnSerenity=async function(){
   </div>
 </div>
 
-<script src="auth-bootstrap.js?v=7440"></script>
+<script src="auth-bootstrap.js?v=7470"></script>
 </body>
 </html>

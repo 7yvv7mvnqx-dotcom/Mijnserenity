@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.4.6 — native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.4.7 — native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -87,26 +87,11 @@ function ms708SetNavigationState(id){
     );
   });
 
-  const desktopMap={
-    dashboard:0,
-    live:1,
-    ais:2,
-    weather:3,
-    map:4,
-    planner:5,
-    entertainment:6,
-    technical:7,
-    pois:8,
-    logbook:9,
-    finance:11,
-    settings:12
-  };
-
   document.querySelectorAll('.tab')
-    .forEach((tab,index)=>{
+    .forEach(tab=>{
       tab.classList.toggle(
         'active',
-        index===desktopMap[id]
+        tab.dataset.target===id
       );
     });
 

@@ -1,4 +1,4 @@
-/* MijnSerenity 7.4.6 — Polis & Periodieke Kosten Guard */
+/* MijnSerenity 7.4.7 — Polis & Periodieke Kosten Guard */
 (()=>{
   'use strict';
 
@@ -850,5 +850,5 @@
 
   const retry=document.getElementById('costOcrRetryButton');
   if(retry)retry.textContent='✨ Gegevens opnieuw uit foto/PDF lezen';
-  console.info('MijnSerenity 7.4.6 Polis & Periodieke Kosten Guard actief.');
+  console.info('MijnSerenity 7.4.7 Polis & Periodieke Kosten Guard actief.');
 })();
