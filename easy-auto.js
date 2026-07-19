@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.8 — Eenvoudig automatisch varen
+   MijnSerenity Cloud 7.4.0 — Eenvoudig automatisch varen
    ============================================================ */
 
 let ms701BootTimer=null;
@@ -502,20 +502,27 @@ window.addEventListener(
   {passive:true}
 );
 
-document.addEventListener(
-  'DOMContentLoaded',
-  ()=>{
-    ms701ApplySimpleMode();
-    ms704ApplyDefaultOffOnce();
-    ms701Render();
+function ms739InitialiseEasyAuto(){
+  ms701ApplySimpleMode();
+  ms704ApplyDefaultOffOnce();
+  ms701Render();
 
-    clearInterval(ms701BootTimer);
-    ms701BootTimer=setInterval(
-      ms701AutoBoot,
-      6000
-    );
+  clearInterval(ms701BootTimer);
+  ms701BootTimer=setInterval(
+    ms701AutoBoot,
+    6000
+  );
 
-    setTimeout(ms701AutoBoot,1200);
-    setTimeout(ms701AutoBoot,3500);
-  }
-);
+  setTimeout(ms701AutoBoot,1200);
+  setTimeout(ms701AutoBoot,3500);
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener(
+    'DOMContentLoaded',
+    ms739InitialiseEasyAuto,
+    {once:true}
+  );
+}else{
+  ms739InitialiseEasyAuto();
+}

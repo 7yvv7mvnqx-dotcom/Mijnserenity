@@ -1,16 +1,16 @@
 /* ============================================================
-   MijnSerenity Cloud 7.3.8 — Automatische beste GPS-bron
+   MijnSerenity Cloud 7.4.0 — Automatische beste GPS-bron
    Eén recorder, GPS-watchdog, herstel na onderbreking en diagnose
    ============================================================ */
 (()=>{
   'use strict';
 
-  const BUILD='7.3.8';
+  const BUILD='7.4.0';
   const CLAIM_TTL_MS=120000;
   const CLAIM_RENEW_MS=30000;
   const GPS_STALE_MS=18000;
   const MAX_ACCEPTED_ACCURACY_M=75;
-  const MAX_BOAT_SPEED_KMH=42;
+  const MAX_TRACKING_SPEED_KMH=180;
   const GPS_METRIC_WINDOW_MS=30000;
 
   let watchdogTimer=null;
@@ -437,10 +437,14 @@
     }else{
       selectedSpeed=0;
     }
-    const candidate=Math.min(MAX_BOAT_SPEED_KMH,Math.max(0,selectedSpeed));
+    const candidate=Math.min(MAX_TRACKING_SPEED_KMH,Math.max(0,selectedSpeed));
     recentSpeeds.push(candidate);
-    recentSpeeds=recentSpeeds.slice(-5);
-    const smoothed=median(recentSpeeds);
+    recentSpeeds=recentSpeeds.slice(-3);
+    // Garmin/iOS Doppler-snelheid is bij een nauwkeurige fix de beste bron.
+    // Alleen de uit positieverschil berekende reservesnelheid wordt licht gefilterd.
+    const smoothed=usableDeviceSpeed&&point.deviceSpeed>=0.3
+      ?candidate
+      :median(recentSpeeds);
     return {
       timestamp:point.time,
       coords:{
@@ -782,7 +786,7 @@
     stopGpsTest();
   });
 
-  document.addEventListener('DOMContentLoaded',()=>{
+  function initialiseReliability(){
     renderReliability();
     clearInterval(watchdogTimer);
     watchdogTimer=setInterval(watchdog,8000);
@@ -795,7 +799,13 @@
       }
       watchdog();
     },1800);
-  });
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',initialiseReliability,{once:true});
+  }else{
+    initialiseReliability();
+  }
 
   window.ms735ClaimRecorder=claimRecorder;
   window.ms735RenderReliability=renderReliability;

@@ -1,4 +1,4 @@
-/* MijnSerenity 7.3.8 — Waterkaarten vertrekassistent */
+/* MijnSerenity 7.4.0 — Waterkaarten vertrekassistent */
 (()=>{
   'use strict';
 

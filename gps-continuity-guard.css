@@ -1,0 +1,26 @@
+/* MijnSerenity 7.4.0 — GPS Continuity Guard */
+.ms739-gps-guard{
+  margin-top:10px;
+  padding:11px 13px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:14px;
+  background:rgba(255,255,255,.055);
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.ms739-gps-guard strong{font-size:.94rem;line-height:1.2}
+.ms739-gps-guard small{opacity:.84;line-height:1.35}
+.ms739-gps-guard.success{border-color:rgba(93,216,166,.5)}
+.ms739-gps-guard.warning{border-color:rgba(255,195,92,.58)}
+.ms739-gps-guard.error{
+  border-color:rgba(255,102,117,.75);
+  background:rgba(122,24,37,.24);
+}
+.ms739-gps-interrupted #liveRecordingBadge{
+  animation:ms739Pulse 1.25s ease-in-out infinite;
+}
+@keyframes ms739Pulse{
+  0%,100%{opacity:1}
+  50%{opacity:.58}
+}
