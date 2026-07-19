@@ -1,5 +1,5 @@
 
-/* MijnSerenity 7.4.2 — Mission Control */
+/* MijnSerenity 7.4.4 — Mission Control */
 .ms700-mission-card{position:relative;overflow:hidden;margin-bottom:14px;background:radial-gradient(circle at 100% 0,rgba(71,199,255,.21),transparent 34%),radial-gradient(circle at 0 100%,rgba(75,211,143,.12),transparent 42%),linear-gradient(145deg,rgba(7,34,49,.99),rgba(3,20,31,.99));border-color:rgba(92,214,246,.26)}
 .ms700-mission-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.ms700-mission-head h2{margin-bottom:3px}
 .ms700-mission-ring{--score:0deg;display:flex;flex:0 0 auto;align-items:center;justify-content:center;flex-direction:column;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,#092333 57%,transparent 59%),conic-gradient(#4bd38f var(--score),rgba(255,255,255,.08) 0);box-shadow:0 0 0 1px rgba(255,255,255,.08),0 13px 36px rgba(0,0,0,.3)}

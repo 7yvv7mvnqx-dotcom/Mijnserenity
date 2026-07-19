@@ -44,7 +44,7 @@
   to = "/index.html"
   status = 200
 
-# MijnSerenity 7.4.2 — voorkom gemengde PWA-versies
+# MijnSerenity 7.4.4 — voorkom gemengde PWA-versies
 [[headers]]
   for = "/index.html"
   [headers.values]
@@ -61,7 +61,7 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
 
 
-# MijnSerenity 7.4.2 — Home Assistant en livecamera-assets
+# MijnSerenity 7.4.4 — Home Assistant en livecamera-assets
 [[headers]]
   for = "/ha-live-bridge.js"
   [headers.values]
@@ -77,7 +77,7 @@
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
-# MijnSerenity 7.4.2 — compacte navigatie direct vernieuwen
+# MijnSerenity 7.4.4 — iPad navigatiecorrectie direct vernieuwen
 [[headers]]
   for = "/navigation-compact.css"
   [headers.values]

@@ -1,4 +1,4 @@
-/* MijnSerenity 7.4.2 — PDF & Receipt Reader Pro */
+/* MijnSerenity 7.4.4 — PDF & Receipt Reader Pro */
 (()=>{
   'use strict';
 
@@ -577,7 +577,7 @@
   };
 
   window.MSReceiptReaderPro={
-    version:'7.4.2',
+    version:'7.4.4',
     parseReceiptText,
     extractAmount,
     extractMerchant,
@@ -589,5 +589,5 @@
 
   const retry=document.getElementById('costOcrRetryButton');
   if(retry)retry.textContent='✨ Gegevens opnieuw uit foto/PDF lezen';
-  console.info('MijnSerenity 7.4.2 PDF & Receipt Reader Pro actief.');
+  console.info('MijnSerenity 7.4.4 PDF & Receipt Reader Pro actief.');
 })();
