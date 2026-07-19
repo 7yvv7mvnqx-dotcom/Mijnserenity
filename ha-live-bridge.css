@@ -1,4 +1,4 @@
-/* MijnSerenity 7.3.4 LIVE — eenvoudige Home Assistant-koppeling */
+/* MijnSerenity 7.3.8 LIVE — eenvoudige Home Assistant-koppeling */
 #entertainmentSettingsPanel.ms730-simple-mode > :not(.smart-home-section-head):not(#ms730HomeAssistantWizard){display:none!important}
 #ms730HomeAssistantWizard{display:grid;gap:14px;margin-top:12px}
 .ms730-wizard-card{border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:16px;background:rgba(255,255,255,.045)}

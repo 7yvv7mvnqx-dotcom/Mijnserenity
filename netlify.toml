@@ -44,7 +44,7 @@
   to = "/index.html"
   status = 200
 
-# MijnSerenity 7.3.4 — voorkom gemengde PWA-versies
+# MijnSerenity 7.3.8 — voorkom gemengde PWA-versies
 [[headers]]
   for = "/index.html"
   [headers.values]
@@ -61,7 +61,7 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
 
 
-# MijnSerenity 7.3.4 — Home Assistant en livecamera-assets
+# MijnSerenity 7.3.8 — Home Assistant en livecamera-assets
 [[headers]]
   for = "/ha-live-bridge.js"
   [headers.values]
