@@ -1,11 +1,11 @@
-/* MijnSerenity 7.3.2 DEV — officiële Home Assistant OAuth + WebSocket koppeling */
+/* MijnSerenity 7.3.6 LIVE — officiële Home Assistant OAuth + WebSocket koppeling */
 (()=>{
   'use strict';
 
-  const AUTH_KEY='mijnserenity-ha-oauth-v730';
-  const OAUTH_STATE_KEY='mijnserenity-ha-oauth-state-v730';
-  const SELECT_KEY='mijnserenity-ha-selection-v730';
-  const LIVE_CAMERA_KEY='mijnserenity-ha-live-cameras-v732';
+  const AUTH_KEY='mijnserenity-ha-oauth-v733';
+  const OAUTH_STATE_KEY='mijnserenity-ha-oauth-state-v733';
+  const SELECT_KEY='mijnserenity-ha-selection-v733';
+  const LIVE_CAMERA_KEY='mijnserenity-ha-live-cameras-v733';
   const ALLOWED_DOMAINS=new Set(['light','media_player','remote','camera','switch','scene']);
   let installed=false;
   let discovered=[];
@@ -214,7 +214,6 @@
       connectedAt:new Date().toISOString()
     });
     sessionStorage.removeItem(OAUTH_STATE_KEY);
-    localStorage.setItem('mijnserenity-dev-auto-open-v730','1');
     history.replaceState({},'',location.pathname);
     window.MIJSERENITY_HA_CALLBACK_OK=true;
     window.dispatchEvent(new CustomEvent('mijnserenity-ha-connected'));
@@ -227,8 +226,7 @@
       const nonce=randomState();
       const state={nonce,baseUrl,clientId:clientId(),redirectUri:redirectUri()};
       sessionStorage.setItem(OAUTH_STATE_KEY,JSON.stringify(state));
-      localStorage.setItem('mijnserenity-dev-auto-open-v730','1');
-      const url=new URL(`${baseUrl}/auth/authorize`);
+        const url=new URL(`${baseUrl}/auth/authorize`);
       url.searchParams.set('client_id',state.clientId);
       url.searchParams.set('redirect_uri',state.redirectUri);
       url.searchParams.set('state',nonce);
@@ -335,7 +333,7 @@
   function entity(id){return discovered.find(item=>item.entity_id===id)}
   function keyFor(item,index,prefix){return typeof ms712SafeKey==='function'?ms712SafeKey(item?.name||item?.entity_id,`${prefix}-${index+1}`):`${prefix}-${index+1}`}
 
-  function applySelection(){
+  async function applySelection(){
     if(!discovered.length){status('Haal eerst je apparaten op.','warning');return}
     const selected={};
     document.querySelectorAll('#ms730DeviceGroups input[type=checkbox]').forEach(input=>selected[input.value]=input.checked);
@@ -366,14 +364,23 @@
       scenes:ms712DefaultScenes().map((slot,index)=>scenes[index]?{key:keyFor(scenes[index],index,'scene'),name:scenes[index].name,entityId:scenes[index].entity_id}:slot),
       updatedAt:new Date().toISOString()
     });
-    technicalStateCache={...(technicalStateCache||{}),entertainment:config};
+    technicalStateCache=typeof normaliseTechnicalState==='function'
+      ?normaliseTechnicalState({...(technicalStateCache||readTechnicalLocalState?.()||{}),entertainment:config})
+      :{...(technicalStateCache||{}),entertainment:config};
+    let shared=false;
     try{
-      const current=JSON.parse(localStorage.getItem('mijnserenity-dev-state-v730')||'{}');
-      current.entertainment=config;localStorage.setItem('mijnserenity-dev-state-v730',JSON.stringify(current));
-    }catch(error){console.warn('Home Assistant-selectie opslaan mislukt',error)}
+      if(typeof persistTechnicalState==='function'&&currentBoat&&currentUser){
+        shared=await persistTechnicalState('Home Assistant-apparaten ingesteld.');
+      }
+    }catch(error){
+      console.warn('Home Assistant-selectie delen mislukt',error);
+    }
     renderEntertainmentPage?.();
-    status(`Gereed: ${ms712ConfiguredDeviceCount(config)} apparaten/scènes gekoppeld.`,`success`);
-    showAppToast?.('Home Assistant-apparaten ingesteld ✅');
+    status(shared
+      ?`Gereed: ${ms712ConfiguredDeviceCount(config)} apparaten/scènes gekoppeld en gedeeld.`
+      :`Gereed: ${ms712ConfiguredDeviceCount(config)} apparaten/scènes gekoppeld op dit apparaat.`,
+      shared?'success':'warning');
+    showAppToast?.(shared?'Home Assistant-apparaten ingesteld en gedeeld ✅':'Home Assistant-apparaten lokaal ingesteld ✅');
   }
 
   function injectWizard(){
@@ -519,7 +526,7 @@
   const callbackPromise=processOAuthCallback().catch(error=>{window.MIJSERENITY_HA_CALLBACK_ERROR=error.message;console.error(error)});
   window.MIJSERENITY_HA_CALLBACK_PROMISE=callbackPromise;
 
-  // 7.3.2: initialiseer de live bridge altijd zelf. De DEV-auto-open kon eerder
+  // 7.3.6: initialiseer de live bridge altijd zelf. De pagina kan eerder
   // sneller starten dan dit bestand was geladen, waardoor de wizard wel zichtbaar
   // was maar de knoppen nog geen functies hadden.
   function bootLiveBridge(){

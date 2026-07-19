@@ -1,0 +1,60 @@
+/* MijnSerenity 7.3.6 — betrouwbaar automatisch varen */
+.ms735-reliability{
+  margin-top:10px;
+  padding:11px;
+  border-radius:14px;
+  border:1px solid rgba(85,205,255,.18);
+  background:linear-gradient(145deg,rgba(39,135,172,.10),rgba(8,29,39,.45));
+}
+.ms735-reliability-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.ms735-reliability-head strong{display:block;color:#eefbff;font-size:13px}
+.ms735-reliability-head small{display:block;margin-top:3px;color:#a9c7d0;line-height:1.4}
+.ms735-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.ms735-badge{
+  display:inline-flex;align-items:center;min-height:25px;padding:4px 8px;
+  border-radius:999px;border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.06);color:#c9e3ea;font-size:9px;font-weight:850;
+}
+.ms735-badge.success{background:rgba(75,211,143,.12);border-color:rgba(75,211,143,.25);color:#8df0ba}
+.ms735-badge.warning{background:rgba(255,183,77,.11);border-color:rgba(255,183,77,.25);color:#ffd08a}
+.ms735-badge.error{background:rgba(255,91,91,.12);border-color:rgba(255,91,91,.25);color:#ffaaaa}
+.ms735-badge.muted{opacity:.72}
+.ms735-reliability-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.ms735-reliability-actions button{width:auto}
+.ms735-live-reliability{
+  margin-top:8px;padding:8px 10px;border-radius:11px;
+  background:rgba(41,154,196,.08);border:1px solid rgba(70,196,240,.14);
+  color:#b9dce5;font-size:10px;line-height:1.4;
+}
+body.ms735-tracking-warning .ms735-reliability,
+body.ms735-tracking-warning .ms735-live-reliability{
+  border-color:rgba(255,166,77,.35);
+  background:rgba(255,139,55,.08);
+}
+@media(max-width:640px){
+  .ms735-reliability-head{display:block}
+  .ms735-reliability-actions button{flex:1 1 auto}
+}
+
+
+/* MijnSerenity 7.3.6 — Garmin / externe GPS */
+.ms736-garmin-panel{
+  margin-top:9px;padding:9px;border-radius:12px;
+  background:rgba(4,19,28,.42);border:1px solid rgba(91,204,245,.14);
+}
+.ms736-garmin-toggle{display:flex;align-items:center;gap:9px;cursor:pointer}
+.ms736-garmin-toggle input{width:19px;height:19px;accent-color:#43c8ef;flex:0 0 auto}
+.ms736-garmin-toggle span{display:block;min-width:0}
+.ms736-garmin-toggle strong{display:block;color:#e9faff;font-size:11px}
+.ms736-garmin-toggle small{display:block;margin-top:2px;color:#91b6c1;font-size:9px;line-height:1.35}
+.ms736-gps-metrics{margin-top:7px;color:#b8d8e1;font-size:9px;line-height:1.45}
+.ms736-live-source{
+  margin-top:6px;padding:7px 10px;border-radius:10px;
+  color:#9fcbd7;background:rgba(50,175,220,.06);border:1px solid rgba(75,194,235,.12);
+  font-size:9px;line-height:1.4;
+}
