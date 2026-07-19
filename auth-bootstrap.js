@@ -1,9 +1,9 @@
-/* MijnSerenity 7.3.6 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.3.7 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='7.3.6';
-  const VERSION='7360';
+  const BUILD='7.3.7';
+  const VERSION='7370';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `mission-control.js?v=${VERSION}`,

@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.3.6">
+<meta name="mijnserenity-build" content="7.3.7">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='7.3.6';
+window.MIJSERENITY_BUILD='7.3.7';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -29,26 +29,26 @@ window.repairMijnSerenity=async function(){
   window.location.replace(url.toString());
 };
 </script>
-<link rel="manifest" href="manifest.json?v=7360">
+<link rel="manifest" href="manifest.json?v=7370">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7360">
-  <link rel="stylesheet" href="ha-live-bridge.css?v=7360">
-  <link rel="stylesheet" href="live-cameras.css?v=7360">
-  <link rel="stylesheet" href="mission-control.css?v=7360">
-  <link rel="stylesheet" href="easy-auto.css?v=7360">
-<link rel="stylesheet" href="auto-track-reliability.css?v=7360">
-  <link rel="stylesheet" href="live-split.css?v=7360">
-  <link rel="stylesheet" href="route-control.css?v=7360">
-  <link rel="stylesheet" href="page-swipe.css?v=7360">
-  <link rel="stylesheet" href="weather-page.css?v=7360">
-  <link rel="stylesheet" href="weather-radar.css?v=7360">
-  <link rel="stylesheet" href="ais-page.css?v=7360">
-  <link rel="stylesheet" href="entertainment-page.css?v=7360">
+<link rel="stylesheet" href="styles.css?v=7370">
+  <link rel="stylesheet" href="ha-live-bridge.css?v=7370">
+  <link rel="stylesheet" href="live-cameras.css?v=7370">
+  <link rel="stylesheet" href="mission-control.css?v=7370">
+  <link rel="stylesheet" href="easy-auto.css?v=7370">
+<link rel="stylesheet" href="auto-track-reliability.css?v=7370">
+  <link rel="stylesheet" href="live-split.css?v=7370">
+  <link rel="stylesheet" href="route-control.css?v=7370">
+  <link rel="stylesheet" href="page-swipe.css?v=7370">
+  <link rel="stylesheet" href="weather-page.css?v=7370">
+  <link rel="stylesheet" href="weather-radar.css?v=7370">
+  <link rel="stylesheet" href="ais-page.css?v=7370">
+  <link rel="stylesheet" href="entertainment-page.css?v=7370">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7360">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7360">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7370">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7370">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -57,7 +57,7 @@ window.repairMijnSerenity=async function(){
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7360" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7370" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -99,7 +99,7 @@ window.repairMijnSerenity=async function(){
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7360" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7370" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -285,14 +285,13 @@ window.repairMijnSerenity=async function(){
             <span id="ms735CloudBadge" class="ms735-badge warning">Delen controleren</span>
           </div>
           <div class="ms736-garmin-panel">
-            <label class="ms736-garmin-toggle">
-              <input id="ms736GarminToggle" type="checkbox" onchange="ms736SetGarminPreferred(this.checked)">
-              <span><strong>Garmin / externe GPS gekoppeld</strong><small>Gebruik externe GPS-snelheid als voorkeursmeting.</small></span>
-            </label>
+            <div class="ms736-garmin-toggle">
+              <span><strong>Automatisch de beste GPS-bron</strong><small>iOS gebruikt Garmin zodra die gekoppeld en bruikbaar is; anders neemt MijnSerenity automatisch de GPS van de iPhone of iPad.</small></span>
+            </div>
             <div id="ms736GpsMetrics" class="ms736-gps-metrics">Nog geen GPS-metingen ontvangen.</div>
           </div>
           <div class="ms735-reliability-actions">
-            <button type="button" class="secondary" onclick="ms735RunGpsTest()">⌖ Garmin/GPS-test 30 sec</button>
+            <button type="button" class="secondary" onclick="ms735RunGpsTest()">⌖ GPS-brontest 30 sec</button>
             <button type="button" class="secondary" onclick="captainNavigate('live')">Open live controle</button>
           </div>
         </div>
@@ -544,7 +543,7 @@ window.repairMijnSerenity=async function(){
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7360" alt="">
+          <img src="waterkaarten-dashboard.png?v=7370" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -638,7 +637,7 @@ window.repairMijnSerenity=async function(){
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.3.6</div>
+          <div class="label">Sync · v7.3.7</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1643,7 +1642,7 @@ window.repairMijnSerenity=async function(){
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.3.6</span>
+        <span class="planner-version-badge">7.3.7</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -4419,6 +4418,6 @@ window.repairMijnSerenity=async function(){
   </div>
 </div>
 
-<script src="auth-bootstrap.js?v=7360"></script>
+<script src="auth-bootstrap.js?v=7370"></script>
 </body>
 </html>

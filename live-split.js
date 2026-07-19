@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — OpenStreetMap + camera split view
+   MijnSerenity Cloud 7.3.7 — OpenStreetMap + camera split view
    ============================================================ */
 
 let ms702CameraStartBusy=false;

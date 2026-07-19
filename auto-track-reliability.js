@@ -1,17 +1,16 @@
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Betrouwbaar automatisch varen
+   MijnSerenity Cloud 7.3.7 — Automatische beste GPS-bron
    Eén recorder, GPS-watchdog, herstel na onderbreking en diagnose
    ============================================================ */
 (()=>{
   'use strict';
 
-  const BUILD='7.3.6';
+  const BUILD='7.3.7';
   const CLAIM_TTL_MS=120000;
   const CLAIM_RENEW_MS=30000;
   const GPS_STALE_MS=18000;
   const MAX_ACCEPTED_ACCURACY_M=75;
   const MAX_BOAT_SPEED_KMH=42;
-  const GARMIN_PREF_PREFIX='mijnserenity-garmin-gps-';
   const GPS_METRIC_WINDOW_MS=30000;
 
   let watchdogTimer=null;
@@ -37,10 +36,6 @@
       :'unknown-device';
   }
   function boatId(){return currentBoat?.id||'geen-boot';}
-  function garminPreferenceKey(){return `${GARMIN_PREF_PREFIX}${boatId()}`;}
-  function garminPreferred(){
-    try{return localStorage.getItem(garminPreferenceKey())==='1';}catch{return false;}
-  }
   function cleanMetricHistory(timestamp=now()){
     gpsFixHistory=gpsFixHistory.filter(value=>timestamp-value<=GPS_METRIC_WINDOW_MS);
     gpsAccuracyHistory=gpsAccuracyHistory.slice(-30);
@@ -58,17 +53,24 @@
     return span>0?(gpsFixHistory.length-1)/span:0;
   }
   function medianAccuracy(){return median(gpsAccuracyHistory);}
-  function gpsSourceAssessment(){
+  function externalGpsLikely(){
     const rate=gpsRateHz();
     const accuracy=medianAccuracy();
-    if(garminPreferred())return 'Garmin / externe GPS geselecteerd';
-    if(rate>=0.75&&accuracy>0&&accuracy<=15)return 'Externe GPS waarschijnlijk';
-    if(accuracy>0&&accuracy<=25)return 'GPS-signaal actief';
-    return 'iPad-locatie / GPS';
+    // Safari benoemt de hardwarebron niet. iPadOS/iOS kiest zelf de best
+    // beschikbare locatiebron. Een hoge updatefrequentie gecombineerd met
+    // goede nauwkeurigheid is een aanwijzing voor Garmin/externe GPS.
+    return (rate>=0.75&&accuracy>0&&accuracy<=15)||(rate>=0.35&&accuracy>0&&accuracy<=8);
+  }
+  function gpsSourceAssessment(){
+    const accuracy=medianAccuracy();
+    if(externalGpsLikely())return 'Beste bron: Garmin / externe GPS waarschijnlijk';
+    if(accuracy>0&&accuracy<=25)return 'Beste bron: iOS GPS / locatie actief';
+    return 'Automatisch beste GPS-bron bepalen';
   }
   function updateGpsSourceUi(){
     const rate=gpsRateHz();
     const accuracy=medianAccuracy();
+    const external=externalGpsLikely();
     lastSourceAssessment=gpsSourceAssessment();
     const detail=[
       lastSourceAssessment,
@@ -79,21 +81,23 @@
     setText('ms736LiveGpsSource',detail);
     setBadge(
       'ms736SourceBadge',
-      garminPreferred()?'Garmin voorkeur':rate>=0.75&&accuracy>0&&accuracy<=15?'Externe GPS waarschijnlijk':'GPS-bron actief',
-      garminPreferred()||rate>=0.75&&accuracy>0&&accuracy<=15?'success':'muted'
+      external?'Garmin/externe GPS waarschijnlijk':'Automatische GPS-keuze',
+      external?'success':'muted'
     );
-    const toggle=el('ms736GarminToggle');
-    if(toggle&&document.activeElement!==toggle)toggle.checked=garminPreferred();
-    window.ms736GpsMetrics={rateHz:rate,medianAccuracy:accuracy,source:lastSourceAssessment,garminPreferred:garminPreferred()};
+    window.ms736GpsMetrics={
+      rateHz:rate,
+      medianAccuracy:accuracy,
+      source:lastSourceAssessment,
+      externalGpsLikely:external,
+      automaticSelection:true
+    };
   }
-  window.ms736SetGarminPreferred=function(enabled){
-    try{localStorage.setItem(garminPreferenceKey(),enabled?'1':'0');}catch{}
+  // Achterwaartse compatibiliteit met een eventueel oud gecachet scherm.
+  window.ms736SetGarminPreferred=function(){
     recentSpeeds=[];
     lastRawPoint=null;
     updateGpsSourceUi();
-    showAppToast(enabled
-      ?'Garmin / externe GPS ingesteld als voorkeursbron.'
-      :'Automatische GPS-bronselectie ingeschakeld.');
+    showAppToast('Automatische GPS-bronselectie is altijd actief.');
   };
   function automaticEnabled(){
     return typeof ms701AutomaticEnabled==='function'&&ms701AutomaticEnabled();
@@ -293,7 +297,8 @@
         liveNavState.autoRecorderClaim=claim;
         liveNavState.gpsSource=lastSourceAssessment;
         liveNavState.gpsRateHz=Number(gpsRateHz().toFixed(2));
-        liveNavState.garminPreferred=garminPreferred();
+        liveNavState.externalGpsLikely=externalGpsLikely();
+        liveNavState.gpsSelectionMode='automatic';
         persistLiveState();
       }
       renderReliability();
@@ -350,7 +355,7 @@
     gpsTestPoints=[];
     gpsFixHistory=[];
     gpsAccuracyHistory=[];
-    setText('ms735ReliabilityTitle','Garmin/GPS-test loopt…');
+    setText('ms735ReliabilityTitle','GPS-brontest loopt…');
     setText('ms735ReliabilityDetail','Beweeg enkele meters en laat MijnSerenity op het scherm staan.');
     gpsTestWatchId=navigator.geolocation.watchPosition(position=>{
       recordGpsMetric(position);
@@ -387,11 +392,11 @@
       const acceptable=gpsTestPoints.some(point=>point.accuracy<=MAX_ACCEPTED_ACCURACY_M);
       const externalLikely=gpsRateHz()>=0.75&&medianAccuracy()>0&&medianAccuracy()<=15;
       updateGpsSourceUi();
-      setText('ms735ReliabilityTitle',acceptable?'Garmin/GPS-test geslaagd':'GPS-signaal onvoldoende');
+      setText('ms735ReliabilityTitle',acceptable?'GPS-brontest geslaagd':'GPS-signaal onvoldoende');
       setText(
         'ms735ReliabilityDetail',
         acceptable
-          ?`${gpsTestPoints.length} metingen ontvangen · ${gpsRateHz().toFixed(1)} per sec. ${garminPreferred()?'Garmin-voorkeur actief.':externalLikely?'Externe GPS lijkt actief.':'GPS is bruikbaar; bron kan door Safari niet exact worden benoemd.'}`
+          ?`${gpsTestPoints.length} metingen ontvangen · ${gpsRateHz().toFixed(1)} per sec. ${externalLikely?'Garmin/externe GPS lijkt automatisch actief.':'iOS gebruikt de beste beschikbare GPS-bron; Garmin wordt automatisch overgenomen zodra deze gekoppeld en bruikbaar is.'}`
           :'Ga naar buiten, controleer Locatievoorzieningen en de Bluetooth-koppeling en probeer opnieuw.'
       );
     },30000);
@@ -419,15 +424,18 @@
     lastRawPoint=point;
     const calculatedSpeed=Number.isFinite(calculated)?calculated:0;
     let selectedSpeed;
-    if(garminPreferred()&&Number.isFinite(coords.speed)){
-      // Een externe Garmin levert doorgaans de beste Doppler-snelheid.
-      // Alleen wanneer Safari tijdelijk 0 doorgeeft terwijl er duidelijke
-      // verplaatsing is, gebruiken we de berekende snelheid als reserve.
-      selectedSpeed=point.deviceSpeed>=0.3
-        ?point.deviceSpeed
-        :(calculatedSpeed>=1.2?calculatedSpeed:0);
+    const accurateFix=point.accuracy<=40;
+    const usableDeviceSpeed=Number.isFinite(coords.speed)&&accurateFix;
+    // iOS kiest automatisch Garmin wanneer die gekoppeld en bruikbaar is.
+    // MijnSerenity gebruikt de door iOS geleverde Doppler-snelheid wanneer
+    // die betrouwbaar is en valt bij een tijdelijke nulmeting terug op de
+    // snelheid die uit opeenvolgende posities is berekend.
+    if(usableDeviceSpeed&&point.deviceSpeed>=0.3){
+      selectedSpeed=point.deviceSpeed;
+    }else if(calculatedSpeed>=1.2){
+      selectedSpeed=calculatedSpeed;
     }else{
-      selectedSpeed=Math.max(point.deviceSpeed,calculatedSpeed);
+      selectedSpeed=0;
     }
     const candidate=Math.min(MAX_BOAT_SPEED_KMH,Math.max(0,selectedSpeed));
     recentSpeeds.push(candidate);
@@ -543,7 +551,8 @@
         autoRecorderClaim:null,
         gpsSource:'',
         gpsRateHz:0,
-        garminPreferred:false
+        externalGpsLikely:false,
+        gpsSelectionMode:'automatic'
       };
     };
   }
@@ -655,7 +664,7 @@
           :null;
         if(previous&&current){
           const segmentM=haversineKm(previous,current)*1000;
-          const noiseFloor=garminPreferred()
+          const noiseFloor=externalGpsLikely()
             ?Math.max(2,Math.min(10,(Number(current.accuracy)||0)*.18))
             :Math.max(3,Math.min(18,(Number(current.accuracy)||0)*.25));
           if(segmentM<noiseFloor&&Number(liveNavState.speedKmh||0)<1.2){

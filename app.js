@@ -17,7 +17,7 @@ let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presen
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Storage Safety
+   MijnSerenity Cloud 7.3.7 — Storage Safety
    Foto's en documenten worden pas geladen wanneer ze zichtbaar
    of bewust geopend worden. Signed URLs worden tijdelijk hergebruikt.
    ============================================================ */
@@ -12964,7 +12964,8 @@ function createEmptyLiveState(){
     accuracy:null,
     gpsSource:'',
     gpsRateHz:0,
-    garminPreferred:false,
+    externalGpsLikely:false,
+    gpsSelectionMode:'automatic',
     engineRpm:0,
     rudderAngle:0,
     weather:null,
@@ -14512,7 +14513,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.3.6"
+<gpx version="1.1" creator="MijnSerenity 7.3.7"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14764,7 +14765,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.3.6';
+const APP_VERSION='7.3.7';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14841,7 +14842,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=7360',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=7370',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -16540,7 +16541,7 @@ function closeLightbox(){
 }
 
 
-/* MijnSerenity Cloud 7.3.6 — vaste onderste navigatie */
+/* MijnSerenity Cloud 7.3.7 — vaste onderste navigatie */
 let bottomNavHideTimer=null;
 let bottomNavActivityFrame=null;
 
@@ -16736,7 +16737,7 @@ document.addEventListener(
 
 
 
-/* MijnSerenity Cloud 7.3.6 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 7.3.7 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -17125,7 +17126,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6
+   MijnSerenity Cloud 7.3.7
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -18062,7 +18063,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.3.6"
+ creator="MijnSerenity 7.3.7"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -18088,7 +18089,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.3.6 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 7.3.7 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -18126,7 +18127,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Next Level Live Cockpit
+   MijnSerenity Cloud 7.3.7 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -19100,7 +19101,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Smart Route
+   MijnSerenity Cloud 7.3.7 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -20410,7 +20411,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.3.6 Smart Route"
+ creator="MijnSerenity 7.3.7 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -20439,7 +20440,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.3.6 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 7.3.7 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20506,7 +20507,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 7.3.7 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -21425,7 +21426,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Auto Logbook
+   MijnSerenity Cloud 7.3.7 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22633,7 +22634,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Routefoto’s met GPS en omschrijving
+   MijnSerenity Cloud 7.3.7 — Routefoto’s met GPS en omschrijving
    ============================================================ */
 
 let ms681PendingPhotos=[];
@@ -23471,7 +23472,7 @@ initLiveMode=async function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Boat Intelligence
+   MijnSerenity Cloud 7.3.7 — Boat Intelligence
    ============================================================ */
 
 function ms690Clamp(value,min=0,max=100){
@@ -24771,7 +24772,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Gewaardeerde havenimporteur
+   MijnSerenity Cloud 7.3.7 — Gewaardeerde havenimporteur
    ============================================================ */
 
 let ms692HarbourImportBusy=false;
@@ -25428,7 +25429,7 @@ async function ms692ImportRatedHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — Havens binnen straal van locatie
+   MijnSerenity Cloud 7.3.7 — Havens binnen straal van locatie
    ============================================================ */
 
 let ms693NearbyBusy=false;
@@ -25781,7 +25782,7 @@ async function ms693ImportNearbyHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.6 — POI Data Service
+   MijnSerenity Cloud 7.3.7 — POI Data Service
    ============================================================ */
 
 let ms694EnrichmentBusy=false;
