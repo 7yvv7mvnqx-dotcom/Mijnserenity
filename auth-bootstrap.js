@@ -1,14 +1,15 @@
-/* MijnSerenity 7.3.7 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.3.8 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='7.3.7';
-  const VERSION='7370';
+  const BUILD='7.3.8';
+  const VERSION='7380';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `mission-control.js?v=${VERSION}`,
     `easy-auto.js?v=${VERSION}`,
     `auto-track-reliability.js?v=${VERSION}`,
+    `waterkaarten-split-launch.js?v=${VERSION}`,
     `live-split.js?v=${VERSION}`,
     `route-control.js?v=${VERSION}`,
     `weather-page.js?v=${VERSION}`,

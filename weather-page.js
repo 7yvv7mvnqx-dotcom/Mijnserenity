@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.3.7 — live weerpagina
+   MijnSerenity Cloud 7.3.8 — live weerpagina
    ============================================================ */
 
 let ms709WeatherPayload=null;

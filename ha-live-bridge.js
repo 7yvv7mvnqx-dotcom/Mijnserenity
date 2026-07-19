@@ -1,4 +1,4 @@
-/* MijnSerenity 7.3.7 LIVE — officiële Home Assistant OAuth + WebSocket koppeling */
+/* MijnSerenity 7.3.8 LIVE — officiële Home Assistant OAuth + WebSocket koppeling */
 (()=>{
   'use strict';
 
@@ -526,7 +526,7 @@
   const callbackPromise=processOAuthCallback().catch(error=>{window.MIJSERENITY_HA_CALLBACK_ERROR=error.message;console.error(error)});
   window.MIJSERENITY_HA_CALLBACK_PROMISE=callbackPromise;
 
-  // 7.3.7: initialiseer de live bridge altijd zelf. De pagina kan eerder
+  // 7.3.8: initialiseer de live bridge altijd zelf. De pagina kan eerder
   // sneller starten dan dit bestand was geladen, waardoor de wizard wel zichtbaar
   // was maar de knoppen nog geen functies hadden.
   function bootLiveBridge(){

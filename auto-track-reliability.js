@@ -1,11 +1,11 @@
 /* ============================================================
-   MijnSerenity Cloud 7.3.7 — Automatische beste GPS-bron
+   MijnSerenity Cloud 7.3.8 — Automatische beste GPS-bron
    Eén recorder, GPS-watchdog, herstel na onderbreking en diagnose
    ============================================================ */
 (()=>{
   'use strict';
 
-  const BUILD='7.3.7';
+  const BUILD='7.3.8';
   const CLAIM_TTL_MS=120000;
   const CLAIM_RENEW_MS=30000;
   const GPS_STALE_MS=18000;
