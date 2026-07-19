@@ -1,4 +1,4 @@
-/* MijnSerenity 7.4.5 — Factuur Total Guard */
+/* MijnSerenity 7.4.6 — Polis & Periodieke Kosten Guard */
 (()=>{
   'use strict';
 
@@ -44,6 +44,132 @@
       .filter(Boolean);
   }
 
+
+  function isInsurancePolicy(text){
+    const normalized=normalizeDocumentText(text);
+    return /\b(?:bootverzekering|verzekeringspolis|polisnummer|verzekeringsoverzicht)\b/i.test(normalized)&&
+      /\b(?:verzekerd\s+bij|verzekeringen|premie|dekking(?:en)?)\b/i.test(normalized);
+  }
+
+  function findLineMoney(text,pattern){
+    for(const line of lines(text)){
+      if(!pattern.test(line))continue;
+      const values=moneyValues(line);
+      if(values.length)return values[values.length-1].value;
+    }
+    return null;
+  }
+
+  function parseDutchDateValue(raw){
+    const months={
+      januari:1,februari:2,maart:3,april:4,mei:5,juni:6,
+      juli:7,augustus:8,september:9,oktober:10,november:11,december:12
+    };
+    const match=String(raw||'').match(/\b(\d{1,2})\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)\s+(20\d{2})\b/i);
+    if(!match)return null;
+    const day=Number(match[1]);
+    const month=months[match[2].toLowerCase()];
+    const year=Number(match[3]);
+    if(!month||day<1||day>31)return null;
+    return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  }
+
+  function findDutchDateAfterLabel(text,labelSource){
+    const normalized=normalizeDocumentText(text);
+    const month='januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december';
+    const pattern=new RegExp(`${labelSource}[^\\n]{0,100}?(\\d{1,2}\\s+(?:${month})\\s+20\\d{2})`,'i');
+    const sameLine=normalized.match(pattern);
+    if(sameLine)return parseDutchDateValue(sameLine[1]);
+
+    const windowPattern=new RegExp(`${labelSource}[\\s\\S]{0,120}?(\\d{1,2}\\s+(?:${month})\\s+20\\d{2})`,'i');
+    const nearby=normalized.match(windowPattern);
+    return nearby?parseDutchDateValue(nearby[1]):null;
+  }
+
+  function parseInsurancePolicy(text){
+    const normalized=normalizeDocumentText(text);
+    if(!isInsurancePolicy(normalized))return null;
+
+    let amount=null;
+    let cadence='';
+    for(const line of lines(normalized)){
+      const match=line.match(/\btotale?\s+premie\s+per\s+(maand|kwartaal|halfjaar|jaar)\b/i);
+      if(!match)continue;
+      const values=moneyValues(line);
+      if(values.length){
+        amount=values[values.length-1].value;
+        cadence=match[1].toLowerCase();
+        break;
+      }
+    }
+
+    // Alleen wanneer geen expliciete totaalpremie aanwezig is, mag een gewone
+    // periodieke premie als reserve worden gebruikt. Verzekerde bedragen,
+    // eigen risico's en maximale uitkeringen zijn nooit een te boeken kostenbedrag.
+    if(amount===null){
+      for(const line of lines(normalized)){
+        const match=line.match(/^premie\s+per\s+(maand|kwartaal|halfjaar|jaar)\b/i);
+        if(!match)continue;
+        const values=moneyValues(line);
+        if(values.length){
+          amount=values[values.length-1].value;
+          cadence=match[1].toLowerCase();
+          break;
+        }
+      }
+    }
+
+    const insurerMatch=normalized.match(/\bverzekerd\s+bij\s+([^\n]{3,80}?)(?=\s{2,}|\bnetto\s+jaarpremie\b|\n)/i)
+      ||normalized.match(/\b(TVM\s+verzekeringen\s+N\.?V\.?)\b/i);
+    const insurer=insurerMatch?.[1]?.replace(/\s+/g,' ').trim()||'Verzekeraar';
+    const policyNumber=(normalized.match(/\bpolisnummer\s*:?\s*([0-9A-Z-]{4,})\b/i)||[])[1]||'';
+    const relationNumber=(normalized.match(/\brelatienummer\s*:?\s*([0-9A-Z-]{3,})\b/i)||[])[1]||'';
+    const startDate=findDutchDateAfterLabel(normalized,'\\bingangs-?\\/?wijzigingsdatum\\b')
+      ||findDutchDateAfterLabel(normalized,'\\bingangsdatum\\b');
+    const documentDate=findDutchDateAfterLabel(normalized,'\\bdatum\\b');
+    const paymentMethod=(normalized.match(/\bbetaalwijze\s*:?\s*([^\n]{3,80})/i)||[])[1]?.trim()||'';
+    const baseQuarterly=findLineMoney(normalized,/^premie\s+per\s+kwartaal\b/i);
+    const tax=findLineMoney(normalized,/\bassurantiebelasting\b/i);
+    const liability=findLineMoney(normalized,/^aansprakelijkheid\s*:/i);
+    const occupants=findLineMoney(normalized,/^ongevallen\s+opvarenden\s*:/i);
+    const annualNet=(liability!==null&&occupants!==null)?Number((liability+occupants).toFixed(2)):null;
+
+    const coverages=[];
+    for(const [label,pattern] of [
+      ['Aansprakelijkheid',/^aansprakelijkheid\s*:\s*ja\b/i],
+      ['Casco',/^casco\s*:\s*ja\b/i],
+      ['Inboedel',/^inboedel\s*:\s*ja\b/i],
+      ['Vaartuigenhulp',/^vaartuigenhulp\s*:\s*ja\b/i],
+      ['Ongevallen opvarenden',/^ongevallen\s+opvarenden\s*:\s*ja\b/i]
+    ]){
+      if(lines(normalized).some(line=>pattern.test(line)))coverages.push(label);
+    }
+
+    return {
+      amount,
+      cadence,
+      insurer,
+      policyNumber,
+      relationNumber,
+      date:startDate||documentDate||null,
+      startDate,
+      documentDate,
+      paymentMethod,
+      baseQuarterly,
+      tax,
+      annualNet,
+      coverages
+    };
+  }
+
+  function extractDocumentDate(text){
+    const policy=parseInsurancePolicy(text);
+    if(policy?.date)return policy.date;
+    return typeof original.extractReceiptDate==='function'
+      ?original.extractReceiptDate(text)
+      :null;
+  }
+
   function parseMoney(raw){
     let value=String(raw||'')
       .replace(/[€$£]/g,'')
@@ -80,6 +206,8 @@
 
   function extractAmount(text){
     const normalized=normalizeDocumentText(text);
+    const policy=parseInsurancePolicy(normalized);
+    if(policy?.amount!==null&&policy?.amount!==undefined)return policy.amount;
     const docLines=lines(normalized);
     const moneySource='(?:\\d{1,7}(?:[.\\s]\\d{3})*[,.]\\d{2})';
 
@@ -154,6 +282,8 @@
 
   function extractMerchant(text){
     const normalized=normalizeDocumentText(text);
+    const policy=parseInsurancePolicy(normalized);
+    if(policy)return /\bbootverzekering\b/i.test(normalized)?'TVM Bootverzekering':policy.insurer;
     if(/\bvolvo\s*penta\b/i.test(normalized))return 'Volvo Penta';
     if(/\bkranerweerd\b/i.test(normalized))return 'Jachthaven de Kranerweerd B.V.';
     if(/\bda\s+giorgio\b/i.test(normalized))return 'Da Giorgio';
@@ -206,6 +336,7 @@
 
   function detectCategory(text){
     const normalized=normalizeDocumentText(text).toLowerCase();
+    if(isInsurancePolicy(normalized))return 'Verzekering';
     if(/vervangen\s+stuurcilinder|uurloon\s+service\s+monteur|werkzaamheden|reparatie|service\s+monteur/.test(normalized)){
       return 'Onderhoud';
     }
@@ -266,6 +397,7 @@
   }
 
   function extractItems(text){
+    if(isInsurancePolicy(text))return [];
     const invoiceRows=invoiceItemRows(text);
     if(invoiceRows.length)return invoiceRows.slice(0,30);
     const structured=structuredItemRows(text);
@@ -315,6 +447,26 @@
   function buildDetails(text,{merchant,date,amount}={}){
     const result=[];
     const normalized=normalizeDocumentText(text);
+    const policy=parseInsurancePolicy(normalized);
+    if(policy){
+      result.push(`Verzekeraar: ${policy.insurer}`);
+      if(policy.policyNumber)result.push(`Polisnummer: ${policy.policyNumber}`);
+      if(policy.relationNumber)result.push(`Relatienummer: ${policy.relationNumber}`);
+      if(policy.startDate)result.push(`Ingangsdatum: ${policy.startDate.split('-').reverse().join('-')}`);
+      else if(date)result.push(`Datum: ${date.split('-').reverse().join('-')}`);
+      if(policy.paymentMethod)result.push(`Betaalwijze: ${policy.paymentMethod}`);
+      if(policy.coverages.length)result.push(`Dekkingen: ${policy.coverages.join(', ')}`);
+      result.push('');
+      if(policy.annualNet!==null)result.push(`Netto jaarpremie: €${policy.annualNet.toFixed(2).replace('.',',')}`);
+      if(policy.baseQuarterly!==null)result.push(`Premie per kwartaal: €${policy.baseQuarterly.toFixed(2).replace('.',',')}`);
+      if(policy.tax!==null)result.push(`Assurantiebelasting: €${policy.tax.toFixed(2).replace('.',',')}`);
+      if(amount!==null&&amount!==undefined){
+        const period=policy.cadence?` per ${policy.cadence}`:'';
+        result.push(`Te boeken premie${period}: €${Number(amount).toFixed(2).replace('.',',')}`);
+      }
+      result.push('Verzekerde bedragen en eigen risico’s zijn bewust niet als kosten meegenomen.');
+      return result.join('\n').trim();
+    }
     const items=extractItems(normalized);
     const invoiceNumber=findLabelValue(normalized,/\bfactuurnummer\s*(?:=\s*)?:?\s*([A-Z0-9-]+)/i);
     const relationNumber=findLabelValue(normalized,/\brelatienummer\s*(?:=\s*)?:?\s*([A-Z0-9-]+)/i);
@@ -365,9 +517,7 @@
   function parseReceiptText(text){
     const normalized=normalizeDocumentText(text);
     const amount=extractAmount(normalized);
-    const date=typeof original.extractReceiptDate==='function'
-      ?original.extractReceiptDate(normalized)
-      :null;
+    const date=extractDocumentDate(normalized);
     const merchant=extractMerchant(normalized);
     const category=detectCategory(normalized);
     const items=extractItems(normalized);
@@ -687,17 +837,18 @@
   };
 
   window.MSReceiptReaderPro={
-    version:'7.4.5',
+    version:'7.4.6',
     parseReceiptText,
     extractAmount,
     extractMerchant,
     detectCategory,
     extractItems,
     buildDetails,
-    normalizeDocumentText
+    normalizeDocumentText,
+    parseInsurancePolicy
   };
 
   const retry=document.getElementById('costOcrRetryButton');
   if(retry)retry.textContent='✨ Gegevens opnieuw uit foto/PDF lezen';
-  console.info('MijnSerenity 7.4.5 Factuur Total Guard actief.');
+  console.info('MijnSerenity 7.4.6 Polis & Periodieke Kosten Guard actief.');
 })();
