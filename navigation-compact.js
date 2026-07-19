@@ -1,4 +1,4 @@
-/* MijnSerenity 7.4.7 — navigatie altijd zichtbaar op iPad/iPhone */
+/* MijnSerenity 7.4.8 — navigatie altijd zichtbaar op iPad/iPhone */
 (()=>{
   'use strict';
 

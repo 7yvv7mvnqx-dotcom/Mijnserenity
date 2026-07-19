@@ -1,4 +1,4 @@
-/* MijnSerenity 7.4.7 — Polis & Periodieke Kosten Guard */
+/* MijnSerenity 7.4.8 — Factuur Header & Regeltabel Guard */
 (()=>{
   'use strict';
 
@@ -163,10 +163,23 @@
   }
 
   function extractDocumentDate(text){
-    const policy=parseInsurancePolicy(text);
+    const normalized=normalizeDocumentText(text);
+    const policy=parseInsurancePolicy(normalized);
     if(policy?.date)return policy.date;
+
+    // Nederlandse leveranciers gebruiken vaak een uitgeschreven datum, zoals
+    // "Datum: 6 mei 2026". Geef een datum met expliciet label altijd voorrang.
+    const labelled=findDutchDateAfterLabel(
+      normalized,
+      '\\b(?:factuurdatum|besteldatum|orderdatum|datum)\\b'
+    );
+    if(labelled)return labelled;
+
+    const anyDutch=parseDutchDateValue(normalized);
+    if(anyDutch)return anyDutch;
+
     return typeof original.extractReceiptDate==='function'
-      ?original.extractReceiptDate(text)
+      ?original.extractReceiptDate(normalized)
       :null;
   }
 
@@ -280,19 +293,33 @@
     return candidates[0]?.value??null;
   }
 
+  function merchantLooksLikeItem(value){
+    const line=String(value||'').trim();
+    if(!line)return true;
+    if(/^\d{1,3}(?:[,.]\d{1,2})?\s+/.test(line))return true;
+    if(moneyValues(line).length)return true;
+    if(/\b(?:aantal|stukprijs|bedrag|arbeid|materiaal|vetkoord|impeller|pakking|afdichtring|o-ring)\b/i.test(line))return true;
+    return false;
+  }
+
   function extractMerchant(text){
     const normalized=normalizeDocumentText(text);
     const policy=parseInsurancePolicy(normalized);
     if(policy)return /\bbootverzekering\b/i.test(normalized)?'TVM Bootverzekering':policy.insurer;
-    if(/\bvolvo\s*penta\b/i.test(normalized))return 'Volvo Penta';
+
+    // Herken leveranciers ook aan bestandsnaam, website en e-mailadres. Bij
+    // PDF's staat het logo namelijk geregeld als afbeelding buiten de tekstlaag.
+    if(/\bgeertman\b|jachtwerfgeertman\.nl|info@jachtwerfgeertman/i.test(normalized))return 'Jachtwerf Geertman BV';
     if(/\bkranerweerd\b/i.test(normalized))return 'Jachthaven de Kranerweerd B.V.';
+    if(/\bvolvo\s*penta\b/i.test(normalized)&&/\b(?:orderbevestiging|bestelnummer|onderdeelnummer)\b/i.test(normalized))return 'Volvo Penta';
     if(/\bda\s+giorgio\b/i.test(normalized))return 'Da Giorgio';
 
     const docLines=lines(normalized);
     const legalEntity=docLines.find(line=>
       /\b(?:b\.?v\.?|n\.?v\.?|vof|v\.o\.f\.)\b/i.test(line)&&
       /[A-Za-zÀ-ÿ]{3}/.test(line)&&
-      !/\b(?:iban|bic|btw|kvk|rekening|bank|factuuradres|bezorgadres)\b/i.test(line)
+      !merchantLooksLikeItem(line)&&
+      !/\b(?:iban|bic|btw|kvk|rekening|bank|factuuradres|bezorgadres|algemene voorwaarden)\b/i.test(line)
     );
     if(legalEntity){
       return legalEntity
@@ -301,11 +328,11 @@
         .trim();
     }
 
-    const reject=/\b(?:factuur|invoice|orderbevestiging|bestelbevestiging|factuuradres|bezorgadres|klantreferentie|aanvullende informatie|onderdeelnummer|beschrijving|samenvatting|subtotaal|totale kosten|bestelnummer|besteldatum|orderklasse|bezorgwijze|betalingsmethode|nettogewicht|klant|bedrijf|e-?mail|telefoon)\b/i;
+    const reject=/\b(?:factuur|invoice|orderbevestiging|bestelbevestiging|factuuradres|bezorgadres|klantreferentie|aanvullende informatie|onderdeelnummer|beschrijving|samenvatting|subtotaal|totale kosten|bestelnummer|besteldatum|orderklasse|bezorgwijze|betalingsmethode|nettogewicht|klant|bedrijf|e-?mail|telefoon|betreft|deb\.?\s*nr|pagina)\b/i;
     const candidates=[];
 
-    docLines.slice(0,28).forEach((line,index)=>{
-      if(reject.test(line))return;
+    docLines.slice(0,40).forEach((line,index)=>{
+      if(reject.test(line)||merchantLooksLikeItem(line))return;
       if(line.length<3||line.length>70)return;
       if(!/[A-Za-zÀ-ÿ]{3}/.test(line))return;
       if(/@|https?:|www\.|\b\d{4}\s?[A-Z]{2}\b/i.test(line))return;
@@ -316,28 +343,30 @@
       const uppercase=line.match(/[A-ZÀ-Þ]/g)||[];
       let score=150-index*8;
       if(letters.length&&uppercase.length/letters.length>.75)score+=40;
-      if(/\b(bv|b\.v\.|nv|n\.v\.|marine|marina|jachthaven|watersport|service|shop)\b/i.test(line))score+=120;
+      if(/\b(bv|b\.v\.|nv|n\.v\.|marine|marina|jachtwerf|jachthaven|watersport|service|shop)\b/i.test(line))score+=140;
       if(/^full service/i.test(line))score+=40;
       candidates.push({line,score});
     });
 
     if(candidates.length){
       candidates.sort((a,b)=>b.score-a.score);
-      return String(candidates[0].line)
+      const merchant=String(candidates[0].line)
         .replace(/^[^A-Za-zÀ-ÿ]+/,'')
         .replace(/\s{2,}/g,' ')
         .trim();
+      if(!merchantLooksLikeItem(merchant))return merchant;
     }
 
-    return typeof original.extractReceiptMerchant==='function'
-      ?original.extractReceiptMerchant(text)
+    const fallback=typeof original.extractReceiptMerchant==='function'
+      ?original.extractReceiptMerchant(normalized)
       :null;
+    return merchantLooksLikeItem(fallback)?null:fallback;
   }
 
   function detectCategory(text){
     const normalized=normalizeDocumentText(text).toLowerCase();
     if(isInsurancePolicy(normalized))return 'Verzekering';
-    if(/vervangen\s+stuurcilinder|uurloon\s+service\s+monteur|werkzaamheden|reparatie|service\s+monteur/.test(normalized)){
+    if(/jachtwerf|uit\/?in\s+water|schoonspuiten\s+onderwaterschip|conserveren|overige\s+werkzaamheden|arbeid\s+geert|vervangen\s+stuurcilinder|uurloon\s+service\s+monteur|werkzaamheden|reparatie|service\s+monteur/.test(normalized)){
       return 'Onderhoud';
     }
     if(/volvo\s*penta|onderdeelnummer|pakking|afdichtring|o-ring|onderdelen|spare\s*parts?/.test(normalized)){
@@ -350,20 +379,37 @@
 
   function invoiceItemRows(text){
     const results=[];
-    const reject=/\b(?:omschrijving|aantal|stuksprijs|subtotaal|totaal|te betalen|btw|vat|excl|incl|betaling binnen|factuurdatum|factuurnummer|relatienummer)\b/i;
-    const pattern=/^(.+?)\s+(\d{1,3})\s*[x×]\s*(?:€\s*)?(\d{1,7}(?:[.\s]\d{3})*[,.]\d{2})\s+(?:€\s*)?(\d{1,7}(?:[.\s]\d{3})*[,.]\d{2})\s*$/i;
+    const reject=/\b(?:omschrijving|aantal|stuksprijs|subtotaal|totaal|te betalen|btw|vat|excl|incl|betaling binnen|factuurdatum|factuurnummer|relatienummer|deb\.?\s*nr)\b/i;
+    const money='(\\d{1,7}(?:[.\\s]\\d{3})*[,.]\\d{2})';
+    const quantity='(\\d{1,3}(?:[,.]\\d{1,2})?)';
+    const descriptionFirst=new RegExp(`^(.+?)\\s+${quantity}\\s*[x×]\\s*(?:€\\s*)?${money}\\s+(?:€\\s*)?${money}\\s*$`,'i');
+    const quantityFirst=new RegExp(`^${quantity}\\s+(?!€)(.+?)\\s+(?:€\\s*)?${money}\\s+(?:€\\s*)?${money}\\s*$`,'i');
 
     for(const line of lines(text)){
       if(reject.test(line))continue;
-      const match=line.match(pattern);
-      if(!match)continue;
-      const description=match[1].replace(/^[-•·]+\s*/,'').replace(/\s{2,}/g,' ').trim();
-      const quantity=Number(match[2]);
-      const unitPrice=parseMoney(match[3]);
-      const total=parseMoney(match[4]);
-      if(!description||description.length<3||!Number.isFinite(quantity)||quantity<1||quantity>999)continue;
+      let match=line.match(descriptionFirst);
+      let description,quantityRaw,unitRaw,totalRaw;
+      if(match){
+        description=match[1];
+        quantityRaw=match[2];
+        unitRaw=match[3];
+        totalRaw=match[4];
+      }else{
+        match=line.match(quantityFirst);
+        if(!match)continue;
+        quantityRaw=match[1];
+        description=match[2];
+        unitRaw=match[3];
+        totalRaw=match[4];
+      }
+
+      description=String(description||'').replace(/^[-•·]+\s*/,'').replace(/\s{2,}/g,' ').trim();
+      const quantityNumber=Number(String(quantityRaw).replace(',','.'));
+      const unitPrice=parseMoney(unitRaw);
+      const total=parseMoney(totalRaw);
+      if(!description||description.length<3||!Number.isFinite(quantityNumber)||quantityNumber<=0||quantityNumber>999)continue;
       if(unitPrice===null||total===null)continue;
-      results.push({description,quantity,unitPrice,amount:total});
+      results.push({description,quantity:quantityNumber,unitPrice,amount:total});
     }
     return results;
   }
@@ -468,13 +514,17 @@
       return result.join('\n').trim();
     }
     const items=extractItems(normalized);
-    const invoiceNumber=findLabelValue(normalized,/\bfactuurnummer\s*(?:=\s*)?:?\s*([A-Z0-9-]+)/i);
+    const invoiceNumber=findLabelValue(normalized,/\bfactuurnummer\s*(?:=\s*)?:?\s*([A-Z0-9-]+)/i)
+      ||findLabelValue(normalized,/^factuur\s+(?:nr\.?\s*)?([A-Z0-9-]{3,})\b/i);
     const relationNumber=findLabelValue(normalized,/\brelatienummer\s*(?:=\s*)?:?\s*([A-Z0-9-]+)/i);
+    const debtorNumber=findLabelValue(normalized,/\bdeb\.?\s*nr\.?\s*:?[ ]*([A-Z0-9-]+)/i);
+    const subject=findLabelValue(normalized,/\bbetreft\s*:?[ ]*(.+)$/i);
     const orderNumber=findLabelValue(normalized,/\bbestelnummer\s*:?\s*([A-Z0-9-]+)/i)
       ||findLabelValue(normalized,/\border(?:nummer)?\s*#?\s*:?\s*([A-Z0-9-]+)/i);
     const subtotal=findMoneyByLabel(normalized,/\bsubtotaal\b/i);
     const shipping=findMoneyByLabel(normalized,/\bverzend(?:ing)?[-\s]+en[-\s]+afhandelingskosten\b/i);
-    const exclusive=findMoneyAfterLabel(normalized,'\\bEXCL(?:USIEF)?\\.?');
+    const exclusive=findMoneyByLabel(normalized,/\btotaal\s+excl\.?\s*btw\b/i)
+      ??findMoneyAfterLabel(normalized,'\\bEXCL(?:USIEF)?\\.?');
     const vat21=findMoneyAfterLabel(normalized,'\\bBTW\\s*21\\s*%');
     const vat9=findMoneyAfterLabel(normalized,'\\bBTW\\s*9\\s*%');
     const work=findWorkDescription(normalized);
@@ -484,13 +534,15 @@
     if(invoiceNumber)result.push(`Factuurnummer: ${invoiceNumber}`);
     else if(orderNumber)result.push(`Bestelnummer: ${orderNumber}`);
     if(relationNumber)result.push(`Relatienummer: ${relationNumber}`);
+    if(debtorNumber)result.push(`Debiteurnummer: ${debtorNumber}`);
+    if(subject)result.push(`Betreft: ${subject}`);
     if(work)result.push(`Werkzaamheden: ${work}`);
 
     if(items.length){
       result.push('');
       result.push('Artikelen:');
       items.forEach(item=>{
-        const quantity=item.quantity>1?`${item.quantity} × `:'';
+        const quantity=item.quantity>1?`${Number(item.quantity).toLocaleString('nl-NL',{maximumFractionDigits:2})} × `:'';
         const unit=item.unitPrice!==undefined&&item.quantity>1
           ?` à €${Number(item.unitPrice).toFixed(2).replace('.',',')}`
           :'';
@@ -694,13 +746,39 @@
 
     try{
       const {text,pdf}=await extractPdfText(file);
-      const direct=parseReceiptText(text);
+      const fileHint=`Documentnaam: ${String(file?.name||'').replace(/[_-]+/g,' ')}`;
+      const directText=normalizeDocumentText(`${fileHint}\n${text}`);
+      const direct=parseReceiptText(directText);
       const hasUsefulText=text.length>80&&(direct.amount!==null||direct.date||direct.merchant||direct.items.length);
+      const needsHeaderEnrichment=hasUsefulText&&(
+        merchantLooksLikeItem(direct.merchant)||
+        !direct.merchant||
+        !direct.date||
+        (/\bfactuur\b/i.test(directText)&&direct.items.length===0)
+      );
 
-      if(hasUsefulText){
-        lastReceiptOcrText=text;
-        applyResult(text,'pdf');
+      if(hasUsefulText&&!needsHeaderEnrichment){
+        lastReceiptOcrText=directText;
+        applyResult(directText,'pdf');
         return direct;
+      }
+
+      if(hasUsefulText&&needsHeaderEnrichment){
+        window.setCostOcrStatus('PDF-tekst gevonden; leverancier en factuurkop extra controleren…');
+        try{
+          const pageBlobs=await renderPdfPages(pdf,1);
+          const ocrText=await ocrPdfPages(pageBlobs);
+          const enrichedText=normalizeDocumentText(`${directText}\n${ocrText}`);
+          const enriched=parseReceiptText(enrichedText);
+          lastReceiptOcrText=enrichedText;
+          applyResult(enrichedText,'pdf');
+          return enriched;
+        }catch(enrichmentError){
+          console.warn('Extra controle van factuurkop mislukt; directe PDF-tekst wordt gebruikt.',enrichmentError);
+          lastReceiptOcrText=directText;
+          applyResult(directText,'pdf');
+          return direct;
+        }
       }
 
       window.setCostOcrStatus('Deze PDF bestaat waarschijnlijk uit scans. OCR wordt gestart…');
@@ -837,7 +915,7 @@
   };
 
   window.MSReceiptReaderPro={
-    version:'7.4.6',
+    version:'7.4.8',
     parseReceiptText,
     extractAmount,
     extractMerchant,
@@ -850,5 +928,5 @@
 
   const retry=document.getElementById('costOcrRetryButton');
   if(retry)retry.textContent='✨ Gegevens opnieuw uit foto/PDF lezen';
-  console.info('MijnSerenity 7.4.7 Polis & Periodieke Kosten Guard actief.');
+  console.info('MijnSerenity 7.4.8 Factuur Header & Regeltabel Guard actief.');
 })();
