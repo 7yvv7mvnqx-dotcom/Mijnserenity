@@ -1,4 +1,4 @@
-/* MijnSerenity 7.4.0 — betrouwbaar automatisch varen */
+/* MijnSerenity 7.4.1 — betrouwbaar automatisch varen */
 .ms735-reliability{
   margin-top:10px;
   padding:11px;
@@ -42,7 +42,7 @@ body.ms735-tracking-warning .ms735-live-reliability{
 }
 
 
-/* MijnSerenity 7.4.0 — automatische beste GPS-bron */
+/* MijnSerenity 7.4.1 — automatische beste GPS-bron */
 .ms736-garmin-panel{
   margin-top:9px;padding:9px;border-radius:12px;
   background:rgba(4,19,28,.42);border:1px solid rgba(91,204,245,.14);
