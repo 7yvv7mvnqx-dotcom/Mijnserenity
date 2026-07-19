@@ -1,12 +1,12 @@
 /* ============================================================
-   MijnSerenity Cloud 7.4.1 — GPS Continuity Guard
+   MijnSerenity Cloud 7.4.2 — GPS Continuity Guard
    Voorkomt stille GPS-uitval, foutieve aankomstdetectie en
    houdt Garmin/iOS-locatie actief met watch + zichtbare polling.
    ============================================================ */
 (()=>{
   'use strict';
 
-  const BUILD='7.4.1';
+  const BUILD='7.4.2';
   const GPS_STALE_MS=12000;
   const GPS_GAP_MS=20000;
   const MAX_POSITION_AGE_MS=20000;

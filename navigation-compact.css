@@ -1,0 +1,155 @@
+/* =========================================================
+   MijnSerenity 7.4.2 — compacte vaste navigatie
+   De navigatie staat buiten de scrollpagina, blijft aan de
+   echte viewport vast en neemt zo weinig mogelijk ruimte in.
+   ========================================================= */
+
+:root{
+  --nav-height:58px;
+  --ms742-nav-button:42px;
+}
+
+/* De pagina krijgt alleen de werkelijk benodigde vrije ruimte. */
+body{
+  padding-bottom:
+    calc(
+      var(--nav-height) +
+      env(safe-area-inset-bottom) +
+      8px
+    ) !important;
+}
+
+main,
+#app,
+.app-shell,
+.ms708-native-pager > .ms708-native-page{
+  padding-bottom:
+    calc(
+      var(--nav-height) +
+      env(safe-area-inset-bottom) +
+      12px
+    ) !important;
+}
+
+/* Belangrijk voor iOS/Safari: geen transformed/contained fixed element. */
+body > .bottom-nav.ms742-compact-nav,
+.bottom-nav.ms742-compact-nav{
+  position:fixed !important;
+  inset:auto 0 0 0 !important;
+  left:0 !important;
+  right:0 !important;
+  top:auto !important;
+  bottom:0 !important;
+
+  width:100% !important;
+  max-width:100% !important;
+  height:calc(var(--nav-height) + env(safe-area-inset-bottom)) !important;
+  min-height:calc(var(--nav-height) + env(safe-area-inset-bottom)) !important;
+  max-height:calc(var(--nav-height) + env(safe-area-inset-bottom)) !important;
+
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  gap:5px !important;
+  padding:6px 7px env(safe-area-inset-bottom) !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  touch-action:pan-x;
+
+  background:rgba(2,11,19,.88) !important;
+  border-top:1px solid rgba(113,220,255,.18) !important;
+  box-shadow:0 -8px 24px rgba(0,0,0,.22) !important;
+  backdrop-filter:blur(18px) saturate(130%);
+  -webkit-backdrop-filter:blur(18px) saturate(130%);
+
+  transform:none !important;
+  translate:none !important;
+  perspective:none !important;
+  contain:none !important;
+  isolation:isolate;
+  will-change:auto !important;
+
+  opacity:1 !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+  z-index:2147483000 !important;
+}
+
+body > .bottom-nav.ms742-compact-nav::-webkit-scrollbar,
+.bottom-nav.ms742-compact-nav::-webkit-scrollbar{
+  display:none;
+  width:0;
+  height:0;
+}
+
+.bottom-nav.ms742-compact-nav .bottom-nav-item,
+.bottom-nav.ms742-compact-nav.ms709-icon-nav .bottom-nav-item{
+  flex:0 0 var(--ms742-nav-button) !important;
+  width:var(--ms742-nav-button) !important;
+  min-width:var(--ms742-nav-button) !important;
+  max-width:var(--ms742-nav-button) !important;
+  height:var(--ms742-nav-button) !important;
+  min-height:var(--ms742-nav-button) !important;
+  max-height:var(--ms742-nav-button) !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-radius:13px !important;
+  background:transparent;
+}
+
+.bottom-nav.ms742-compact-nav .bottom-nav-item span,
+.bottom-nav.ms742-compact-nav.ms709-icon-nav .bottom-nav-item span{
+  margin:0 !important;
+  font-size:21px !important;
+  line-height:1 !important;
+}
+
+.bottom-nav.ms742-compact-nav .bottom-nav-item small{
+  display:none !important;
+}
+
+.bottom-nav.ms742-compact-nav .bottom-nav-item.active{
+  background:rgba(79,203,242,.14) !important;
+  box-shadow:inset 0 0 0 1px rgba(99,217,249,.23) !important;
+}
+
+/* Oude auto-hide- en page-swipe-regels mogen de balk niet meenemen. */
+body.ms708-native-pages-active .bottom-nav.ms742-compact-nav,
+.bottom-nav.ms742-compact-nav.bottom-nav-auto-hidden,
+.bottom-nav.ms742-compact-nav.bottom-nav-viewport-fixed,
+.bottom-nav.ms742-compact-nav.bottom-nav-always-visible{
+  transform:none !important;
+  translate:none !important;
+  contain:none !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+}
+
+/* Bij het toetsenbord verdwijnt de onderbalk tijdelijk uit de weg. */
+body.ms742-keyboard-open > .bottom-nav.ms742-compact-nav{
+  display:none !important;
+}
+
+@media(max-width:430px){
+  :root{
+    --nav-height:54px;
+    --ms742-nav-button:39px;
+  }
+
+  body > .bottom-nav.ms742-compact-nav,
+  .bottom-nav.ms742-compact-nav{
+    gap:4px !important;
+    padding-top:5px !important;
+  }
+
+  .bottom-nav.ms742-compact-nav .bottom-nav-item span{
+    font-size:20px !important;
+  }
+}

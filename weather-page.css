@@ -1,6 +1,6 @@
 
 /* =========================================================
-   MijnSerenity Cloud 7.4.1 — live weerpagina
+   MijnSerenity Cloud 7.4.2 — live weerpagina
    ========================================================= */
 
 .ms709-weather-hero{
@@ -403,7 +403,7 @@
     0 7px 22px rgba(0,0,0,.20);
 }
 
-/* Mission Control 7.4.1 */
+/* Mission Control 7.4.2 */
 .ms709-mission-top{
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
