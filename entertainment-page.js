@@ -1,5 +1,5 @@
 /* ============================================================
-   MijnSerenity Cloud 7.4.4 — Home Assistant Smart Home
+   MijnSerenity Cloud 7.4.5 — Home Assistant Smart Home
    Ring, Philips Hue, Sonos, Apple TV en scènes via één beveiligde
    webhook. Er wordt geen Home Assistant-accounttoken opgeslagen.
    ============================================================ */
