@@ -1,5 +1,5 @@
 
-/* MijnSerenity 7.5.4 — Mission Control */
+/* MijnSerenity 7.5.5 — Mission Control */
 let ms700DiagnosticResults=[];
 let ms700DiagnosticsBusy=false;
 let ms700BackupBusy=false;
@@ -280,7 +280,7 @@ function ms700RenderDiagnostics(){
 }
 function ms700SystemReport(){
   const s=ms700Snapshot();
-  return [`MijnSerenity 7.5.4 systeemrapport`,`Datum: ${new Date().toLocaleString('nl-NL')}`,
+  return [`MijnSerenity 7.5.5 systeemrapport`,`Datum: ${new Date().toLocaleString('nl-NL')}`,
     `Boot: ${currentBoat?.name||'Serenity'}`,`Mission-score: ${s.score}/100`,
     `Vertrekcheck: ${s.readiness}/100`,`Datakwaliteit: ${s.data.score}/100`,
     `Online: ${navigator.onLine?'ja':'nee'}`,'','Diagnose:',
@@ -298,7 +298,7 @@ async function ms700BuildBackup(){
   const tables=['boat_settings','pois','poi_photos','trips','trip_photos','costs','cost_receipts','technical_state','technical_events','live_navigation_state'];
   const database={},errors=[];
   for(const table of tables){const result=await ms700FetchBackupTable(table);database[table]=result.rows;if(result.error)errors.push({table,error:result.error})}
-  return {format:'mijnserenity-backup',format_version:1,app_version:'7.5.4',created_at:new Date().toISOString(),
+  return {format:'mijnserenity-backup',format_version:1,app_version:'7.5.5',created_at:new Date().toISOString(),
     boat:{id:currentBoat.id,name:currentBoat.name||settingsCache?.boat_name||'Serenity'},
     user:{id:currentUser?.id||null,email:currentUser?.email||null,role:currentRole||null},
     database,local:{smart_route_profile:ms700BoatProfile(),departure_check_today:ms700ManualChecks(),technical_cache:technicalStateCache||null,settings_cache:settingsCache||null},

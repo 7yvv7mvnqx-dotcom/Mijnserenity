@@ -1,4 +1,4 @@
-/* MijnSerenity 7.5.4 — navigatie echt vast aan het scherm */
+/* MijnSerenity 7.5.5 — navigatie echt vast aan het scherm */
 (()=>{
   'use strict';
 

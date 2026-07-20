@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.4 — native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.5.6 — native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -44,6 +44,21 @@ let ms708ResizeFrame=null;
 let ms708PreparingId=null;
 let ms708Initialised=false;
 
+
+function ms708SinglePageMode(){
+  return document.body?.classList.contains('ms755-single-page-nav');
+}
+
+function ms708SetSingleActive(id){
+  if(!ms708Pager)return;
+  ms708PageOrder.forEach(pageId=>{
+    const page=ms708PageElement(pageId);
+    page?.classList.toggle('ms755-route-active',pageId===id);
+    page?.setAttribute('aria-hidden',String(pageId!==id));
+  });
+  ms708Pager.dataset.ms755Active=id;
+}
+
 function ms708PageIndex(id){
   return ms708PageOrder.indexOf(id);
 }
@@ -72,6 +87,7 @@ function ms708ClosestPageIndex(){
 }
 
 function ms708CurrentPageId(){
+  if(ms708SinglePageMode())return ms708ActiveId||'dashboard';
   return ms708PageOrder[
     ms708ClosestPageIndex()
   ]||'dashboard';
@@ -192,6 +208,7 @@ function ms708ScrollToPage(
   id,
   smooth=true
 ){
+  if(ms708SinglePageMode())return ms708GoToPage(id,true);
   if(
     !ms708Pager||
     !ms708PageOrder.includes(id)
@@ -252,6 +269,15 @@ function ms708GoToPage(id,runPageActions=true){
     ms708ActivatePage(id,true);
   }else{
     ms708SetNavigationState(id);
+  }
+
+  if(ms708SinglePageMode()){
+    ms708SetSingleActive(id);
+    ms708Pager.scrollLeft=0;
+    ms708PageElement(id)?.scrollTo({top:0,left:0,behavior:'auto'});
+    ms708SetNavigationState(id);
+    ms708ResizePager();
+    return true;
   }
 
   const index=ms708PageIndex(id);
@@ -322,7 +348,10 @@ function ms708ResizePager(){
     ms708Pager.style.height=
       `${height}px`;
 
-    if(currentIndex>=0){
+    if(ms708SinglePageMode()){
+      ms708SetSingleActive(ms708ActiveId||'dashboard');
+      ms708Pager.scrollLeft=0;
+    }else if(currentIndex>=0){
       ms708Pager.scrollTo({
         left:
           currentIndex*
@@ -349,7 +378,7 @@ function ms708ResizePager(){
 }
 
 function ms708HandleScroll(){
-  if(!ms708Pager)return;
+  if(!ms708Pager||ms708SinglePageMode())return;
 
   if(!ms708Frame){
     ms708Frame=requestAnimationFrame(()=>{
@@ -404,7 +433,7 @@ function ms708HandleScroll(){
 }
 
 function ms708HandleScrollSettled(){
-  if(!ms708Pager)return;
+  if(!ms708Pager||ms708SinglePageMode())return;
 
   const id=ms708CurrentPageId();
 
@@ -547,6 +576,7 @@ function ms708CreatePager(){
 
   ms708Pager=pager;
   ms708Initialised=true;
+  if(ms708SinglePageMode())ms708SetSingleActive('dashboard');
 
   showTab=function(id,button){
     if(ms708PageOrder.includes(id)){
@@ -560,7 +590,11 @@ function ms708CreatePager(){
 
       ms708SetPagerVisibility(true);
 
-      if(!ms708SuppressScroll){
+      if(ms708SinglePageMode()){
+        ms708ActiveId=id;
+        ms708SetSingleActive(id);
+        ms708SetNavigationState(id);
+      }else if(!ms708SuppressScroll){
         ms708ScrollToPage(id,true);
       }
 
@@ -581,11 +615,15 @@ function ms708CreatePager(){
         sourceButton
       );
 
-    if(
-      ms708PageOrder.includes(id)&&
-      !ms708SuppressScroll
-    ){
-      ms708ScrollToPage(id,true);
+    if(ms708PageOrder.includes(id)&&!ms708SuppressScroll){
+      if(ms708SinglePageMode()){
+        ms708ActiveId=id;
+        ms708SetSingleActive(id);
+        ms708SetNavigationState(id);
+        ms708ResizePager();
+      }else{
+        ms708ScrollToPage(id,true);
+      }
     }
 
     return result;
@@ -655,6 +693,7 @@ function ms708CreatePager(){
 window.ms708ResizePager=ms708ResizePager;
 window.ms708ScrollToPage=ms708ScrollToPage;
 window.ms708GoToPage=ms708GoToPage;
+window.ms708SetSingleActive=ms708SetSingleActive;
 
 document.addEventListener(
   'DOMContentLoaded',

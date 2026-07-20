@@ -1,5 +1,5 @@
 /* =========================================================
-   MijnSerenity 7.5.4 — eenvoudige en toegankelijke bediening
+   MijnSerenity 7.5.6 — eenvoudige en toegankelijke bediening
    ========================================================= */
 
 :root{
@@ -560,7 +560,7 @@ body.ms750-more-open{
 
 
 /* =========================================================
-   MijnSerenity 7.5.4 — schermruimte en centrale bootmaten
+   MijnSerenity 7.5.6 — schermruimte en centrale bootmaten
    ========================================================= */
 
 /* De native pagina vult altijd de ruimte tot aan de vaste navigatie. */
@@ -679,7 +679,7 @@ body.ms750-simple-ui .ms752-edit-dimensions{
   }
 }
 
-/* 7.5.4 — Startknoppen moeten altijd één duidelijke klikzone hebben. */
+/* 7.5.6 — Startknoppen moeten altijd één duidelijke klikzone hebben. */
 body.ms750-simple-ui .ms750-home-button,
 body.ms750-simple-ui .bottom-nav-item[data-target="dashboard"]{
   position:relative;
@@ -697,4 +697,175 @@ body.ms750-simple-ui .bottom-nav-item[data-target="dashboard"]::after{
 body.ms750-simple-ui .ms750-auto-button:disabled{
   opacity:.72;
   cursor:wait;
+}
+
+
+/* =========================================================
+   MijnSerenity 7.5.6 — betrouwbare Start, zoeken, HA en radio
+   ========================================================= */
+
+/* In de eenvoudige bediening is er steeds exact één echte pagina actief.
+   Hierdoor kan Start niet meer alleen de kop wijzigen terwijl de oude
+   pagina-inhoud blijft staan. */
+body.ms755-single-page-nav .ms708-native-pager{
+  display:block !important;
+  overflow:hidden !important;
+  scroll-snap-type:none !important;
+  scroll-behavior:auto !important;
+}
+body.ms755-single-page-nav .ms708-native-pager > .ms708-native-page{
+  display:none !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  height:100% !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  transform:none !important;
+}
+body.ms755-single-page-nav .ms708-native-pager > .ms708-native-page.ms755-route-active{
+  display:block !important;
+}
+
+/* Welkom aan boord blijft alleen in de persoonlijke eenvoudige fotokaart.
+   De dubbele teksten in het uitgebreide dashboard verdwijnen. */
+body.ms750-simple-ui #dashboard > .dashboard-photo-card .dashboard-photo-overlay #welcome,
+body.ms750-simple-ui #dashboard .captain-intelligence-head #captainGreeting{
+  display:none !important;
+}
+
+/* Vraag het de Captain staat in uitgebreid dashboard direct onder Start live varen. */
+.ms755-expanded-captain-slot{
+  display:none;
+  margin:0 0 14px;
+  padding:16px;
+}
+body.ms750-simple-ui.ms750-dashboard-expanded .ms755-expanded-captain-slot{
+  display:block;
+}
+.ms755-expanded-captain-slot .ms690-captain-box{
+  margin:0;
+  width:100%;
+}
+
+/* De drie extra snelknoppen blijven rustig in hetzelfde raster. */
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) .ms750-primary-grid [data-ms750-route="search"],
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) .ms750-primary-grid [data-ms750-route="entertainment"],
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) .ms750-primary-grid [data-ms750-route="radio"]{
+  display:flex;
+}
+body.ms750-simple-ui.ms750-dashboard-expanded .ms750-primary-grid [data-ms750-route="search"],
+body.ms750-simple-ui.ms750-dashboard-expanded .ms750-primary-grid [data-ms750-route="entertainment"],
+body.ms750-simple-ui.ms750-dashboard-expanded .ms750-primary-grid [data-ms750-route="radio"]{
+  display:none;
+}
+
+.ms755-search-layer{
+  position:fixed;
+  inset:0;
+  z-index:2147483400;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:calc(env(safe-area-inset-top) + 18px) 12px calc(var(--ms750-nav-height) + env(safe-area-inset-bottom) + 12px);
+  background:rgba(0,0,0,.76);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.ms755-search-layer.hidden{display:none !important;}
+.ms755-search-panel{
+  width:min(760px,100%);
+  max-height:calc(100dvh - var(--ms750-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 42px);
+  overflow:auto;
+  padding:16px;
+  border:1px solid rgba(126,220,255,.32);
+  border-radius:22px;
+  background:#071d2b;
+  box-shadow:0 22px 70px rgba(0,0,0,.55);
+}
+.ms755-search-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.ms755-search-head h2{margin:1px 0 0;}
+.ms755-search-head small{color:#99c9dc;font-weight:800;letter-spacing:.08em;}
+body.ms750-simple-ui .ms755-search-close{
+  flex:0 0 48px;
+  min-width:48px;
+  width:48px;
+  padding:0;
+  border-radius:15px;
+  font-size:27px;
+}
+.ms755-search-input-wrap{
+  display:grid !important;
+  grid-template-columns:auto 1fr;
+  align-items:center;
+  gap:8px;
+  margin:0 0 12px !important;
+  padding:0 12px;
+  border:2px solid rgba(126,220,255,.30);
+  border-radius:17px;
+  background:#03131f;
+}
+.ms755-search-input-wrap > span{font-size:23px;}
+body.ms750-simple-ui .ms755-search-input-wrap input{
+  min-width:0;
+  border:0;
+  background:transparent;
+  padding-left:0;
+}
+.ms755-search-results{display:grid;gap:8px;}
+body.ms750-simple-ui .ms755-search-result{
+  min-height:68px;
+  display:grid;
+  grid-template-columns:48px 1fr auto;
+  align-items:center;
+  gap:10px;
+  padding:9px 12px;
+  border:1px solid rgba(126,220,255,.20);
+  border-radius:17px;
+  background:#0d2b40;
+  color:#fff;
+  text-align:left;
+}
+.ms755-search-result > span:first-child{
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  border-radius:14px;
+  background:rgba(255,255,255,.08);
+  font-size:24px;
+}
+.ms755-search-result strong,.ms755-search-result small{display:block;}
+.ms755-search-result small{color:#bad1dd;font-size:13px !important;}
+.ms755-search-result b{font-size:24px;color:#66d8ff;}
+.ms755-search-empty{padding:22px;text-align:center;color:#bcd0dc;}
+.ms755-radio-highlight{animation:ms755RadioPulse 1.8s ease;}
+@keyframes ms755RadioPulse{
+  0%,100%{box-shadow:none;}
+  30%,70%{box-shadow:0 0 0 4px rgba(255,222,89,.65),0 0 28px rgba(255,222,89,.26);}
+}
+
+@media(max-width:520px){
+  .ms750-primary-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .ms750-primary-action{min-height:112px;align-items:flex-start;flex-direction:column;}
+  .ms750-primary-action .ms750-action-icon{width:48px;height:48px;flex-basis:48px;}
+}
+
+
+/* 7.5.6: Start is altijd een volledige paginawissel, ook na iPad viewport-herstel. */
+body.ms755-single-page-nav #ms708NativePager > #dashboard.ms755-route-active{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+}
+body.ms755-single-page-nav #ms708NativePager > .ms708-native-page:not(.ms755-route-active){
+  display:none !important;
+  pointer-events:none !important;
 }

@@ -1,4 +1,4 @@
-/* MijnSerenity 7.5.4 LIVE — officiële Home Assistant OAuth + WebSocket koppeling */
+/* MijnSerenity 7.5.5 LIVE — officiële Home Assistant OAuth + WebSocket koppeling */
 (()=>{
   'use strict';
 

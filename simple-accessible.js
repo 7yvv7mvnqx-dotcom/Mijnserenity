@@ -1,8 +1,8 @@
-/* MijnSerenity 7.5.4 — eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.5.5 — eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.5.4';
+  const BUILD='7.5.6';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -28,6 +28,7 @@
   let currentRoute='dashboard';
   let originalCaptainNavigate=null;
   let moreLayer=null;
+  let searchLayer=null;
   let pageTitle=null;
   let homeButton=null;
   let autoObserver=null;
@@ -191,6 +192,9 @@
         ${primaryButton('logbook','📖','Logboek','Vaartochten bekijken')}
         ${primaryButton('costs','🧾','Kosten','Bon of factuur toevoegen')}
         ${primaryButton('weather','☀️','Weer','Verwachting en waarschuwingen')}
+        ${primaryButton('search','🔎','Zoeken','Zoek in alles op MijnSerenity')}
+        ${primaryButton('entertainment','🏡','Home Assistant','Alles aan boord bedienen')}
+        ${primaryButton('radio','📻','Radio','Sonos en favoriete zenders')}
       </div>
     `;
 
@@ -205,12 +209,188 @@
         if(typeof window.openWaterkaarten==='function')window.openWaterkaarten();
         return;
       }
+      if(route==='search'){
+        openSearch();
+        return;
+      }
+      if(route==='radio'){
+        openRadio();
+        return;
+      }
       navigate(route);
     });
 
     section.querySelector('#ms750AutoButton')?.addEventListener('click',toggleAutomaticVaren);
     syncAutomaticVaren();
     observePersonalWelcome();
+  }
+
+  const SEARCH_ROUTES=[
+    {route:'dashboard',icon:'🏠',title:'Start',subtitle:'Persoonlijk overzicht',keywords:'home begin dashboard'},
+    {route:'live',icon:'⛵',title:'Varen',subtitle:'GPS, snelheid en route',keywords:'live automatisch varen navigatie'},
+    {route:'waterkaarten',icon:'🗺️',title:'Waterkaarten',subtitle:'Route kiezen of maken',keywords:'waterkaart route plannen'},
+    {route:'map',icon:'📍',title:'Kaart',subtitle:'Positie, havens en POI’s',keywords:'kaart locatie gps poi haven'},
+    {route:'logbook',icon:'📖',title:'Logboek',subtitle:'Vaartochten bekijken',keywords:'log route tocht geschiedenis'},
+    {route:'ais',icon:'📡',title:'AIS',subtitle:'Boten in de omgeving',keywords:'schepen boten volgen ais'},
+    {route:'weather',icon:'☀️',title:'Weer',subtitle:'Verwachting en waarschuwingen',keywords:'regen wind radar weer'},
+    {route:'planner',icon:'🧭',title:'Reisplanner',subtitle:'Route en bootafmetingen',keywords:'reis route hoogte diepgang brug'},
+    {route:'entertainment',icon:'🏡',title:'Home Assistant',subtitle:'Slimme apparaten bedienen',keywords:'home assistant ha ring hue sonos apple tv'},
+    {route:'radio',icon:'📻',title:'Radio',subtitle:'Sonos en favoriete zenders',keywords:'radio muziek sonos zender favoriet'},
+    {route:'technical',icon:'⚙️',title:'Techniek',subtitle:'Accu, motor en onderhoud',keywords:'techniek accu motor onderhoud storing'},
+    {route:'pois',icon:'📍',title:'POI’s',subtitle:'Havens en favoriete locaties',keywords:'poi haven favorieten locatie'},
+    {route:'costs',icon:'🧾',title:'Kosten',subtitle:'Bonnen en facturen',keywords:'kosten bon factuur uitgave'},
+    {route:'finance',icon:'💶',title:'Financieel',subtitle:'Uitgaven en overzicht',keywords:'financieel geld totaal uitgaven'},
+    {route:'settings',icon:'🚤',title:'Instellingen',subtitle:'Boot, app en koppelingen',keywords:'instellingen boot versie verversen'},
+    {route:'boat',icon:'👥',title:'Boot en delen',subtitle:'Gebruikers en toegang',keywords:'delen account desiree gebruiker'}
+  ];
+
+  function searchMatch(haystack,terms){
+    const value=String(haystack||'').toLowerCase();
+    return terms.every(term=>value.includes(term));
+  }
+
+  function searchRouteButton(item){
+    return `
+      <button type="button" class="ms755-search-result" data-ms755-search-route="${escapeHtml(item.route)}">
+        <span aria-hidden="true">${item.icon}</span>
+        <span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.subtitle)}</small></span>
+        <b aria-hidden="true">›</b>
+      </button>
+    `;
+  }
+
+  function renderSearchResults(value=''){
+    if(!searchLayer)return;
+    const target=searchLayer.querySelector('#ms755SearchResults');
+    if(!target)return;
+    const query=String(value||'').trim().toLowerCase();
+    const terms=query.split(/\s+/).filter(Boolean);
+
+    const routes=SEARCH_ROUTES.filter(item=>
+      !terms.length||searchMatch(`${item.title} ${item.subtitle} ${item.keywords}`,terms)
+    ).slice(0,10);
+
+    let dataItems=[];
+    if(terms.length>=1&&typeof window.captainSearchItems==='function'){
+      try{
+        dataItems=window.captainSearchItems()
+          .filter(item=>searchMatch(item.search,terms))
+          .slice(0,10);
+      }catch(error){
+        console.warn('Zoekgegevens konden niet worden gelezen:',error);
+      }
+    }
+
+    const routeHtml=routes.map(searchRouteButton).join('');
+    const dataHtml=dataItems.map(item=>`
+      <button type="button" class="ms755-search-result" data-ms755-search-type="${escapeHtml(item.type)}" data-ms755-search-id="${escapeHtml(item.id)}">
+        <span aria-hidden="true">${item.icon||'🔎'}</span>
+        <span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.subtitle)}</small></span>
+        <b aria-hidden="true">›</b>
+      </button>
+    `).join('');
+
+    target.innerHTML=(routeHtml||dataHtml)
+      ?`${routeHtml}${dataHtml}`
+      :`<div class="ms755-search-empty">Geen resultaat voor “${escapeHtml(value)}”.</div>`;
+  }
+
+  function buildSearchLayer(){
+    if(document.getElementById('ms755SearchLayer'))return;
+    const layer=document.createElement('div');
+    layer.id='ms755SearchLayer';
+    layer.className='ms755-search-layer hidden';
+    layer.setAttribute('role','dialog');
+    layer.setAttribute('aria-modal','true');
+    layer.setAttribute('aria-labelledby','ms755SearchTitle');
+    layer.setAttribute('aria-hidden','true');
+    layer.innerHTML=`
+      <div class="ms755-search-panel" role="document">
+        <div class="ms755-search-head">
+          <div><small>MIJNSERENITY</small><h2 id="ms755SearchTitle">Zoek in alles</h2></div>
+          <button type="button" class="ms755-search-close" aria-label="Zoeken sluiten">×</button>
+        </div>
+        <label class="ms755-search-input-wrap" for="ms755SearchInput">
+          <span aria-hidden="true">🔎</span>
+          <input id="ms755SearchInput" type="search" autocomplete="off" placeholder="Bijv. haven, factuur, route of Home Assistant">
+        </label>
+        <div id="ms755SearchResults" class="ms755-search-results" aria-live="polite"></div>
+      </div>
+    `;
+    document.body.appendChild(layer);
+    searchLayer=layer;
+    const input=layer.querySelector('#ms755SearchInput');
+    input?.addEventListener('input',()=>renderSearchResults(input.value));
+    layer.addEventListener('click',event=>{
+      if(event.target===layer||event.target.closest('.ms755-search-close')){
+        closeSearch();
+        return;
+      }
+      const routeButton=event.target.closest('[data-ms755-search-route]');
+      if(routeButton){
+        const route=routeButton.dataset.ms755SearchRoute;
+        closeSearch(false);
+        if(route==='waterkaarten')window.openWaterkaarten?.();
+        else if(route==='radio')openRadio();
+        else navigate(route);
+        return;
+      }
+      const dataButton=event.target.closest('[data-ms755-search-type]');
+      if(dataButton){
+        closeSearch(false);
+        window.openCaptainItem?.(dataButton.dataset.ms755SearchType,dataButton.dataset.ms755SearchId);
+      }
+    });
+    renderSearchResults('');
+  }
+
+  function openSearch(){
+    if(!searchLayer)buildSearchLayer();
+    searchLayer?.classList.remove('hidden');
+    searchLayer?.setAttribute('aria-hidden','false');
+    document.body.classList.add('ms755-search-open');
+    const input=searchLayer?.querySelector('#ms755SearchInput');
+    if(input){
+      input.value='';
+      renderSearchResults('');
+      requestAnimationFrame(()=>input.focus());
+    }
+  }
+
+  function closeSearch(restoreFocus=true){
+    if(!searchLayer||searchLayer.classList.contains('hidden'))return;
+    searchLayer.classList.add('hidden');
+    searchLayer.setAttribute('aria-hidden','true');
+    document.body.classList.remove('ms755-search-open');
+    if(restoreFocus)document.querySelector('[data-ms750-route="search"]')?.focus?.();
+  }
+
+  function openRadio(){
+    navigate('entertainment');
+    const reveal=()=>{
+      const card=document.querySelector('#entertainment .sonos-control-card');
+      card?.scrollIntoView({behavior:'smooth',block:'start'});
+      card?.classList.add('ms755-radio-highlight');
+      setTimeout(()=>card?.classList.remove('ms755-radio-highlight'),1800);
+    };
+    setTimeout(reveal,180);
+  }
+
+  function repositionCaptainQuestion(){
+    const dashboard=document.getElementById('dashboard');
+    const strip=dashboard?.querySelector(':scope > .captain-strip');
+    const captainBox=dashboard?.querySelector('.ms690-captain-box');
+    if(!dashboard||!strip||!captainBox)return;
+
+    let slot=document.getElementById('ms755ExpandedCaptainSlot');
+    if(!slot){
+      slot=document.createElement('section');
+      slot.id='ms755ExpandedCaptainSlot';
+      slot.className='card ms755-expanded-captain-slot';
+      slot.setAttribute('aria-label','Vraag het de Captain');
+      strip.insertAdjacentElement('afterend',slot);
+    }
+    slot.appendChild(captainBox);
   }
 
   function moreRoute(route){
@@ -396,19 +576,75 @@
     window.setTimeout(()=>forceRouteVisible(route,false),40);
   }
 
-  function installReliableStartNavigation(){
-    if(document.documentElement.dataset.ms753StartGuard==='true')return;
-    document.documentElement.dataset.ms753StartGuard='true';
+  function hardOpenStartPage(){
+    const dashboard=document.getElementById('dashboard');
+    const pager=document.getElementById('ms708NativePager');
+    if(!dashboard)return false;
 
-    document.addEventListener('click',event=>{
+    document.body.classList.add('ms755-single-page-nav');
+    pager?.classList.remove('hidden');
+    if(pager){
+      pager.dataset.ms755Active='dashboard';
+      pager.scrollLeft=0;
+      pager.style.setProperty('display','block','important');
+    }
+
+    const pages=pager
+      ?[...pager.querySelectorAll(':scope > .ms708-native-page')]
+      :[...document.querySelectorAll('#appView > section')];
+
+    pages.forEach(page=>{
+      const active=page===dashboard||page.id==='dashboard';
+      page.classList.toggle('ms755-route-active',active);
+      page.classList.toggle('hidden',!active);
+      page.setAttribute('aria-hidden',String(!active));
+      page.style.setProperty('display',active?'block':'none','important');
+      if(active){
+        page.style.setProperty('width','100%','important');
+        page.style.setProperty('min-width','0','important');
+        page.scrollTop=0;
+      }
+    });
+
+    if(typeof window.ms708SetSingleActive==='function'){
+      try{window.ms708SetSingleActive('dashboard');}catch(_error){}
+    }
+    if(typeof window.ms708GoToPage==='function'){
+      try{window.ms708GoToPage('dashboard',true);}catch(_error){}
+    }
+
+    currentRoute='dashboard';
+    updatePageBar('dashboard');
+    closeMore(false);
+    window.scrollTo({top:0,left:0,behavior:'auto'});
+    requestAnimationFrame(()=>{
+      dashboard.classList.add('ms755-route-active');
+      dashboard.classList.remove('hidden');
+      dashboard.style.setProperty('display','block','important');
+      dashboard.scrollTop=0;
+      window.scrollTo(0,0);
+    });
+    return true;
+  }
+
+  function installReliableStartNavigation(){
+    if(document.documentElement.dataset.ms756StartGuard==='true')return;
+    document.documentElement.dataset.ms756StartGuard='true';
+
+    const activate=event=>{
       const start=event.target.closest(
         '.ms750-home-button, .bottom-nav-item[data-target="dashboard"], [data-ms750-route="dashboard"]'
       );
       if(!start)return;
       event.preventDefault();
+      event.stopPropagation();
       event.stopImmediatePropagation();
-      navigate('dashboard',start);
-    },true);
+      hardOpenStartPage();
+    };
+
+    document.addEventListener('pointerup',activate,true);
+    document.addEventListener('click',activate,true);
+    window.ms756OpenStart=hardOpenStartPage;
   }
 
   function openMore(){
@@ -532,13 +768,19 @@
   }
 
   function applyPreferences(){
-    document.body.classList.add('ms750-simple-ui');
+    document.body.classList.add('ms750-simple-ui','ms755-single-page-nav');
     document.body.classList.toggle('ms750-large-text',storedBoolean(LARGE_TEXT_KEY,true));
     document.body.classList.toggle('ms750-dashboard-expanded',storedBoolean(EXPANDED_KEY,false));
     storeBoolean(SIMPLE_KEY,true);
   }
 
   function handleKeyboard(event){
+    const searchOpen=searchLayer&&!searchLayer.classList.contains('hidden');
+    if(event.key==='Escape'&&searchOpen){
+      event.preventDefault();
+      closeSearch();
+      return;
+    }
     const open=moreLayer&&!moreLayer.classList.contains('hidden');
     if(event.key==='Escape'&&open){
       event.preventDefault();
@@ -566,14 +808,19 @@
     buildPageBar();
     buildSimpleDashboard();
     buildMoreLayer();
+    buildSearchLayer();
+    repositionCaptainQuestion();
     rebuildBottomNavigation();
     wrapNavigation();
     installReliableStartNavigation();
     observeAutomaticVaren();
     afterNavigate('dashboard');
+    [0,120,450].forEach(delay=>setTimeout(()=>navigate('dashboard'),delay));
     document.addEventListener('keydown',handleKeyboard);
     window.ms753RefreshSimpleAutomaticUi=syncAutomaticVaren;
     window.ms753Navigate=navigate;
+    window.ms755OpenSearch=openSearch;
+    window.ms755OpenRadio=openRadio;
     console.info(`MijnSerenity ${BUILD}: eenvoudige bediening actief.`);
   }
 
