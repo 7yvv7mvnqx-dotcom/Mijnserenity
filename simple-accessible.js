@@ -1,8 +1,8 @@
-/* MijnSerenity 7.5.3 — eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.5.4 — eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.5.3';
+  const BUILD='7.5.4';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -335,23 +335,34 @@
     window.captainNavigate=wrapped;
   }
 
-  function forceRouteVisible(route){
+  function forceRouteVisible(route,runPageActions=false){
     const target=document.getElementById(route);
-    if(!target)return;
+    if(!target)return false;
 
     const pager=document.getElementById('ms708NativePager');
     if(pager&&target.parentElement===pager){
-      if(typeof window.ms708ScrollToPage==='function'){
-        window.ms708ScrollToPage(route,true);
-      }else{
-        target.scrollIntoView({behavior:'auto',block:'nearest',inline:'start'});
+      if(typeof window.ms708GoToPage==='function'){
+        return window.ms708GoToPage(route,runPageActions)!==false;
       }
-      return;
+      if(typeof window.ms708ScrollToPage==='function'){
+        return window.ms708ScrollToPage(route,false)!==false;
+      }
+
+      const pages=[...pager.querySelectorAll(':scope > section')];
+      const index=pages.indexOf(target);
+      if(index>=0){
+        const left=index*Math.max(1,pager.clientWidth);
+        pager.scrollTo({left,top:0,behavior:'auto'});
+        pager.scrollLeft=left;
+        return true;
+      }
+      return false;
     }
 
     document.querySelectorAll('#appView > section').forEach(section=>{
       section.classList.toggle('hidden',section!==target);
     });
+    return true;
   }
 
   function navigate(route,sourceButton=null){
@@ -359,23 +370,30 @@
       route='settings';
     }
 
+    /*
+       Pagina's in de iPhone/iPad-pager gaan voortaan rechtstreeks en
+       zonder animatie naar de gekozen pagina. Zo kunnen header, actieve
+       knop en inhoud niet meer uit elkaar lopen.
+    */
+    if(typeof window.ms708GoToPage==='function'&&window.ms708GoToPage(route,true)){
+      afterNavigate(route);
+      requestAnimationFrame(()=>forceRouteVisible(route,false));
+      return;
+    }
+
     try{
       if(typeof window.captainNavigate==='function'){
         window.captainNavigate(route,sourceButton);
       }else{
-        forceRouteVisible(route);
-        afterNavigate(route);
+        forceRouteVisible(route,true);
       }
     }catch(error){
       console.warn('Navigatie opnieuw uitgevoerd:',error);
-      forceRouteVisible(route);
-      afterNavigate(route);
+      forceRouteVisible(route,true);
     }
 
-    window.setTimeout(()=>{
-      forceRouteVisible(route);
-      if(currentRoute!==route)afterNavigate(route);
-    },90);
+    afterNavigate(route);
+    window.setTimeout(()=>forceRouteVisible(route,false),40);
   }
 
   function installReliableStartNavigation(){

@@ -1,5 +1,5 @@
 /* ============================================================
-   MijnSerenity 7.5.3 — apparaat-synchronisatie en Start Guard
+   MijnSerenity 7.5.4 — apparaat-synchronisatie en Start Guard
    De bootbrede stand van automatisch varen wordt klein en veilig
    opgeslagen in de bestaande live_navigation_state-rij.
    Slechts één apparaat blijft de GPS-recorder.
@@ -7,7 +7,7 @@
 (()=>{
   'use strict';
 
-  const BUILD='7.5.3';
+  const BUILD='7.5.4';
   const FIELD='sharedAutomaticVaren';
   let shared={
     known:false,

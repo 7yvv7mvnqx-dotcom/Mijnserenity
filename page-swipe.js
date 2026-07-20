@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.3 — native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.5.4 — native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -196,11 +196,21 @@ function ms708ScrollToPage(
     !ms708Pager||
     !ms708PageOrder.includes(id)
   ){
-    return;
+    return false;
   }
 
   const index=ms708PageIndex(id);
   const page=ms708PageElement(id);
+
+  /*
+     Zet de doelpagina direct als actief. Eerder bleef ms708ActiveId
+     tijdens de animatie nog op bijvoorbeeld 'settings' staan. Een
+     Visual Viewport/resize-event op iOS kon de pager dan meteen weer
+     naar die oude pagina terugzetten: de kop veranderde wel, de pagina
+     zelf niet. Dit is de kern van de Start-fout uit 7.5.3.
+  */
+  ms708ActiveId=id;
+  ms708PreparePage(id);
 
   page?.scrollTo({
     top:0,
@@ -221,6 +231,36 @@ function ms708ScrollToPage(
   if(!smooth){
     ms708ActivatePage(id,true);
   }
+
+  return true;
+}
+
+/*
+   Betrouwbare openbare route voor de vereenvoudigde navigatie.
+   Hiermee worden inhoud, paginapositie en paginalogica in één stap
+   naar dezelfde pagina gezet, zonder afhankelijk te zijn van een
+   soepele scrollanimatie die iOS tussentijds kan terugdraaien.
+*/
+function ms708GoToPage(id,runPageActions=true){
+  if(!ms708Pager||!ms708PageOrder.includes(id))return false;
+
+  ms708ActiveId=id;
+  ms708PreparePage(id);
+  ms708SetPagerVisibility(true);
+
+  if(runPageActions){
+    ms708ActivatePage(id,true);
+  }else{
+    ms708SetNavigationState(id);
+  }
+
+  const index=ms708PageIndex(id);
+  const left=index*Math.max(1,ms708Pager.clientWidth);
+  ms708Pager.scrollTo({left,top:0,behavior:'auto'});
+  ms708Pager.scrollLeft=left;
+  ms708SetNavigationState(id);
+
+  return true;
 }
 
 function ms708SetPagerVisibility(visible){
@@ -613,6 +653,8 @@ function ms708CreatePager(){
 }
 
 window.ms708ResizePager=ms708ResizePager;
+window.ms708ScrollToPage=ms708ScrollToPage;
+window.ms708GoToPage=ms708GoToPage;
 
 document.addEventListener(
   'DOMContentLoaded',
