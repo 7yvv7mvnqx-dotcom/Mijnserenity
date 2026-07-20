@@ -1,5 +1,5 @@
 /* =========================================================
-   MijnSerenity 7.5.2 — eenvoudige en toegankelijke bediening
+   MijnSerenity 7.5.3 — eenvoudige en toegankelijke bediening
    ========================================================= */
 
 :root{
@@ -560,7 +560,7 @@ body.ms750-more-open{
 
 
 /* =========================================================
-   MijnSerenity 7.5.2 — schermruimte en centrale bootmaten
+   MijnSerenity 7.5.3 — schermruimte en centrale bootmaten
    ========================================================= */
 
 /* De native pagina vult altijd de ruimte tot aan de vaste navigatie. */
@@ -677,4 +677,24 @@ body.ms750-simple-ui .ms752-edit-dimensions{
   .ms752-dimensions-head{
     align-items:flex-start;
   }
+}
+
+/* 7.5.3 — Startknoppen moeten altijd één duidelijke klikzone hebben. */
+body.ms750-simple-ui .ms750-home-button,
+body.ms750-simple-ui .bottom-nav-item[data-target="dashboard"]{
+  position:relative;
+  z-index:3;
+  pointer-events:auto !important;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+body.ms750-simple-ui .ms750-home-button::after,
+body.ms750-simple-ui .bottom-nav-item[data-target="dashboard"]::after{
+  content:"";
+  position:absolute;
+  inset:-2px;
+}
+body.ms750-simple-ui .ms750-auto-button:disabled{
+  opacity:.72;
+  cursor:wait;
 }

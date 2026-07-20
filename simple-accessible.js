@@ -1,8 +1,8 @@
-/* MijnSerenity 7.5.2 — eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.5.3 — eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.5.2';
+  const BUILD='7.5.3';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -335,13 +335,62 @@
     window.captainNavigate=wrapped;
   }
 
+  function forceRouteVisible(route){
+    const target=document.getElementById(route);
+    if(!target)return;
+
+    const pager=document.getElementById('ms708NativePager');
+    if(pager&&target.parentElement===pager){
+      if(typeof window.ms708ScrollToPage==='function'){
+        window.ms708ScrollToPage(route,true);
+      }else{
+        target.scrollIntoView({behavior:'auto',block:'nearest',inline:'start'});
+      }
+      return;
+    }
+
+    document.querySelectorAll('#appView > section').forEach(section=>{
+      section.classList.toggle('hidden',section!==target);
+    });
+  }
+
   function navigate(route,sourceButton=null){
     if(route==='boat'&&typeof window.isAppAdmin==='function'&&!window.isAppAdmin()){
       route='settings';
     }
-    if(typeof window.captainNavigate==='function'){
-      window.captainNavigate(route,sourceButton);
+
+    try{
+      if(typeof window.captainNavigate==='function'){
+        window.captainNavigate(route,sourceButton);
+      }else{
+        forceRouteVisible(route);
+        afterNavigate(route);
+      }
+    }catch(error){
+      console.warn('Navigatie opnieuw uitgevoerd:',error);
+      forceRouteVisible(route);
+      afterNavigate(route);
     }
+
+    window.setTimeout(()=>{
+      forceRouteVisible(route);
+      if(currentRoute!==route)afterNavigate(route);
+    },90);
+  }
+
+  function installReliableStartNavigation(){
+    if(document.documentElement.dataset.ms753StartGuard==='true')return;
+    document.documentElement.dataset.ms753StartGuard='true';
+
+    document.addEventListener('click',event=>{
+      const start=event.target.closest(
+        '.ms750-home-button, .bottom-nav-item[data-target="dashboard"], [data-ms750-route="dashboard"]'
+      );
+      if(!start)return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      navigate('dashboard',start);
+    },true);
   }
 
   function openMore(){
@@ -408,17 +457,41 @@
     const button=document.getElementById('ms750AutoButton');
     const status=document.getElementById('ms750AutoStatus');
     if(!button||!status)return;
-    const enabled=Boolean(source?.checked);
-    button.textContent=enabled?'Aan':'Uit';
+
+    const shared=typeof window.ms753SharedAutomaticState==='function'
+      ?window.ms753SharedAutomaticState()
+      :null;
+    const localEnabled=Boolean(source?.checked);
+    const enabled=shared?.known?Boolean(shared.enabled):localEnabled;
+
+    button.textContent=shared?.busy?'Even…':(enabled?'Aan':'Uit');
+    button.disabled=Boolean(shared?.busy);
     button.classList.toggle('is-on',enabled);
     button.setAttribute('aria-pressed',String(enabled));
+
     const detail=document.getElementById('ms701DepartureStatus')?.textContent?.trim();
-    status.textContent=enabled
-      ?(detail||'MijnSerenity wacht automatisch op vertrek.')
-      :'Tik op Aan om een vaartocht automatisch te registreren.';
+    if(shared?.error){
+      status.textContent=enabled
+        ?'Aan op dit apparaat · synchronisatie tijdelijk niet bereikbaar.'
+        :'Synchronisatie tussen iPhone en iPad tijdelijk niet bereikbaar.';
+    }else if(enabled&&shared?.known&&!shared.localRecorder){
+      status.textContent=shared.claimFresh
+        ?'Aan op een ander apparaat · dit apparaat kijkt mee.'
+        :'Aan voor Serenity · momenteel registreert geen apparaat.';
+    }else{
+      status.textContent=enabled
+        ?(detail||'Dit apparaat wacht automatisch op vertrek.')
+        :'Tik op Aan om automatisch varen voor Serenity te activeren.';
+    }
   }
 
-  function toggleAutomaticVaren(){
+  async function toggleAutomaticVaren(){
+    if(typeof window.ms753ToggleSharedAutomatic==='function'){
+      await window.ms753ToggleSharedAutomatic();
+      syncAutomaticVaren();
+      return;
+    }
+
     const source=automaticToggle();
     if(!source){
       navigate('dashboard');
@@ -477,9 +550,12 @@
     buildMoreLayer();
     rebuildBottomNavigation();
     wrapNavigation();
+    installReliableStartNavigation();
     observeAutomaticVaren();
     afterNavigate('dashboard');
     document.addEventListener('keydown',handleKeyboard);
+    window.ms753RefreshSimpleAutomaticUi=syncAutomaticVaren;
+    window.ms753Navigate=navigate;
     console.info(`MijnSerenity ${BUILD}: eenvoudige bediening actief.`);
   }
 
