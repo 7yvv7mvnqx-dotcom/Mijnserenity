@@ -1,0 +1,517 @@
+/* =========================================================
+   MijnSerenity 7.5.0 — eenvoudige en toegankelijke bediening
+   ========================================================= */
+
+:root{
+  --ms750-surface:#0d2b40;
+  --ms750-surface-strong:#143b55;
+  --ms750-border:rgba(142,222,255,.28);
+  --ms750-focus:#ffe66d;
+  --ms750-nav-height:72px;
+}
+
+html{
+  scroll-padding-top:88px;
+  -webkit-text-size-adjust:100%;
+}
+
+body.ms750-simple-ui{
+  --nav-height:var(--ms750-nav-height);
+  line-height:1.45;
+  padding-bottom:calc(var(--ms750-nav-height) + env(safe-area-inset-bottom) + 12px) !important;
+}
+
+body.ms750-simple-ui.ms750-large-text{
+  font-size:18px;
+}
+
+body.ms750-simple-ui.ms750-large-text .small,
+body.ms750-simple-ui.ms750-large-text label,
+body.ms750-simple-ui.ms750-large-text .sub{
+  font-size:16px;
+}
+
+body.ms750-simple-ui main{
+  width:100%;
+  max-width:1100px;
+  padding:0 14px calc(var(--ms750-nav-height) + env(safe-area-inset-bottom) + 22px) !important;
+}
+
+body.ms750-simple-ui #appView > .tabs{
+  display:none !important;
+}
+
+/* Duidelijke, vaste paginakop met veilige ruimte onder de iOS-statusbalk. */
+.ms750-pagebar{
+  position:sticky;
+  top:0;
+  z-index:1005;
+  display:grid;
+  grid-template-columns:minmax(52px,auto) 1fr minmax(52px,auto);
+  align-items:center;
+  gap:10px;
+  min-height:66px;
+  margin:0 -14px 14px;
+  padding:max(8px,env(safe-area-inset-top)) 14px 8px;
+  background:rgba(2,11,19,.97);
+  border-bottom:1px solid rgba(132,220,255,.18);
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+.ms750-pagebar h1{
+  min-width:0;
+  margin:0;
+  overflow:hidden;
+  color:#fff;
+  font-size:clamp(20px,3.5vw,28px);
+  line-height:1.15;
+  text-align:center;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.ms750-pagebar button{
+  min-width:52px;
+  min-height:52px;
+  padding:8px 10px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  background:#183d56;
+  color:#fff;
+  font-size:16px;
+}
+
+.ms750-pagebar .ms750-home-button.is-placeholder{
+  visibility:hidden;
+  pointer-events:none;
+}
+
+/* Vereenvoudigd startscherm. */
+.ms750-simple-dashboard{
+  margin-bottom:16px;
+}
+
+.ms750-welcome-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:14px;
+  padding:18px;
+  border:1px solid var(--ms750-border);
+  border-radius:22px;
+  background:linear-gradient(135deg,rgba(69,200,255,.18),rgba(75,211,143,.10)),var(--ms750-surface);
+}
+
+.ms750-welcome-card h2{
+  margin:0 0 4px;
+  font-size:clamp(25px,4.5vw,34px);
+}
+
+.ms750-welcome-card p{
+  margin:0;
+  color:#c9dce7;
+}
+
+.ms750-boat-mark{
+  flex:0 0 64px;
+  display:grid;
+  place-items:center;
+  width:64px;
+  height:64px;
+  border-radius:20px;
+  background:rgba(255,255,255,.09);
+  font-size:34px;
+}
+
+.ms750-auto-card{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:14px;
+  margin-bottom:14px;
+  padding:16px 18px;
+  border:1px solid var(--ms750-border);
+  border-radius:20px;
+  background:var(--ms750-surface);
+}
+
+.ms750-auto-card strong{
+  display:block;
+  margin-bottom:3px;
+  font-size:20px;
+}
+
+.ms750-auto-card small{
+  display:block;
+  color:#bdd0dd;
+  font-size:15px;
+}
+
+.ms750-auto-button{
+  min-width:92px;
+  min-height:52px;
+  border:2px solid rgba(255,255,255,.16);
+  border-radius:999px;
+  background:#29475a;
+  color:#fff;
+}
+
+.ms750-auto-button.is-on{
+  background:#45c8ff;
+  color:#02111c;
+}
+
+.ms750-primary-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+.ms750-primary-action{
+  min-height:104px;
+  padding:15px;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  border:1px solid var(--ms750-border);
+  border-radius:21px;
+  background:var(--ms750-surface);
+  color:#fff;
+  text-align:left;
+  box-shadow:none;
+}
+
+.ms750-primary-action .ms750-action-icon{
+  flex:0 0 54px;
+  display:grid;
+  place-items:center;
+  width:54px;
+  height:54px;
+  border-radius:17px;
+  background:rgba(255,255,255,.09);
+  font-size:29px;
+}
+
+.ms750-primary-action strong{
+  display:block;
+  margin-bottom:3px;
+  font-size:20px;
+  line-height:1.15;
+}
+
+.ms750-primary-action small{
+  display:block;
+  color:#c0d4df;
+  font-size:14px;
+  font-weight:650;
+  line-height:1.25;
+}
+
+.ms750-primary-action.ms750-start-action{
+  background:linear-gradient(135deg,rgba(69,200,255,.30),rgba(75,211,143,.12)),var(--ms750-surface-strong);
+}
+
+/* In eenvoudige modus verdwijnen dubbele en drukke dashboarddelen. */
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) #dashboard > .captain-strip,
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) #dashboard > .dashboard-photo-card,
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) #dashboard > .captain-command-center,
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) #dashboard > .dashboard-actions,
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) #dashboard > #dashboardFinanceCard,
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) #dashboard > #latestRouteCard,
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) #dashboard > .compact-status{
+  display:none !important;
+}
+
+/* Altijd duidelijke invoervelden en bedieningsvlakken. */
+body.ms750-simple-ui button,
+body.ms750-simple-ui input,
+body.ms750-simple-ui select,
+body.ms750-simple-ui textarea,
+body.ms750-simple-ui summary{
+  min-height:48px;
+}
+
+body.ms750-simple-ui input,
+body.ms750-simple-ui select,
+body.ms750-simple-ui textarea{
+  padding:13px 14px;
+  border-width:2px;
+  font-size:17px;
+}
+
+body.ms750-simple-ui label{
+  display:block;
+  margin-top:6px;
+  font-weight:750;
+}
+
+body.ms750-simple-ui :where(button,a,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:4px solid var(--ms750-focus) !important;
+  outline-offset:3px !important;
+}
+
+body.ms750-simple-ui button:active{
+  transform:scale(.98);
+}
+
+/* Vijf vaste navigatieknoppen met tekst, zonder horizontaal scrollen. */
+body.ms750-simple-ui > .bottom-nav.ms744-compact-nav,
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav{
+  --ms744-nav-button:auto;
+  display:grid !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  gap:3px !important;
+  height:calc(var(--ms750-nav-height) + env(safe-area-inset-bottom)) !important;
+  min-height:calc(var(--ms750-nav-height) + env(safe-area-inset-bottom)) !important;
+  max-height:calc(var(--ms750-nav-height) + env(safe-area-inset-bottom)) !important;
+  padding:6px 7px env(safe-area-inset-bottom) !important;
+  overflow:hidden !important;
+}
+
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item,
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav.ms709-icon-nav .bottom-nav-item{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:58px !important;
+  min-height:58px !important;
+  max-height:58px !important;
+  padding:5px 2px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:2px !important;
+  border-radius:15px !important;
+  color:#b9ccd8;
+}
+
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item span{
+  display:block !important;
+  margin:0 !important;
+  font-size:23px !important;
+}
+
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item small{
+  display:block !important;
+  overflow:hidden;
+  max-width:100%;
+  color:inherit;
+  font-size:11px !important;
+  font-weight:800;
+  line-height:1;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item.active{
+  color:#fff !important;
+  background:rgba(69,200,255,.17) !important;
+  box-shadow:inset 0 0 0 1px rgba(109,224,255,.32) !important;
+}
+
+/* Meer-menu als rustig, volledig schermdeel. */
+.ms750-more-layer{
+  position:fixed;
+  inset:0;
+  z-index:2147483200;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding:max(12px,env(safe-area-inset-top)) 12px calc(var(--ms750-nav-height) + env(safe-area-inset-bottom) + 10px);
+  background:rgba(0,0,0,.70);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+
+.ms750-more-layer.hidden{
+  display:none !important;
+}
+
+.ms750-more-panel{
+  width:min(780px,100%);
+  max-height:min(82dvh,760px);
+  overflow:auto;
+  padding:18px;
+  border:1px solid var(--ms750-border);
+  border-radius:25px;
+  background:#071d2d;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+
+.ms750-more-head{
+  position:sticky;
+  top:-18px;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:-18px -18px 14px;
+  padding:18px;
+  background:#071d2d;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.ms750-more-head h2{
+  margin:0;
+  font-size:26px;
+}
+
+.ms750-close-more{
+  width:52px;
+  min-width:52px;
+  height:52px;
+  padding:0;
+  border-radius:999px;
+  background:#284a60;
+  color:#fff;
+  font-size:28px;
+}
+
+.ms750-more-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.ms750-more-route{
+  min-height:76px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:17px;
+  background:#123248;
+  color:#fff;
+  text-align:left;
+}
+
+.ms750-more-route span{
+  font-size:27px;
+}
+
+.ms750-more-route strong{
+  font-size:17px;
+}
+
+.ms750-more-settings{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.10);
+}
+
+.ms750-more-settings button{
+  min-height:58px;
+  background:#294b61;
+  color:#fff;
+}
+
+.ms750-skip-link{
+  position:fixed;
+  left:12px;
+  top:8px;
+  z-index:2147483600;
+  padding:12px 16px;
+  border-radius:12px;
+  background:#ffe66d;
+  color:#07111a;
+  font-weight:900;
+  transform:translateY(-150%);
+}
+
+.ms750-skip-link:focus{
+  transform:none;
+}
+
+body.ms750-more-open{
+  overflow:hidden;
+}
+
+@media(max-width:520px){
+  :root{
+    --ms750-nav-height:68px;
+  }
+
+  body.ms750-simple-ui main{
+    padding-left:10px;
+    padding-right:10px;
+  }
+
+  .ms750-pagebar{
+    margin-left:-10px;
+    margin-right:-10px;
+    padding-left:10px;
+    padding-right:10px;
+  }
+
+  .ms750-primary-grid,
+  .ms750-more-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .ms750-primary-action{
+    min-height:112px;
+    padding:12px;
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .ms750-primary-action .ms750-action-icon{
+    width:46px;
+    height:46px;
+    flex-basis:46px;
+    font-size:25px;
+  }
+
+  .ms750-primary-action strong{
+    font-size:17px;
+  }
+
+  .ms750-primary-action small{
+    display:none;
+  }
+
+  .ms750-welcome-card{
+    padding:16px;
+  }
+
+  .ms750-boat-mark{
+    width:54px;
+    height:54px;
+    flex-basis:54px;
+  }
+
+  body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item small{
+    font-size:10px !important;
+  }
+}
+
+@media(max-width:360px){
+  .ms750-pagebar h1{
+    font-size:19px;
+  }
+
+  .ms750-pagebar button{
+    min-width:46px;
+    min-height:46px;
+    padding:6px;
+    font-size:14px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    scroll-behavior:auto !important;
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}

@@ -1,9 +1,9 @@
-/* MijnSerenity 7.4.8 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.5.0 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='7.4.8';
-  const VERSION='7480';
+  const BUILD='7.5.0';
+  const VERSION='7500';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `receipt-reader-pro.js?v=${VERSION}`,
@@ -21,7 +21,8 @@
     `ha-live-bridge.js?v=${VERSION}`,
     `live-cameras.js?v=${VERSION}`,
     `page-swipe.js?v=${VERSION}`,
-    `navigation-compact.js?v=${VERSION}`
+    `navigation-compact.js?v=${VERSION}`,
+    `simple-accessible.js?v=${VERSION}`
   ];
   const SUPABASE_SOURCES=[
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
