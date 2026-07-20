@@ -17,7 +17,7 @@ let currentUser=null,currentBoat=null,currentRole=null,accountAccess=null,presen
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — Storage Safety
+   MijnSerenity Cloud 7.5.2 — Storage Safety
    Foto's en documenten worden pas geladen wanneer ze zichtbaar
    of bewust geopend worden. Signed URLs worden tijdelijk hergebruikt.
    ============================================================ */
@@ -5785,6 +5785,31 @@ async function loadSettings(){
     dashboard_photo_path:null
   };
 
+  try{
+    const {data:technicalRow,error:technicalError}=await sb
+      .from('technical_state')
+      .select('data,updated_at')
+      .eq('boat_id',currentBoat.id)
+      .maybeSingle();
+
+    if(!technicalError){
+      technicalCloudReady=true;
+      if(technicalRow?.data){
+        technicalStateCache=normaliseTechnicalState({
+          ...technicalRow.data,
+          updatedAt:technicalRow.updated_at||technicalRow.data.updatedAt||null
+        });
+        saveTechnicalLocalState(technicalStateCache);
+      }else if(!technicalStateCache){
+        technicalStateCache=readTechnicalLocalState();
+      }
+    }else if(!technicalTableMissing(technicalError)){
+      console.warn('Gedeelde bootafmetingen laden mislukt:',technicalError);
+    }
+  }catch(error){
+    console.warn('Gedeelde bootafmetingen laden mislukt:',error);
+  }
+
   await loadDashboardPhoto();
   plannerSetDefaults();
 
@@ -5885,7 +5910,53 @@ async function removeDashboardPhoto(){
   settingsCache.dashboard_photo_path=null;await loadDashboardPhoto();
 }
 
-function loadSettingsForm(){if(!settingsCache)return;$('settingBoatName').value=settingsCache.boat_name||'Serenity';$('settingFuelPrice').value=settingsCache.fuel_price??'';$('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';$('settingTankCapacity').value=settingsCache.tank_capacity??''}
+function ms752NumberInputValue(id){
+  const value=String($(id)?.value||'').trim().replace(',','.');
+  if(!value)return null;
+  const number=Number(value);
+  return Number.isFinite(number)&&number>0?number:null;
+}
+function loadSettingsForm(){
+  if(!settingsCache)return;
+  const state=normaliseTechnicalState(technicalStateCache||readTechnicalLocalState());
+  technicalStateCache=state;
+  const boat=state.boat||{};
+  $('settingBoatName').value=settingsCache.boat_name||boat.name||'Serenity';
+  $('settingFuelPrice').value=settingsCache.fuel_price??'';
+  $('settingFuelPerHour').value=settingsCache.fuel_per_hour??'';
+  $('settingTankCapacity').value=settingsCache.tank_capacity??'';
+  $('settingBoatLength').value=boat.lengthM??11.2;
+  $('settingBoatWidth').value=boat.widthM??'';
+  $('settingBoatDraft').value=boat.draftM??'';
+  $('settingBoatAirDraft').value=boat.airDraftM??'';
+}
+function ms752ApplySharedDimensionsToPlanner(){
+  const state=normaliseTechnicalState(technicalStateCache||readTechnicalLocalState());
+  const boat=state.boat||{};
+  const values={
+    ms670BoatLength:boat.lengthM??11.2,
+    ms670BoatWidth:boat.widthM??'',
+    ms670BoatDraft:boat.draftM??'',
+    ms670BoatAirDraft:boat.airDraftM??''
+  };
+  Object.entries(values).forEach(([id,value])=>{
+    const element=$(id);
+    if(element)element.value=String(value);
+  });
+}
+function openBoatDimensionsSettings(){
+  captainNavigate('settings');
+  setTimeout(()=>{
+    loadSettingsForm();
+    setPanelCollapsed('settingsFormWrap','settingsFormToggle',false);
+    $('settingBoatLength')?.focus();
+    $('settingBoatLength')?.scrollIntoView({block:'center',behavior:'smooth'});
+  },120);
+}
+
+window.openBoatDimensionsSettings=openBoatDimensionsSettings;
+window.ms752ApplySharedDimensionsToPlanner=ms752ApplySharedDimensionsToPlanner;
+
 async function saveSettings(){
   const row={
     boat_id:currentBoat.id,
@@ -5901,7 +5972,22 @@ async function saveSettings(){
   if(error)return alert(error.message);
 
   settingsCache={...(settingsCache||{}),...row};
-  $('settingsMsg').textContent='Instellingen opgeslagen ✅';
+  technicalStateCache=normaliseTechnicalState(technicalStateCache||readTechnicalLocalState());
+  technicalStateCache.boat={
+    ...technicalStateCache.boat,
+    name:row.boat_name,
+    lengthM:ms752NumberInputValue('settingBoatLength')||11.2,
+    widthM:ms752NumberInputValue('settingBoatWidth'),
+    draftM:ms752NumberInputValue('settingBoatDraft'),
+    airDraftM:ms752NumberInputValue('settingBoatAirDraft')
+  };
+  const shared=await persistTechnicalState('Bootafmetingen opgeslagen.');
+  ms752ApplySharedDimensionsToPlanner();
+  ms670SaveProfile();
+
+  $('settingsMsg').textContent=shared
+    ?'Bootinstellingen en afmetingen opgeslagen en gedeeld ✅'
+    :'Bootinstellingen opgeslagen. Afmetingen staan lokaal op dit apparaat.';
   $('settingsMsg').classList.remove('hidden');
   await loadDashboardPhoto();
   previewFuelCalculation();
@@ -7334,6 +7420,9 @@ function defaultTechnicalState(){
       model:'VriJon Contessa 37E',
       buildYear:1994,
       lengthM:11.2,
+      widthM:null,
+      draftM:null,
+      airDraftM:null,
       hull:'Staal'
     },
     engineHours:0,
@@ -14499,7 +14588,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.5.1"
+<gpx version="1.1" creator="MijnSerenity 7.5.2"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14751,7 +14840,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.5.1';
+const APP_VERSION='7.5.2';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14828,7 +14917,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=7510',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=7520',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -16527,7 +16616,7 @@ function closeLightbox(){
 }
 
 
-/* MijnSerenity Cloud 7.5.1 — vaste onderste navigatie */
+/* MijnSerenity Cloud 7.5.2 — vaste onderste navigatie */
 let bottomNavHideTimer=null;
 let bottomNavActivityFrame=null;
 
@@ -16723,7 +16812,7 @@ document.addEventListener(
 
 
 
-/* MijnSerenity Cloud 7.5.1 — Waterkaarten Bridge + gedeelde live vaarkaart */
+/* MijnSerenity Cloud 7.5.2 — Waterkaarten Bridge + gedeelde live vaarkaart */
 let ms640CloudReady=false;
 let ms640Viewing=false;
 let ms640SyncTimer=null;
@@ -17112,7 +17201,7 @@ ms640InitTimer=setInterval(async()=>{
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1
+   MijnSerenity Cloud 7.5.2
    Echte waterwegroute + POI's + GPX-track voor Waterkaarten
    ============================================================ */
 
@@ -18049,7 +18138,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.5.1"
+ creator="MijnSerenity 7.5.2"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -18075,7 +18164,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.5.1 — navigatie altijd aan de viewport vastzetten */
+/* MijnSerenity 7.5.2 — navigatie altijd aan de viewport vastzetten */
 function mountBottomNavigationToViewport(){
   const nav=document.querySelector('.bottom-nav');
   if(!nav)return;
@@ -18113,7 +18202,7 @@ window.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — Next Level Live Cockpit
+   MijnSerenity Cloud 7.5.2 — Next Level Live Cockpit
    ============================================================ */
 
 let ms660FocusMode=false;
@@ -19087,7 +19176,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — Smart Route
+   MijnSerenity Cloud 7.5.2 — Smart Route
    ============================================================ */
 
 const MS670_OVERPASS_ENDPOINTS=[
@@ -19162,11 +19251,12 @@ function ms670LoadProfile(){
     );
   }catch{}
 
+  const sharedBoat=normaliseTechnicalState(technicalStateCache||readTechnicalLocalState()).boat||{};
   const values={
-    ms670BoatLength:saved?.length||11.2,
-    ms670BoatWidth:saved?.width||'',
-    ms670BoatDraft:saved?.draft||'',
-    ms670BoatAirDraft:saved?.airDraft||'',
+    ms670BoatLength:sharedBoat.lengthM||saved?.length||11.2,
+    ms670BoatWidth:sharedBoat.widthM||saved?.width||'',
+    ms670BoatDraft:sharedBoat.draftM||saved?.draft||'',
+    ms670BoatAirDraft:sharedBoat.airDraftM||saved?.airDraft||'',
     ms670DailyHours:saved?.dailyHours||6,
     ms670StartTime:saved?.startTime||'09:00',
     ms670BridgeDelay:saved?.bridgeDelayMinutes||15,
@@ -20397,7 +20487,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.5.1 Smart Route"
+ creator="MijnSerenity 7.5.2 Smart Route"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
@@ -20426,7 +20516,7 @@ ms640PlannerGpx=function(plan){
 
 
 
-/* MijnSerenity 7.5.1 — OSM-routeobjecten ook als POI tonen */
+/* MijnSerenity 7.5.2 — OSM-routeobjecten ook als POI tonen */
 const ms672OriginalRenderRoutePois=
   ms650RenderRoutePois;
 
@@ -20493,7 +20583,7 @@ ms650RenderRoutePois=function(plan){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — Fullscreen kaart + alternatieve route
+   MijnSerenity Cloud 7.5.2 — Fullscreen kaart + alternatieve route
    ============================================================ */
 
 let ms673PlannerMapPlaceholder=null;
@@ -21412,7 +21502,7 @@ initPlanner=function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — Auto Logbook
+   MijnSerenity Cloud 7.5.2 — Auto Logbook
    ============================================================ */
 
 let ms680DepartureWatchId=null;
@@ -22620,7 +22710,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — Routefoto’s met GPS en omschrijving
+   MijnSerenity Cloud 7.5.2 — Routefoto’s met GPS en omschrijving
    ============================================================ */
 
 let ms681PendingPhotos=[];
@@ -23458,7 +23548,7 @@ initLiveMode=async function(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — Boat Intelligence
+   MijnSerenity Cloud 7.5.2 — Boat Intelligence
    ============================================================ */
 
 function ms690Clamp(value,min=0,max=100){
@@ -24758,7 +24848,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — Gewaardeerde havenimporteur
+   MijnSerenity Cloud 7.5.2 — Gewaardeerde havenimporteur
    ============================================================ */
 
 let ms692HarbourImportBusy=false;
@@ -25415,7 +25505,7 @@ async function ms692ImportRatedHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — Havens binnen straal van locatie
+   MijnSerenity Cloud 7.5.2 — Havens binnen straal van locatie
    ============================================================ */
 
 let ms693NearbyBusy=false;
@@ -25768,7 +25858,7 @@ async function ms693ImportNearbyHarbours(){
 
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — POI Data Service
+   MijnSerenity Cloud 7.5.2 — POI Data Service
    ============================================================ */
 
 let ms694EnrichmentBusy=false;

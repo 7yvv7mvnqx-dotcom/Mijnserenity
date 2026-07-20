@@ -1,4 +1,4 @@
-/* MijnSerenity 7.5.1 — navigatie echt vast aan het scherm */
+/* MijnSerenity 7.5.2 — navigatie echt vast aan het scherm */
 (()=>{
   'use strict';
 
@@ -44,6 +44,11 @@
       );
       document.body?.classList.toggle(KEYBOARD_CLASS,keyboardOpen);
       keepFocusedControlVisible();
+      if(typeof window.ms708ResizePager==='function'){
+        window.ms708ResizePager();
+      }else{
+        window.dispatchEvent(new Event('resize'));
+      }
     });
   }
 

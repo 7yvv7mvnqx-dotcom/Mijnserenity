@@ -1,5 +1,5 @@
 /* =========================================================
-   MijnSerenity 7.5.1 — eenvoudige en toegankelijke bediening
+   MijnSerenity 7.5.2 — eenvoudige en toegankelijke bediening
    ========================================================= */
 
 :root{
@@ -18,7 +18,7 @@ html{
 body.ms750-simple-ui{
   --nav-height:var(--ms750-nav-height);
   line-height:1.45;
-  padding-bottom:calc(var(--ms750-nav-height) + env(safe-area-inset-bottom) + 12px) !important;
+  padding-bottom:0 !important;
 }
 
 body.ms750-simple-ui.ms750-large-text{
@@ -64,9 +64,9 @@ body.ms750-simple-ui .bottom-nav.ms744-compact-nav{
   grid-template-columns:minmax(52px,auto) 1fr minmax(52px,auto);
   align-items:center;
   gap:10px;
-  min-height:66px;
+  min-height:calc(66px + env(safe-area-inset-top));
   margin:0 -14px 14px;
-  padding:max(8px,env(safe-area-inset-top)) 14px 8px;
+  padding:calc(env(safe-area-inset-top) + 12px) 14px 10px;
   background:rgba(2,11,19,.97);
   border-bottom:1px solid rgba(132,220,255,.18);
   box-shadow:0 8px 24px rgba(0,0,0,.18);
@@ -555,5 +555,126 @@ body.ms750-more-open{
     animation-duration:.01ms !important;
     animation-iteration-count:1 !important;
     transition-duration:.01ms !important;
+  }
+}
+
+
+/* =========================================================
+   MijnSerenity 7.5.2 — schermruimte en centrale bootmaten
+   ========================================================= */
+
+/* De native pagina vult altijd de ruimte tot aan de vaste navigatie. */
+body.ms750-simple-ui.ms708-native-pages-active main{
+  padding-bottom:0 !important;
+}
+body.ms750-simple-ui.ms708-native-pages-active .ms708-native-pager > .ms708-native-page{
+  padding-bottom:18px !important;
+}
+
+.ms752-app-info-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+  padding:12px 14px;
+}
+.ms752-app-info-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+}
+.ms752-app-info-copy strong{
+  color:#fff;
+  font-size:17px;
+}
+.ms752-app-info-copy small{
+  color:#bcd0dc;
+  font-size:13px !important;
+}
+body.ms750-simple-ui .ms752-small-refresh{
+  flex:0 0 auto;
+  width:auto;
+  min-width:0;
+  min-height:38px !important;
+  height:38px;
+  padding:5px 11px;
+  border-radius:12px;
+  font-size:14px;
+  white-space:nowrap;
+}
+
+.ms752-dimensions-card{
+  margin:16px 0;
+  padding:15px;
+  border:1px solid rgba(112,218,255,.25);
+  border-radius:18px;
+  background:rgba(26,83,112,.22);
+}
+.ms752-dimensions-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.ms752-dimensions-head h3{
+  margin:2px 0 0;
+}
+.ms752-dimensions-head > span{
+  flex:0 0 auto;
+  padding:5px 9px;
+  border-radius:999px;
+  background:rgba(69,200,255,.15);
+  color:#ccefff;
+  font-size:12px;
+  font-weight:800;
+}
+.ms752-dimensions-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px 12px;
+}
+.ms752-dimensions-grid label > span{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:#bcd0dc;
+  font-size:14px;
+  font-weight:650;
+}
+.ms752-dimensions-grid input{
+  min-width:0;
+  width:100%;
+}
+.ms752-profile-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+body.ms750-simple-ui .ms752-edit-dimensions{
+  min-height:38px;
+  padding:6px 10px;
+  font-size:13px;
+}
+#ms670BoatLength[readonly],
+#ms670BoatWidth[readonly],
+#ms670BoatDraft[readonly],
+#ms670BoatAirDraft[readonly]{
+  opacity:.82;
+  cursor:default;
+}
+
+@media(max-width:520px){
+  .ms750-pagebar{
+    padding-top:calc(env(safe-area-inset-top) + 14px);
+  }
+  .ms752-dimensions-grid{
+    grid-template-columns:1fr;
+  }
+  .ms752-dimensions-head{
+    align-items:flex-start;
   }
 }

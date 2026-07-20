@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.5.1">
+<meta name="mijnserenity-build" content="7.5.2">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='7.5.1';
+window.MIJSERENITY_BUILD='7.5.2';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -29,30 +29,30 @@ window.repairMijnSerenity=async function(){
   window.location.replace(url.toString());
 };
 </script>
-<link rel="manifest" href="manifest.json?v=7510">
+<link rel="manifest" href="manifest.json?v=7520">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=7510">
-  <link rel="stylesheet" href="ha-live-bridge.css?v=7510">
-  <link rel="stylesheet" href="live-cameras.css?v=7510">
-  <link rel="stylesheet" href="mission-control.css?v=7510">
-  <link rel="stylesheet" href="easy-auto.css?v=7510">
-<link rel="stylesheet" href="auto-track-reliability.css?v=7510">
-<link rel="stylesheet" href="gps-continuity-guard.css?v=7510">
-<link rel="stylesheet" href="waterkaarten-split-launch.css?v=7510">
-  <link rel="stylesheet" href="live-split.css?v=7510">
-  <link rel="stylesheet" href="route-control.css?v=7510">
-  <link rel="stylesheet" href="page-swipe.css?v=7510">
-  <link rel="stylesheet" href="weather-page.css?v=7510">
-  <link rel="stylesheet" href="weather-radar.css?v=7510">
-  <link rel="stylesheet" href="ais-page.css?v=7510">
-  <link rel="stylesheet" href="entertainment-page.css?v=7510">
-  <link rel="stylesheet" href="navigation-compact.css?v=7510">
-  <link rel="stylesheet" href="simple-accessible.css?v=7510">
+<link rel="stylesheet" href="styles.css?v=7520">
+  <link rel="stylesheet" href="ha-live-bridge.css?v=7520">
+  <link rel="stylesheet" href="live-cameras.css?v=7520">
+  <link rel="stylesheet" href="mission-control.css?v=7520">
+  <link rel="stylesheet" href="easy-auto.css?v=7520">
+<link rel="stylesheet" href="auto-track-reliability.css?v=7520">
+<link rel="stylesheet" href="gps-continuity-guard.css?v=7520">
+<link rel="stylesheet" href="waterkaarten-split-launch.css?v=7520">
+  <link rel="stylesheet" href="live-split.css?v=7520">
+  <link rel="stylesheet" href="route-control.css?v=7520">
+  <link rel="stylesheet" href="page-swipe.css?v=7520">
+  <link rel="stylesheet" href="weather-page.css?v=7520">
+  <link rel="stylesheet" href="weather-radar.css?v=7520">
+  <link rel="stylesheet" href="ais-page.css?v=7520">
+  <link rel="stylesheet" href="entertainment-page.css?v=7520">
+  <link rel="stylesheet" href="navigation-compact.css?v=7520">
+  <link rel="stylesheet" href="simple-accessible.css?v=7520">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7510">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7510">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7520">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=7520">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -61,7 +61,7 @@ window.repairMijnSerenity=async function(){
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7510" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=7520" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -103,7 +103,7 @@ window.repairMijnSerenity=async function(){
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7510" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=7520" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -547,7 +547,7 @@ window.repairMijnSerenity=async function(){
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=7510" alt="">
+          <img src="waterkaarten-dashboard.png?v=7520" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -641,7 +641,7 @@ window.repairMijnSerenity=async function(){
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.5.1</div>
+          <div class="label">Sync · v7.5.2</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1646,7 +1646,7 @@ window.repairMijnSerenity=async function(){
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.5.1</span>
+        <span class="planner-version-badge">7.5.2</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -1736,38 +1736,37 @@ window.repairMijnSerenity=async function(){
         <div class="ms670-profile-card">
           <div class="ms670-profile-head">
             <div>
-              <span class="eyebrow">SCHEEPSPROFIEL SERENITY</span>
+              <span class="eyebrow">SCHEEPSPROFIEL UIT BOOTINSTELLINGEN</span>
               <strong>Controleer bekende beperkingen langs de route</strong>
             </div>
-            <span id="ms670ProfileBadge" class="ms670-profile-badge">
-              Profiel opslaan
-            </span>
+            <div class="ms752-profile-actions">
+              <span id="ms670ProfileBadge" class="ms670-profile-badge">
+                Centraal opgeslagen
+              </span>
+              <button type="button" class="secondary ms752-edit-dimensions" onclick="openBoatDimensionsSettings()">Wijzig maten</button>
+            </div>
           </div>
 
           <div class="ms670-profile-grid">
             <label>
               Lengte
               <span><input id="ms670BoatLength" type="number" min="0"
-                step="0.1" value="11.2"
-                oninput="ms670PlannerProfileChanged()"> meter</span>
+                step="0.1" value="11.2" readonly aria-readonly="true"> meter</span>
             </label>
             <label>
               Breedte
               <span><input id="ms670BoatWidth" type="number" min="0"
-                step="0.05" placeholder="Vul in"
-                oninput="ms670PlannerProfileChanged()"> meter</span>
+                step="0.05" placeholder="Vul in" readonly aria-readonly="true"> meter</span>
             </label>
             <label>
               Diepgang
               <span><input id="ms670BoatDraft" type="number" min="0"
-                step="0.05" placeholder="Vul in"
-                oninput="ms670PlannerProfileChanged()"> meter</span>
+                step="0.05" placeholder="Vul in" readonly aria-readonly="true"> meter</span>
             </label>
             <label>
               Doorvaarthoogte
               <span><input id="ms670BoatAirDraft" type="number" min="0"
-                step="0.05" placeholder="Vul in"
-                oninput="ms670PlannerProfileChanged()"> meter</span>
+                step="0.05" placeholder="Vul in" readonly aria-readonly="true"> meter</span>
             </label>
             <label>
               Maximaal varen per dag
@@ -3793,6 +3792,16 @@ window.repairMijnSerenity=async function(){
     </div>
   </section>
 <section id="settings" class="hidden">
+    <div class="card ms752-app-info-card" aria-label="Appinformatie">
+      <div class="ms752-app-info-copy">
+        <span class="eyebrow">MIJNSERENITY</span>
+        <strong>Versie <span id="settingsAppVersion">7.5.2</span></strong>
+        <small id="settingsAppStatus">Live en gesynchroniseerd</small>
+      </div>
+      <button id="settingsRefreshButton" type="button" class="secondary ms752-small-refresh"
+        onclick="refreshMijnSerenity(this)" aria-label="MijnSerenity verversen">↻ Ververs</button>
+    </div>
+
     <div class="card collapsible-card">
       <button id="settingsFormToggle" class="section-toggle" type="button" onclick="toggleSection('settingsFormWrap',this)">
         <span>Bootinstellingen</span><span class="chevron">⌄</span>
@@ -3805,7 +3814,43 @@ window.repairMijnSerenity=async function(){
         <button class="secondary" onclick="uploadDashboardPhoto()">Foto opslaan</button>
         <button class="small-danger" onclick="removeDashboardPhoto()">Foto verwijderen</button>
       </div>
-      <div id="dashboardPhotoMsg" class="status small hidden"></div><div class="row"><div><label>Bootnaam</label><input id="settingBoatName" value="Serenity"></div><div><label>Tankinhoud liter</label><input id="settingTankCapacity" type="number" step="1"></div></div><div class="row"><div><label>Brandstofprijs per liter €</label><input id="settingFuelPrice" type="number" step="0.01"></div><div><label>Gemiddeld verbruik per uur</label><input id="settingFuelPerHour" type="number" step="0.1"></div></div><button onclick="saveSettings()">Instellingen opslaan</button>
+      <div id="dashboardPhotoMsg" class="status small hidden"></div>
+
+      <div class="row">
+        <div><label for="settingBoatName">Bootnaam</label><input id="settingBoatName" value="Serenity"></div>
+        <div><label for="settingTankCapacity">Tankinhoud liter</label><input id="settingTankCapacity" type="number" min="0" step="1"></div>
+      </div>
+
+      <div class="ms752-dimensions-card">
+        <div class="ms752-dimensions-head">
+          <div>
+            <span class="eyebrow">SCHEEPSPROFIEL</span>
+            <h3>Afmetingen Serenity</h3>
+          </div>
+          <span>Eenmalig instellen</span>
+        </div>
+        <p class="small">Deze maten worden gedeeld en automatisch gebruikt door Reisplanner en Smart Route.</p>
+        <div class="ms752-dimensions-grid">
+          <label for="settingBoatLength">Lengte
+            <span><input id="settingBoatLength" type="number" min="0" step="0.1" inputmode="decimal" placeholder="11,20"> meter</span>
+          </label>
+          <label for="settingBoatWidth">Breedte
+            <span><input id="settingBoatWidth" type="number" min="0" step="0.05" inputmode="decimal" placeholder="Vul in"> meter</span>
+          </label>
+          <label for="settingBoatDraft">Diepgang
+            <span><input id="settingBoatDraft" type="number" min="0" step="0.05" inputmode="decimal" placeholder="Vul in"> meter</span>
+          </label>
+          <label for="settingBoatAirDraft">Doorvaarthoogte
+            <span><input id="settingBoatAirDraft" type="number" min="0" step="0.05" inputmode="decimal" placeholder="Vul in"> meter</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div><label for="settingFuelPrice">Brandstofprijs per liter €</label><input id="settingFuelPrice" type="number" min="0" step="0.01"></div>
+        <div><label for="settingFuelPerHour">Gemiddeld verbruik per uur</label><input id="settingFuelPerHour" type="number" min="0" step="0.1"></div>
+      </div>
+      <button onclick="saveSettings()">Bootinstellingen opslaan</button>
       <button type="button" class="secondary settings-share-button" onclick="captainNavigate('boat')">Boot delen en leden beheren</button>
       <div id="settingsMsg" class="status small hidden"></div></div></div>
 
@@ -4422,6 +4467,6 @@ window.repairMijnSerenity=async function(){
   </div>
 </div>
 
-<script src="auth-bootstrap.js?v=7510"></script>
+<script src="auth-bootstrap.js?v=7520"></script>
 </body>
 </html>

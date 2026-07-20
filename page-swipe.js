@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.1 — native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.5.2 — native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -255,17 +255,26 @@ function ms708ResizePager(){
     );
     const pagerRect=
       ms708Pager.getBoundingClientRect();
-    const navTop=
-      nav?.getBoundingClientRect().top||
-      (
-        window.visualViewport?.height||
-        window.innerHeight
-      );
+    const viewport=window.visualViewport;
+    const visibleBottom=(Number(viewport?.offsetTop)||0)+(
+      Number(viewport?.height)||window.innerHeight
+    );
+    const navHeight=Math.max(
+      0,
+      nav?.getBoundingClientRect().height||0
+    );
+    /*
+       Gebruik de echte zichtbare viewport in plaats van een mogelijk
+       verouderde nav-positie. Dit voorkomt de zwarte strook wanneer
+       iOS na starten de safe-area of Visual Viewport nog bijwerkt.
+    */
+    const contentBottom=Math.max(
+      pagerRect.top+260,
+      visibleBottom-navHeight
+    );
     const height=Math.max(
       260,
-      Math.floor(
-        navTop-pagerRect.top-8
-      )
+      Math.floor(contentBottom-pagerRect.top)
     );
     const currentIndex=
       ms708PageIndex(ms708ActiveId);
@@ -602,6 +611,8 @@ function ms708CreatePager(){
   );
   ms708ShowHint();
 }
+
+window.ms708ResizePager=ms708ResizePager;
 
 document.addEventListener(
   'DOMContentLoaded',
