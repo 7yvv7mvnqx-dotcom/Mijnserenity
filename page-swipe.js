@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.5.0 — native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.5.1 — native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -445,7 +445,7 @@ function ms708ShowHint(){
 
   setTimeout(()=>{
     hint.classList.add('hidden');
-  },7500);
+  },7510);
 }
 
 function ms708CreatePager(){

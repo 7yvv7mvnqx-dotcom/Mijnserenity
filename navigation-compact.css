@@ -40,7 +40,7 @@ body > .bottom-nav.ms744-compact-nav,
   left:0 !important;
   right:0 !important;
   top:auto !important;
-  bottom:0 !important;
+  bottom:var(--ms751-nav-bottom,0px) !important;
 
   width:100% !important;
   max-width:100% !important;
@@ -89,10 +89,10 @@ body > .bottom-nav.ms744-compact-nav,
 */
 html.ms744-ios-viewport body > .bottom-nav.ms744-compact-nav,
 html.ms744-ios-viewport .bottom-nav.ms744-compact-nav{
-  position:absolute !important;
-  inset:auto 0 auto 0 !important;
-  top:var(--ms744-nav-top, calc(100dvh - var(--nav-height))) !important;
-  bottom:auto !important;
+  position:fixed !important;
+  inset:auto 0 var(--ms751-nav-bottom,0px) 0 !important;
+  top:auto !important;
+  bottom:var(--ms751-nav-bottom,0px) !important;
 }
 
 body > .bottom-nav.ms744-compact-nav::-webkit-scrollbar,

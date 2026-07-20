@@ -1,8 +1,8 @@
-/* MijnSerenity 7.5.0 — eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.5.1 — eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.5.0';
+  const BUILD='7.5.1';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -32,6 +32,8 @@
   let homeButton=null;
   let autoObserver=null;
   let moreReturnFocus=null;
+  let welcomePhotoObserver=null;
+  let greetingTimer=0;
 
   function storedBoolean(key,fallback){
     try{
@@ -93,6 +95,68 @@
     `;
   }
 
+  function personalGreetingText(){
+    if(typeof window.captainGreetingText==='function'){
+      try{return window.captainGreetingText();}catch(_error){}
+    }
+    const hour=new Date().getHours();
+    const part=hour<12?'Goedemorgen':hour<18?'Goedemiddag':'Goedenavond';
+    let name='Michel';
+    if(typeof window.getLoggedInFirstName==='function'){
+      try{name=window.getLoggedInFirstName()||name;}catch(_error){}
+    }
+    return `${part}, ${name}`;
+  }
+
+  function syncPersonalWelcome(){
+    const greeting=document.getElementById('ms751Greeting');
+    if(greeting)greeting.textContent=personalGreetingText();
+
+    const source=document.getElementById('dashboardBoatPhoto');
+    const target=document.getElementById('ms751WelcomePhoto');
+    const fallback=document.getElementById('ms751WelcomeFallback');
+    if(!target||!fallback)return;
+
+    const usable=Boolean(
+      source?.src&&
+      !source.classList.contains('hidden')&&
+      source.complete&&
+      source.naturalWidth>0
+    );
+
+    if(usable){
+      if(target.src!==source.src)target.src=source.src;
+      target.classList.remove('hidden');
+      fallback.classList.add('hidden');
+    }else{
+      target.removeAttribute('src');
+      target.classList.add('hidden');
+      fallback.classList.remove('hidden');
+    }
+  }
+
+  function observePersonalWelcome(){
+    const source=document.getElementById('dashboardBoatPhoto');
+    if(source){
+      source.addEventListener('load',syncPersonalWelcome);
+      source.addEventListener('error',syncPersonalWelcome);
+      welcomePhotoObserver?.disconnect();
+      welcomePhotoObserver=new MutationObserver(syncPersonalWelcome);
+      welcomePhotoObserver.observe(source,{
+        attributes:true,
+        attributeFilter:['src','class','data-storage-path']
+      });
+    }
+
+    [0,250,800,1800,4000].forEach(delay=>setTimeout(syncPersonalWelcome,delay));
+    clearInterval(greetingTimer);
+    greetingTimer=setInterval(syncPersonalWelcome,60*1000);
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible')syncPersonalWelcome();
+    });
+    window.addEventListener('pageshow',syncPersonalWelcome,{passive:true});
+  }
+
   function buildSimpleDashboard(){
     const dashboard=document.getElementById('dashboard');
     if(!dashboard||document.getElementById('ms750SimpleDashboard'))return;
@@ -102,12 +166,14 @@
     section.className='ms750-simple-dashboard';
     section.setAttribute('aria-label','Snelle bediening');
     section.innerHTML=`
-      <div class="ms750-welcome-card">
-        <div>
-          <h2>Welkom aan boord</h2>
-          <p>De belangrijkste functies van Serenity staan hier direct klaar.</p>
+      <div class="ms750-welcome-card ms751-photo-welcome" aria-label="Persoonlijke begroeting">
+        <img id="ms751WelcomePhoto" class="ms751-welcome-photo hidden" alt="Serenity">
+        <div id="ms751WelcomeFallback" class="ms751-welcome-fallback" aria-hidden="true">🚤</div>
+        <div class="ms751-welcome-shade" aria-hidden="true"></div>
+        <div class="ms751-welcome-copy">
+          <h2 id="ms751Greeting">Welkom aan boord</h2>
+          <p>Fijn dat je er bent. Wat gaan we vandaag met Serenity doen?</p>
         </div>
-        <div class="ms750-boat-mark" aria-hidden="true">🚤</div>
       </div>
 
       <div class="ms750-auto-card">
@@ -144,6 +210,7 @@
 
     section.querySelector('#ms750AutoButton')?.addEventListener('click',toggleAutomaticVaren);
     syncAutomaticVaren();
+    observePersonalWelcome();
   }
 
   function moreRoute(route){
