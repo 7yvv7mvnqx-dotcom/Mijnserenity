@@ -1,0 +1,13 @@
+{
+  "build": "7.5.7",
+  "javascript_syntax_ok": true,
+  "javascript_files_checked": 21,
+  "logbook_regression_test_ok": true,
+  "logbook_regression_test_output": "OK",
+  "navigation_checks": {
+    "geen_blijvende_een_paginamodus": true,
+    "geen_inline_display_none_hack": true,
+    "native_swipe_altijd_actief": true
+  },
+  "all_checks_ok": true
+}

@@ -14071,6 +14071,28 @@ function pauseLiveNavigation(){
 
 async function stopLiveNavigation(options={}){
   const automatic=Boolean(options.automatic);
+  const manualArrival=Boolean(options.manualArrival);
+  const explicitStop=!automatic||manualArrival;
+
+  if(
+    explicitStop&&
+    liveNavState.status==='active'&&
+    liveNavState.points.length===1
+  ){
+    /*
+       Een zeer korte handmatige test kan vóór de tweede GPS-update worden
+       gestopt. Bewaar dan een eindpunt met een nieuwe tijd, zodat de opname
+       niet stilletjes verloren gaat en als 0 km-testlog kan worden opgeslagen.
+    */
+    const first=liveNavState.points[0];
+    liveNavState.points.push({
+      ...first,
+      time:Date.now(),
+      speedKmh:0,
+      gapBefore:false
+    });
+    persistLiveState();
+  }
 
   if(liveNavState.status==='active'){
     liveNavState.accumulatedMs=getLiveElapsedMs();
@@ -14099,23 +14121,35 @@ async function stopLiveNavigation(options={}){
     renderLiveAutoSummary();
 
     const settings=readLiveAutomationSettings();
+    const qualifies=liveTripQualifiesForAutoSave();
 
-    if(settings.autoSave&&liveTripQualifiesForAutoSave()){
+    /*
+       De minimumafstand en minimumduur beschermen alleen tegen een volledig
+       automatische foutdetectie. Wanneer Michel zelf op Stop of
+       'Nu aankomst vastleggen' tikt, is dat een bewuste afronding en wordt
+       de opname bij Automatisch opslaan altijd bewaard.
+    */
+    if(settings.autoSave&&(explicitStop||qualifies)){
       setLiveAutoLogStatus(
-        'Route compleet · automatisch opslaan in het gedeelde logboek…',
+        explicitStop&&!qualifies
+          ?'Bewuste korte opname · direct opslaan in het gedeelde logboek…'
+          :'Route compleet · automatisch opslaan in het gedeelde logboek…',
         'success'
       );
 
       if(saveButton)saveButton.disabled=false;
-      await saveLiveTrip({automatic:true});
-      return;
+      const saved=await saveLiveTrip({
+        automatic:true,
+        explicitStop
+      });
+      return saved;
     }
 
-    if(settings.autoSave&&!liveTripQualifiesForAutoSave()){
+    if(settings.autoSave&&!qualifies){
       $('liveGpsStatus').textContent=
-        'Opname is te kort voor automatisch opslaan. Controleer de gegevens en sla handmatig op.';
+        'Automatische afmeerdetectie heeft een te korte opname gevonden. Controleer de gegevens en sla handmatig op.';
       setLiveAutoLogStatus(
-        `Niet automatisch opgeslagen: minimaal ${settings.minDistanceKm} km en ${settings.minDurationMinutes} minuten nodig.`,
+        `Niet automatisch opgeslagen: minimaal ${settings.minDistanceKm} km en ${settings.minDurationMinutes} minuten nodig. Een bewuste druk op Stop slaat wel direct op.`,
         'warning'
       );
     }else{
@@ -14588,7 +14622,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.5.5"
+<gpx version="1.1" creator="MijnSerenity 7.5.7"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14612,18 +14646,18 @@ function createLiveGpxFile(title){
 async function saveLiveTrip(options={}){
   const automatic=Boolean(options.automatic);
 
-  if(liveAutoSaveRunning)return;
+  if(liveAutoSaveRunning)return false;
 
   if(!currentBoat||!currentUser){
     if(!automatic)alert('Log opnieuw in.');
-    return;
+    return false;
   }
 
   if(liveNavState.status!=='stopped'||liveNavState.points.length<2){
     if(!automatic){
       alert('Stop eerst de opname en zorg voor minimaal twee GPS-punten.');
     }
-    return;
+    return false;
   }
 
   const saveStatus=$('liveSaveStatus');
@@ -14762,6 +14796,7 @@ async function saveLiveTrip(options={}){
     );
 
     setTimeout(()=>captainNavigate('logbook'),650);
+    return true;
   }catch(error){
     console.error('Live vaartocht opslaan mislukt:',error);
     saveStatus.textContent=
@@ -14772,6 +14807,7 @@ async function saveLiveTrip(options={}){
     );
     liveNavState.status='stopped';
     persistLiveState();
+    return false;
   }finally{
     liveAutoSaveRunning=false;
     saveButton.disabled=false;
@@ -14840,7 +14876,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.5.5';
+const APP_VERSION='7.5.7';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14917,7 +14953,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=7550',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=7570',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -18138,7 +18174,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.5.5"
+ creator="MijnSerenity 7.5.7"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>

@@ -1,8 +1,8 @@
-/* MijnSerenity 7.5.5 — eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.5.7 — stabiele eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.5.6';
+  const BUILD='7.5.7';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -545,10 +545,33 @@
     return true;
   }
 
+  function restoreNativePagerMode(){
+    document.body.classList.remove('ms755-single-page-nav');
+
+    const pager=document.getElementById('ms708NativePager');
+    if(pager){
+      pager.classList.remove('hidden');
+      pager.style.removeProperty('display');
+      delete pager.dataset.ms755Active;
+    }
+
+    document.querySelectorAll(
+      '#ms708NativePager > .ms708-native-page'
+    ).forEach(page=>{
+      page.classList.remove('ms755-route-active');
+      page.removeAttribute('aria-hidden');
+      page.style.removeProperty('display');
+      page.style.removeProperty('width');
+      page.style.removeProperty('min-width');
+    });
+  }
+
   function navigate(route,sourceButton=null){
     if(route==='boat'&&typeof window.isAppAdmin==='function'&&!window.isAppAdmin()){
       route='settings';
     }
+
+    restoreNativePagerMode();
 
     /*
        Pagina's in de iPhone/iPad-pager gaan voortaan rechtstreeks en
@@ -578,53 +601,57 @@
 
   function hardOpenStartPage(){
     const dashboard=document.getElementById('dashboard');
-    const pager=document.getElementById('ms708NativePager');
     if(!dashboard)return false;
 
-    document.body.classList.add('ms755-single-page-nav');
-    pager?.classList.remove('hidden');
-    if(pager){
-      pager.dataset.ms755Active='dashboard';
-      pager.scrollLeft=0;
-      pager.style.setProperty('display','block','important');
-    }
+    restoreNativePagerMode();
 
-    const pages=pager
-      ?[...pager.querySelectorAll(':scope > .ms708-native-page')]
-      :[...document.querySelectorAll('#appView > section')];
+    let opened=false;
 
-    pages.forEach(page=>{
-      const active=page===dashboard||page.id==='dashboard';
-      page.classList.toggle('ms755-route-active',active);
-      page.classList.toggle('hidden',!active);
-      page.setAttribute('aria-hidden',String(!active));
-      page.style.setProperty('display',active?'block':'none','important');
-      if(active){
-        page.style.setProperty('width','100%','important');
-        page.style.setProperty('min-width','0','important');
-        page.scrollTop=0;
-      }
-    });
-
-    if(typeof window.ms708SetSingleActive==='function'){
-      try{window.ms708SetSingleActive('dashboard');}catch(_error){}
-    }
     if(typeof window.ms708GoToPage==='function'){
-      try{window.ms708GoToPage('dashboard',true);}catch(_error){}
+      try{
+        opened=window.ms708GoToPage('dashboard',true)!==false;
+      }catch(error){
+        console.warn('Startpagina via pager openen mislukt:',error);
+      }
+    }
+
+    if(!opened){
+      try{
+        const startButton=document.querySelector(
+          '.bottom-nav-item[data-target="dashboard"]'
+        );
+        if(typeof originalCaptainNavigate==='function'){
+          originalCaptainNavigate('dashboard',startButton);
+          opened=true;
+        }else if(typeof window.captainNavigate==='function'){
+          window.captainNavigate('dashboard',startButton);
+          opened=true;
+        }
+      }catch(error){
+        console.warn('Startpagina via navigatie openen mislukt:',error);
+      }
+    }
+
+    if(!opened){
+      document.querySelectorAll('#appView > section').forEach(section=>{
+        section.classList.toggle('hidden',section!==dashboard);
+      });
+      opened=true;
     }
 
     currentRoute='dashboard';
     updatePageBar('dashboard');
     closeMore(false);
+
+    dashboard.scrollTop=0;
     window.scrollTo({top:0,left:0,behavior:'auto'});
+
     requestAnimationFrame(()=>{
-      dashboard.classList.add('ms755-route-active');
-      dashboard.classList.remove('hidden');
-      dashboard.style.setProperty('display','block','important');
       dashboard.scrollTop=0;
-      window.scrollTo(0,0);
+      window.ms708ResizePager?.();
     });
-    return true;
+
+    return opened;
   }
 
   function installReliableStartNavigation(){
