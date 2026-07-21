@@ -1,0 +1,11 @@
+{
+  "build": "7.5.8",
+  "javascript_syntax_ok": true,
+  "javascript_files_checked": 21,
+  "duplicate_dashboard_tab_removed": true,
+  "bottom_start_retained": true,
+  "expanded_overview_wording": true,
+  "old_visible_dashboard_mode_wording_removed": true,
+  "cache_version_updated": true,
+  "all_checks_ok": true
+}

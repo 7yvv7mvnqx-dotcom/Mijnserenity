@@ -1,8 +1,8 @@
-/* MijnSerenity 7.5.7 — stabiele eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.5.8 — stabiele eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.5.7';
+  const BUILD='7.5.8';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -432,7 +432,7 @@
         </div>
         <div class="ms750-more-settings">
           <button type="button" id="ms750TextSizeButton">Tekstgrootte: groot</button>
-          <button type="button" id="ms750DashboardModeButton">Toon uitgebreid dashboard</button>
+          <button type="button" id="ms750DashboardModeButton">Toon uitgebreid overzicht</button>
         </div>
       </div>
     `;
@@ -724,8 +724,8 @@
     }
     if(dashboardButton){
       dashboardButton.textContent=document.body.classList.contains('ms750-dashboard-expanded')
-        ?'Verberg uitgebreid dashboard'
-        :'Toon uitgebreid dashboard';
+        ?'Verberg uitgebreid overzicht'
+        :'Toon uitgebreid overzicht';
     }
   }
 
