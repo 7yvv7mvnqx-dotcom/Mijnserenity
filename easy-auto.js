@@ -65,8 +65,8 @@ function ms701ApplySimpleMode(){
   const button=document.getElementById('ms701SimpleToggle');
   if(button){
     button.textContent=simple
-      ?'Toon uitgebreid overzicht'
-      :'Maak startscherm eenvoudig';
+      ?'Toon uitgebreid dashboard'
+      :'Maak dashboard eenvoudig';
   }
 }
 
@@ -75,8 +75,8 @@ function ms701ToggleSimpleMode(){
   ms701ApplySimpleMode();
   showAppToast(
     ms701SimpleEnabled()
-      ?'Eenvoudig startscherm actief'
-      :'Uitgebreid startscherm actief'
+      ?'Eenvoudig dashboard actief'
+      :'Uitgebreid dashboard actief'
   );
 }
 
