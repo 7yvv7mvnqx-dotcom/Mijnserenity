@@ -1,9 +1,9 @@
-/* MijnSerenity 7.5.10 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.5.11 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='7.5.10';
-  const VERSION='75100';
+  const BUILD='7.5.11';
+  const VERSION='75110';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `receipt-reader-pro.js?v=${VERSION}`,

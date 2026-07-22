@@ -1,0 +1,7 @@
+{
+  "build": "7.5.11",
+  "change": "Home Assistant high-contrast text",
+  "base": "7.5.10",
+  "new_asset": "home-assistant-contrast.css",
+  "status": "validated"
+}

@@ -1,0 +1,117 @@
+/* ============================================================
+   MijnSerenity 7.5.11 — Home Assistant hoog contrast
+   Zorgt dat tekst op donkere kaarten en actieknoppen altijd leesbaar is.
+   ============================================================ */
+
+#entertainment{
+  --ha-text-primary:#f5fbff;
+  --ha-text-secondary:#c8d9e5;
+  --ha-text-muted:#a9bfcd;
+  color:var(--ha-text-primary);
+}
+
+#entertainment h1,
+#entertainment h2,
+#entertainment h3,
+#entertainment h4,
+#entertainment h5,
+#entertainment h6,
+#entertainment strong,
+#entertainment b,
+#entertainment .smart-home-integration-head strong,
+#entertainment .smart-home-section-head h3,
+#entertainment .entertainment-grid-title h3,
+#entertainment .entertainment-grid-title h4,
+#entertainment .smart-home-scene-button strong,
+#entertainment .smart-home-zone-select strong,
+#entertainment .entertainment-player-card strong,
+#entertainment .entertainment-favorite strong{
+  color:var(--ha-text-primary) !important;
+  -webkit-text-fill-color:var(--ha-text-primary) !important;
+}
+
+#entertainment p,
+#entertainment small,
+#entertainment label,
+#entertainment .small,
+#entertainment .smart-home-safety-note,
+#entertainment .smart-home-integration-head small,
+#entertainment .smart-home-zone-select small{
+  color:var(--ha-text-secondary) !important;
+  -webkit-text-fill-color:var(--ha-text-secondary) !important;
+  opacity:1;
+}
+
+/* Actiekaarten en scènes: nooit meer donkere tekst op donkerblauw. */
+#entertainment .smart-home-scene-button,
+#entertainment .smart-home-scene-button:visited,
+#entertainment .smart-home-zone-select,
+#entertainment .entertainment-player-card,
+#entertainment .entertainment-favorite{
+  color:var(--ha-text-primary) !important;
+  -webkit-text-fill-color:var(--ha-text-primary) !important;
+}
+
+#entertainment .smart-home-scene-button *,
+#entertainment .smart-home-zone-select *,
+#entertainment .entertainment-player-card *,
+#entertainment .entertainment-favorite *{
+  color:inherit !important;
+  -webkit-text-fill-color:currentColor !important;
+}
+
+/* Alle bedieningsknoppen op de HA-pagina blijven licht leesbaar. */
+#entertainment button,
+#entertainment button.secondary,
+#entertainment .secondary,
+#entertainment .smart-home-card-actions button,
+#entertainment .smart-home-inline-actions button,
+#entertainment .entertainment-main-controls button,
+#entertainment .apple-tv-remote button,
+#entertainment .apple-tv-media-controls button{
+  color:#f7fcff !important;
+  -webkit-text-fill-color:#f7fcff !important;
+}
+
+#entertainment button:disabled,
+#entertainment button[disabled]{
+  color:#9fb1bd !important;
+  -webkit-text-fill-color:#9fb1bd !important;
+}
+
+/* Statusbadges behouden hun betekenisvolle groen/geel-kleuren. */
+#entertainment .smart-home-device-state.online,
+#entertainment .entertainment-cloud-badge.online,
+#entertainment .entertainment-connection-badge.online{
+  color:#caffdc !important;
+  -webkit-text-fill-color:#caffdc !important;
+}
+
+#entertainment .smart-home-device-state.offline,
+#entertainment .entertainment-cloud-badge.warning,
+#entertainment .entertainment-connection-badge.offline{
+  color:#ffe5a8 !important;
+  -webkit-text-fill-color:#ffe5a8 !important;
+}
+
+#entertainment select,
+#entertainment input,
+#entertainment textarea,
+#entertainment option{
+  color:#f5fbff !important;
+  -webkit-text-fill-color:#f5fbff !important;
+  color-scheme:dark;
+}
+
+#entertainment .eyebrow{
+  color:#b8eaff !important;
+  -webkit-text-fill-color:#b8eaff !important;
+}
+
+@media (prefers-contrast:more){
+  #entertainment .smart-home-scene-button,
+  #entertainment .smart-home-integration-card,
+  #entertainment .smart-home-section-card{
+    border-color:rgba(184,234,255,.48);
+  }
+}
