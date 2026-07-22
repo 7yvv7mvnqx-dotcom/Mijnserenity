@@ -125,7 +125,10 @@
         }
         if(message.type==='event'&&message.event?.event_type==='state_changed'){
           const next=message.event.data?.new_state;
-          if(next?.entity_id)stateMap.set(next.entity_id,cleanState(next));
+          if(next?.entity_id){
+            stateMap.set(next.entity_id,cleanState(next));
+            window.dispatchEvent(new CustomEvent('mijnserenity-ha-state-updated',{detail:{entity_id:next.entity_id}}));
+          }
         }
       };
       ws.onerror=()=>{
@@ -160,7 +163,8 @@
         volume_level:Number.isFinite(Number(attributes.volume_level))?Number(attributes.volume_level):null,
         brightness:Number.isFinite(Number(attributes.brightness))?Number(attributes.brightness):null,
         media_title:attributes.media_title??null,
-        media_artist:attributes.media_artist??null
+        media_artist:attributes.media_artist??null,
+        media_channel:attributes.media_channel??attributes.media_station??null
       }
     };
   }
@@ -172,6 +176,7 @@
       .filter(item=>ALLOWED_DOMAINS.has(item.domain))
       .sort((a,b)=>a.name.localeCompare(b.name,'nl'));
     stateMap=new Map(discovered.map(item=>[item.entity_id,item]));
+    window.dispatchEvent(new CustomEvent('mijnserenity-ha-state-updated',{detail:{full:true}}));
     if(!stateSubscriptionActive){
       await wsCommand({type:'subscribe_events',event_type:'state_changed'});
       stateSubscriptionActive=true;
@@ -502,6 +507,11 @@
     window.ms730FetchCameraFrame=fetchCameraFrame;
     window.ms730GetSelectedLiveCameras=selectedLiveCameras;
     window.ms730HomeAssistantConnected=()=>Boolean(authData());
+    window.ms730GetStateSnapshot=()=>[...stateMap.values()].map(item=>({
+      ...item,
+      attributes:{...(item.attributes||{})}
+    }));
+    window.ms730RefreshStateSnapshot=()=>getStates();
     window.ms730ToggleAdvanced=toggleAdvanced;
     window.ms712SendCommand=sendCommand;
     window.ms712OpenHomeAssistant=()=>{

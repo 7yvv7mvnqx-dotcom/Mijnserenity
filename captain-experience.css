@@ -1,0 +1,790 @@
+/* =========================================================
+   MijnSerenity 7.6.0 — Captain Experience
+   Slim dashboard, status, routebeleving, radio en thema's
+   ========================================================= */
+
+:root{
+  --ms760-accent:#50d0ff;
+  --ms760-accent-rgb:80,208,255;
+  --ms760-good:#57d99a;
+  --ms760-warning:#ffd36c;
+  --ms760-danger:#ff7d86;
+  --ms760-card:rgba(13,43,64,.94);
+  --ms760-card-strong:rgba(18,58,82,.98);
+  --ms760-line:rgba(142,222,255,.25);
+  --ms760-copy:#f5fbff;
+  --ms760-muted:#b9cdd9;
+  --ms760-radio-height:0px;
+}
+
+body[data-ms760-theme="day"]{
+  --ms760-accent:#39bdf4;
+  --ms760-accent-rgb:57,189,244;
+  --ms760-card:rgba(16,54,78,.95);
+  --ms760-card-strong:rgba(19,70,98,.98);
+}
+
+body[data-ms760-theme="evening"]{
+  --ms760-accent:#79c8ff;
+  --ms760-accent-rgb:121,200,255;
+  --ms760-card:rgba(25,42,67,.96);
+  --ms760-card-strong:rgba(36,52,80,.98);
+}
+
+body[data-ms760-theme="night"]{
+  --ms760-accent:#ff9f6e;
+  --ms760-accent-rgb:255,159,110;
+  --ms760-card:rgba(14,23,35,.98);
+  --ms760-card-strong:rgba(26,31,42,.99);
+  --ms760-line:rgba(255,159,110,.20);
+  --ms760-muted:#c9c2be;
+}
+
+body.ms760-captain-experience{
+  background:
+    radial-gradient(circle at 50% -15%,rgba(var(--ms760-accent-rgb),.10),transparent 33%),
+    #020d16;
+}
+
+body.ms760-captain-experience main,
+body.ms760-captain-experience.ms750-simple-ui.ms708-native-pages-active main{
+  padding-bottom:calc(var(--ms750-nav-height) + var(--ms760-radio-height) + env(safe-area-inset-bottom) + 24px) !important;
+}
+body.ms760-captain-experience.ms708-native-pages-active .ms708-native-pager > .ms708-native-page{
+  padding-bottom:calc(var(--ms760-radio-height) + 26px) !important;
+}
+
+/* Het bestaande eenvoudige dashboard wordt de rustige basis. */
+body.ms760-captain-experience #ms750SimpleDashboard .ms750-auto-card,
+body.ms760-captain-experience #ms750SimpleDashboard > .ms750-primary-grid{
+  display:none !important;
+}
+
+.ms760-dashboard{
+  display:grid;
+  gap:14px;
+  margin:-2px 0 18px;
+}
+
+.ms760-glass-card{
+  border:1px solid var(--ms760-line);
+  border-radius:22px;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.035),transparent 42%),
+    var(--ms760-card);
+  box-shadow:0 14px 36px rgba(0,0,0,.18);
+}
+
+/* Contextkaart */
+.ms760-context-card{
+  position:relative;
+  overflow:hidden;
+  padding:17px;
+}
+
+.ms760-context-card::after{
+  content:"";
+  position:absolute;
+  width:180px;
+  height:180px;
+  right:-65px;
+  top:-90px;
+  border-radius:50%;
+  background:rgba(var(--ms760-accent-rgb),.12);
+  filter:blur(3px);
+  pointer-events:none;
+}
+
+.ms760-context-head{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.ms760-context-copy{
+  min-width:0;
+}
+
+.ms760-context-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-height:30px;
+  margin-bottom:8px;
+  padding:5px 10px;
+  border:1px solid rgba(var(--ms760-accent-rgb),.35);
+  border-radius:999px;
+  background:rgba(var(--ms760-accent-rgb),.12);
+  color:#e9f8ff;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.ms760-context-copy h3{
+  margin:0 0 5px;
+  color:var(--ms760-copy);
+  font-size:clamp(22px,4vw,30px);
+  line-height:1.12;
+}
+
+.ms760-context-copy p{
+  margin:0;
+  color:var(--ms760-muted);
+  font-size:15px;
+  line-height:1.38;
+}
+
+body.ms750-simple-ui .ms760-auto-toggle{
+  position:relative;
+  z-index:1;
+  flex:0 0 auto;
+  min-width:74px;
+  min-height:44px;
+  padding:7px 12px;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:999px;
+  background:#2a4658;
+  color:#fff;
+  font-size:14px;
+  font-weight:900;
+}
+
+body.ms750-simple-ui .ms760-auto-toggle.is-on{
+  background:var(--ms760-accent);
+  color:#03131f;
+}
+
+.ms760-context-actions{
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-top:15px;
+}
+
+body.ms750-simple-ui .ms760-context-action{
+  min-width:0;
+  min-height:56px;
+  padding:8px 7px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:15px;
+  background:#17394f;
+  color:#fff;
+  font-size:13px;
+  font-weight:850;
+  line-height:1.15;
+  text-align:center;
+}
+
+body.ms750-simple-ui .ms760-context-action.primary{
+  background:linear-gradient(135deg,rgba(var(--ms760-accent-rgb),.43),rgba(73,219,151,.16)),#17445e;
+}
+
+/* Live status */
+.ms760-section-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:2px 2px -4px;
+}
+
+.ms760-section-title h3{
+  margin:0;
+  color:var(--ms760-copy);
+  font-size:20px;
+}
+
+.ms760-section-title small{
+  color:var(--ms760-muted);
+  font-size:12px !important;
+}
+
+.ms760-status-strip{
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:minmax(138px,1fr);
+  gap:9px;
+  overflow-x:auto;
+  overscroll-behavior-x:contain;
+  scroll-snap-type:x proximity;
+  padding:2px 1px 7px;
+  scrollbar-width:none;
+}
+
+.ms760-status-strip::-webkit-scrollbar{display:none;}
+
+.ms760-status-chip{
+  scroll-snap-align:start;
+  display:grid;
+  grid-template-columns:38px 1fr;
+  align-items:center;
+  gap:9px;
+  min-height:70px;
+  padding:10px;
+  border:1px solid var(--ms760-line);
+  border-radius:17px;
+  background:var(--ms760-card);
+}
+
+.ms760-status-chip .icon{
+  display:grid;
+  place-items:center;
+  width:38px;
+  height:38px;
+  border-radius:13px;
+  background:rgba(255,255,255,.07);
+  font-size:22px;
+}
+
+.ms760-status-chip strong,
+.ms760-status-chip small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.ms760-status-chip strong{
+  color:var(--ms760-copy);
+  font-size:15px;
+}
+
+.ms760-status-chip small{
+  color:var(--ms760-muted);
+  font-size:11px !important;
+}
+
+.ms760-status-chip.good{border-color:rgba(87,217,154,.36);}
+.ms760-status-chip.warning{border-color:rgba(255,211,108,.42);}
+.ms760-status-chip.danger{border-color:rgba(255,125,134,.50);}
+
+/* Captain-assistent */
+.ms760-captain-card{
+  padding:16px;
+}
+
+.ms760-captain-head{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  margin-bottom:11px;
+}
+
+.ms760-captain-mark{
+  display:grid;
+  place-items:center;
+  width:46px;
+  height:46px;
+  flex:0 0 46px;
+  border-radius:16px;
+  background:linear-gradient(135deg,rgba(var(--ms760-accent-rgb),.31),rgba(87,217,154,.18));
+  font-size:25px;
+}
+
+.ms760-captain-head h3,
+.ms760-captain-head p{
+  margin:0;
+}
+
+.ms760-captain-head h3{font-size:20px;}
+.ms760-captain-head p{color:var(--ms760-muted);font-size:13px;}
+
+.ms760-captain-prompts{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding:0 0 8px;
+  scrollbar-width:none;
+}
+.ms760-captain-prompts::-webkit-scrollbar{display:none;}
+body.ms750-simple-ui .ms760-prompt{
+  flex:0 0 auto;
+  min-height:38px;
+  padding:7px 11px;
+  border-radius:999px;
+  border:1px solid rgba(var(--ms760-accent-rgb),.24);
+  background:rgba(var(--ms760-accent-rgb),.08);
+  color:#effaff;
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.ms760-captain-input{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+  margin-top:3px;
+}
+
+body.ms750-simple-ui .ms760-captain-input input{
+  min-height:48px;
+  border-radius:15px;
+}
+
+body.ms750-simple-ui .ms760-captain-input button{
+  min-width:58px;
+  min-height:48px;
+  padding:8px 12px;
+  border-radius:15px;
+  background:var(--ms760-accent);
+  color:#03131f;
+  font-weight:950;
+}
+
+.ms760-captain-answer{
+  min-height:0;
+  margin-top:10px;
+  padding:0;
+  border-radius:15px;
+  color:#eaf7fd;
+  line-height:1.48;
+  transition:min-height .2s ease,padding .2s ease,background .2s ease;
+}
+
+.ms760-captain-answer.has-answer{
+  min-height:58px;
+  padding:12px 13px;
+  background:rgba(2,15,25,.53);
+  border:1px solid rgba(255,255,255,.07);
+}
+
+.ms760-captain-answer.thinking{opacity:.72;}
+
+/* Snelle bediening */
+.ms760-quick-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+}
+
+body.ms750-simple-ui .ms760-quick-button{
+  min-width:0;
+  min-height:86px;
+  padding:10px 7px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  border:1px solid var(--ms760-line);
+  border-radius:18px;
+  background:var(--ms760-card);
+  color:#fff;
+  text-align:left;
+}
+
+.ms760-quick-button span{font-size:27px;line-height:1;}
+.ms760-quick-button strong{font-size:14px;line-height:1.12;}
+
+/* Havenkaarten */
+.ms760-harbour-row{
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:minmax(220px,74%);
+  gap:10px;
+  overflow-x:auto;
+  padding:2px 1px 8px;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+}
+.ms760-harbour-row::-webkit-scrollbar{display:none;}
+
+.ms760-harbour-card{
+  position:relative;
+  min-height:150px;
+  overflow:hidden;
+  scroll-snap-align:start;
+  border:1px solid var(--ms760-line);
+  border-radius:20px;
+  background:linear-gradient(135deg,#18425a,#0b2638);
+  color:#fff;
+  text-align:left;
+}
+
+.ms760-harbour-photo,
+.ms760-harbour-fallback{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+.ms760-harbour-photo{object-fit:cover;}
+.ms760-harbour-fallback{
+  display:grid;
+  place-items:center;
+  background:radial-gradient(circle at 78% 20%,rgba(var(--ms760-accent-rgb),.30),transparent 34%),linear-gradient(135deg,#17445e,#0a2434);
+  font-size:48px;
+}
+.ms760-harbour-shade{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.78));
+}
+.ms760-harbour-copy{
+  position:absolute;
+  inset:auto 13px 12px;
+}
+.ms760-harbour-copy strong,
+.ms760-harbour-copy small{display:block;}
+.ms760-harbour-copy strong{font-size:17px;}
+.ms760-harbour-copy small{color:#e3f3fb;font-size:12px !important;}
+.ms760-harbour-favourite{
+  position:absolute;
+  right:10px;
+  top:10px;
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  background:rgba(2,12,20,.68);
+  font-size:18px;
+}
+
+/* Laatste vaart */
+.ms760-trip-card{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:12px;
+  padding:15px;
+}
+.ms760-trip-card h3,.ms760-trip-card p{margin:0;}
+.ms760-trip-card h3{font-size:19px;}
+.ms760-trip-card p{margin-top:4px;color:var(--ms760-muted);font-size:13px;}
+body.ms750-simple-ui .ms760-replay-button{
+  min-width:98px;
+  min-height:48px;
+  padding:8px 12px;
+  border-radius:15px;
+  background:rgba(var(--ms760-accent-rgb),.18);
+  border:1px solid rgba(var(--ms760-accent-rgb),.33);
+  color:#fff;
+  font-weight:900;
+}
+
+/* Routebeleving */
+.ms760-replay-layer{
+  position:fixed;
+  inset:0;
+  z-index:2147483550;
+  display:grid;
+  place-items:center;
+  padding:max(10px,env(safe-area-inset-top)) 10px calc(var(--ms750-nav-height) + env(safe-area-inset-bottom) + 10px);
+  background:rgba(0,0,0,.82);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.ms760-replay-layer.hidden{display:none !important;}
+.ms760-replay-panel{
+  width:min(920px,100%);
+  max-height:calc(100dvh - var(--ms750-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px);
+  overflow:auto;
+  border:1px solid var(--ms760-line);
+  border-radius:24px;
+  background:#061b29;
+  box-shadow:0 28px 80px rgba(0,0,0,.62);
+}
+.ms760-replay-head{
+  position:sticky;
+  top:0;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 15px;
+  background:rgba(6,27,41,.96);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(12px);
+}
+.ms760-replay-head h2,.ms760-replay-head p{margin:0;}
+.ms760-replay-head h2{font-size:21px;}
+.ms760-replay-head p{color:var(--ms760-muted);font-size:12px;}
+body.ms750-simple-ui .ms760-replay-close{
+  flex:0 0 46px;
+  width:46px;
+  min-width:46px;
+  min-height:46px;
+  padding:0;
+  border-radius:15px;
+  font-size:24px;
+}
+.ms760-replay-map{height:min(52dvh,470px);background:#dbe8ec;}
+.ms760-replay-controls{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:10px;
+  padding:13px 15px;
+}
+body.ms750-simple-ui .ms760-replay-play{
+  width:52px;
+  min-width:52px;
+  min-height:48px;
+  padding:0;
+  border-radius:15px;
+}
+.ms760-replay-slider{width:100%;}
+.ms760-replay-speed{
+  width:auto;
+  min-width:70px;
+  min-height:44px !important;
+  padding:5px 8px !important;
+}
+.ms760-replay-stats{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  padding:0 15px 15px;
+}
+.ms760-replay-stat{
+  padding:10px;
+  border-radius:14px;
+  background:rgba(255,255,255,.05);
+}
+.ms760-replay-stat strong,.ms760-replay-stat small{display:block;}
+.ms760-replay-stat small{color:var(--ms760-muted);font-size:11px !important;}
+.ms760-replay-photos{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:0 15px 15px;
+}
+.ms760-replay-photos img{
+  flex:0 0 92px;
+  width:92px;
+  height:70px;
+  object-fit:cover;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.10);
+}
+body.ms760-replay-open{overflow:hidden;}
+
+/* Beleef-knop bij ieder logboek */
+body.ms750-simple-ui .ms760-trip-replay-inline{
+  min-height:42px;
+  padding:7px 11px;
+  border-radius:12px;
+  background:rgba(var(--ms760-accent-rgb),.14);
+  border:1px solid rgba(var(--ms760-accent-rgb),.28);
+  color:#fff;
+}
+
+/* Home Assistant groepen */
+.ms760-ha-groups{
+  position:sticky;
+  top:calc(66px + env(safe-area-inset-top));
+  z-index:12;
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  margin:0 0 12px;
+  padding:8px 2px;
+  background:linear-gradient(180deg,#020d16 72%,transparent);
+  scrollbar-width:none;
+}
+.ms760-ha-groups::-webkit-scrollbar{display:none;}
+body.ms750-simple-ui .ms760-ha-group{
+  flex:0 0 auto;
+  min-height:38px;
+  padding:7px 11px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.11);
+  background:#17384e;
+  color:#eaf6fb;
+  font-size:12px;
+  font-weight:850;
+}
+body.ms750-simple-ui .ms760-ha-group.active{
+  background:var(--ms760-accent);
+  color:#03131f;
+}
+#entertainment[data-ms760-filter="media"] .ring-card,
+#entertainment[data-ms760-filter="media"] .hue-card,
+#entertainment[data-ms760-filter="media"] .hue-control-card,
+#entertainment[data-ms760-filter="media"] .entertainment-grid-title,
+#entertainment[data-ms760-filter="media"] #homeAssistantScenes,
+#entertainment[data-ms760-filter="security"] .hue-card,
+#entertainment[data-ms760-filter="security"] .sonos-card,
+#entertainment[data-ms760-filter="security"] .apple-card,
+#entertainment[data-ms760-filter="security"] .hue-control-card,
+#entertainment[data-ms760-filter="security"] .sonos-control-card,
+#entertainment[data-ms760-filter="security"] .apple-tv-control-card,
+#entertainment[data-ms760-filter="security"] .entertainment-grid-title,
+#entertainment[data-ms760-filter="security"] #homeAssistantScenes,
+#entertainment[data-ms760-filter="lights"] .ring-card,
+#entertainment[data-ms760-filter="lights"] .sonos-card,
+#entertainment[data-ms760-filter="lights"] .apple-card,
+#entertainment[data-ms760-filter="lights"] .sonos-control-card,
+#entertainment[data-ms760-filter="lights"] .apple-tv-control-card,
+#entertainment[data-ms760-filter="scenes"] .smart-home-integration-grid,
+#entertainment[data-ms760-filter="scenes"] .hue-control-card,
+#entertainment[data-ms760-filter="scenes"] .sonos-control-card,
+#entertainment[data-ms760-filter="scenes"] .apple-tv-control-card{
+  display:none !important;
+}
+
+/* Mini-radiospeler */
+.ms760-radio-player{
+  position:fixed;
+  z-index:2147483090;
+  left:50%;
+  bottom:calc(var(--ms751-nav-bottom,0px) + var(--ms750-nav-height) + env(safe-area-inset-bottom) + 5px);
+  width:min(690px,calc(100% - 18px));
+  transform:translateX(-50%);
+  border:1px solid rgba(var(--ms760-accent-rgb),.32);
+  border-radius:19px;
+  background:rgba(5,25,38,.96);
+  box-shadow:0 15px 42px rgba(0,0,0,.42);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  transition:transform .2s ease,opacity .2s ease;
+}
+.ms760-radio-player.hidden{display:none !important;}
+.ms760-radio-main{
+  display:grid;
+  grid-template-columns:auto 1fr repeat(3,44px) auto;
+  align-items:center;
+  gap:7px;
+  min-height:58px;
+  padding:6px 8px;
+}
+.ms760-radio-icon{
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  background:rgba(var(--ms760-accent-rgb),.14);
+  font-size:23px;
+}
+.ms760-radio-copy{min-width:0;}
+.ms760-radio-copy strong,.ms760-radio-copy small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.ms760-radio-copy strong{font-size:14px;}
+.ms760-radio-copy small{color:var(--ms760-muted);font-size:10px !important;}
+body.ms750-simple-ui .ms760-radio-control,
+body.ms750-simple-ui .ms760-radio-expand{
+  width:44px;
+  min-width:44px;
+  min-height:44px;
+  padding:0;
+  border-radius:13px;
+  background:#173b52;
+  color:#fff;
+}
+body.ms750-simple-ui .ms760-radio-expand{width:38px;min-width:38px;}
+.ms760-radio-panel{
+  display:none;
+  padding:0 10px 10px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.ms760-radio-player.expanded .ms760-radio-panel{display:block;}
+.ms760-radio-volume{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:8px;
+  padding:9px 2px 5px;
+}
+.ms760-radio-favourites{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding:4px 0;
+  scrollbar-width:none;
+}
+.ms760-radio-favourites::-webkit-scrollbar{display:none;}
+body.ms750-simple-ui .ms760-radio-favourite{
+  flex:0 0 auto;
+  min-height:38px;
+  padding:7px 10px;
+  border-radius:12px;
+  background:#173b52;
+  color:#fff;
+  font-size:12px;
+}
+body.ms760-radio-visible{--ms760-radio-height:68px;}
+body.ms760-radio-visible .bottom-nav{box-shadow:0 -1px 0 rgba(255,255,255,.06),0 -84px 34px -34px rgba(0,0,0,.28);}
+
+/* Themakeuze in Meer */
+.ms760-theme-setting{
+  margin-top:10px;
+  padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+.ms760-theme-setting strong{display:block;margin-bottom:8px;}
+.ms760-theme-buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+body.ms750-simple-ui .ms760-theme-button{
+  min-height:42px;
+  padding:6px;
+  border-radius:12px;
+  background:#17384e;
+  color:#fff;
+  font-size:11px;
+}
+body.ms750-simple-ui .ms760-theme-button.active{
+  background:var(--ms760-accent);
+  color:#03131f;
+}
+
+/* Verfijnde interactie */
+@keyframes ms760CardIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:none}
+}
+.ms760-dashboard > *{
+  animation:ms760CardIn .34s both;
+}
+.ms760-dashboard > *:nth-child(2){animation-delay:.035s}
+.ms760-dashboard > *:nth-child(3){animation-delay:.07s}
+.ms760-dashboard > *:nth-child(4){animation-delay:.105s}
+.ms760-dashboard > *:nth-child(5){animation-delay:.14s}
+.ms760-dashboard > *:nth-child(6){animation-delay:.175s}
+
+body.ms760-captain-experience button{
+  transition:transform .12s ease,filter .16s ease,background-color .16s ease,border-color .16s ease;
+}
+body.ms760-captain-experience button:active{transform:scale(.975);}
+body.ms760-captain-experience button:hover{filter:brightness(1.055);}
+
+@media(max-width:580px){
+  .ms760-context-actions{grid-template-columns:1fr 1fr 1fr;}
+  .ms760-context-action{font-size:11px !important;}
+  .ms760-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .ms760-quick-button{min-height:82px !important;}
+  .ms760-trip-card{grid-template-columns:1fr;}
+  .ms760-trip-card .ms760-replay-button{width:100%;}
+  .ms760-radio-main{grid-template-columns:auto 1fr repeat(2,42px) auto;}
+  .ms760-radio-main [data-ms760-radio="previous"]{display:none;}
+  .ms760-theme-buttons{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+
+@media(max-width:390px){
+  .ms760-context-head{display:block;}
+  .ms760-auto-toggle{margin-top:10px;}
+  .ms760-status-strip{grid-auto-columns:minmax(128px,70%);}
+  .ms760-context-action{padding:7px 4px !important;}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ms760-dashboard > *{animation:none !important;}
+  .ms760-radio-player,body.ms760-captain-experience button{transition:none !important;}
+}
