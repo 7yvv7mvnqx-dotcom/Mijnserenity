@@ -1,8 +1,8 @@
-/* MijnSerenity 7.5.7 — eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.5.9 — stabiele eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.5.7';
+  const BUILD='7.5.9';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -432,7 +432,7 @@
         </div>
         <div class="ms750-more-settings">
           <button type="button" id="ms750TextSizeButton">Tekstgrootte: groot</button>
-          <button type="button" id="ms750DashboardModeButton">Toon uitgebreid dashboard</button>
+          <button type="button" id="ms750DashboardModeButton">Toon uitgebreid overzicht</button>
         </div>
       </div>
     `;
@@ -545,10 +545,33 @@
     return true;
   }
 
+  function restoreNativePagerMode(){
+    document.body.classList.remove('ms755-single-page-nav');
+
+    const pager=document.getElementById('ms708NativePager');
+    if(pager){
+      pager.classList.remove('hidden');
+      pager.style.removeProperty('display');
+      delete pager.dataset.ms755Active;
+    }
+
+    document.querySelectorAll(
+      '#ms708NativePager > .ms708-native-page'
+    ).forEach(page=>{
+      page.classList.remove('ms755-route-active');
+      page.removeAttribute('aria-hidden');
+      page.style.removeProperty('display');
+      page.style.removeProperty('width');
+      page.style.removeProperty('min-width');
+    });
+  }
+
   function navigate(route,sourceButton=null){
     if(route==='boat'&&typeof window.isAppAdmin==='function'&&!window.isAppAdmin()){
       route='settings';
     }
+
+    restoreNativePagerMode();
 
     /*
        Pagina's in de iPhone/iPad-pager gaan voortaan rechtstreeks en
@@ -576,41 +599,58 @@
     window.setTimeout(()=>forceRouteVisible(route,false),40);
   }
 
-  function clearLegacySinglePageLayout(){
-    document.body.classList.remove('ms755-single-page-nav');
-    const pager=document.getElementById('ms708NativePager');
-    pager?.removeAttribute('data-ms755-active');
-    document.querySelectorAll('#ms708NativePager > .ms708-native-page, #appView > section').forEach(page=>{
-      page.classList.remove('ms755-route-active');
-      page.style.removeProperty('display');
-      page.style.removeProperty('width');
-      page.style.removeProperty('min-width');
-      page.removeAttribute('aria-hidden');
-    });
-  }
-
   function hardOpenStartPage(){
     const dashboard=document.getElementById('dashboard');
     if(!dashboard)return false;
 
-    // Oude 7.5.6 één-pagina-instellingen kunnen Logboek en andere pagina's
-    // onzichtbaar houden. 7.5.7 gebruikt weer één gedeelde pager-route voor
-    // knoppen, veegbewegingen én automatisch openen na opslaan.
-    clearLegacySinglePageLayout();
+    restoreNativePagerMode();
 
     let opened=false;
+
     if(typeof window.ms708GoToPage==='function'){
-      try{opened=window.ms708GoToPage('dashboard',true)!==false;}catch(_error){}
+      try{
+        opened=window.ms708GoToPage('dashboard',true)!==false;
+      }catch(error){
+        console.warn('Startpagina via pager openen mislukt:',error);
+      }
     }
+
     if(!opened){
-      opened=forceRouteVisible('dashboard',true);
+      try{
+        const startButton=document.querySelector(
+          '.bottom-nav-item[data-target="dashboard"]'
+        );
+        if(typeof originalCaptainNavigate==='function'){
+          originalCaptainNavigate('dashboard',startButton);
+          opened=true;
+        }else if(typeof window.captainNavigate==='function'){
+          window.captainNavigate('dashboard',startButton);
+          opened=true;
+        }
+      }catch(error){
+        console.warn('Startpagina via navigatie openen mislukt:',error);
+      }
+    }
+
+    if(!opened){
+      document.querySelectorAll('#appView > section').forEach(section=>{
+        section.classList.toggle('hidden',section!==dashboard);
+      });
+      opened=true;
     }
 
     currentRoute='dashboard';
     updatePageBar('dashboard');
     closeMore(false);
-    dashboard.scrollTo?.({top:0,left:0,behavior:'auto'});
+
+    dashboard.scrollTop=0;
     window.scrollTo({top:0,left:0,behavior:'auto'});
+
+    requestAnimationFrame(()=>{
+      dashboard.scrollTop=0;
+      window.ms708ResizePager?.();
+    });
+
     return opened;
   }
 
@@ -684,8 +724,8 @@
     }
     if(dashboardButton){
       dashboardButton.textContent=document.body.classList.contains('ms750-dashboard-expanded')
-        ?'Verberg uitgebreid dashboard'
-        :'Toon uitgebreid dashboard';
+        ?'Verberg uitgebreid overzicht'
+        :'Toon uitgebreid overzicht';
     }
   }
 
@@ -755,8 +795,7 @@
   }
 
   function applyPreferences(){
-    document.body.classList.add('ms750-simple-ui');
-    clearLegacySinglePageLayout();
+    document.body.classList.add('ms750-simple-ui','ms755-single-page-nav');
     document.body.classList.toggle('ms750-large-text',storedBoolean(LARGE_TEXT_KEY,true));
     document.body.classList.toggle('ms750-dashboard-expanded',storedBoolean(EXPANDED_KEY,false));
     storeBoolean(SIMPLE_KEY,true);

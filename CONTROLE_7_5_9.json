@@ -1,0 +1,11 @@
+{
+  "build": "7.5.9",
+  "base": "user-uploaded 7.5.8 dashboard opgeruimd",
+  "waterkaarten_ipad_shortcut_only": true,
+  "fullscreen_web_fallback_disabled_on_ipad": true,
+  "right_window_setup_and_memory": true,
+  "all_waterkaarten_buttons_patched": true,
+  "automatic_departure_prompt_updated": true,
+  "javascript_syntax_ok": true,
+  "all_checks_ok": true
+}
