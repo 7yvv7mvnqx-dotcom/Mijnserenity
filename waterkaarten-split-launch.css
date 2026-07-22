@@ -71,7 +71,7 @@
   .ms738-waterkaarten-banner button{width:100%}
 }
 
-/* 7.5.9 — status voor vaste rechter Waterkaarten-indeling */
+/* 7.5.10 — status en bevestiging voor vaste rechter Waterkaarten-indeling */
 .ms759-split-ready{
   display:flex;
   flex-direction:column;
@@ -84,3 +84,9 @@
 }
 .ms759-split-ready.hidden{display:none!important}
 .ms759-split-ready span{color:var(--muted,#b8c6d2);font-size:.92rem}
+
+/* 7.5.10 — bevestiging blijft vindbaar na terugkeer uit Waterkaarten */
+.ms759-banner-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ms759-banner-actions button{min-height:44px}
+.ms759-banner-actions .hidden{display:none!important}
+@media(max-width:720px){.ms759-banner-actions{width:100%}.ms759-banner-actions button{flex:1 1 150px}}

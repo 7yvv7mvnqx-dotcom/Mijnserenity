@@ -1,0 +1,7 @@
+{
+  "build": "7.5.10",
+  "split_confirmation_returns": true,
+  "banner_confirmation_available": true,
+  "ipad_shortcut_only": true,
+  "fullscreen_web_fallback": false
+}

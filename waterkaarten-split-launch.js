@@ -1,4 +1,4 @@
-/* MijnSerenity 7.5.9 — Waterkaarten rechts in iPad-venster */
+/* MijnSerenity 7.5.10 — Waterkaarten rechts en bevestiging na terugkeer */
 (()=>{
   'use strict';
 
@@ -54,7 +54,10 @@
           <small>MijnSerenity blijft links zichtbaar voor de GPS-opname.</small>
         </div>
       </div>
-      <button type="button" onclick="ms738LaunchWaterkaarten()">Open rechts</button>`;
+      <div class="ms759-banner-actions">
+        <button type="button" onclick="ms738LaunchWaterkaarten()">Open rechts</button>
+        <button id="ms7510BannerConfirm" type="button" class="secondary" onclick="ms759ConfirmWaterkaartenRight()">✓ Indeling staat goed</button>
+      </div>`;
     document.body.appendChild(banner);
 
     const modal=document.createElement('div');
@@ -107,12 +110,16 @@
     document.getElementById('ms738WaterkaartenSteps')?.classList.toggle('hidden',ready);
     const confirm=document.getElementById('ms759ConfirmSplit');
     if(confirm)confirm.classList.toggle('hidden',ready);
+    const bannerConfirm=document.getElementById('ms7510BannerConfirm');
+    if(bannerConfirm)bannerConfirm.classList.toggle('hidden',ready);
   }
 
   function setMessage(reason){
     const message=document.getElementById('ms738WaterkaartenMessage');
     if(!message)return;
-    if(reason==='departure'){
+    if(reason==='return'){
+      message.textContent='Waterkaarten staat nu rechts? Tik op Indeling staat goed. Daarna gebruikt MijnSerenity deze werkwijze voortaan.';
+    }else if(reason==='departure'){
       message.textContent='Vertrek gedetecteerd. Open Waterkaarten rechts terwijl MijnSerenity links de vaart blijft registreren.';
     }else if(reason==='armed'){
       message.textContent='Automatisch varen staat klaar. Open Waterkaarten rechts voordat je vertrekt.';
@@ -153,6 +160,7 @@
 
   function launch(){
     safeWrite(OPEN_MARKER_KEY,Date.now());
+    pendingReason='return';
     closePrompt();
     document.getElementById('ms738WaterkaartenBanner')?.classList.add('hidden');
 
@@ -233,11 +241,25 @@
       detectAutomaticDeparture();
     },700);
 
+    const showConfirmationAfterReturn=()=>{
+      if(document.hidden||splitReady())return;
+      if(recentlyOpened()){
+        pendingReason='return';
+        setTimeout(()=>showPrompt('return'),180);
+      }
+    };
+
     document.addEventListener('visibilitychange',()=>{
-      if(!document.hidden&&pendingReason){
+      if(!document.hidden){
         renderSplitState();
+        showConfirmationAfterReturn();
       }
     });
+    window.addEventListener('focus',showConfirmationAfterReturn);
+    window.addEventListener('pageshow',showConfirmationAfterReturn);
+
+    // Ook na een terugkeer via Opdrachten, waarbij iPadOS geen visibility-event geeft.
+    setInterval(showConfirmationAfterReturn,1200);
   }
 
   window.ms738ShowWaterkaartenPrompt=showPrompt;
