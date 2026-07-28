@@ -1,0 +1,10 @@
+{
+  "build": "7.8.2",
+  "base": "7.5.11",
+  "change": "Captain Experience dashboard, route replay, HA groups, radio mini-player and themes",
+  "new_assets": [
+    "captain-experience.css",
+    "captain-experience.js"
+  ],
+  "status": "validated"
+}

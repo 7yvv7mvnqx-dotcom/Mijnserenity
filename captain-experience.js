@@ -1,12 +1,12 @@
 /* ============================================================
-   MijnSerenity 7.8.1 — Captain Experience
+   MijnSerenity 7.8.2 — Captain Experience
    Contextdashboard, live status, Captain, routebeleving,
    Home Assistant-groepen, radio-minispeler en automatische thema's.
    ============================================================ */
 (()=>{
   'use strict';
 
-  const BUILD='7.8.1';
+  const BUILD='7.8.2';
   const THEME_KEY='ms760-theme';
   const DASHBOARD_ID='ms760CaptainDashboard';
   const REPLAY_ID='ms760ReplayLayer';
@@ -400,7 +400,7 @@
     if($('ms760ContextBadge'))$('ms760ContextBadge').textContent=context.badge;
     if($('ms760ContextTitle'))$('ms760ContextTitle').textContent=context.title;
     if($('ms760ContextSubtitle'))$('ms760ContextSubtitle').textContent=context.subtitle;
-    if($('ms760ContextActions'))$('ms760ContextActions').innerHTML=context.actions.map(actionButton).join('');
+    if($('ms760ContextActions'))$('ms760ContextActions').innerHTML=context.actions.slice(0,2).map(actionButton).join('');
     const toggle=$('ms760AutoToggle');
     if(toggle){
       toggle.textContent=automatic?.busy?'Even…':automatic?.enabled?'Auto aan':'Auto uit';
@@ -802,7 +802,7 @@
   }
 
   function exposeHaSnapshot(){
-    /* De live bridge van 7.8.1 exposeert dit zelf. Deze fallback houdt
+    /* De live bridge van 7.8.2 exposeert dit zelf. Deze fallback houdt
        de minispeler bruikbaar wanneer de bridge iets later initialiseert. */
     if(typeof window.ms730GetStateSnapshot!=='function')window.ms730GetStateSnapshot=()=>[];
   }
