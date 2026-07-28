@@ -788,3 +788,71 @@ body.ms760-captain-experience button:hover{filter:brightness(1.055);}
   .ms760-dashboard > *{animation:none !important;}
   .ms760-radio-player,body.ms760-captain-experience button{transition:none !important;}
 }
+
+
+/* MijnSerenity 7.8 — rustige startpagina */
+body.ms750-simple-ui #ms750SimpleDashboard > .ms750-auto-card,
+body.ms750-simple-ui #ms750SimpleDashboard > .ms750-primary-grid{
+  display:none !important;
+}
+
+body.ms750-simple-ui .ms760-dashboard{
+  gap:14px;
+  margin-top:14px;
+}
+
+body.ms750-simple-ui .ms780-status-title small{
+  display:block;
+}
+
+body.ms750-simple-ui .ms760-status-strip{
+  grid-auto-flow:unset;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  overflow:visible;
+  gap:10px;
+  padding:0;
+}
+
+body.ms750-simple-ui .ms760-status-chip{
+  width:100%;
+  min-width:0;
+  min-height:68px;
+}
+
+body.ms750-simple-ui .ms780-captain-compact{
+  padding:16px;
+}
+
+body.ms750-simple-ui .ms780-captain-compact .ms760-captain-head{
+  margin-bottom:12px;
+}
+
+body.ms750-simple-ui .ms780-captain-compact .ms760-captain-input{
+  margin-top:0;
+}
+
+body.ms750-simple-ui .ms750-welcome-card{
+  margin-bottom:0;
+}
+
+@media(max-width:390px){
+  body.ms750-simple-ui .ms760-status-strip{
+    grid-template-columns:1fr 1fr;
+  }
+  body.ms750-simple-ui .ms760-status-chip{
+    grid-template-columns:34px minmax(0,1fr);
+    gap:7px;
+    padding:9px;
+  }
+  body.ms750-simple-ui .ms760-status-chip .icon{
+    width:34px;
+    height:34px;
+    font-size:19px;
+  }
+  body.ms750-simple-ui .ms760-status-chip strong{
+    font-size:14px;
+  }
+  body.ms750-simple-ui .ms760-section-title small{
+    display:none;
+  }
+}

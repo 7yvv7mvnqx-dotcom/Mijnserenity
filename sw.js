@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.7.0-iphone-experience';
+const CACHE_NAME='mijnserenity-7.8.0-iphone-experience';
 const APP_SHELL=[
   '/',
   '/index.html',
