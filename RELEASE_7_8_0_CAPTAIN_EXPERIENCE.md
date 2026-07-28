@@ -1,11 +1,11 @@
-# MijnSerenity 7.8.0 — volledige cache-update
+# MijnSerenity 7.8.1 — volledige cache-update
 
 ## Technische correctie
 
-- Alle zichtbare versienummers staan op **7.8.0**.
-- Alle lokale CSS-, JavaScript-, manifest- en afbeeldingsverwijzingen gebruiken cachecode **78000**.
-- De service worker registreert nu met `sw.js?v=78000`.
-- De PWA-cache heet `mijnserenity-7.8.0-captain-experience-r1`, waardoor oude 7.6.0-caches automatisch worden verwijderd.
+- Alle zichtbare versienummers staan op **7.8.1**.
+- Alle lokale CSS-, JavaScript-, manifest- en afbeeldingsverwijzingen gebruiken cachecode **78100**.
+- De service worker registreert nu met `sw.js?v=78100`.
+- De PWA-cache heet `mijnserenity-7.8.1-captain-experience-r1`, waardoor oude 7.6.0-caches automatisch worden verwijderd.
 - De ZIP bevat alle bestanden los in de hoofdmap en kan de bestaande GitHub-bestanden volledig vervangen.
 
 ## Nieuw

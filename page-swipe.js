@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.8.0 — hersteld native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.8.1 — hersteld native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -47,7 +47,7 @@ let ms708Initialised=false;
 
 function ms708SinglePageMode(){
   /*
-     7.8.0: de tijdelijke harde Start-oplossing zette de app blijvend
+     7.8.1: de tijdelijke harde Start-oplossing zette de app blijvend
      in één-paginamodus. Daardoor verdwenen andere pagina's en stopte
      horizontaal vegen. Native paginavegen is weer altijd actief.
   */

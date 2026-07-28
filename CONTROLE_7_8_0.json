@@ -1,8 +1,8 @@
 {
-  "build": "7.8.0",
+  "build": "7.8.1",
   "base": "7.6.0",
   "change": "Complete upload package with synchronized build numbers and forced PWA cache refresh",
-  "cache_token": "78000",
-  "service_worker_cache": "mijnserenity-7.8.0-captain-experience-r1",
+  "cache_token": "78100",
+  "service_worker_cache": "mijnserenity-7.8.1-captain-experience-r1",
   "status": "validated"
 }
