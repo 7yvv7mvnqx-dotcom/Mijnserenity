@@ -1,12 +1,12 @@
 /* ============================================================
-   MijnSerenity 7.6.0 — Captain Experience
+   MijnSerenity 7.8.0 — Captain Experience
    Contextdashboard, live status, Captain, routebeleving,
    Home Assistant-groepen, radio-minispeler en automatische thema's.
    ============================================================ */
 (()=>{
   'use strict';
 
-  const BUILD='7.6.0';
+  const BUILD='7.8.0';
   const THEME_KEY='ms760-theme';
   const DASHBOARD_ID='ms760CaptainDashboard';
   const REPLAY_ID='ms760ReplayLayer';
@@ -267,23 +267,61 @@
     section.className='ms760-dashboard';
     section.setAttribute('aria-label','Captain dashboard');
     section.innerHTML=`
-      <div class="ms760-section-title ms780-status-title"><h3>Status Serenity</h3><small>Alleen wat nu belangrijk is</small></div>
+      <article class="ms760-context-card ms760-glass-card">
+        <div class="ms760-context-head">
+          <div class="ms760-context-copy">
+            <span id="ms760ContextBadge" class="ms760-context-badge">CAPTAIN</span>
+            <h3 id="ms760ContextTitle">Serenity wordt gecontroleerd…</h3>
+            <p id="ms760ContextSubtitle">Even geduld.</p>
+          </div>
+          <button id="ms760AutoToggle" type="button" class="ms760-auto-toggle" aria-pressed="false">Auto uit</button>
+        </div>
+        <div id="ms760ContextActions" class="ms760-context-actions"></div>
+      </article>
+
+      <div class="ms760-section-title"><h3>Live aan boord</h3><small>Tik voor details</small></div>
       <div id="ms760StatusStrip" class="ms760-status-strip" aria-label="Actuele bootstatus"></div>
 
-      <article class="ms760-captain-card ms760-glass-card ms780-captain-compact">
+      <article class="ms760-captain-card ms760-glass-card">
         <div class="ms760-captain-head">
           <span class="ms760-captain-mark" aria-hidden="true">🧭</span>
-          <div><h3>Vraag het de Captain</h3><p>Vraag iets over Serenity, een route of het vaarweer.</p></div>
+          <div><h3>Vraag het de Captain</h3><p>Gebruikt je eigen boot-, route- en kostengegevens.</p></div>
+        </div>
+        <div class="ms760-captain-prompts" aria-label="Voorbeeldvragen">
+          <button type="button" class="ms760-prompt" data-ms760-question="Waar kunnen we morgen heen?">Morgen varen</button>
+          <button type="button" class="ms760-prompt" data-ms760-question="Is het veilig vaarweer?">Veilig vaarweer</button>
+          <button type="button" class="ms760-prompt" data-ms760-question="Wat vraagt aandacht aan Serenity?">Technische aandacht</button>
+          <button type="button" class="ms760-prompt" data-ms760-question="Wat hebben we dit seizoen uitgegeven?">Uitgaven</button>
+          <button type="button" class="ms760-prompt" data-ms760-question="Analyseer mijn laatste vaart">Laatste vaart</button>
         </div>
         <form id="ms760CaptainForm" class="ms760-captain-input">
-          <input id="ms760CaptainInput" type="search" autocomplete="off" placeholder="Wat wil je weten?">
+          <input id="ms760CaptainInput" type="search" autocomplete="off" placeholder="Stel een vraag over Serenity">
           <button type="submit" aria-label="Vraag stellen">➜</button>
         </form>
         <div id="ms760CaptainAnswer" class="ms760-captain-answer" aria-live="polite"></div>
       </article>
 
+      <div class="ms760-section-title"><h3>Snelle bediening</h3><small>Alles binnen één tik</small></div>
+      <div class="ms760-quick-grid">
+        ${quickButton('live','⛵','Varen')}
+        ${quickButton('waterkaarten','🗺️','Waterkaarten')}
+        ${quickButton('map','📍','Kaart')}
+        ${quickButton('search','🔎','Zoeken')}
+        ${quickButton('entertainment','🏡','Home Assistant')}
+        ${quickButton('radio','📻','Radio')}
+        ${quickButton('logbook','📖','Logboek')}
+        ${quickButton('weather','☀️','Weer')}
+        ${quickButton('more','☰','Alles')}
+      </div>
+
+      <div id="ms760HarbourSection" class="hidden">
+        <div class="ms760-section-title"><h3>Favoriete havens</h3><small>Veeg voor meer</small></div>
+        <div id="ms760HarbourRow" class="ms760-harbour-row"></div>
+      </div>
+
       <article id="ms760LatestTrip" class="ms760-trip-card ms760-glass-card hidden"></article>
-    `;    if(welcome)welcome.insertAdjacentElement('afterend',section);
+    `;
+    if(welcome)welcome.insertAdjacentElement('afterend',section);
     else simple.prepend(section);
 
     section.addEventListener('click',event=>{
@@ -418,7 +456,7 @@
   function updateStatus(){
     const strip=$('ms760StatusStrip');
     if(!strip)return;
-    strip.innerHTML=statusItems().slice(0,4).map(item=>`
+    strip.innerHTML=statusItems().map(item=>`
       <button type="button" class="ms760-status-chip ${item.level||''}" data-ms760-route="${
         item.label==='Wind'?'weather':item.label==='Verbinding'?'entertainment':'technical'
       }">
@@ -807,7 +845,7 @@
   }
 
   function exposeHaSnapshot(){
-    /* De live bridge van 7.6.0 exposeert dit zelf. Deze fallback houdt
+    /* De live bridge van 7.8.0 exposeert dit zelf. Deze fallback houdt
        de minispeler bruikbaar wanneer de bridge iets later initialiseert. */
     if(typeof window.ms730GetStateSnapshot!=='function')window.ms730GetStateSnapshot=()=>[];
   }
