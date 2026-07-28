@@ -1,0 +1,144 @@
+/* =========================================================
+   MijnSerenity 7.7.0 — iPhone Experience
+   Gelijke knopverdeling, geen afkapping en veilige ruimte rond
+   de vaste radio- en navigatiebalk.
+   ========================================================= */
+
+html,body{max-width:100%;overflow-x:hidden;}
+body.ms760-captain-experience main,
+body.ms760-captain-experience #app,
+body.ms760-captain-experience .app-shell,
+body.ms760-captain-experience .ms708-native-pager,
+body.ms760-captain-experience .ms708-native-page{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+
+body.ms760-captain-experience .ms760-dashboard,
+body.ms760-captain-experience .ms760-dashboard > *,
+body.ms760-captain-experience .ms760-glass-card{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+
+/* Onderste navigatie: vijf exact gelijke vakken. */
+body.ms750-simple-ui > .bottom-nav.ms744-compact-nav,
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav{
+  display:grid !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  column-gap:4px !important;
+  width:100% !important;
+  padding-left:max(8px,env(safe-area-inset-left)) !important;
+  padding-right:max(8px,env(safe-area-inset-right)) !important;
+  overflow:hidden !important;
+}
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item,
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav.ms709-icon-nav .bottom-nav-item{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  margin:0 !important;
+}
+
+@media(max-width:600px){
+  /* Iets meer ademruimte langs de schermranden. */
+  body.ms760-captain-experience main{
+    padding-left:max(14px,env(safe-area-inset-left)) !important;
+    padding-right:max(14px,env(safe-area-inset-right)) !important;
+    padding-bottom:calc(var(--ms750-nav-height) + var(--ms760-radio-height) + env(safe-area-inset-bottom) + 34px) !important;
+  }
+
+  /* Live status: twee nette kolommen in plaats van half zichtbare kaarten. */
+  .ms760-status-strip{
+    display:grid;
+    grid-auto-flow:row;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-auto-columns:auto;
+    gap:10px;
+    overflow:visible;
+    padding:2px 0 7px;
+  }
+  .ms760-status-chip{
+    width:100%;
+    min-width:0;
+    min-height:76px;
+    grid-template-columns:42px minmax(0,1fr);
+  }
+  .ms760-status-chip strong,
+  .ms760-status-chip small{
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* Captain-vragen verdelen over twee gelijke kolommen. */
+  .ms760-captain-card{padding:15px;}
+  .ms760-captain-head{align-items:flex-start;}
+  .ms760-captain-head > div{min-width:0;}
+  .ms760-captain-head h3{font-size:19px;line-height:1.15;}
+  .ms760-captain-head p{font-size:12px;line-height:1.35;}
+  .ms760-captain-prompts{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    overflow:visible;
+    padding-bottom:9px;
+  }
+  body.ms750-simple-ui .ms760-prompt{
+    width:100%;
+    min-width:0;
+    min-height:42px;
+    padding:8px 9px;
+    white-space:normal;
+    line-height:1.15;
+  }
+  .ms760-captain-input{grid-template-columns:minmax(0,1fr) 54px;}
+  body.ms750-simple-ui .ms760-captain-input button{min-width:54px;padding:8px;}
+
+  /* Snelle bediening: twee ruime kolommen, dus geen smalle tegels. */
+  .ms760-quick-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:10px;
+  }
+  body.ms750-simple-ui .ms760-quick-button{
+    width:100%;
+    min-width:0;
+    min-height:92px !important;
+    padding:12px 11px;
+  }
+  .ms760-quick-button strong{font-size:15px;}
+
+  /* Bovenste contextknoppen mogen netjes doorlopen. */
+  .ms760-context-actions{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  body.ms750-simple-ui .ms760-context-action{font-size:12px !important;min-height:54px;}
+
+  /* Radiospeler blijft volledig binnen het scherm en overlapt niets. */
+  .ms760-radio-player{
+    width:calc(100% - 20px);
+    max-width:calc(100% - 20px);
+    left:10px;
+    right:10px;
+    transform:none;
+    box-sizing:border-box;
+  }
+  .ms760-radio-main{
+    grid-template-columns:46px minmax(0,1fr) 44px 44px 38px !important;
+    gap:6px;
+  }
+  .ms760-radio-main [data-ms760-radio="previous"]{display:none !important;}
+
+  .ms760-section-title{min-width:0;}
+  .ms760-section-title h3{font-size:20px;}
+  .ms760-section-title small{display:none;}
+}
+
+@media(max-width:390px){
+  .ms760-status-strip{grid-template-columns:1fr;}
+  .ms760-captain-prompts{grid-template-columns:1fr 1fr;}
+  .ms760-context-actions{grid-template-columns:1fr 1fr !important;}
+  body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item small{font-size:10px !important;}
+  body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item span{font-size:21px !important;}
+}
