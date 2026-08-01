@@ -1,0 +1,8 @@
+{
+  "build": "7.9.0",
+  "base": "7.8.0",
+  "change": "Responsive Serenity IVMS dashboard with technical, GPS, weather and Home Assistant data",
+  "cache_token": "79000",
+  "service_worker_cache": "mijnserenity-7.9.0-ivms-r1",
+  "status": "validated"
+}

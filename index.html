@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.8.2">
+<meta name="mijnserenity-build" content="7.9.0">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='7.8.2';
+window.MIJSERENITY_BUILD='7.9.0';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -29,32 +29,33 @@ window.repairMijnSerenity=async function(){
   window.location.replace(url.toString());
 };
 </script>
-<link rel="manifest" href="manifest.json?v=78200">
+<link rel="manifest" href="manifest.json?v=79000">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=78200">
-  <link rel="stylesheet" href="ha-live-bridge.css?v=78200">
-  <link rel="stylesheet" href="live-cameras.css?v=78200">
-  <link rel="stylesheet" href="mission-control.css?v=78200">
-  <link rel="stylesheet" href="easy-auto.css?v=78200">
-<link rel="stylesheet" href="auto-track-reliability.css?v=78200">
-<link rel="stylesheet" href="gps-continuity-guard.css?v=78200">
-<link rel="stylesheet" href="waterkaarten-split-launch.css?v=78200">
-  <link rel="stylesheet" href="live-split.css?v=78200">
-  <link rel="stylesheet" href="route-control.css?v=78200">
-  <link rel="stylesheet" href="page-swipe.css?v=78200">
-  <link rel="stylesheet" href="weather-page.css?v=78200">
-  <link rel="stylesheet" href="weather-radar.css?v=78200">
-  <link rel="stylesheet" href="ais-page.css?v=78200">
-  <link rel="stylesheet" href="entertainment-page.css?v=78200">
-  <link rel="stylesheet" href="navigation-compact.css?v=78200">
-  <link rel="stylesheet" href="simple-accessible.css?v=78200">
-  <link rel="stylesheet" href="home-assistant-contrast.css?v=78200">
-  <link rel="stylesheet" href="captain-experience.css?v=78200">
+<link rel="stylesheet" href="styles.css?v=79000">
+  <link rel="stylesheet" href="ha-live-bridge.css?v=79000">
+  <link rel="stylesheet" href="live-cameras.css?v=79000">
+  <link rel="stylesheet" href="mission-control.css?v=79000">
+  <link rel="stylesheet" href="easy-auto.css?v=79000">
+<link rel="stylesheet" href="auto-track-reliability.css?v=79000">
+<link rel="stylesheet" href="gps-continuity-guard.css?v=79000">
+<link rel="stylesheet" href="waterkaarten-split-launch.css?v=79000">
+  <link rel="stylesheet" href="live-split.css?v=79000">
+  <link rel="stylesheet" href="route-control.css?v=79000">
+  <link rel="stylesheet" href="page-swipe.css?v=79000">
+  <link rel="stylesheet" href="weather-page.css?v=79000">
+  <link rel="stylesheet" href="weather-radar.css?v=79000">
+  <link rel="stylesheet" href="ais-page.css?v=79000">
+  <link rel="stylesheet" href="entertainment-page.css?v=79000">
+  <link rel="stylesheet" href="navigation-compact.css?v=79000">
+  <link rel="stylesheet" href="simple-accessible.css?v=79000">
+  <link rel="stylesheet" href="home-assistant-contrast.css?v=79000">
+  <link rel="stylesheet" href="captain-experience.css?v=79000">
+  <link rel="stylesheet" href="serenity-ivms.css?v=79000">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=78200">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=78200">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=79000">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=79000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -63,7 +64,7 @@ window.repairMijnSerenity=async function(){
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=78200" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=79000" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -105,7 +106,7 @@ window.repairMijnSerenity=async function(){
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=78200" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=79000" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -145,6 +146,157 @@ window.repairMijnSerenity=async function(){
   </div>
 
   <section id="dashboard">
+
+    <section id="serenityIvms" class="serenity-ivms" aria-label="Serenity geïntegreerd vaartuigdashboard">
+      <header class="ivms-header">
+        <div class="ivms-brand">
+          <div class="ivms-brand-name">Serenity</div>
+          <div class="ivms-brand-copy">
+            <strong>IVMS</strong>
+            <span>INTEGRATED VESSEL MONITORING SYSTEM</span>
+          </div>
+        </div>
+        <div class="ivms-header-tools">
+          <div class="ivms-clock">
+            <strong id="ivmsTime">--:--</strong>
+            <span id="ivmsDate">-- --- ----</span>
+          </div>
+          <button type="button" class="ivms-icon-button" onclick="captainNavigate('technical')" aria-label="Technische waarschuwingen">
+            🔔 <span id="ivmsAlarmCount" class="ivms-alarm-count hidden">0</span>
+          </button>
+          <button type="button" class="ivms-icon-button" onclick="captainNavigate('settings')" aria-label="Instellingen">⚙️</button>
+          <button id="ivmsSystemStatus" type="button" class="ivms-system-status" onclick="captainNavigate('technical')">
+            <span><small>SYSTEEMSTATUS</small><strong id="ivmsSystemLabel">NORMAAL</strong></span>
+            <i class="ivms-status-dot"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="ivms-main-grid">
+        <aside class="ivms-side ivms-side-left">
+          <article class="ivms-card ivms-gauge-card" onclick="captainNavigate('technical')">
+            <div class="ivms-card-title"><span>⛽</span><span>BRANDSTOF</span></div>
+            <div class="ivms-gauge-content">
+              <div class="ivms-gauge-copy"><strong id="ivmsFuelLiters">– L</strong><span id="ivmsFuelCapacity">tankniveau</span><small>Dieselvoorraad</small></div>
+              <div id="ivmsFuelRing" class="ivms-ring good"><strong>–%</strong></div>
+            </div>
+          </article>
+
+          <article class="ivms-card ivms-gauge-card" onclick="captainNavigate('technical')">
+            <div class="ivms-card-title"><span>💧</span><span>DRINKWATER</span></div>
+            <div class="ivms-gauge-content">
+              <div class="ivms-gauge-copy"><strong id="ivmsWaterValue">–%</strong><span id="ivmsWaterMeta">nog niet gemeten</span><small>Watertank</small></div>
+              <div id="ivmsWaterRing" class="ivms-ring good"><strong>–%</strong></div>
+            </div>
+          </article>
+
+          <article class="ivms-card ivms-gauge-card" onclick="captainNavigate('technical')">
+            <div class="ivms-card-title"><span>🔋</span><span>HUISHOUDACCU'S</span></div>
+            <div class="ivms-gauge-content">
+              <div class="ivms-gauge-copy"><strong id="ivmsBatteryVoltage">– V</strong><span id="ivmsBatteryMeta">nog geen meting</span><small>Victron / SmartShunt</small></div>
+              <div id="ivmsBatteryRing" class="ivms-ring good"><strong>–%</strong></div>
+            </div>
+          </article>
+        </aside>
+
+        <main class="ivms-center">
+          <div class="ivms-nav-strip">
+            <div class="ivms-nav-stat"><span>◴</span><div><small>Snelheid</small><strong><span id="ivmsSpeed">0,0</span> <em>km/u</em></strong><em id="ivmsSpeedKn">0,0 kn</em></div></div>
+            <div class="ivms-nav-stat"><span>◉</span><div><small>Koers</small><strong><span id="ivmsHeading">–°</span> <em id="ivmsHeadingDir">–</em></strong></div></div>
+            <div class="ivms-nav-stat"><span>≋</span><div><small>Diepte</small><strong><span id="ivmsDepth">–</span> <em>m</em></strong><em id="ivmsDepthUnit">nog niet gekoppeld</em></div></div>
+            <div class="ivms-nav-stat"><span>≋</span><div><small>Wind</small><strong><span id="ivmsWindValue">–</span> <em>km/u</em></strong><em id="ivmsWindUnit">Bft</em></div></div>
+          </div>
+          <div class="ivms-hero" onclick="captainNavigate('live')">
+            <img id="ivmsBoatPhoto" src="serenity-ivms-hero.png?v=79000" alt="Serenity op het water">
+            <div class="ivms-hero-name"><strong>Serenity</strong><span>VriJon Contessa 37E · 11,20 meter</span></div>
+            <div class="ivms-live-pill"><i></i><span>CAPTAIN COMMAND CENTER</span></div>
+          </div>
+        </main>
+
+        <aside class="ivms-side ivms-side-right">
+          <article class="ivms-card ivms-info-card" onclick="captainNavigate('technical')">
+            <div class="ivms-card-title"><span>⚡</span><span>STROOMSTATUS</span></div>
+            <div class="ivms-info-grid">
+              <span>Bron</span><strong id="ivmsPowerSource" class="ok">ACCU</strong>
+              <span>Spanning</span><strong id="ivmsPowerVoltage">–</strong>
+              <span>Frequentie</span><strong id="ivmsPowerFrequency">–</strong>
+              <span>Status</span><strong id="ivmsPowerStatus" class="ok">BOORDNET</strong>
+            </div>
+          </article>
+
+          <article class="ivms-card ivms-info-card" onclick="captainNavigate('technical')">
+            <div class="ivms-card-title"><span>☀️</span><span>ZON / LADEN</span></div>
+            <div class="ivms-info-grid">
+              <span>Ingangsvermogen</span><strong id="ivmsSolarPower">– W</strong>
+              <span>Acculading</span><strong id="ivmsSolarBattery">–%</strong>
+            </div>
+            <div class="ivms-sparkline"></div>
+          </article>
+
+          <article class="ivms-card ivms-info-card" onclick="captainNavigate('weather')">
+            <div class="ivms-card-title"><span>🌡️</span><span>TEMPERATUUR</span></div>
+            <div class="ivms-temperature">
+              <div><small>Binnen</small><strong id="ivmsCabinTemp">– °C</strong></div>
+              <div><small>Buiten</small><strong id="ivmsOutsideTemp">– °C</strong></div>
+            </div>
+            <div class="ivms-sparkline"></div>
+          </article>
+        </aside>
+      </div>
+
+      <div class="ivms-bottom-grid">
+        <article class="ivms-card ivms-bottom-card" onclick="ivmsSetPeopleOnboard()">
+          <div class="ivms-card-title"><span>👥</span><span>PERSONEN AAN BOORD</span></div>
+          <div class="ivms-bottom-value"><strong id="ivmsPeople">2</strong><span>Tik om aan te passen</span></div>
+        </article>
+
+        <article class="ivms-card ivms-bottom-card" onclick="captainNavigate('technical')">
+          <div class="ivms-card-title"><span>≋</span><span>BILGESTATUS</span></div>
+          <div id="ivmsBilgeIcon" class="ivms-clear-icon">✓</div>
+          <div id="ivmsBilgeStatus" class="ivms-bottom-status">GEEN MELDING</div>
+        </article>
+
+        <article class="ivms-card ivms-bottom-card" onclick="captainNavigate('technical')">
+          <div class="ivms-card-title"><span>🛡️</span><span>VEILIGHEIDSSTATUS</span></div>
+          <div class="ivms-clear-icon">✓</div>
+          <div id="ivmsSecurityStatus" class="ivms-bottom-status">ALLES IN ORDE</div>
+        </article>
+
+        <article class="ivms-card ivms-bottom-card ivms-gps-card" onclick="captainNavigate('live')">
+          <div class="ivms-card-title"><span>📍</span><span>GPS / POSITIE</span></div>
+          <div class="ivms-gps-copy"><strong id="ivmsGpsLat">GPS nog niet actief</strong><strong id="ivmsGpsLon">Start Live varen</strong><span id="ivmsGpsStatus">POSITIE</span></div>
+        </article>
+
+        <article class="ivms-card ivms-bottom-card" onclick="captainNavigate('technical')">
+          <div class="ivms-card-title"><span>▣</span><span>TANKNIVEAUS</span></div>
+          <div class="ivms-tank-bars">
+            <div class="ivms-tank-row"><span>Brandstof</span><div class="ivms-tank-track"><i id="ivmsTankFuelBar"></i></div><strong id="ivmsTankFuelValue">–</strong></div>
+            <div class="ivms-tank-row"><span>Water</span><div class="ivms-tank-track"><i id="ivmsTankWaterBar"></i></div><strong id="ivmsTankWaterValue">–</strong></div>
+            <div class="ivms-tank-row"><span>Vuilwater</span><div class="ivms-tank-track"><i id="ivmsTankWasteBar"></i></div><strong id="ivmsTankWasteValue">–</strong></div>
+          </div>
+        </article>
+
+        <article class="ivms-card ivms-bottom-card ivms-weather-card" onclick="captainNavigate('weather')">
+          <div class="ivms-card-title"><span>☁️</span><span>WEERSVERWACHTING</span></div>
+          <div class="ivms-weather-head">
+            <div class="ivms-weather-current"><strong id="ivmsWeatherTemp">–°</strong><span id="ivmsWeatherDescription">Wachten op weer</span></div>
+            <div id="ivmsHourly" class="ivms-hourly"><div><time>NU</time><b>◌</b><span>–</span></div></div>
+          </div>
+          <div class="ivms-weather-foot"><span id="ivmsWeatherWind">Wind –</span><span id="ivmsWeatherRain">Regen –</span></div>
+        </article>
+      </div>
+
+      <nav class="ivms-quick-nav" aria-label="Dashboard snelkoppelingen">
+        <button type="button" class="active" onclick="captainNavigate('dashboard')"><span>⌂</span><small>Overzicht</small></button>
+        <button type="button" onclick="captainNavigate('live')"><span>⛵</span><small>Live varen</small></button>
+        <button type="button" onclick="captainNavigate('planner')"><span>🧭</span><small>Route</small></button>
+        <button type="button" onclick="captainNavigate('technical')"><span>🔋</span><small>Energie</small></button>
+        <button type="button" onclick="captainNavigate('technical')"><span>▣</span><small>Tanks</small></button>
+        <button type="button" onclick="captainNavigate('map')"><span>🗺️</span><small>Kaart</small></button>
+        <button type="button" onclick="captainNavigate('weather')"><span>☀️</span><small>Weer</small></button>
+        <button type="button" onclick="captainNavigate('settings')"><span>⚙️</span><small>Instellingen</small></button>
+      </nav>
+    </section>
 
     <div class="captain-strip">
       <div>
@@ -548,7 +700,7 @@ window.repairMijnSerenity=async function(){
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=78200" alt="">
+          <img src="waterkaarten-dashboard.png?v=79000" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -642,7 +794,7 @@ window.repairMijnSerenity=async function(){
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.8.2</div>
+          <div class="label">Sync · v7.9.0</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1647,7 +1799,7 @@ window.repairMijnSerenity=async function(){
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.8.2</span>
+        <span class="planner-version-badge">7.9.0</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -3796,7 +3948,7 @@ window.repairMijnSerenity=async function(){
     <div class="card ms752-app-info-card" aria-label="Appinformatie">
       <div class="ms752-app-info-copy">
         <span class="eyebrow">MIJNSERENITY</span>
-        <strong>Versie <span id="settingsAppVersion">7.8.2</span></strong>
+        <strong>Versie <span id="settingsAppVersion">7.9.0</span></strong>
         <small id="settingsAppStatus">Live en gesynchroniseerd</small>
       </div>
       <button id="settingsRefreshButton" type="button" class="secondary ms752-small-refresh"
@@ -4468,6 +4620,6 @@ window.repairMijnSerenity=async function(){
   </div>
 </div>
 
-<script src="auth-bootstrap.js?v=78200"></script>
+<script src="auth-bootstrap.js?v=79000"></script>
 </body>
 </html>

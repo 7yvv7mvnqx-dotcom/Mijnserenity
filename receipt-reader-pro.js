@@ -1,4 +1,4 @@
-/* MijnSerenity 7.8.2 — Factuur Header & Regeltabel Guard */
+/* MijnSerenity 7.5.5 — Factuur Header & Regeltabel Guard */
 (()=>{
   'use strict';
 
@@ -915,7 +915,7 @@
   };
 
   window.MSReceiptReaderPro={
-    version:'7.8.2',
+    version:'7.9.0',
     parseReceiptText,
     extractAmount,
     extractMerchant,
@@ -928,5 +928,5 @@
 
   const retry=document.getElementById('costOcrRetryButton');
   if(retry)retry.textContent='✨ Gegevens opnieuw uit foto/PDF lezen';
-  console.info('MijnSerenity 7.8.2 Factuur Header & Regeltabel Guard actief.');
+  console.info('MijnSerenity 7.9.0 Factuur Header & Regeltabel Guard actief.');
 })();

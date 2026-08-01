@@ -1,4 +1,4 @@
-/* MijnSerenity 7.8.2 — Waterkaarten rechts en bevestiging na terugkeer */
+/* MijnSerenity 7.5.10 — Waterkaarten rechts en bevestiging na terugkeer */
 (()=>{
   'use strict';
 

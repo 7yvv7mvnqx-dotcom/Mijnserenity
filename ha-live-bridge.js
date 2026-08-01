@@ -1,4 +1,4 @@
-/* MijnSerenity 7.8.2 LIVE — officiële Home Assistant OAuth + WebSocket koppeling */
+/* MijnSerenity 7.5.5 LIVE — officiële Home Assistant OAuth + WebSocket koppeling */
 (()=>{
   'use strict';
 
@@ -6,7 +6,7 @@
   const OAUTH_STATE_KEY='mijnserenity-ha-oauth-state-v733';
   const SELECT_KEY='mijnserenity-ha-selection-v733';
   const LIVE_CAMERA_KEY='mijnserenity-ha-live-cameras-v733';
-  const ALLOWED_DOMAINS=new Set(['light','media_player','remote','camera','switch','scene']);
+  const ALLOWED_DOMAINS=new Set(['light','media_player','remote','camera','switch','scene','sensor','binary_sensor']);
   let installed=false;
   let discovered=[];
   let stateMap=new Map();
@@ -164,7 +164,12 @@
         brightness:Number.isFinite(Number(attributes.brightness))?Number(attributes.brightness):null,
         media_title:attributes.media_title??null,
         media_artist:attributes.media_artist??null,
-        media_channel:attributes.media_channel??attributes.media_station??null
+        media_channel:attributes.media_channel??attributes.media_station??null,
+        unit_of_measurement:attributes.unit_of_measurement??null,
+        device_class:attributes.device_class??null,
+        state_class:attributes.state_class??null,
+        icon:attributes.icon??null,
+        battery_level:Number.isFinite(Number(attributes.battery_level))?Number(attributes.battery_level):null
       }
     };
   }
