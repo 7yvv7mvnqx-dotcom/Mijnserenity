@@ -1,8 +1,8 @@
-/* MijnSerenity 7.9.2 — stabiele eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.9.3 — stabiele eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.2';
+  const BUILD='7.9.3';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';

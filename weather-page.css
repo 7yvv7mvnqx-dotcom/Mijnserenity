@@ -1,6 +1,6 @@
 
 /* =========================================================
-   MijnSerenity Cloud 7.4.8 — live weerpagina
+   MijnSerenity 7.9.3 — live weerpagina met watertemperatuur
    ========================================================= */
 
 .ms709-weather-hero{
@@ -173,6 +173,40 @@
 .ms709-weather-metrics small{
   margin-top:3px;
   color:#8fa8b2;
+}
+
+.ms709-weather-metrics .ms793-water-temperature{
+  grid-column:1 / -1;
+  position:relative;
+  padding-left:48px;
+  background:
+    radial-gradient(circle at 0 50%,rgba(69,200,255,.16),transparent 34%),
+    rgba(255,255,255,.045);
+  border-color:rgba(69,200,255,.16);
+}
+
+.ms709-weather-metrics .ms793-water-temperature::before{
+  position:absolute;
+  left:13px;
+  top:50%;
+  transform:translateY(-50%);
+  content:'≈';
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  border-radius:10px;
+  color:#9ee9ff;
+  background:rgba(69,200,255,.10);
+  border:1px solid rgba(69,200,255,.18);
+  font-size:19px;
+  font-weight:900;
+}
+
+.ms709-weather-metrics .ms793-water-temperature strong{
+  color:#9ee9ff;
+  font-size:22px;
 }
 
 .ms709-weather-card{
