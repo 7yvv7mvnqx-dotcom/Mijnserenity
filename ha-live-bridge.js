@@ -275,8 +275,22 @@
     const text=`${entity?.entity_id||''} ${entity?.name||''}`.toLowerCase();
     return terms.some(term=>text.includes(term));
   }
+  function isShorePowerEntity(entity){
+    const text=`${entity?.entity_id||''} ${entity?.name||''}`.toLowerCase();
+    if(/walstroom|landstroom|shore\s*power|shorepower/.test(text))return true;
+    if(/ac[_\s-]*(input|in)\b/.test(text)&&/vrm|victron|cerbo|serenity|connected|aangesloten/.test(text))return true;
+    if(/grid\s+connected|mains\s+connected|netspanning\s+aanwezig/.test(text)&&/vrm|victron|cerbo|serenity/.test(text))return true;
+    return false;
+  }
+  function shorePowerLabel(entity){
+    const raw=String(entity?.state||'').toLowerCase();
+    if(['on','connected','true','1','yes','active','aan','present','detected'].includes(raw))return 'AAN';
+    if(['off','disconnected','false','0','no','inactive','uit','absent','clear'].includes(raw))return 'UIT';
+    return String(entity?.state||'onbekend');
+  }
   function defaultSelected(entity){
     if(entity.domain==='sensor'&&['sensor.vrm_state_of_charge','sensor.vrm_voltage','sensor.vrm_current','sensor.vrm_battery_power','sensor.vrm_time_to_go'].includes(entity.entity_id))return true;
+    if(isShorePowerEntity(entity))return true;
     if(entity.domain==='light'||entity.domain==='scene')return true;
     if(entity.domain==='camera')return contains(entity,['ring','doorbell','voordeur','oprit','serenity','radarbeugel','live_weergave']);
     if(entity.domain==='switch')return contains(entity,['ring','doorbell','voordeur']);
@@ -307,6 +321,17 @@
     }).join('')}</div></div>`;
   }
 
+  function renderShorePowerSensors(){
+    const saved=loadSavedSelection();
+    const list=discovered.filter(isShorePowerEntity);
+    if(!list.length)return `<div class="ms730-device-group"><h5>⚡ Walstroomdetectie</h5><div class="ms730-empty">Nog geen walstroomsensor gevonden. De momentopname blijft handmatig.</div></div>`;
+    return `<div class="ms730-device-group"><h5>⚡ Walstroomdetectie <small>(automatisch aan/uit)</small></h5><div class="ms730-device-list">${list.map(entity=>{
+      const checked=Object.prototype.hasOwnProperty.call(saved,entity.entity_id)?Boolean(saved[entity.entity_id]):true;
+      const label=shorePowerLabel(entity);
+      return `<label class="ms730-device-option"><input type="checkbox" data-ms730-domain="shore_power" value="${escape(entity.entity_id)}" ${checked?'checked':''}><span><strong>${escape(friendly(entity))}</strong><small>${escape(entity.entity_id)}</small><span class="ms730-live-state ms730-shore-state ${label==='AAN'?'on':'off'}">Walstroom: ${escape(label)}</span></span></label>`;
+    }).join('')}</div></div>`;
+  }
+
   function renderDiscovered(){
     const container=document.getElementById('ms730DeviceGroups');
     if(!container)return;
@@ -318,7 +343,8 @@
       renderGroup('Camera’s','📹','camera',4),
       renderGroup('Schakelaars','👁','switch',1),
       renderGroup('Scènes','✨','scene',4),
-      renderVictronSensors()
+      renderVictronSensors(),
+      renderShorePowerSensors()
     ].join('');
     container.querySelectorAll('input[type=checkbox]').forEach(input=>input.addEventListener('change',()=>{
       const max=Number(input.dataset.ms730Max||0);

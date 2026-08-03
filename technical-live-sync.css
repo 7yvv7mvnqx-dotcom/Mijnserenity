@@ -1,0 +1,36 @@
+/* MijnSerenity 7.9.2 — live momentopname */
+.ms792-live-snapshot-fields{
+  margin:14px 0;
+  padding:14px;
+  border:1px solid rgba(43,151,255,.32);
+  border-radius:16px;
+  background:linear-gradient(145deg,rgba(8,28,48,.9),rgba(8,21,37,.74));
+}
+.ms792-live-snapshot-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+  color:#68b9ff;
+  font-weight:800;
+  letter-spacing:.03em;
+}
+.ms792-live-snapshot-head small{color:#9fb4c9;font-weight:600;letter-spacing:0}
+.ms792-live-snapshot-fields input[readonly]{
+  background:rgba(34,126,190,.13);
+  border-color:rgba(73,166,230,.32);
+  color:#dff2ff;
+}
+.ms792-shore-note{
+  display:block;
+  margin:-3px 0 12px 32px;
+  color:#98acbf;
+}
+.ms792-shore-note.active,.ms792-shore-on{color:#5ee56d!important}
+.ms792-live-value{color:#64b7ff!important}
+.ms730-shore-state.on{color:#5ee56d}
+.ms730-shore-state.off{color:#aebdca}
+@media(max-width:720px){
+  .ms792-live-snapshot-head{align-items:flex-start;flex-direction:column;gap:4px}
+}
