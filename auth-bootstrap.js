@@ -1,9 +1,9 @@
-/* MijnSerenity 7.9.3 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.9.4 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.3';
-  const VERSION='79300';
+  const BUILD='7.9.4';
+  const VERSION='79400';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `receipt-reader-pro.js?v=${VERSION}`,
@@ -16,6 +16,7 @@
     `route-control.js?v=${VERSION}`,
     `weather-page.js?v=${VERSION}`,
     `weather-radar.js?v=${VERSION}`,
+    `rws-nearby.js?v=${VERSION}`,
     `ais-page.js?v=${VERSION}`,
     `entertainment-page.js?v=${VERSION}`,
     `ha-live-bridge.js?v=${VERSION}`,

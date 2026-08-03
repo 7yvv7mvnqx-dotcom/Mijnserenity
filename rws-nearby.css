@@ -1,0 +1,60 @@
+/* MijnSerenity 7.9.4 — Rijkswaterstaat / EuRIS berichten binnen de gekozen straal */
+.rws-page{max-width:1180px;margin:0 auto;padding:10px 12px 120px}
+.rws-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:18px;border:1px solid rgba(91,190,240,.24);border-radius:22px;background:linear-gradient(145deg,rgba(7,33,55,.97),rgba(3,17,29,.98));box-shadow:0 16px 40px rgba(0,0,0,.22)}
+.rws-hero h1{margin:4px 0 6px;font-size:clamp(1.55rem,4vw,2.35rem)}
+.rws-hero p{margin:0;max-width:760px;color:#b8c9d8;line-height:1.5}
+.rws-source-mark{flex:0 0 auto;display:grid;place-items:center;min-width:92px;padding:12px 14px;border-radius:16px;border:1px solid rgba(112,210,255,.25);background:rgba(10,52,82,.72);font-weight:800;color:#e6f7ff;text-align:center}
+.rws-source-mark span{display:block;font-size:1.55rem;margin-bottom:4px}
+.rws-toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;gap:10px;margin:14px 0}
+.rws-control,.rws-action{min-height:48px;border-radius:15px;border:1px solid rgba(103,190,231,.23);background:#0b2336;color:#eff8ff;padding:9px 13px;font:inherit}
+.rws-control{display:flex;align-items:center;gap:10px}
+.rws-control label{font-size:.82rem;color:#a9bdd0;font-weight:700;white-space:nowrap}
+.rws-control select{width:100%;border:0;background:transparent;color:#fff;font:inherit;font-weight:800;outline:0}
+.rws-action{cursor:pointer;font-weight:800}
+.rws-action.primary{background:linear-gradient(135deg,#116b9c,#169fc5);border-color:#39c2ed}
+.rws-action:disabled{opacity:.55;cursor:wait}
+.rws-status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.rws-stat{padding:13px 14px;border-radius:16px;border:1px solid rgba(101,185,224,.2);background:rgba(6,25,40,.92)}
+.rws-stat span{display:block;color:#9db4c6;font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.rws-stat strong{display:block;margin-top:5px;font-size:1.05rem;color:#f3fbff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rws-filterbar{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}
+.rws-filterbar::-webkit-scrollbar{display:none}
+.rws-filter{flex:0 0 auto;border:1px solid rgba(90,180,220,.22);background:#081e30;color:#bcd0df;border-radius:999px;padding:9px 13px;font-weight:800;cursor:pointer}
+.rws-filter.active{background:#154c6b;color:#fff;border-color:#44bce8}
+.rws-notice{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:15px;margin-bottom:10px;border-radius:18px;border:1px solid rgba(94,180,222,.22);background:linear-gradient(145deg,rgba(6,27,44,.97),rgba(4,19,31,.97));cursor:pointer}
+.rws-notice:hover{border-color:rgba(86,207,250,.48)}
+.rws-notice.severity-urgent{border-color:rgba(255,91,91,.48);box-shadow:inset 4px 0 0 #ff5d62}
+.rws-notice.severity-warning{box-shadow:inset 4px 0 0 #ffb53f}
+.rws-notice.severity-info{box-shadow:inset 4px 0 0 #41bde8}
+.rws-notice-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;background:rgba(57,158,209,.16);font-size:1.45rem}
+.rws-notice h3{margin:1px 0 6px;font-size:1rem;color:#f4fbff}
+.rws-notice p{margin:0;color:#b7c9d7;line-height:1.42;font-size:.91rem;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.rws-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.rws-pill{display:inline-flex;align-items:center;min-height:25px;padding:3px 8px;border-radius:999px;background:rgba(64,153,197,.13);color:#c8e2ef;font-size:.74rem;font-weight:800}
+.rws-distance{font-size:.9rem;font-weight:900;color:#74d9ff;white-space:nowrap;padding-top:3px}
+.rws-empty{padding:24px;border:1px dashed rgba(100,190,228,.28);border-radius:18px;text-align:center;color:#adc1d0;background:rgba(4,20,33,.72)}
+.rws-empty strong{display:block;color:#effaff;font-size:1.05rem;margin-bottom:6px}
+.rws-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.rws-link{display:flex;align-items:center;gap:10px;min-height:56px;padding:12px 14px;border-radius:16px;border:1px solid rgba(101,185,224,.2);background:#081f32;color:#eef9ff;text-decoration:none;font-weight:850}
+.rws-link small{display:block;color:#9db4c6;font-weight:600;margin-top:3px}
+.rws-footnote{margin:12px 2px 0;color:#8ea7ba;font-size:.79rem;line-height:1.45}
+.rws-dashboard-tile{position:relative}
+.rws-dashboard-badge{display:none;position:absolute;right:12px;top:9px;min-width:23px;height:23px;padding:0 6px;border-radius:999px;background:#ef4d55;color:#fff;place-items:center;font-size:.75rem;font-weight:950;box-shadow:0 4px 12px rgba(0,0,0,.28)}
+.rws-dashboard-badge.show{display:grid}
+.rws-nav-badge{position:absolute;right:2px;top:1px;min-width:17px;height:17px;border-radius:999px;background:#ef4d55;color:#fff;font-size:10px;font-weight:900;display:none;place-items:center}
+.rws-nav-badge.show{display:grid}
+.rws-nav-button{position:relative!important}
+.rws-notification-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:16px;border:1px solid rgba(101,185,224,.18);background:rgba(7,28,45,.82);margin-bottom:12px}
+.rws-notification-row div{min-width:0}
+.rws-notification-row strong{display:block}
+.rws-notification-row small{display:block;color:#9db4c6;margin-top:3px;line-height:1.35}
+@media(max-width:760px){
+  .rws-page{padding:8px 8px 100px}
+  .rws-hero{padding:15px}.rws-source-mark{display:none}
+  .rws-toolbar{grid-template-columns:1fr 1fr}.rws-control{grid-column:1/-1}
+  .rws-status-grid{grid-template-columns:1fr 1fr}
+  .rws-notice{grid-template-columns:auto minmax(0,1fr)}
+  .rws-distance{grid-column:2;text-align:left;padding-top:0}
+  .rws-links{grid-template-columns:1fr}
+  .rws-notification-row{align-items:flex-start;flex-direction:column}
+}

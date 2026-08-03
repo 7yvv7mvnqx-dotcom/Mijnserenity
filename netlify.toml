@@ -39,6 +39,13 @@
 
 
 
+# MijnSerenity 7.9.4 — EuRIS Notice to Skippers voor vaarwegberichten
+[[redirects]]
+  from = "/api/euris-nts"
+  to = "https://www.eurisportal.eu/api/v3/nts"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -85,5 +92,16 @@
 
 [[headers]]
   for = "/navigation-compact.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# MijnSerenity 7.9.4 — vaarwegberichten direct vernieuwen
+[[headers]]
+  for = "/rws-nearby.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/rws-nearby.css"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
