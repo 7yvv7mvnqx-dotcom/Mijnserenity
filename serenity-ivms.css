@@ -1,4 +1,4 @@
-/* MijnSerenity 7.9.0 — Serenity IVMS dashboard */
+/* MijnSerenity 7.9.1 — Serenity IVMS dashboard */
 :root{
   --ivms-bg:#020914;
   --ivms-panel:#061321;
@@ -99,6 +99,12 @@
 .ivms-gauge-copy strong{display:block;color:var(--ivms-blue-soft);font-size:26px;font-weight:500;line-height:1.1}
 .ivms-gauge-copy span{display:block;color:#bdc9d6;font-size:12px;margin-top:8px;text-transform:uppercase}
 .ivms-gauge-copy small{display:block;color:var(--ivms-muted);font-size:11px;margin-top:7px}
+.ivms-battery-card{min-height:224px}
+.ivms-battery-live-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(139,168,196,.18)}
+.ivms-battery-live-grid span{min-width:0}
+.ivms-battery-live-grid small{display:block;color:var(--ivms-muted);font-size:9px;letter-spacing:.07em;white-space:nowrap}
+.ivms-battery-live-grid strong{display:block;margin-top:3px;color:#eef7ff;font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
 .ivms-ring{
   --value:0;
   --ring-color:var(--ivms-blue);

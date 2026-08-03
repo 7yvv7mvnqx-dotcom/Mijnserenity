@@ -1,4 +1,4 @@
-/* MijnSerenity 7.9.0 — live Serenity IVMS startdashboard */
+/* MijnSerenity 7.9.1 — live Serenity IVMS startdashboard */
 (()=>{
   'use strict';
 
@@ -57,6 +57,18 @@
       .map(entity=>({entity,score:scoreEntity(entity,terms)}))
       .filter(item=>item.score>0)
       .sort((a,b)=>b.score-a.score)[0]?.entity||null;
+  }
+
+  function exactHa(entityId){
+    return haStates().find(entity=>entity?.entity_id===entityId&&!['unknown','unavailable','none',''].includes(String(entity?.state||'').toLowerCase()))||null;
+  }
+
+  function timeToGoLabel(hours){
+    if(!finite(hours)||Number(hours)<0)return '–';
+    const total=Math.round(Number(hours));
+    const days=Math.floor(total/24);
+    const rest=total%24;
+    return days>0?`${days}d ${rest}u`:`${rest}u`;
   }
 
   function setText(id,value){const el=$(id);if(el)el.textContent=value}
@@ -197,11 +209,16 @@
     const state=technicalState();
     const live=liveState();
     const payload=weatherPayload();
-    const haSoc=findHa(['state of charge','battery soc','accu percentage','battery percentage','smartshunt soc','soc'],'%');
-    const haVoltage=findHa(['smartshunt voltage','battery voltage','accuspanning','house battery voltage'],'V');
-    const haSolar=findHa(['pv power','solar power','mppt power','zonnepaneel vermogen'],'W');
+    const haSoc=exactHa('sensor.vrm_state_of_charge')||findHa(['state of charge','battery soc','accu percentage','battery percentage','smartshunt soc','soc'],'%');
+    const haVoltage=exactHa('sensor.vrm_voltage')||findHa(['vrm voltage','smartshunt voltage','battery voltage','accuspanning','accu spanning','house battery voltage'],'V');
+    const haCurrent=exactHa('sensor.vrm_current')||findHa(['vrm current','battery current','accustroom','accu stroom'],'A');
+    const haBatteryPower=exactHa('sensor.vrm_battery_power')||findHa(['vrm battery power','battery power','accuvermogen','accu vermogen'],'W');
+    const haTimeToGo=exactHa('sensor.vrm_time_to_go')||findHa(['time to go','resterende tijd','battery runtime'],'h');
+    const haSolar=exactHa('sensor.vrm_solar_charger_power')||exactHa('sensor.vrm_pv_power')||findHa(['pv power','solar charger power','solar power','mppt power','zonnepaneel vermogen'],'W');
     const haCabin=findHa(['salon temperature','cabine temperatuur','cabin temperature','inside temperature','interieur temperatuur'],'°C');
+    const haShorePower=findHaBinary(['shore power','walstroom','ac input connected','grid connected']);
     const haShoreVoltage=findHa(['shore voltage','walstroom spanning','ac input voltage','grid voltage'],'V');
+    const haShoreFrequency=findHa(['shore frequency','walstroom frequentie','ac input frequency','grid frequency'],'Hz');
     const haBilge=findHaBinary(['bilge','bilgepomp','hoog water','high water']);
 
     const fuelPct=finite(state.fuelPct)?Number(state.fuelPct):null;
@@ -219,7 +236,10 @@
     const voltage=finite(haVoltage?.state)?Number(haVoltage.state):(finite(state.houseVoltage)?Number(state.houseVoltage):null);
     const batteryPct=finite(haSoc?.state)?Number(haSoc.state):estimateBatteryPct(voltage,state.batteryType||'lead');
     setText('ivmsBatteryVoltage',voltage!==null?`${nl(voltage,2)} V`:'– V');
-    setText('ivmsBatteryMeta',haSoc?'Victron live':voltage!==null?'schatting op spanning':'nog geen meting');
+    setText('ivmsBatteryMeta',haSoc||haVoltage?'Victron live':voltage!==null?'schatting op spanning':'nog geen meting');
+    setText('ivmsBatteryCurrent',finite(haCurrent?.state)?`${nl(haCurrent.state,2)} A`:'– A');
+    setText('ivmsBatteryPower',finite(haBatteryPower?.state)?`${nl(haBatteryPower.state,0)} W`:'– W');
+    setText('ivmsBatteryTime',finite(haTimeToGo?.state)?timeToGoLabel(haTimeToGo.state):'–');
     setRing('ivmsBatteryRing',batteryPct,levelForPercent(batteryPct));
 
     const speed=finite(live.speedKmh)?Number(live.speedKmh):0;
@@ -231,14 +251,16 @@
     setText('ivmsDepth','–');
     setText('ivmsDepthUnit','nog niet gekoppeld');
 
-    const shore=Boolean(state.shorePower);
-    const shoreVoltage=finite(haShoreVoltage?.state)?Number(haShoreVoltage.state):(shore?230:null);
+    const shoreRaw=String(haShorePower?.state||'').toLowerCase();
+    const shore=haShorePower?['on','connected','true','1','yes'].includes(shoreRaw):Boolean(state.shorePower);
+    const shoreVoltage=finite(haShoreVoltage?.state)?Number(haShoreVoltage.state):null;
+    const shoreFrequency=finite(haShoreFrequency?.state)?Number(haShoreFrequency.state):null;
     setText('ivmsPowerSource',shore?'WALSTROOM':'ACCU');
-    setText('ivmsPowerVoltage',shoreVoltage!==null?`${nl(shoreVoltage,0)} V`:voltage!==null?`${nl(voltage,2)} V`:'–');
-    setText('ivmsPowerFrequency',shore?'50,0 Hz':'–');
-    setText('ivmsPowerStatus',shore?'NORMAAL':'BOORDNET');
+    setText('ivmsPowerVoltage',shore?(shoreVoltage!==null?`${nl(shoreVoltage,0)} V`:'– V'):(voltage!==null?`${nl(voltage,2)} V`:'–'));
+    setText('ivmsPowerFrequency',shoreFrequency!==null?`${nl(shoreFrequency,1)} Hz`:'–');
+    setText('ivmsPowerStatus',shore?(shoreVoltage!==null?'NORMAAL':'AANGESLOTEN'):'BOORDNET');
 
-    const solar=finite(haSolar?.state)?Number(haSolar.state):(finite(state.solarPower)?Number(state.solarPower):null);
+    const solar=finite(haSolar?.state)?Number(haSolar.state):null;
     setText('ivmsSolarPower',solar!==null?`${nl(solar,0)} W`:'– W');
     setText('ivmsSolarBattery',finite(batteryPct)?`${Math.round(batteryPct)}%`:'–%');
 
