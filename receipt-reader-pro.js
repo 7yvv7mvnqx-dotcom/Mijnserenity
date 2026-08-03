@@ -915,7 +915,7 @@
   };
 
   window.MSReceiptReaderPro={
-    version:'7.9.4',
+    version:'7.9.5',
     parseReceiptText,
     extractAmount,
     extractMerchant,
@@ -928,5 +928,5 @@
 
   const retry=document.getElementById('costOcrRetryButton');
   if(retry)retry.textContent='✨ Gegevens opnieuw uit foto/PDF lezen';
-  console.info('MijnSerenity 7.9.4 Factuur Header & Regeltabel Guard actief.');
+  console.info('MijnSerenity 7.9.5 Factuur Header & Regeltabel Guard actief.');
 })();

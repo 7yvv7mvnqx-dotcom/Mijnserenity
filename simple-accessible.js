@@ -1,8 +1,8 @@
-/* MijnSerenity 7.9.4 — stabiele eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.9.5 — stabiele eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.4';
+  const BUILD='7.9.5';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -14,6 +14,7 @@
     logbook:{title:'Logboek',icon:'📖'},
     ais:{title:'AIS',icon:'📡'},
     weather:{title:'Weer',icon:'☀️'},
+    rws:{title:'Vaarwegberichten',icon:'📢'},
     planner:{title:'Reisplanner',icon:'🧭'},
     entertainment:{title:'Home Assistant',icon:'🏡'},
     technical:{title:'Techniek',icon:'⚙️'},
@@ -192,6 +193,7 @@
         ${primaryButton('logbook','📖','Logboek','Vaartochten bekijken')}
         ${primaryButton('costs','🧾','Kosten','Bon of factuur toevoegen')}
         ${primaryButton('weather','☀️','Weer','Verwachting en waarschuwingen')}
+        ${primaryButton('rws','📢','Vaarwegberichten','Bruggen, sluizen en stremmingen binnen 20 km')}
         ${primaryButton('search','🔎','Zoeken','Zoek in alles op MijnSerenity')}
         ${primaryButton('entertainment','🏡','Home Assistant','Alles aan boord bedienen')}
         ${primaryButton('radio','📻','Radio','Sonos en favoriete zenders')}
@@ -233,6 +235,7 @@
     {route:'logbook',icon:'📖',title:'Logboek',subtitle:'Vaartochten bekijken',keywords:'log route tocht geschiedenis'},
     {route:'ais',icon:'📡',title:'AIS',subtitle:'Boten in de omgeving',keywords:'schepen boten volgen ais'},
     {route:'weather',icon:'☀️',title:'Weer',subtitle:'Verwachting en waarschuwingen',keywords:'regen wind radar weer'},
+    {route:'rws',icon:'📢',title:'Vaarwegberichten',subtitle:'Bruggen, sluizen, stremmingen en waterstanden',keywords:'rijkswaterstaat rws vaarweg brug sluis stremming waterstand wachttijd euris'},
     {route:'planner',icon:'🧭',title:'Reisplanner',subtitle:'Route en bootafmetingen',keywords:'reis route hoogte diepgang brug'},
     {route:'entertainment',icon:'🏡',title:'Home Assistant',subtitle:'Slimme apparaten bedienen',keywords:'home assistant ha ring hue sonos apple tv'},
     {route:'radio',icon:'📻',title:'Radio',subtitle:'Sonos en favoriete zenders',keywords:'radio muziek sonos zender favoriet'},
@@ -421,6 +424,7 @@
         <div class="ms750-more-grid">
           ${moreRoute('ais')}
           ${moreRoute('weather')}
+          ${moreRoute('rws')}
           ${moreRoute('planner')}
           ${moreRoute('pois')}
           ${moreRoute('technical')}
@@ -500,6 +504,7 @@
     currentRoute=PAGE_META[route]?route:'dashboard';
     updatePageBar(currentRoute);
     closeMore(false);
+    if(currentRoute==='rws')window.setTimeout(()=>window.initRwsPage?.(),30);
     window.scrollTo({top:0,left:0,behavior:'auto'});
   }
 

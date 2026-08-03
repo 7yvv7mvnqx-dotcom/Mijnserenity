@@ -1,8 +1,8 @@
-/* MijnSerenity 7.9.4 — actuele vaarwegberichten rond Serenity via EuRIS/Rijkswaterstaat */
+/* MijnSerenity 7.9.5 — actuele vaarwegberichten rond Serenity via EuRIS/Rijkswaterstaat */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.4';
+  const BUILD='7.9.5';
   const API_URL='/api/euris-nts';
   const DIRECT_API='https://www.eurisportal.eu/api/v3/nts';
   const RADIUS_KEY='mijnserenity-rws-radius-km';
@@ -451,7 +451,7 @@
       const button=document.createElement('button');
       button.className='bottom-nav-item rws-nav-button';button.dataset.target='rws';button.title='Vaarwegberichten';button.setAttribute('aria-label','Vaarwegberichten');
       button.innerHTML='<span>📢</span><i id="rwsNavBadge" class="rws-nav-badge">0</i>';
-      button.onclick=()=>window.ms794OpenRws();
+      button.onclick=()=>window.ms795OpenRws();
       const weather=bottom.querySelector('[data-target="weather"]');
       weather?.insertAdjacentElement('afterend',button)||bottom.appendChild(button);
     }
@@ -461,7 +461,7 @@
       const tile=document.createElement('button');
       tile.id='rwsDashboardTile';tile.type='button';tile.className='dashboard-tile rws-dashboard-tile';
       tile.innerHTML='<span class="tile-icon-shell"><span class="tile-icon">📢</span></span><span class="tile-copy"><b>Vaarwegberichten</b><small id="rwsDashboardDetail">Nog niet gecontroleerd</small></span><span id="rwsDashboardBadge" class="rws-dashboard-badge">0</span><span class="tile-arrow">›</span>';
-      tile.onclick=()=>window.ms794OpenRws();
+      tile.onclick=()=>window.ms795OpenRws();
       const planner=actions.querySelector('[data-route="planner"]');
       planner?.insertAdjacentElement('afterend',tile)||actions.appendChild(tile);
     }
@@ -491,7 +491,7 @@
   }
 
   window.initRwsPage=init;
-  window.ms794OpenRws=()=>{
+  window.ms795OpenRws=()=>{
     buildPage();
     const tab=document.querySelector('.tab[data-target="rws"]');
     if(typeof window.showTab==='function'&&tab)window.showTab('rws',tab);
