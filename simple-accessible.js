@@ -1,8 +1,8 @@
-/* MijnSerenity 7.9.8 — stabiele eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.9.9 — stabiele eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.8';
+  const BUILD='7.9.9';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -552,7 +552,7 @@
   }
 
   function restoreNativePagerMode(){
-    /* 7.9.8: behoud de stabiele één-paginamodus. Het oude herstel maakte
+    /* 7.9.9: behoud de stabiele één-paginamodus. Het oude herstel maakte
        alle pagina's tegelijk zichtbaar en kon een klik direct terugdraaien. */
     document.body.classList.add('ms755-single-page-nav');
 

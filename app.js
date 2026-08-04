@@ -14022,7 +14022,7 @@ function startLiveNavigation(){
   if($('livePhotos'))$('livePhotos').value='';
   $('liveSaveStatus').classList.add('hidden');
   $('liveAutoSummary')?.classList.add('hidden');
-  $('liveGpsStatus').textContent='GPS-opname gestart. Waterkaarten wordt geopend…';
+  $('liveGpsStatus').textContent='GPS-opname gestart. Route en vaargegevens worden vastgelegd.';
   setLiveAutoLogStatus('GPS-opname actief · route en logboek worden automatisch opgebouwd.','success');
 
   persistLiveState();
@@ -14032,9 +14032,6 @@ function startLiveNavigation(){
 
   showAppToast('Live varen gestart · automatisch vaarlogboek actief');
 
-  setTimeout(()=>{
-    openWaterkaarten();
-  },350);
 }
 
 function resumeLiveNavigation(){
@@ -14622,7 +14619,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.9.8"
+<gpx version="1.1" creator="MijnSerenity 7.9.9"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14847,7 +14844,7 @@ function clearLiveTrip(options={}){
   $('liveAutoSummary').innerHTML='';
 
   $('liveGpsStatus').textContent=
-    'Tik op Start varen. MijnSerenity start de GPS-opname en opent daarna Waterkaarten. Open beide schermen op de iPad in Split View en laat beide schermen open totdat de reis is opgeslagen.';
+    'Tik op Start varen. MijnSerenity start de GPS-opname en legt de route vast. Laat MijnSerenity geopend en zichtbaar totdat de reis is opgeslagen.';
 
   $('liveWeatherStatus').textContent=
     'Het weer wordt na het eerste GPS-punt automatisch opgehaald.';
@@ -14876,7 +14873,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.9.8';
+const APP_VERSION='7.9.9';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14953,7 +14950,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=79800',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=79900',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -18174,7 +18171,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.9.8"
+ creator="MijnSerenity 7.9.9"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>

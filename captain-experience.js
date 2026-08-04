@@ -1,12 +1,12 @@
 /* ============================================================
-   MijnSerenity 7.9.8 — Captain Experience
+   MijnSerenity 7.9.9 — Captain Experience
    Contextdashboard, live status, Captain, routebeleving,
    Home Assistant-groepen, radio-minispeler en automatische thema's.
    ============================================================ */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.8';
+  const BUILD='7.9.9';
   const THEME_KEY='ms760-theme';
   const DASHBOARD_ID='ms760CaptainDashboard';
   const REPLAY_ID='ms760ReplayLayer';
@@ -845,7 +845,7 @@
   }
 
   function exposeHaSnapshot(){
-    /* De live bridge van 7.9.8 exposeert dit zelf. Deze fallback houdt
+    /* De live bridge van 7.9.9 exposeert dit zelf. Deze fallback houdt
        de minispeler bruikbaar wanneer de bridge iets later initialiseert. */
     if(typeof window.ms730GetStateSnapshot!=='function')window.ms730GetStateSnapshot=()=>[];
   }

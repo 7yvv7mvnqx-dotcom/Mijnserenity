@@ -234,11 +234,8 @@
   function start(){
     ensureUi();
     patchAllWaterkaartenButtons();
-    patchAutomaticMode();
     monitorTimer=setInterval(()=>{
       patchAllWaterkaartenButtons();
-      patchAutomaticMode();
-      detectAutomaticDeparture();
     },700);
 
     const showConfirmationAfterReturn=()=>{
