@@ -1,4 +1,4 @@
-/* MijnSerenity 7.9.9 — live Victron- en walstroomwaarden in momentopname */
+/* MijnSerenity 7.10.0 — live Victron- en walstroomwaarden in momentopname */
 (()=>{
   'use strict';
 
@@ -330,6 +330,39 @@
         live.houseTimeToGo!==null?`Resterend ${timeLabel(live.houseTimeToGo)}`:null
       ].filter(Boolean).join(' · ');
     }
+    const solarIsLive=live.solarPower!==null;
+    const solarPower=solarIsLive?live.solarPower:number(state.solarPower);
+    const solarStrip=$('liveSolarPower');
+    if(solarStrip){
+      solarStrip.textContent=solarPower!==null?`${nl(solarPower,0)} W`:'– W';
+      solarStrip.classList.toggle('ms792-live-value',solarIsLive);
+    }
+    const solarYield=$('liveSolarYieldPower');
+    const solarYieldStatus=$('liveSolarYieldStatus');
+    const solarYieldDetail=$('liveSolarYieldDetail');
+    const solarYieldBar=$('liveSolarYieldBar');
+    if(solarYield){
+      solarYield.textContent=solarPower!==null?`${nl(solarPower,0)} W`:'– W';
+      const producing=solarIsLive&&solarPower>2;
+      const hasSavedValue=!solarIsLive&&solarPower!==null;
+      if(solarYieldStatus){
+        solarYieldStatus.textContent=producing?'Live opbrengst':solarIsLive?'Stand-by':hasSavedValue?'Momentopname':'Niet gekoppeld';
+        solarYieldStatus.classList.toggle('live',producing);
+        solarYieldStatus.classList.toggle('standby',solarIsLive&&!producing);
+      }
+      if(solarYieldDetail){
+        solarYieldDetail.textContent=producing
+          ?'Actueel via Victron SmartSolar / Home Assistant'
+          :solarIsLive?'MPPT gekoppeld · momenteel vrijwel geen opbrengst'
+          :hasSavedValue?'Laatst opgeslagen technische waarde · niet live'
+          :'Wacht op een Victron SmartSolar MPPT-sensor';
+      }
+      if(solarYieldBar){
+        const pct=solarPower!==null?Math.max(0,Math.min(100,(Math.max(0,solarPower)/700)*100)):0;
+        solarYieldBar.style.width=`${pct}%`;
+      }
+    }
+
     const shore=$('liveShorePower');
     if(shore&&live.shorePowerDetected!==null){
       shore.textContent=live.shorePowerDetected?'Aan':'Uit';

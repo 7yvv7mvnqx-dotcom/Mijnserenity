@@ -8644,3 +8644,102 @@ main,
 .dashboard-tile > *{
   pointer-events:none;
 }
+
+
+/* MijnSerenity 7.10.0 — actuele zonne-opbrengst op het vaarscherm */
+.live-solar-yield-metric{
+  position:relative;
+  overflow:hidden;
+  min-height:190px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  border-color:rgba(255,194,71,.25);
+  background:
+    radial-gradient(circle at 84% 18%,rgba(255,200,74,.15),transparent 34%),
+    linear-gradient(145deg,rgba(18,57,74,.98),rgba(7,31,46,.98));
+}
+.live-solar-yield-metric::after{
+  content:'☀';
+  position:absolute;
+  right:16px;
+  bottom:4px;
+  font-size:74px;
+  line-height:1;
+  opacity:.065;
+  pointer-events:none;
+}
+.live-solar-yield-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.live-solar-yield-head>span{
+  color:#d7eaf3;
+  font-size:.78rem;
+  font-weight:850;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.live-solar-yield-head>small{
+  flex:0 0 auto;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(255,255,255,.055);
+  color:#9db4c3;
+  font-size:.65rem;
+  font-weight:900;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+.live-solar-yield-head>small.live{
+  color:#dfffe9;
+  background:rgba(51,199,116,.14);
+  border:1px solid rgba(74,226,139,.22);
+}
+.live-solar-yield-head>small.standby{
+  color:#ffe6a7;
+  background:rgba(244,177,45,.13);
+  border:1px solid rgba(244,177,45,.2);
+}
+.live-solar-yield-metric>strong{
+  position:relative;
+  z-index:1;
+  display:block;
+  color:#fff0a8;
+  font-size:clamp(2.05rem,5vw,3rem);
+  line-height:1;
+  letter-spacing:-.04em;
+  white-space:nowrap;
+}
+.live-solar-yield-metric>small{
+  position:relative;
+  z-index:1;
+  display:block;
+  margin-top:9px;
+  color:#a9bdca;
+  line-height:1.35;
+}
+.live-solar-yield-bar{
+  position:relative;
+  z-index:1;
+  height:6px;
+  margin-top:16px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(255,255,255,.07);
+}
+.live-solar-yield-bar i{
+  display:block;
+  width:0;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#f0a929,#ffe27a);
+  box-shadow:0 0 14px rgba(255,204,77,.36);
+  transition:width .35s ease;
+}
+@media(max-width:760px){
+  .live-solar-yield-metric{min-height:145px}
+}

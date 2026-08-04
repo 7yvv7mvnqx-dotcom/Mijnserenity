@@ -1,12 +1,12 @@
 /* ============================================================
-   MijnSerenity 7.8.2 — Captain Experience
+   MijnSerenity 7.10.0 — Captain Experience
    Contextdashboard, live status, Captain, routebeleving,
    Home Assistant-groepen, radio-minispeler en automatische thema's.
    ============================================================ */
 (()=>{
   'use strict';
 
-  const BUILD='7.8.2';
+  const BUILD='7.10.0';
   const THEME_KEY='ms760-theme';
   const DASHBOARD_ID='ms760CaptainDashboard';
   const REPLAY_ID='ms760ReplayLayer';
@@ -237,13 +237,15 @@
     const water=number(state.waterPct);
     const fuel=number(state.fuelPct);
     const wind=number(weather.windSpeed);
+    const ha=Boolean(window.ms730HomeAssistantConnected?.());
 
     return [
       {icon:'🔋',label:'Huishoudaccu',value:house===null?'Nog meten':`${house.toFixed(1)} V`,level:batteryLevel},
       {icon:'⚡',label:'Walstroom',value:state.shorePower?'Aangesloten':'Niet actief',level:state.shorePower?'good':'info'},
       {icon:'💧',label:'Drinkwater',value:water===null?'Nog meten':`${Math.round(water)}%`,level:water===null?'info':water<20?'danger':water<40?'warning':'good'},
       {icon:'⛽',label:'Diesel',value:fuel===null?'Nog meten':`${Math.round(fuel)}%`,level:fuel===null?'info':fuel<20?'danger':fuel<35?'warning':'good'},
-      {icon:'🌬️',label:'Wind',value:wind===null?'Open weer':`${bftFromKmh(wind)} Bft`,level:wind===null?'info':wind>=50?'danger':wind>=30?'warning':'good'}
+      {icon:'🌬️',label:'Wind',value:wind===null?'Weer openen':`${bftFromKmh(wind)} Bft · ${Math.round(wind)} km/u`,level:wind===null?'info':wind>=50?'danger':wind>=30?'warning':'good'},
+      {icon:navigator.onLine?'📡':'⚠️',label:'Verbinding',value:navigator.onLine?(ha?'Online · HA gekoppeld':'Online'):'Offline',level:navigator.onLine?'good':'warning'}
     ];
   }
 
@@ -262,7 +264,7 @@
     const welcome=simple.querySelector('.ms750-welcome-card');
     const section=document.createElement('section');
     section.id=DASHBOARD_ID;
-    section.className='ms760-dashboard ms760-dashboard-simple';
+    section.className='ms760-dashboard';
     section.setAttribute('aria-label','Captain dashboard');
     section.innerHTML=`
       <article class="ms760-context-card ms760-glass-card">
@@ -277,16 +279,47 @@
         <div id="ms760ContextActions" class="ms760-context-actions"></div>
       </article>
 
-      <div class="ms760-section-title"><h3>Status aan boord</h3></div>
-      <div id="ms760StatusStrip" class="ms760-status-strip ms760-status-grid" aria-label="Actuele bootstatus"></div>
+      <div class="ms760-section-title"><h3>Live aan boord</h3><small>Tik voor details</small></div>
+      <div id="ms760StatusStrip" class="ms760-status-strip" aria-label="Actuele bootstatus"></div>
 
-      <div class="ms760-section-title"><h3>Snel naar</h3></div>
-      <div class="ms760-quick-grid ms760-quick-grid-simple">
+      <article class="ms760-captain-card ms760-glass-card">
+        <div class="ms760-captain-head">
+          <span class="ms760-captain-mark" aria-hidden="true">🧭</span>
+          <div><h3>Vraag het de Captain</h3><p>Gebruikt je eigen boot-, route- en kostengegevens.</p></div>
+        </div>
+        <div class="ms760-captain-prompts" aria-label="Voorbeeldvragen">
+          <button type="button" class="ms760-prompt" data-ms760-question="Waar kunnen we morgen heen?">Morgen varen</button>
+          <button type="button" class="ms760-prompt" data-ms760-question="Is het veilig vaarweer?">Veilig vaarweer</button>
+          <button type="button" class="ms760-prompt" data-ms760-question="Wat vraagt aandacht aan Serenity?">Technische aandacht</button>
+          <button type="button" class="ms760-prompt" data-ms760-question="Wat hebben we dit seizoen uitgegeven?">Uitgaven</button>
+          <button type="button" class="ms760-prompt" data-ms760-question="Analyseer mijn laatste vaart">Laatste vaart</button>
+        </div>
+        <form id="ms760CaptainForm" class="ms760-captain-input">
+          <input id="ms760CaptainInput" type="search" autocomplete="off" placeholder="Stel een vraag over Serenity">
+          <button type="submit" aria-label="Vraag stellen">➜</button>
+        </form>
+        <div id="ms760CaptainAnswer" class="ms760-captain-answer" aria-live="polite"></div>
+      </article>
+
+      <div class="ms760-section-title"><h3>Snelle bediening</h3><small>Alles binnen één tik</small></div>
+      <div class="ms760-quick-grid">
         ${quickButton('live','⛵','Varen')}
+        ${quickButton('waterkaarten','🗺️','Waterkaarten')}
         ${quickButton('map','📍','Kaart')}
+        ${quickButton('search','🔎','Zoeken')}
+        ${quickButton('entertainment','🏡','Home Assistant')}
+        ${quickButton('radio','📻','Radio')}
         ${quickButton('logbook','📖','Logboek')}
         ${quickButton('weather','☀️','Weer')}
+        ${quickButton('more','☰','Alles')}
       </div>
+
+      <div id="ms760HarbourSection" class="hidden">
+        <div class="ms760-section-title"><h3>Favoriete havens</h3><small>Veeg voor meer</small></div>
+        <div id="ms760HarbourRow" class="ms760-harbour-row"></div>
+      </div>
+
+      <article id="ms760LatestTrip" class="ms760-trip-card ms760-glass-card hidden"></article>
     `;
     if(welcome)welcome.insertAdjacentElement('afterend',section);
     else simple.prepend(section);
@@ -294,6 +327,16 @@
     section.addEventListener('click',event=>{
       const routeButton=event.target.closest('[data-ms760-route]');
       if(routeButton){route(routeButton.dataset.ms760Route);return;}
+      const question=event.target.closest('[data-ms760-question]');
+      if(question){askCaptain(question.dataset.ms760Question);return;}
+      const poiButton=event.target.closest('[data-ms760-poi]');
+      if(poiButton){window.openCaptainItem?.('poi',poiButton.dataset.ms760Poi);return;}
+      const replay=event.target.closest('[data-ms760-replay]');
+      if(replay){openReplay(replay.dataset.ms760Replay);}
+    });
+    $('ms760CaptainForm')?.addEventListener('submit',event=>{
+      event.preventDefault();
+      askCaptain($('ms760CaptainInput')?.value||'');
     });
     $('ms760AutoToggle')?.addEventListener('click',toggleAutomatic);
     updateDashboard();
@@ -400,7 +443,7 @@
     if($('ms760ContextBadge'))$('ms760ContextBadge').textContent=context.badge;
     if($('ms760ContextTitle'))$('ms760ContextTitle').textContent=context.title;
     if($('ms760ContextSubtitle'))$('ms760ContextSubtitle').textContent=context.subtitle;
-    if($('ms760ContextActions'))$('ms760ContextActions').innerHTML=context.actions.slice(0,2).map(actionButton).join('');
+    if($('ms760ContextActions'))$('ms760ContextActions').innerHTML=context.actions.map(actionButton).join('');
     const toggle=$('ms760AutoToggle');
     if(toggle){
       toggle.textContent=automatic?.busy?'Even…':automatic?.enabled?'Auto aan':'Auto uit';
@@ -802,7 +845,7 @@
   }
 
   function exposeHaSnapshot(){
-    /* De live bridge van 7.8.2 exposeert dit zelf. Deze fallback houdt
+    /* De live bridge van 7.10.0 exposeert dit zelf. Deze fallback houdt
        de minispeler bruikbaar wanneer de bridge iets later initialiseert. */
     if(typeof window.ms730GetStateSnapshot!=='function')window.ms730GetStateSnapshot=()=>[];
   }

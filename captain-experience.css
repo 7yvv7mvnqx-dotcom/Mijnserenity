@@ -1,5 +1,5 @@
 /* =========================================================
-   MijnSerenity 7.8.2 — Captain Experience
+   MijnSerenity 7.10.0 — Captain Experience
    Slim dashboard, status, routebeleving, radio en thema's
    ========================================================= */
 
@@ -787,33 +787,4 @@ body.ms760-captain-experience button:hover{filter:brightness(1.055);}
 @media(prefers-reduced-motion:reduce){
   .ms760-dashboard > *{animation:none !important;}
   .ms760-radio-player,body.ms760-captain-experience button{transition:none !important;}
-}
-
-
-/* =========================================================
-   MijnSerenity 7.8.2 — rustige startpagina
-   Minder druk, eenvoudigere knoppen en betere iPhone-indeling
-   ========================================================= */
-.ms760-dashboard-simple{gap:12px;}
-.ms760-dashboard-simple .ms760-context-card{padding:16px;}
-.ms760-dashboard-simple .ms760-context-copy h3{font-size:clamp(19px,4.2vw,27px);}
-.ms760-dashboard-simple .ms760-context-copy p{font-size:14px;}
-.ms760-dashboard-simple .ms760-context-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-body.ms750-simple-ui .ms760-dashboard-simple .ms760-context-action{min-height:54px;padding:10px 8px;border-radius:16px;font-size:13px;}
-.ms760-dashboard-simple .ms760-section-title{margin:0 2px -2px;}
-.ms760-dashboard-simple .ms760-section-title small{display:none;}
-.ms760-dashboard-simple .ms760-section-title h3{font-size:17px;}
-.ms760-dashboard-simple .ms760-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;overflow:visible;padding:0;}
-.ms760-dashboard-simple .ms760-status-chip{grid-template-columns:34px 1fr;min-height:68px;padding:10px;border-radius:18px;}
-.ms760-dashboard-simple .ms760-status-chip .icon{width:34px;height:34px;border-radius:12px;font-size:20px;}
-.ms760-dashboard-simple .ms760-status-chip strong{font-size:14px;}
-.ms760-dashboard-simple .ms760-status-chip small{font-size:11px !important;}
-.ms760-dashboard-simple .ms760-quick-grid-simple{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-body.ms750-simple-ui .ms760-dashboard-simple .ms760-quick-button{min-height:74px;padding:11px 10px;border-radius:18px;justify-content:flex-start;}
-.ms760-dashboard-simple .ms760-quick-button span{font-size:23px;}
-.ms760-dashboard-simple .ms760-quick-button strong{font-size:14px;}
-@media(max-width:390px){
-  .ms760-dashboard-simple .ms760-context-actions,
-  .ms760-dashboard-simple .ms760-status-grid,
-  .ms760-dashboard-simple .ms760-quick-grid-simple{grid-template-columns:1fr 1fr;}
 }

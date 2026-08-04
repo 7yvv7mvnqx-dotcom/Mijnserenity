@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.4.6 — live weerpagina
+   MijnSerenity 7.10.0 — live weerpagina met watertemperatuur
    ============================================================ */
 
 let ms709WeatherPayload=null;
@@ -12,7 +12,7 @@ let ms709WeatherLastAttempt=0;
 const MS709_REFRESH_MS=5*60*1000;
 
 function ms709WeatherCacheKey(){
-  return `mijnserenity-weather-709-${currentBoat?.id||'serenity'}`;
+  return `mijnserenity-weather-793-${currentBoat?.id||'serenity'}`;
 }
 
 function ms709ReadWeatherCache(){
@@ -231,6 +231,158 @@ function ms709BuildWeatherUrl(lat,lon){
   return `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
 }
 
+function ms793BuildMarineUrl(lat,lon){
+  const params=new URLSearchParams({
+    latitude:Number(lat).toFixed(6),
+    longitude:Number(lon).toFixed(6),
+    current:'sea_surface_temperature',
+    hourly:'sea_surface_temperature',
+    timezone:'auto',
+    forecast_days:'1'
+  });
+
+  return `https://marine-api.open-meteo.com/v1/marine?${params.toString()}`;
+}
+
+function ms793FiniteNumber(value){
+  if(value===null||value===''||typeof value==='boolean')return null;
+  const number=Number(value);
+  return Number.isFinite(number)?number:null;
+}
+
+function ms793DistanceKm(lat1,lon1,lat2,lon2){
+  const values=[lat1,lon1,lat2,lon2].map(ms793FiniteNumber);
+  if(values.some(value=>value===null))return null;
+
+  const [aLat,aLon,bLat,bLon]=values;
+  const toRadians=value=>value*Math.PI/180;
+  const earthRadiusKm=6371;
+  const deltaLat=toRadians(bLat-aLat);
+  const deltaLon=toRadians(bLon-aLon);
+  const startLat=toRadians(aLat);
+  const endLat=toRadians(bLat);
+  const a=
+    Math.sin(deltaLat/2)**2+
+    Math.cos(startLat)*Math.cos(endLat)*
+    Math.sin(deltaLon/2)**2;
+
+  return earthRadiusKm*2*Math.atan2(
+    Math.sqrt(a),
+    Math.sqrt(1-a)
+  );
+}
+
+function ms793NearestMarineTemperature(data){
+  const current=ms793FiniteNumber(
+    data?.current?.sea_surface_temperature
+  );
+
+  if(current!==null){
+    return {
+      available:true,
+      value:current,
+      time:data?.current?.time||null,
+      source:'Open-Meteo Marine'
+    };
+  }
+
+  const times=Array.isArray(data?.hourly?.time)
+    ?data.hourly.time
+    :[];
+  const values=Array.isArray(
+    data?.hourly?.sea_surface_temperature
+  )
+    ?data.hourly.sea_surface_temperature
+    :[];
+
+  let best=null;
+  let bestDistance=Infinity;
+  const now=Date.now();
+
+  times.forEach((time,index)=>{
+    const value=ms793FiniteNumber(values[index]);
+    const timestamp=new Date(time).getTime();
+    if(value===null||!Number.isFinite(timestamp))return;
+
+    const distance=Math.abs(timestamp-now);
+    if(distance<bestDistance){
+      bestDistance=distance;
+      best={
+        available:true,
+        value,
+        time,
+        source:'Open-Meteo Marine'
+      };
+    }
+  });
+
+  return best||{
+    available:false,
+    value:null,
+    time:null,
+    source:'Open-Meteo Marine'
+  };
+}
+
+async function ms793FetchWaterTemperature(lat,lon){
+  try{
+    const response=await fetch(
+      ms793BuildMarineUrl(lat,lon),
+      {
+        headers:{Accept:'application/json'},
+        cache:'no-store'
+      }
+    );
+
+    if(!response.ok){
+      return {
+        available:false,
+        value:null,
+        source:'Open-Meteo Marine',
+        reason:`HTTP ${response.status}`
+      };
+    }
+
+    const data=await response.json();
+    const gridDistanceKm=ms793DistanceKm(
+      lat,
+      lon,
+      data?.latitude,
+      data?.longitude
+    );
+
+    if(
+      gridDistanceKm!==null&&
+      gridDistanceKm>15
+    ){
+      return {
+        available:false,
+        value:null,
+        source:'Open-Meteo Marine',
+        reason:'Geen nabijgelegen watermodel',
+        gridDistanceKm
+      };
+    }
+
+    return {
+      ...ms793NearestMarineTemperature(data),
+      gridDistanceKm
+    };
+  }catch(error){
+    console.warn(
+      'Watertemperatuur kon niet worden opgehaald:',
+      error
+    );
+
+    return {
+      available:false,
+      value:null,
+      source:'Open-Meteo Marine',
+      reason:'Niet bereikbaar'
+    };
+  }
+}
+
 function ms709CurrentHourlyIndex(payload){
   const times=payload?.hourly?.time||[];
   if(!times.length)return 0;
@@ -396,6 +548,23 @@ function ms709RenderCurrent(payload){
       ?`Voelt als ${ms709Number(current.apparent_temperature,1)} °C`
       :'Gevoelstemperatuur onbekend'
   );
+
+  const waterTemperature=ms793FiniteNumber(
+    payload?.waterTemperature?.value
+  );
+  ms709SetText(
+    'ms793WeatherWaterTemp',
+    waterTemperature!==null
+      ?`${ms709Number(waterTemperature,1)} °C`
+      :'Niet beschikbaar'
+  );
+  ms709SetText(
+    'ms793WeatherWaterSource',
+    waterTemperature!==null
+      ?'Modelschatting op de GPS-positie'
+      :'Geen watermodel voor deze positie'
+  );
+
   ms709SetText(
     'ms709WeatherWind',
     Number.isFinite(Number(current.wind_speed_10m))
@@ -496,7 +665,8 @@ function ms709RenderCurrent(payload){
       weatherCode:Number(current.weather_code),
       windSpeed:Number(current.wind_speed_10m),
       windGusts:Number(current.wind_gusts_10m),
-      windDirection:Number(current.wind_direction_10m)
+      windDirection:Number(current.wind_direction_10m),
+      waterTemperature:waterTemperature
     };
     liveNavState.weatherUpdatedAt=
       Number(payload.fetchedAt)||Date.now();
@@ -772,11 +942,16 @@ async function ms709RefreshWeather(
     }
 
     const data=await response.json();
-    const label=
-      await ms709ReverseLabel(
+    const [label,waterTemperature]=await Promise.all([
+      ms709ReverseLabel(
         coordinates.lat,
         coordinates.lon
-      );
+      ),
+      ms793FetchWaterTemperature(
+        coordinates.lat,
+        coordinates.lon
+      )
+    ]);
 
     const payload={
       ...data,
@@ -787,6 +962,7 @@ async function ms709RefreshWeather(
         accuracy:coordinates.accuracy||null,
         source:coordinates.source||'GPS'
       },
+      waterTemperature,
       locationLabel:
         label||
         `${Number(coordinates.lat).toFixed(4)}, ${Number(coordinates.lon).toFixed(4)}`

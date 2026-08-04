@@ -1,8 +1,8 @@
-/* MijnSerenity 7.9.9 — actuele vaarwegberichten rond Serenity via EuRIS/Rijkswaterstaat */
+/* MijnSerenity 7.10.0 — actuele vaarwegberichten rond Serenity via EuRIS/Rijkswaterstaat */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.9';
+  const BUILD='7.10.0';
   const API_URL='/api/euris-nts';
   const DIRECT_API='https://www.eurisportal.eu/api/v3/nts';
   const RADIUS_KEY='mijnserenity-rws-radius-km';
@@ -326,7 +326,55 @@
     }
 
     document.querySelectorAll('.rws-filter').forEach(button=>button.classList.toggle('active',button.dataset.filter===activeFilter));
+    renderLivePanel();
     updateBadges();
+  }
+
+  function renderLivePanel(){
+    const list=$('rwsLiveNoticeList');
+    if(!list)return;
+    const count=$('rwsLiveCount');
+    const status=$('rwsLiveStatus');
+    const eyebrow=$('rwsLiveEyebrow');
+    if(eyebrow)eyebrow.textContent=`RIJKSWATERSTAAT / EURIS · BINNEN ${radius()} KM`;
+    const important=notices.filter(item=>item.severity!=='info').length;
+    if(count){
+      count.textContent=String(notices.length);
+      count.classList.toggle('alert',important>0);
+    }
+    if(status){
+      if(busy)status.textContent='Actuele berichten worden opgehaald…';
+      else if(notices.length)status.textContent=`${notices.length} bericht${notices.length===1?'':'en'} binnen ${radius()} km · ${important?important+' met aandacht':'geen urgente hinder'}`;
+      else status.textContent=`Geen actuele melding binnen ${radius()} km van Serenity.`;
+    }
+    const values=notices.slice(0,3);
+    if(!values.length){
+      list.innerHTML=`<div class="rws-live-empty"><strong>${busy?'Berichten worden gecontroleerd':'Geen actuele hinder gevonden'}</strong><small>${busy?'GPS en vaarweginformatie worden bijgewerkt.':`Binnen ${radius()} km is nu geen passend bericht gevonden.`}</small></div>`;
+      return;
+    }
+    list.innerHTML=values.map(item=>`
+      <button type="button" class="rws-live-item ${item.severity}" data-id="${escapeHtml(item.id)}">
+        <span class="rws-live-icon">${iconFor(item.type)}</span>
+        <span class="rws-live-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.description)}</small></span>
+        <span class="rws-live-distance">${item.distance.toFixed(1)} km</span>
+      </button>`).join('');
+    list.querySelectorAll('.rws-live-item').forEach(button=>button.addEventListener('click',()=>{
+      const item=notices.find(value=>String(value.id)===button.dataset.id);
+      if(item)window.open(noticeLink(item),'_blank','noopener,noreferrer');
+    }));
+  }
+
+  function bindLivePanel(){
+    const refreshButton=$('rwsLiveRefreshButton');
+    if(refreshButton&&!refreshButton.dataset.bound){
+      refreshButton.dataset.bound='true';
+      refreshButton.addEventListener('click',()=>refresh(false));
+    }
+    const openButton=$('rwsLiveOpenButton');
+    if(openButton&&!openButton.dataset.bound){
+      openButton.dataset.bound='true';
+      openButton.addEventListener('click',()=>window.ms795OpenRws?.());
+    }
   }
 
   function updateBadges(){
@@ -346,7 +394,9 @@
     if(busy)return;
     busy=true;
     const button=$('rwsRefreshButton');
+    const liveButton=$('rwsLiveRefreshButton');
     if(button)button.disabled=true;
+    if(liveButton)liveButton.disabled=true;
     render();
     try{
       const position=await resolvePosition(forcePosition);
@@ -371,6 +421,7 @@
     }finally{
       busy=false;
       if(button)button.disabled=false;
+      if(liveButton)liveButton.disabled=false;
       render();
     }
   }
@@ -485,12 +536,15 @@
 
   function init(){
     buildPage();
+    bindLivePanel();
     if(!initialised){readCache();initialised=true;schedule()}
     render();
     if(!lastFetchAt||Date.now()-lastFetchAt>REFRESH_MS)refresh(false);
   }
 
   window.initRwsPage=init;
+  window.ms710GetRwsNotices=()=>notices.map(item=>({...item}));
+  window.ms710RefreshRws=()=>refresh(false);
   window.ms795OpenRws=()=>{
     buildPage();
     window.captainNavigate?.('rws');
@@ -498,7 +552,7 @@
   };
 
   function start(){
-    buildPage();readCache();render();updateBadges();schedule();
+    buildPage();bindLivePanel();readCache();render();renderLivePanel();updateBadges();schedule();
     window.addEventListener('online',()=>refresh(false));
     document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastFetchAt>REFRESH_MS)refresh(false)});
     console.info(`MijnSerenity ${BUILD} Rijkswaterstaat/EuRIS module actief.`);

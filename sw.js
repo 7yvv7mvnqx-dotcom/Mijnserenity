@@ -1,52 +1,59 @@
-const CACHE_NAME='mijnserenity-7.8.2-captain-experience';
+const CACHE_NAME='mijnserenity-7.10.0-live-rws-solar-r1';
 const APP_SHELL=[
   '/',
   '/index.html',
-  '/styles.css?v=78200',
-  '/ha-live-bridge.css?v=78200',
-  '/live-cameras.css?v=78200',
-  '/mission-control.css?v=78200',
-  '/easy-auto.css?v=78200',
-  '/auto-track-reliability.css?v=78200',
-  '/gps-continuity-guard.css?v=78200',
-  '/waterkaarten-split-launch.css?v=78200',
-  '/live-split.css?v=78200',
-  '/route-control.css?v=78200',
-  '/page-swipe.css?v=78200',
-  '/weather-page.css?v=78200',
-  '/weather-radar.css?v=78200',
-  '/ais-page.css?v=78200',
-  '/entertainment-page.css?v=78200',
-  '/navigation-compact.css?v=78200',
-  '/simple-accessible.css?v=78200',
-  '/home-assistant-contrast.css?v=78200',
-  '/captain-experience.css?v=78200',
-  '/auth-bootstrap.js?v=78200',
-  '/app.js?v=78200',
-  '/receipt-reader-pro.js?v=78200',
-  '/mission-control.js?v=78200',
-  '/easy-auto.js?v=78200',
-  '/auto-track-reliability.js?v=78200',
-  '/gps-continuity-guard.js?v=78200',
-  '/waterkaarten-split-launch.js?v=78200',
-  '/live-split.js?v=78200',
-  '/route-control.js?v=78200',
-  '/weather-page.js?v=78200',
-  '/weather-radar.js?v=78200',
-  '/ais-page.js?v=78200',
-  '/entertainment-page.js?v=78200',
-  '/ha-live-bridge.js?v=78200',
-  '/live-cameras.js?v=78200',
-  '/page-swipe.js?v=78200',
-  '/navigation-compact.js?v=78200',
-  '/simple-accessible.js?v=78200',
-  '/device-sync-guard.js?v=78200',
-  '/captain-experience.js?v=78200',
-  '/manifest.json?v=78200',
-  '/icon-192.png?v=78200',
-  '/icon-512.png?v=78200',
-  '/waterkaarten-dashboard.png?v=78200',
-  '/mijnserenity-logo.png?v=78200'
+  '/styles.css?v=71000',
+  '/ha-live-bridge.css?v=71000',
+  '/live-cameras.css?v=71000',
+  '/mission-control.css?v=71000',
+  '/easy-auto.css?v=71000',
+  '/auto-track-reliability.css?v=71000',
+  '/gps-continuity-guard.css?v=71000',
+  '/waterkaarten-split-launch.css?v=71000',
+  '/live-split.css?v=71000',
+  '/route-control.css?v=71000',
+  '/page-swipe.css?v=71000',
+  '/weather-page.css?v=71000',
+  '/weather-radar.css?v=71000',
+  '/rws-nearby.css?v=71000',
+  '/ais-page.css?v=71000',
+  '/entertainment-page.css?v=71000',
+  '/navigation-compact.css?v=71000',
+  '/simple-accessible.css?v=71000',
+  '/home-assistant-contrast.css?v=71000',
+  '/captain-experience.css?v=71000',
+  '/serenity-ivms.css?v=71000',
+  '/technical-live-sync.css?v=71000',
+  '/auth-bootstrap.js?v=71000',
+  '/app.js?v=71000',
+  '/receipt-reader-pro.js?v=71000',
+  '/mission-control.js?v=71000',
+  '/easy-auto.js?v=71000',
+  '/auto-track-reliability.js?v=71000',
+  '/gps-continuity-guard.js?v=71000',
+  '/waterkaarten-split-launch.js?v=71000',
+  '/live-split.js?v=71000',
+  '/route-control.js?v=71000',
+  '/weather-page.js?v=71000',
+  '/weather-radar.js?v=71000',
+  '/rws-nearby.js?v=71000',
+  '/ais-page.js?v=71000',
+  '/entertainment-page.js?v=71000',
+  '/ha-live-bridge.js?v=71000',
+  '/technical-live-sync.js?v=71000',
+  '/live-cameras.js?v=71000',
+  '/page-swipe.js?v=71000',
+  '/navigation-compact.js?v=71000',
+  '/simple-accessible.js?v=71000',
+  '/device-sync-guard.js?v=71000',
+  '/captain-experience.js?v=71000',
+  '/serenity-ivms.js?v=71000',
+  '/manifest.json?v=71000',
+  '/icon-192.png?v=71000',
+  '/icon-512.png?v=71000',
+  '/waterkaarten-dashboard.png?v=71000',
+  '/mijnserenity-logo.png?v=71000',
+  '/serenity-aankomend.gif?v=71000',
 ];
 
 async function cacheFile(cache,path){
@@ -100,7 +107,13 @@ self.addEventListener('fetch',event=>{
           }
           return response;
         })
-        .catch(()=>caches.match('/index.html'))
+        .catch(async()=>
+          (await caches.match('/index.html'))||
+          new Response('<h1>MijnSerenity is tijdelijk offline</h1><p>Open de app opnieuw zodra er verbinding is.</p>',{
+            status:503,
+            headers:{'Content-Type':'text/html; charset=utf-8'}
+          })
+        )
     );
     return;
   }
@@ -114,6 +127,9 @@ self.addEventListener('fetch',event=>{
         }
         return response;
       })
-      .catch(()=>caches.match(request))
+      .catch(async()=>
+        (await caches.match(request))||
+        new Response('',{status:503,statusText:'Offline'})
+      )
   );
 });
