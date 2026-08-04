@@ -1,4 +1,4 @@
-/* MijnSerenity 7.5.10 — Waterkaarten rechts en bevestiging na terugkeer */
+/* MijnSerenity 7.8.2 — Waterkaarten rechts en bevestiging na terugkeer */
 (()=>{
   'use strict';
 
@@ -234,8 +234,11 @@
   function start(){
     ensureUi();
     patchAllWaterkaartenButtons();
+    patchAutomaticMode();
     monitorTimer=setInterval(()=>{
       patchAllWaterkaartenButtons();
+      patchAutomaticMode();
+      detectAutomaticDeparture();
     },700);
 
     const showConfirmationAfterReturn=()=>{

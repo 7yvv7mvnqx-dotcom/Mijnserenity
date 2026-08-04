@@ -1,8 +1,8 @@
-/* MijnSerenity 7.9.9 — stabiele eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.8.2 — stabiele eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.9';
+  const BUILD='7.8.2';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -14,7 +14,6 @@
     logbook:{title:'Logboek',icon:'📖'},
     ais:{title:'AIS',icon:'📡'},
     weather:{title:'Weer',icon:'☀️'},
-    rws:{title:'Vaarwegberichten',icon:'📢'},
     planner:{title:'Reisplanner',icon:'🧭'},
     entertainment:{title:'Home Assistant',icon:'🏡'},
     technical:{title:'Techniek',icon:'⚙️'},
@@ -193,7 +192,6 @@
         ${primaryButton('logbook','📖','Logboek','Vaartochten bekijken')}
         ${primaryButton('costs','🧾','Kosten','Bon of factuur toevoegen')}
         ${primaryButton('weather','☀️','Weer','Verwachting en waarschuwingen')}
-        ${primaryButton('rws','📢','Vaarwegberichten','Bruggen, sluizen en stremmingen binnen 20 km')}
         ${primaryButton('search','🔎','Zoeken','Zoek in alles op MijnSerenity')}
         ${primaryButton('entertainment','🏡','Home Assistant','Alles aan boord bedienen')}
         ${primaryButton('radio','📻','Radio','Sonos en favoriete zenders')}
@@ -235,7 +233,6 @@
     {route:'logbook',icon:'📖',title:'Logboek',subtitle:'Vaartochten bekijken',keywords:'log route tocht geschiedenis'},
     {route:'ais',icon:'📡',title:'AIS',subtitle:'Boten in de omgeving',keywords:'schepen boten volgen ais'},
     {route:'weather',icon:'☀️',title:'Weer',subtitle:'Verwachting en waarschuwingen',keywords:'regen wind radar weer'},
-    {route:'rws',icon:'📢',title:'Vaarwegberichten',subtitle:'Bruggen, sluizen, stremmingen en waterstanden',keywords:'rijkswaterstaat rws vaarweg brug sluis stremming waterstand wachttijd euris'},
     {route:'planner',icon:'🧭',title:'Reisplanner',subtitle:'Route en bootafmetingen',keywords:'reis route hoogte diepgang brug'},
     {route:'entertainment',icon:'🏡',title:'Home Assistant',subtitle:'Slimme apparaten bedienen',keywords:'home assistant ha ring hue sonos apple tv'},
     {route:'radio',icon:'📻',title:'Radio',subtitle:'Sonos en favoriete zenders',keywords:'radio muziek sonos zender favoriet'},
@@ -424,7 +421,6 @@
         <div class="ms750-more-grid">
           ${moreRoute('ais')}
           ${moreRoute('weather')}
-          ${moreRoute('rws')}
           ${moreRoute('planner')}
           ${moreRoute('pois')}
           ${moreRoute('technical')}
@@ -488,7 +484,6 @@
   }
 
   function updatePageBar(route){
-    document.body.classList.toggle('ms797-dashboard-route',route==='dashboard');
     const meta=PAGE_META[route]||{title:'MijnSerenity'};
     if(pageTitle)pageTitle.textContent=meta.title;
     if(homeButton){
@@ -505,7 +500,6 @@
     currentRoute=PAGE_META[route]?route:'dashboard';
     updatePageBar(currentRoute);
     closeMore(false);
-    if(currentRoute==='rws')window.setTimeout(()=>window.initRwsPage?.(),30);
     window.scrollTo({top:0,left:0,behavior:'auto'});
   }
 
@@ -552,15 +546,24 @@
   }
 
   function restoreNativePagerMode(){
-    /* 7.9.9: behoud de stabiele één-paginamodus. Het oude herstel maakte
-       alle pagina's tegelijk zichtbaar en kon een klik direct terugdraaien. */
-    document.body.classList.add('ms755-single-page-nav');
+    document.body.classList.remove('ms755-single-page-nav');
 
     const pager=document.getElementById('ms708NativePager');
     if(pager){
       pager.classList.remove('hidden');
       pager.style.removeProperty('display');
+      delete pager.dataset.ms755Active;
     }
+
+    document.querySelectorAll(
+      '#ms708NativePager > .ms708-native-page'
+    ).forEach(page=>{
+      page.classList.remove('ms755-route-active');
+      page.removeAttribute('aria-hidden');
+      page.style.removeProperty('display');
+      page.style.removeProperty('width');
+      page.style.removeProperty('min-width');
+    });
   }
 
   function navigate(route,sourceButton=null){
@@ -826,13 +829,6 @@
     }
   }
 
-  function openRequestedRoute(){
-    let route='';
-    try{route=new URLSearchParams(window.location.search).get('open')||'';}catch(_error){}
-    if(!PAGE_META[route])return;
-    window.setTimeout(()=>navigate(route),650);
-  }
-
   function initialise(){
     applyPreferences();
     buildSkipLink();
@@ -847,14 +843,11 @@
     observeAutomaticVaren();
     afterNavigate('dashboard');
     [0,120,450].forEach(delay=>setTimeout(()=>navigate('dashboard'),delay));
-    openRequestedRoute();
     document.addEventListener('keydown',handleKeyboard);
     window.ms753RefreshSimpleAutomaticUi=syncAutomaticVaren;
-    window.ms753SyncRoute=afterNavigate;
     window.ms753Navigate=navigate;
     window.ms755OpenSearch=openSearch;
     window.ms755OpenRadio=openRadio;
-    window.ms797OpenMore=openMore;
     console.info(`MijnSerenity ${BUILD}: eenvoudige bediening actief.`);
   }
 

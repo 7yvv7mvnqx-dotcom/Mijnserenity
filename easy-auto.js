@@ -266,7 +266,7 @@ function ms701Render(){
     ms701SetText('ms701LogStatus','Automatisch');
     ms701SetText(
       'ms701AutoMessage',
-      'Laat MijnSerenity geopend en zichtbaar; de vaart wordt automatisch vastgelegd.'
+      'Laat MijnSerenity geopend. Waterkaarten kun je daarnaast openen via de knop.'
     );
   }else{
     ms701SetText('ms701AutoTitle','Automatisch varen wordt gereedgemaakt');

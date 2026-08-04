@@ -1,4 +1,4 @@
-/* MijnSerenity 7.5.5 LIVE — officiële Home Assistant OAuth + WebSocket koppeling */
+/* MijnSerenity 7.8.2 LIVE — officiële Home Assistant OAuth + WebSocket koppeling */
 (()=>{
   'use strict';
 
@@ -6,7 +6,7 @@
   const OAUTH_STATE_KEY='mijnserenity-ha-oauth-state-v733';
   const SELECT_KEY='mijnserenity-ha-selection-v733';
   const LIVE_CAMERA_KEY='mijnserenity-ha-live-cameras-v733';
-  const ALLOWED_DOMAINS=new Set(['light','media_player','remote','camera','switch','scene','sensor','binary_sensor']);
+  const ALLOWED_DOMAINS=new Set(['light','media_player','remote','camera','switch','scene']);
   let installed=false;
   let discovered=[];
   let stateMap=new Map();
@@ -164,12 +164,7 @@
         brightness:Number.isFinite(Number(attributes.brightness))?Number(attributes.brightness):null,
         media_title:attributes.media_title??null,
         media_artist:attributes.media_artist??null,
-        media_channel:attributes.media_channel??attributes.media_station??null,
-        unit_of_measurement:attributes.unit_of_measurement??null,
-        device_class:attributes.device_class??null,
-        state_class:attributes.state_class??null,
-        icon:attributes.icon??null,
-        battery_level:Number.isFinite(Number(attributes.battery_level))?Number(attributes.battery_level):null
+        media_channel:attributes.media_channel??attributes.media_station??null
       }
     };
   }
@@ -275,22 +270,7 @@
     const text=`${entity?.entity_id||''} ${entity?.name||''}`.toLowerCase();
     return terms.some(term=>text.includes(term));
   }
-  function isShorePowerEntity(entity){
-    const text=`${entity?.entity_id||''} ${entity?.name||''}`.toLowerCase();
-    if(/walstroom|landstroom|shore\s*power|shorepower/.test(text))return true;
-    if(/ac[_\s-]*(input|in)\b/.test(text)&&/vrm|victron|cerbo|serenity|connected|aangesloten/.test(text))return true;
-    if(/grid\s+connected|mains\s+connected|netspanning\s+aanwezig/.test(text)&&/vrm|victron|cerbo|serenity/.test(text))return true;
-    return false;
-  }
-  function shorePowerLabel(entity){
-    const raw=String(entity?.state||'').toLowerCase();
-    if(['on','connected','true','1','yes','active','aan','present','detected'].includes(raw))return 'AAN';
-    if(['off','disconnected','false','0','no','inactive','uit','absent','clear'].includes(raw))return 'UIT';
-    return String(entity?.state||'onbekend');
-  }
   function defaultSelected(entity){
-    if(entity.domain==='sensor'&&['sensor.vrm_state_of_charge','sensor.vrm_voltage','sensor.vrm_current','sensor.vrm_battery_power','sensor.vrm_time_to_go'].includes(entity.entity_id))return true;
-    if(isShorePowerEntity(entity))return true;
     if(entity.domain==='light'||entity.domain==='scene')return true;
     if(entity.domain==='camera')return contains(entity,['ring','doorbell','voordeur','oprit','serenity','radarbeugel','live_weergave']);
     if(entity.domain==='switch')return contains(entity,['ring','doorbell','voordeur']);
@@ -310,28 +290,6 @@
     }).join('')}</div></div>`;
   }
 
-  function renderVictronSensors(){
-    const wanted=new Set(['sensor.vrm_state_of_charge','sensor.vrm_voltage','sensor.vrm_current','sensor.vrm_battery_power','sensor.vrm_time_to_go']);
-    const saved=loadSavedSelection();
-    const list=discovered.filter(entity=>wanted.has(entity.entity_id));
-    if(!list.length)return `<div class="ms730-device-group"><h5>🔋 Victron / SmartShunt</h5><div class="ms730-empty">Nog geen VRM-sensoren gevonden</div></div>`;
-    return `<div class="ms730-device-group"><h5>🔋 Victron / SmartShunt <small>(live waarden)</small></h5><div class="ms730-device-list">${list.map(entity=>{
-      const checked=Object.prototype.hasOwnProperty.call(saved,entity.entity_id)?Boolean(saved[entity.entity_id]):true;
-      return `<label class="ms730-device-option"><input type="checkbox" data-ms730-domain="sensor" value="${escape(entity.entity_id)}" ${checked?'checked':''}><span><strong>${escape(friendly(entity))}</strong><small>${escape(entity.entity_id)}</small><span class="ms730-live-state">Waarde: ${escape(entity.state)} ${escape(entity.attributes?.unit_of_measurement||'')}</span></span></label>`;
-    }).join('')}</div></div>`;
-  }
-
-  function renderShorePowerSensors(){
-    const saved=loadSavedSelection();
-    const list=discovered.filter(isShorePowerEntity);
-    if(!list.length)return `<div class="ms730-device-group"><h5>⚡ Walstroomdetectie</h5><div class="ms730-empty">Nog geen walstroomsensor gevonden. De momentopname blijft handmatig.</div></div>`;
-    return `<div class="ms730-device-group"><h5>⚡ Walstroomdetectie <small>(automatisch aan/uit)</small></h5><div class="ms730-device-list">${list.map(entity=>{
-      const checked=Object.prototype.hasOwnProperty.call(saved,entity.entity_id)?Boolean(saved[entity.entity_id]):true;
-      const label=shorePowerLabel(entity);
-      return `<label class="ms730-device-option"><input type="checkbox" data-ms730-domain="shore_power" value="${escape(entity.entity_id)}" ${checked?'checked':''}><span><strong>${escape(friendly(entity))}</strong><small>${escape(entity.entity_id)}</small><span class="ms730-live-state ms730-shore-state ${label==='AAN'?'on':'off'}">Walstroom: ${escape(label)}</span></span></label>`;
-    }).join('')}</div></div>`;
-  }
-
   function renderDiscovered(){
     const container=document.getElementById('ms730DeviceGroups');
     if(!container)return;
@@ -342,9 +300,7 @@
       renderGroup('Apple TV afstandsbediening','📺','remote',1),
       renderGroup('Camera’s','📹','camera',4),
       renderGroup('Schakelaars','👁','switch',1),
-      renderGroup('Scènes','✨','scene',4),
-      renderVictronSensors(),
-      renderShorePowerSensors()
+      renderGroup('Scènes','✨','scene',4)
     ].join('');
     container.querySelectorAll('input[type=checkbox]').forEach(input=>input.addEventListener('change',()=>{
       const max=Number(input.dataset.ms730Max||0);
