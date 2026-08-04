@@ -1,4 +1,4 @@
-/* MijnSerenity 7.9.5 — Rijkswaterstaat / EuRIS berichten binnen de gekozen straal */
+/* MijnSerenity 7.9.6 — Rijkswaterstaat / EuRIS berichten binnen de gekozen straal */
 .rws-page{max-width:1180px;margin:0 auto;padding:10px 12px 120px}
 .rws-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:18px;border:1px solid rgba(91,190,240,.24);border-radius:22px;background:linear-gradient(145deg,rgba(7,33,55,.97),rgba(3,17,29,.98));box-shadow:0 16px 40px rgba(0,0,0,.22)}
 .rws-hero h1{margin:4px 0 6px;font-size:clamp(1.55rem,4vw,2.35rem)}

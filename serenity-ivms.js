@@ -1,4 +1,4 @@
-/* MijnSerenity 7.9.5 — live Serenity IVMS startdashboard */
+/* MijnSerenity 7.9.6 — live Serenity IVMS startdashboard */
 (()=>{
   'use strict';
 
@@ -164,9 +164,36 @@
   function updatePhoto(){
     const target=$('ivmsBoatPhoto');
     const source=$('dashboardBoatPhoto');
-    if(!target||!source)return;
+    const hero=$('ivmsHero');
+    if(!target||!source||!hero)return;
     const src=source.currentSrc||source.src||'';
-    if(src&&!source.classList.contains('hidden')&&!src.includes('serenity-ivms-hero'))target.src=src;
+    const usable=Boolean(
+      src&&
+      !source.classList.contains('hidden')&&
+      source.complete&&
+      source.naturalWidth>0
+    );
+    if(!usable){
+      target.removeAttribute('src');
+      target.classList.add('hidden');
+      hero.classList.remove('has-photo');
+      return;
+    }
+    if(target.src!==src){
+      target.onload=()=>{
+        target.classList.remove('hidden');
+        hero.classList.add('has-photo');
+      };
+      target.onerror=()=>{
+        target.removeAttribute('src');
+        target.classList.add('hidden');
+        hero.classList.remove('has-photo');
+      };
+      target.src=src;
+    }else if(target.complete&&target.naturalWidth>0){
+      target.classList.remove('hidden');
+      hero.classList.add('has-photo');
+    }
   }
 
   function updateWeather(payload,live){
@@ -256,13 +283,14 @@
     const shoreVoltage=finite(haShoreVoltage?.state)?Number(haShoreVoltage.state):null;
     const shoreFrequency=finite(haShoreFrequency?.state)?Number(haShoreFrequency.state):null;
     setText('ivmsPowerSource',shore?'WALSTROOM':'ACCU');
-    setText('ivmsPowerVoltage',shore?(shoreVoltage!==null?`${nl(shoreVoltage,0)} V`:'– V'):(voltage!==null?`${nl(voltage,2)} V`:'–'));
-    setText('ivmsPowerFrequency',shoreFrequency!==null?`${nl(shoreFrequency,1)} Hz`:'–');
+    setText('ivmsPowerVoltage',shoreVoltage!==null?`${nl(shoreVoltage,0)} V`:'– V');
+    setText('ivmsPowerFrequency',shoreFrequency!==null?`${nl(shoreFrequency,1)} Hz`:'– Hz');
     setText('ivmsPowerStatus',shore?(shoreVoltage!==null?'NORMAAL':'AANGESLOTEN'):'BOORDNET');
+    $('ivmsShoreDetails')?.classList.toggle('hidden',!shore);
 
     const solar=finite(haSolar?.state)?Number(haSolar.state):null;
     setText('ivmsSolarPower',solar!==null?`${nl(solar,0)} W`:'– W');
-    setText('ivmsSolarBattery',finite(batteryPct)?`${Math.round(batteryPct)}%`:'–%');
+    setText('ivmsSolarBattery',solar!==null?(solar>0?'LADEN':'STANDBY'):'NIET GEKOPPELD');
 
     const cabinTemp=finite(haCabin?.state)?Number(haCabin.state):null;
     setText('ivmsCabinTemp',cabinTemp!==null?`${nl(cabinTemp,1)} °C`:'– °C');
