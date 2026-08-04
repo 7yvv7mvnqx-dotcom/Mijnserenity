@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity 7.9.7 — live weerpagina met watertemperatuur
+   MijnSerenity 7.9.8 — live weerpagina met watertemperatuur
    ============================================================ */
 
 let ms709WeatherPayload=null;

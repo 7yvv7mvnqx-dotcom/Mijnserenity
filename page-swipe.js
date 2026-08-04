@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 7.9.7 — hersteld native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.9.8 — hersteld native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -8,14 +8,17 @@ const ms708PageOrder=[
   'live',
   'ais',
   'weather',
+  'rws',
   'map',
   'planner',
   'entertainment',
   'technical',
   'logbook',
   'pois',
+  'costs',
   'finance',
-  'settings'
+  'settings',
+  'boat'
 ];
 
 const ms708PageLabels={
@@ -23,14 +26,17 @@ const ms708PageLabels={
   live:'Live varen',
   ais:'AIS',
   weather:'Weer',
+  rws:'Vaarwegberichten',
   map:'Kaart',
   planner:'Reisplanner',
   entertainment:'Home Assistant',
   technical:'Techniek',
   logbook:'Logboek',
   pois:'POI',
+  costs:'Kosten',
   finance:'Financieel',
-  settings:'Boot'
+  settings:'Instellingen',
+  boat:'Boot en delen'
 };
 
 let ms708Pager=null;
@@ -43,15 +49,44 @@ let ms708Frame=null;
 let ms708ResizeFrame=null;
 let ms708PreparingId=null;
 let ms708Initialised=false;
+let ms708SwipeStart=null;
+
+function ms708InteractiveTarget(target){
+  return Boolean(target instanceof Element&&target.closest(
+    'button,a,input,textarea,select,label,[role="button"],.leaflet-container,.live-radar-camera-viewport,.ms750-more-layer,.ms750-search-layer'
+  ));
+}
+
+function ms708HandlePointerDown(event){
+  if(!ms708SinglePageMode()||event.pointerType==='mouse'||ms708InteractiveTarget(event.target))return;
+  ms708SwipeStart={x:event.clientX,y:event.clientY,id:event.pointerId};
+}
+
+function ms708HandlePointerUp(event){
+  const start=ms708SwipeStart;
+  ms708SwipeStart=null;
+  if(!start||start.id!==event.pointerId||!ms708SinglePageMode())return;
+  const dx=event.clientX-start.x;
+  const dy=event.clientY-start.y;
+  if(Math.abs(dx)<72||Math.abs(dx)<Math.abs(dy)*1.35)return;
+
+  const current=Math.max(0,ms708PageIndex(ms708ActiveId));
+  const next=Math.max(0,Math.min(ms708PageOrder.length-1,current+(dx<0?1:-1)));
+  if(next===current)return;
+  const id=ms708PageOrder[next];
+  ms708GoToPage(id,true);
+  ms708ShowPageToast(ms708PageLabels[id]||id);
+}
 
 
 function ms708SinglePageMode(){
   /*
-     7.9.7: de tijdelijke harde Start-oplossing zette de app blijvend
-     in één-paginamodus. Daardoor verdwenen andere pagina's en stopte
-     horizontaal vegen. Native paginavegen is weer altijd actief.
+     7.9.8: één zichtbare pagina tegelijk voorkomt dat iOS tijdens een
+     paginawissel terugveert naar de vorige pagina. Links/rechts vegen
+     blijft beschikbaar via een gecontroleerd swipegebaar, zonder een
+     horizontaal scrollvlak onder knoppen, formulieren en kaarten.
   */
-  return false;
+  return true;
 }
 
 function ms708SetSingleActive(id){
@@ -99,35 +134,28 @@ function ms708CurrentPageId(){
 }
 
 function ms708SetNavigationState(id){
-  document.querySelectorAll(
-    '.bottom-nav-item'
-  ).forEach(button=>{
-    button.classList.toggle(
-      'active',
-      button.dataset.target===id
-    );
+  const exactButton=document.querySelector(
+    `.bottom-nav-item[data-target="${CSS.escape(String(id||''))}"]`
+  );
+  const compactMore=document.querySelector(
+    '.bottom-nav-item[data-target="more"]'
+  );
+  const activeTarget=exactButton?id:(compactMore?'more':id);
+
+  document.querySelectorAll('.bottom-nav-item').forEach(button=>{
+    const active=button.dataset.target===activeTarget;
+    button.classList.toggle('active',active);
+    if(active)button.setAttribute('aria-current','page');
+    else button.removeAttribute('aria-current');
   });
 
-  document.querySelectorAll('.tab')
-    .forEach(tab=>{
-      tab.classList.toggle(
-        'active',
-        tab.dataset.target===id
-      );
-    });
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.classList.toggle('active',tab.dataset.target===id);
+  });
 
-  const activeButton=
-    document.querySelector(
-      `.bottom-nav-item[data-target="${id}"]`
-    );
-
-  if(
-    typeof scrollActiveBottomNavigationIntoView==='function'
-  ){
-    scrollActiveBottomNavigationIntoView(
-      activeButton,
-      false
-    );
+  const activeButton=exactButton||compactMore;
+  if(typeof scrollActiveBottomNavigationIntoView==='function'){
+    scrollActiveBottomNavigationIntoView(activeButton,false);
   }
 }
 
@@ -151,6 +179,7 @@ function ms708ActivatePage(
   id,
   runPageActions=true
 ){
+  if(id==='boat'&&typeof isAppAdmin==='function'&&!isAppAdmin())id='settings';
   if(!ms708PageOrder.includes(id))return;
 
   ms708ActiveId=id;
@@ -166,7 +195,16 @@ function ms708ActivatePage(
     ms708SuppressScroll=false;
   }
 
+  window.ms753SyncRoute?.(id);
+  window.dispatchEvent(new CustomEvent('mijnserenity:routechange',{
+    detail:{route:id,source:'pager'}
+  }));
+
   requestAnimationFrame(()=>{
+    if(id==='rws'&&typeof window.initRwsPage==='function'){
+      window.initRwsPage();
+    }
+
     if(id==='ais'&&typeof initAisPage==='function'){
       initAisPage();
     }
@@ -213,6 +251,7 @@ function ms708ScrollToPage(
   id,
   smooth=true
 ){
+  if(id==='boat'&&typeof isAppAdmin==='function'&&!isAppAdmin())id='settings';
   if(ms708SinglePageMode())return ms708GoToPage(id,true);
   if(
     !ms708Pager||
@@ -264,6 +303,7 @@ function ms708ScrollToPage(
    soepele scrollanimatie die iOS tussentijds kan terugdraaien.
 */
 function ms708GoToPage(id,runPageActions=true){
+  if(id==='boat'&&typeof isAppAdmin==='function'&&!isAppAdmin())id='settings';
   if(!ms708Pager||!ms708PageOrder.includes(id))return false;
 
   ms708ActiveId=id;
@@ -457,6 +497,7 @@ function ms708HandleScrollSettled(){
     );
   }else{
     ms708SetNavigationState(id);
+    window.ms753SyncRoute?.(id);
   }
 }
 
@@ -520,7 +561,7 @@ function ms708ShowHint(){
   if(!hint)return;
 
   hint.querySelector('strong').textContent=
-    'Veeg soepel: pagina volgt je vinger';
+    'Veeg links of rechts om van pagina te wisselen';
 
   setTimeout(()=>{
     hint.classList.remove('hidden');
@@ -532,7 +573,7 @@ function ms708ShowHint(){
 }
 
 function ms708CreatePager(){
-  document.body?.classList.remove('ms755-single-page-nav');
+  document.body?.classList.add('ms755-single-page-nav');
 
   const appView=document.getElementById(
     'appView'
@@ -647,6 +688,10 @@ function ms708CreatePager(){
     ms708MarkHintSeen,
     {passive:true,once:true}
   );
+
+  pager.addEventListener('pointerdown',ms708HandlePointerDown,{passive:true});
+  pager.addEventListener('pointerup',ms708HandlePointerUp,{passive:true});
+  pager.addEventListener('pointercancel',()=>{ms708SwipeStart=null;},{passive:true});
 
   if('onscrollend' in window){
     pager.addEventListener(

@@ -1,8 +1,8 @@
-/* MijnSerenity 7.9.7 — actuele vaarwegberichten rond Serenity via EuRIS/Rijkswaterstaat */
+/* MijnSerenity 7.9.8 — actuele vaarwegberichten rond Serenity via EuRIS/Rijkswaterstaat */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.7';
+  const BUILD='7.9.8';
   const API_URL='/api/euris-nts';
   const DIRECT_API='https://www.eurisportal.eu/api/v3/nts';
   const RADIUS_KEY='mijnserenity-rws-radius-km';
@@ -407,7 +407,7 @@
     if(tabs&&!tabs.querySelector('[data-target="rws"]')){
       const button=document.createElement('button');
       button.className='tab';button.dataset.target='rws';button.textContent='Vaarwegberichten';
-      button.onclick=()=>{window.showTab?.('rws',button);window.initRwsPage?.()};
+      button.onclick=()=>window.ms795OpenRws?.();
       const weather=tabs.querySelector('[data-target="weather"]');
       weather?.insertAdjacentElement('afterend',button)||tabs.appendChild(button);
     }
@@ -493,9 +493,7 @@
   window.initRwsPage=init;
   window.ms795OpenRws=()=>{
     buildPage();
-    const tab=document.querySelector('.tab[data-target="rws"]');
-    if(typeof window.showTab==='function'&&tab)window.showTab('rws',tab);
-    else window.captainNavigate?.('rws');
+    window.captainNavigate?.('rws');
     setTimeout(init,30);
   };
 

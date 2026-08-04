@@ -2779,8 +2779,8 @@ async function loadMyAccountAccess(){
   };
 }
 
-async function refreshAccountApproval(){
-  const button=event?.currentTarget;
+async function refreshAccountApproval(event=null){
+  const button=event?.currentTarget||null;
   if(button)button.disabled=true;
 
   try{
@@ -14622,7 +14622,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.9.7"
+<gpx version="1.1" creator="MijnSerenity 7.9.8"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14876,7 +14876,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.9.7';
+const APP_VERSION='7.9.8';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14953,7 +14953,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=79700',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=79800',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -18174,7 +18174,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.9.7"
+ creator="MijnSerenity 7.9.8"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
