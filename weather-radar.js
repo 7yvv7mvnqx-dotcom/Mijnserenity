@@ -1,33 +1,24 @@
-
 /* ============================================================
-   MijnSerenity Cloud 7.4.6 — live neerslagradar
+   MijnSerenity Cloud 7.10.1 — Buienradar op actuele positie
    ============================================================ */
 
 const MS710_RADAR_REFRESH_MS=5*60*1000;
-const MS710_RADAR_ANIMATION_MS=650;
+const MS710_RADAR_LOCATION_MS=20*1000;
+const MS710_RADAR_MOVE_KM=1.5;
+const MS710_RADAR_MODE_KEY='mijnserenity_buienradar_mode';
 
-let ms710RadarMap=null;
-let ms710RadarBaseLayer=null;
-let ms710RadarLayer=null;
-let ms710RadarMarker=null;
-let ms710RadarAccuracyCircle=null;
-let ms710RadarFrames=[];
-let ms710RadarFrameIndex=0;
-let ms710RadarMeta=null;
 let ms710RadarBusy=false;
-let ms710RadarAnimationTimer=null;
 let ms710RadarRefreshTimer=null;
 let ms710RadarLocationTimer=null;
 let ms710RadarLastRefresh=0;
 let ms710RadarCoordinates=null;
-let ms710RadarResizeObserver=null;
+let ms710RadarMode=localStorage.getItem(MS710_RADAR_MODE_KEY)==='past'
+  ?'past'
+  :'forecast';
 
 function ms710RadarPageVisible(){
-  const active=document.querySelector(
-    '.bottom-nav-item.active'
-  )?.dataset.target;
-
-  if(active==='weather')return true;
+  const active=document.querySelector('.bottom-nav-item.active')?.dataset.target;
+  if(active==='weather')return document.visibilityState==='visible';
 
   try{
     return typeof ms708CurrentPageId==='function'&&
@@ -43,46 +34,9 @@ function ms710RadarSetText(id,value){
   if(element)element.textContent=value;
 }
 
-function ms710RadarFrameDate(frame){
-  const time=Number(frame?.time);
-  return Number.isFinite(time)
-    ?new Date(time*1000)
-    :null;
-}
-
-function ms710RadarFormatTime(frame){
-  const date=ms710RadarFrameDate(frame);
-  if(!date)return '–';
-
-  return date.toLocaleTimeString('nl-NL',{
-    hour:'2-digit',
-    minute:'2-digit'
-  });
-}
-
-function ms710RadarAgeText(frame){
-  const date=ms710RadarFrameDate(frame);
-  if(!date)return 'Tijd onbekend';
-
-  const minutes=Math.round(
-    (Date.now()-date.getTime())/60000
-  );
-
-  if(frame?.forecast){
-    const ahead=Math.max(0,-minutes);
-    return ahead<=1
-      ?'Verwachting nu'
-      :`Verwachting +${ahead} min`;
-  }
-
-  if(minutes<=1)return 'Actueel beeld';
-  if(minutes<60)return `${minutes} min geleden`;
-
-  return `${Math.round(minutes/60)} uur geleden`;
-}
-
 function ms710RadarSourceCoordinates(){
-  const livePoint=liveNavState?.points?.at?.(-1);
+  const liveState=window.liveNavState;
+  const livePoint=liveState?.points?.at?.(-1);
 
   if(
     livePoint&&
@@ -92,7 +46,7 @@ function ms710RadarSourceCoordinates(){
     return {
       lat:Number(livePoint.lat),
       lon:Number(livePoint.lon),
-      accuracy:Number(liveNavState.accuracy)||null,
+      accuracy:Number(liveState?.accuracy)||null,
       source:'Live GPS'
     };
   }
@@ -161,612 +115,218 @@ async function ms710RadarResolveCoordinates(forceGps=false){
     const known=ms710RadarSourceCoordinates();
     if(known)return known;
   }
-
   return ms710RadarGetCurrentPosition();
 }
 
-function ms710RadarInitMap(coordinates){
-  const container=document.getElementById(
-    'ms710RadarMap'
-  );
-  if(!container||typeof L==='undefined')return;
-
-  if(!ms710RadarMap){
-    ms710RadarMap=L.map(
-      container,
-      {
-        zoomControl:true,
-        attributionControl:true,
-        preferCanvas:true,
-        minZoom:4,
-        maxZoom:17
-      }
-    );
-
-    ms710RadarBaseLayer=L.tileLayer(
-      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      {
-        maxZoom:19,
-        attribution:
-          '&copy; OpenStreetMap-bijdragers'
-      }
-    ).addTo(ms710RadarMap);
-
-    ms710RadarMap.on(
-      'movestart',
-      ()=>{
-        container.dataset.userMoved='true';
-      }
-    );
-
-    ms710RadarResizeObserver=
-      new ResizeObserver(()=>{
-        requestAnimationFrame(()=>{
-          ms710RadarMap?.invalidateSize({
-            pan:false
-          });
-        });
-      });
-
-    ms710RadarResizeObserver.observe(container);
-  }
-
-  const latlng=[
-    coordinates.lat,
-    coordinates.lon
-  ];
-
-  if(!ms710RadarMarker){
-    ms710RadarMarker=L.circleMarker(
-      latlng,
-      {
-        radius:9,
-        color:'#ffffff',
-        weight:3,
-        fillColor:'#42d5ff',
-        fillOpacity:1
-      }
-    ).addTo(ms710RadarMap)
-      .bindTooltip(
-        'Serenity',
-        {
-          permanent:false,
-          direction:'top'
-        }
-      );
-  }else{
-    ms710RadarMarker.setLatLng(latlng);
-  }
-
-  const accuracy=Number(coordinates.accuracy);
-
-  if(Number.isFinite(accuracy)&&accuracy>0){
-    if(!ms710RadarAccuracyCircle){
-      ms710RadarAccuracyCircle=L.circle(
-        latlng,
-        {
-          radius:accuracy,
-          color:'#42d5ff',
-          weight:1,
-          opacity:.5,
-          fillColor:'#42d5ff',
-          fillOpacity:.08
-        }
-      ).addTo(ms710RadarMap);
-    }else{
-      ms710RadarAccuracyCircle
-        .setLatLng(latlng)
-        .setRadius(accuracy);
-    }
-  }
-
-  if(
-    !ms710RadarMap._loaded||
-    container.dataset.userMoved!=='true'
-  ){
-    ms710RadarMap.setView(
-      latlng,
-      9,
-      {
-        animate:false
-      }
-    );
-  }
-
-  requestAnimationFrame(()=>{
-    ms710RadarMap?.invalidateSize({
-      pan:false
-    });
-  });
+function ms710RadarDistanceKm(a,b){
+  if(!a||!b)return Infinity;
+  const toRad=value=>value*Math.PI/180;
+  const dLat=toRad(Number(b.lat)-Number(a.lat));
+  const dLon=toRad(Number(b.lon)-Number(a.lon));
+  const lat1=toRad(Number(a.lat));
+  const lat2=toRad(Number(b.lat));
+  const h=Math.sin(dLat/2)**2+
+    Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
 }
 
-function ms710RadarTileUrl(frame){
-  if(
-    !ms710RadarMeta?.host||
-    !frame?.path
-  ){
-    return '';
-  }
-
-  return (
-    `${ms710RadarMeta.host}`+
-    `${frame.path}`+
-    '/256/{z}/{x}/{y}/2/1_1.png'
-  );
+function ms710RadarWidgetSize(){
+  if(window.innerWidth<=390)return '2b';
+  if(window.innerWidth<=720)return '3';
+  return '3';
 }
 
-function ms710RadarShowFrame(index){
-  if(
-    !ms710RadarMap||
-    !ms710RadarFrames.length
-  ){
-    return;
-  }
+function ms710RadarZoom(){
+  if(window.innerWidth<=430)return '8';
+  return '7';
+}
 
-  const safeIndex=Math.max(
-    0,
-    Math.min(
-      ms710RadarFrames.length-1,
-      Number(index)||0
-    )
-  );
-  const frame=ms710RadarFrames[safeIndex];
-  const url=ms710RadarTileUrl(frame);
-
-  if(!url)return;
-
-  const nextLayer=L.tileLayer(
-    url,
-    {
-      tileSize:256,
-      opacity:.72,
-      zIndex:300,
-      maxNativeZoom:7,
-      maxZoom:17,
-      attribution:
-        'Weather radar &copy; RainViewer'
-    }
-  );
-
-  nextLayer.addTo(ms710RadarMap);
-
-  const oldLayer=ms710RadarLayer;
-  ms710RadarLayer=nextLayer;
-  ms710RadarFrameIndex=safeIndex;
-
-  nextLayer.once('load',()=>{
-    if(
-      oldLayer&&
-      oldLayer!==nextLayer&&
-      ms710RadarMap.hasLayer(oldLayer)
-    ){
-      ms710RadarMap.removeLayer(oldLayer);
-    }
+function ms710RadarWidgetUrl(coordinates){
+  const params=new URLSearchParams({
+    lat:Number(coordinates.lat).toFixed(5),
+    lng:Number(coordinates.lon).toFixed(5),
+    overname:'2',
+    zoom:ms710RadarZoom(),
+    naam:'Serenity',
+    size:ms710RadarWidgetSize(),
+    voor:ms710RadarMode==='forecast'?'1':'0',
+    t:String(Date.now())
   });
 
-  setTimeout(()=>{
-    if(
-      oldLayer&&
-      oldLayer!==nextLayer&&
-      ms710RadarMap?.hasLayer(oldLayer)
-    ){
-      ms710RadarMap.removeLayer(oldLayer);
-    }
-  },1800);
+  return `https://gadgets.buienradar.nl/gadget/zoommap/?${params.toString()}`;
+}
 
-  const slider=document.getElementById(
-    'ms710RadarSlider'
-  );
-  if(slider)slider.value=String(safeIndex);
-
-  ms710RadarSetText(
-    'ms710RadarFrameTime',
-    ms710RadarFormatTime(frame)
-  );
-  ms710RadarSetText(
-    'ms710RadarFrameAge',
-    ms710RadarAgeText(frame)
-  );
+function ms710RadarUpdateModeButtons(){
+  const past=document.getElementById('ms710RadarPastButton');
+  const forecast=document.getElementById('ms710RadarForecastButton');
+  past?.classList.toggle('active',ms710RadarMode==='past');
+  forecast?.classList.toggle('active',ms710RadarMode==='forecast');
   ms710RadarSetText(
     'ms710RadarFrameType',
-    frame.forecast?'Verwachting':'Radar'
+    ms710RadarMode==='forecast'?'3 uur vooruit':'Afgelopen uur'
   );
 }
 
-function ms710RadarPrepareFrames(payload){
-  const past=(payload?.radar?.past||[])
-    .map(frame=>({
-      ...frame,
-      forecast:false
-    }));
-  const nowcast=(payload?.radar?.nowcast||[])
-    .map(frame=>({
-      ...frame,
-      forecast:true
-    }));
+function ms710RadarSetLoading(active){
+  const loading=document.getElementById('ms710RadarLoading');
+  loading?.classList.toggle('hidden',!active);
 
-  const all=[...past,...nowcast]
-    .filter(frame=>
-      Number.isFinite(Number(frame.time))&&
-      typeof frame.path==='string'
-    )
-    .sort((a,b)=>
-      Number(a.time)-Number(b.time)
-    );
-
-  ms710RadarFrames=all.slice(-18);
-
-  const slider=document.getElementById(
-    'ms710RadarSlider'
-  );
-
-  if(slider){
-    slider.min='0';
-    slider.max=String(
-      Math.max(
-        0,
-        ms710RadarFrames.length-1
-      )
-    );
-    slider.step='1';
+  const button=document.getElementById('ms710RadarRefreshButton');
+  if(button){
+    button.disabled=active;
+    button.classList.toggle('loading',active);
   }
+}
 
-  ms710RadarSetText(
-    'ms710RadarStartTime',
-    ms710RadarFormatTime(
-      ms710RadarFrames[0]
-    )
-  );
-  ms710RadarSetText(
-    'ms710RadarEndTime',
-    ms710RadarFormatTime(
-      ms710RadarFrames.at(-1)
-    )
-  );
-
-  let latestPastIndex=-1;
-
-  ms710RadarFrames.forEach((frame,index)=>{
-    if(!frame.forecast){
-      latestPastIndex=index;
-    }
+function ms710RadarFormatRefreshTime(){
+  return new Date().toLocaleTimeString('nl-NL',{
+    hour:'2-digit',
+    minute:'2-digit'
   });
-
-  ms710RadarFrameIndex=
-    latestPastIndex>=0
-      ?latestPastIndex
-      :Math.max(
-          0,
-          ms710RadarFrames.length-1
-        );
 }
 
-async function ms710FetchRadarMetadata(){
-  const response=await fetch(
-    'https://api.rainviewer.com/public/weather-maps.json',
-    {
-      headers:{
-        Accept:'application/json'
-      },
-      cache:'no-store'
-    }
-  );
+function ms710RadarRender(coordinates){
+  const frame=document.getElementById('ms710RadarMap');
+  if(!frame)throw new Error('Buienradar-venster ontbreekt.');
 
-  if(!response.ok){
-    throw new Error(
-      `Radardienst gaf fout ${response.status}`
-    );
-  }
+  ms710RadarUpdateModeButtons();
+  ms710RadarSetLoading(true);
 
-  const payload=await response.json();
+  let settled=false;
+  const finish=()=>{
+    if(settled)return;
+    settled=true;
+    ms710RadarSetLoading(false);
+    ms710RadarSetText('ms710RadarFrameTime',ms710RadarFormatRefreshTime());
+    ms710RadarSetText('ms710RadarFrameAge','Laatste verversing');
+  };
 
-  if(
-    !payload?.host||
-    !payload?.radar?.past?.length
-  ){
-    throw new Error(
-      'Geen radarbeelden ontvangen.'
-    );
-  }
-
-  return payload;
+  frame.onload=finish;
+  frame.src=ms710RadarWidgetUrl(coordinates);
+  window.setTimeout(finish,7000);
 }
 
-async function ms710RefreshRadar(
-  force=false,
-  forceGps=false
-){
+async function ms710RefreshRadar(force=false,forceGps=false){
   if(ms710RadarBusy)return;
 
-  const age=
-    Date.now()-
-    Number(ms710RadarLastRefresh||0);
-
-  if(
-    !force&&
-    ms710RadarFrames.length&&
-    age<MS710_RADAR_REFRESH_MS
-  ){
-    ms710RadarShowFrame(
-      ms710RadarFrameIndex
-    );
-    return;
-  }
+  const age=Date.now()-Number(ms710RadarLastRefresh||0);
+  if(!force&&ms710RadarLastRefresh&&age<MS710_RADAR_REFRESH_MS)return;
 
   ms710RadarBusy=true;
-  ms710RadarSetText(
-    'ms710RadarStatus',
-    'Actuele radar en GPS-positie ophalen…'
-  );
-
-  const refreshButton=document.getElementById(
-    'ms710RadarRefreshButton'
-  );
-  if(refreshButton){
-    refreshButton.disabled=true;
-    refreshButton.classList.add('loading');
-  }
+  ms710RadarSetText('ms710RadarStatus','Buienradar en GPS-positie ophalen…');
+  ms710RadarSetLoading(true);
 
   try{
-    const [
-      coordinates,
-      payload
-    ]=await Promise.all([
-      ms710RadarResolveCoordinates(forceGps),
-      ms710FetchRadarMetadata()
-    ]);
-
+    const coordinates=await ms710RadarResolveCoordinates(forceGps);
     ms710RadarCoordinates=coordinates;
-    ms710RadarMeta=payload;
     ms710RadarLastRefresh=Date.now();
+    ms710RadarRender(coordinates);
 
-    ms710RadarInitMap(coordinates);
-    ms710RadarPrepareFrames(payload);
-    ms710RadarShowFrame(
-      ms710RadarFrameIndex
-    );
-
+    const modeText=ms710RadarMode==='forecast'
+      ?'verwachting voor de komende 3 uur'
+      :'beelden van het afgelopen uur';
     ms710RadarSetText(
       'ms710RadarStatus',
-      `${coordinates.source} · radarbeelden automatisch iedere 5 minuten vernieuwd`
+      `${coordinates.source} · ${modeText} · automatisch elke 5 minuten vernieuwd`
     );
   }catch(error){
-    console.error(
-      'Radarbeelden ophalen mislukt:',
-      error
-    );
-
+    console.error('Buienradar laden mislukt:',error);
+    ms710RadarSetLoading(false);
     ms710RadarSetText(
       'ms710RadarStatus',
-      `Radar niet beschikbaar: ${error.message}`
+      `Buienradar niet beschikbaar: ${error.message||'onbekende fout'}`
     );
   }finally{
     ms710RadarBusy=false;
-
-    if(refreshButton){
-      refreshButton.disabled=false;
-      refreshButton.classList.remove('loading');
-    }
-  }
-}
-
-function ms710RadarSliderChanged(value){
-  ms710StopRadarAnimation();
-  ms710RadarShowFrame(
-    Number(value)
-  );
-}
-
-function ms710ToggleRadarAnimation(){
-  if(ms710RadarAnimationTimer){
-    ms710StopRadarAnimation();
-  }else{
-    ms710StartRadarAnimation();
-  }
-}
-
-function ms710StartRadarAnimation(){
-  if(ms710RadarFrames.length<2)return;
-
-  ms710StopRadarAnimation();
-
-  const button=document.getElementById(
-    'ms710RadarPlayButton'
-  );
-
-  if(button){
-    button.textContent='Ⅱ';
-    button.setAttribute(
-      'aria-label',
-      'Radaranimatie pauzeren'
-    );
-    button.title='Radaranimatie pauzeren';
-  }
-
-  let index=0;
-  ms710RadarShowFrame(index);
-
-  ms710RadarAnimationTimer=setInterval(()=>{
-    index+=1;
-
-    if(index>=ms710RadarFrames.length){
-      index=0;
-    }
-
-    ms710RadarShowFrame(index);
-  },MS710_RADAR_ANIMATION_MS);
-}
-
-function ms710StopRadarAnimation(){
-  clearInterval(ms710RadarAnimationTimer);
-  ms710RadarAnimationTimer=null;
-
-  const button=document.getElementById(
-    'ms710RadarPlayButton'
-  );
-
-  if(button){
-    button.textContent='▶';
-    button.setAttribute(
-      'aria-label',
-      'Radaranimatie starten'
-    );
-    button.title='Radaranimatie starten';
   }
 }
 
 async function ms710RadarLocate(){
   try{
-    const coordinates=
-      await ms710RadarResolveCoordinates(true);
-
+    const coordinates=await ms710RadarResolveCoordinates(true);
     ms710RadarCoordinates=coordinates;
-    ms710RadarInitMap(coordinates);
-
-    const container=document.getElementById(
-      'ms710RadarMap'
-    );
-
-    if(container){
-      container.dataset.userMoved='false';
-    }
-
-    ms710RadarMap?.setView(
-      [
-        coordinates.lat,
-        coordinates.lon
-      ],
-      Math.max(
-        9,
-        ms710RadarMap.getZoom()
-      ),
-      {
-        animate:true
-      }
-    );
-
+    ms710RadarLastRefresh=0;
+    await ms710RefreshRadar(true,true);
+  }catch{
     ms710RadarSetText(
       'ms710RadarStatus',
-      `${coordinates.source} · radar gecentreerd op Serenity`
-    );
-  }catch(error){
-    ms710RadarSetText(
-      'ms710RadarStatus',
-      'Geef locatietoegang om op Serenity te centreren.'
+      'Geef locatietoegang om Buienradar op Serenity te centreren.'
     );
   }
+}
+
+function ms710SetRadarMode(mode){
+  const next=mode==='past'?'past':'forecast';
+  if(ms710RadarMode===next){
+    ms710RadarUpdateModeButtons();
+    return;
+  }
+  ms710RadarMode=next;
+  localStorage.setItem(MS710_RADAR_MODE_KEY,next);
+  ms710RadarLastRefresh=0;
+  ms710RadarUpdateModeButtons();
+  ms710RefreshRadar(true);
+}
+
+function ms710OpenBuienradar(){
+  window.open(
+    'https://www.buienradar.nl/nederland/neerslag/buienradar',
+    '_blank',
+    'noopener,noreferrer'
+  );
 }
 
 function ms710RadarUpdateLiveLocation(){
-  const coordinates=
-    ms710RadarSourceCoordinates();
-
+  const coordinates=ms710RadarSourceCoordinates();
   if(!coordinates)return;
 
-  const changed=
-    !ms710RadarCoordinates||
-    Math.abs(
-      Number(ms710RadarCoordinates.lat)-
-      Number(coordinates.lat)
-    )>.00005||
-    Math.abs(
-      Number(ms710RadarCoordinates.lon)-
-      Number(coordinates.lon)
-    )>.00005;
-
-  if(!changed)return;
+  const moved=ms710RadarDistanceKm(ms710RadarCoordinates,coordinates);
+  if(moved<MS710_RADAR_MOVE_KM)return;
 
   ms710RadarCoordinates=coordinates;
-  ms710RadarInitMap(coordinates);
+  ms710RadarLastRefresh=0;
+  ms710RefreshRadar(true);
 }
 
 function initWeatherRadarPage(){
-  const coordinates=
-    ms710RadarSourceCoordinates();
-
-  if(coordinates){
-    ms710RadarCoordinates=coordinates;
-    ms710RadarInitMap(coordinates);
-  }
-
+  ms710RadarUpdateModeButtons();
+  const coordinates=ms710RadarSourceCoordinates();
+  if(coordinates)ms710RadarCoordinates=coordinates;
   ms710RefreshRadar(false);
 
   if(!ms710RadarRefreshTimer){
     ms710RadarRefreshTimer=setInterval(()=>{
-      if(
-        document.visibilityState==='visible'&&
-        ms710RadarPageVisible()
-      ){
-        ms710RefreshRadar(false);
-      }
+      if(ms710RadarPageVisible())ms710RefreshRadar(false);
     },60000);
   }
 
   if(!ms710RadarLocationTimer){
     ms710RadarLocationTimer=setInterval(()=>{
-      if(
-        document.visibilityState==='visible'&&
-        ms710RadarPageVisible()
-      ){
-        ms710RadarUpdateLiveLocation();
-      }
-    },15000);
+      if(ms710RadarPageVisible())ms710RadarUpdateLiveLocation();
+    },MS710_RADAR_LOCATION_MS);
   }
-
-  setTimeout(()=>{
-    ms710RadarMap?.invalidateSize({
-      pan:false
-    });
-  },250);
 }
 
-const ms710OriginalInitWeatherPage=
-  initWeatherPage;
-
+const ms710OriginalInitWeatherPage=initWeatherPage;
 initWeatherPage=function(){
-  const result=
-    ms710OriginalInitWeatherPage();
-
-  setTimeout(
-    initWeatherRadarPage,
-    80
-  );
-
+  const result=ms710OriginalInitWeatherPage();
+  setTimeout(initWeatherRadarPage,80);
   return result;
 };
 
-document.addEventListener(
-  'visibilitychange',
-  ()=>{
-    if(
-      !document.hidden&&
-      ms710RadarPageVisible()
-    ){
-      initWeatherRadarPage();
-    }else if(document.hidden){
-      ms710StopRadarAnimation();
-    }
-  }
-);
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&ms710RadarPageVisible())initWeatherRadarPage();
+});
 
-window.addEventListener(
-  'online',
-  ()=>{
-    if(ms710RadarPageVisible()){
-      ms710RefreshRadar(true);
-    }
-  },
-  {passive:true}
-);
+window.addEventListener('online',()=>{
+  if(ms710RadarPageVisible())ms710RefreshRadar(true);
+},{passive:true});
 
-window.addEventListener(
-  'resize',
-  ()=>{
-    setTimeout(()=>{
-      ms710RadarMap?.invalidateSize({
-        pan:false
-      });
-    },150);
-  },
-  {passive:true}
-);
+window.addEventListener('resize',()=>{
+  if(!ms710RadarCoordinates||!ms710RadarPageVisible())return;
+  clearTimeout(window.__ms710RadarResizeTimer);
+  window.__ms710RadarResizeTimer=setTimeout(()=>{
+    ms710RadarLastRefresh=0;
+    ms710RefreshRadar(true);
+  },400);
+},{passive:true});

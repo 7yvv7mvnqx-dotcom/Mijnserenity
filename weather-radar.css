@@ -1,23 +1,14 @@
-
 /* =========================================================
-   MijnSerenity Cloud 7.4.8 — live neerslagradar
+   MijnSerenity Cloud 7.10.1 — Buienradar
    ========================================================= */
 
 .ms710-radar-card{
   margin-top:12px;
   overflow:hidden;
   background:
-    radial-gradient(
-      circle at 100% 0,
-      rgba(116,82,255,.13),
-      transparent 34%
-    ),
-    linear-gradient(
-      145deg,
-      rgba(7,37,51,.98),
-      rgba(4,20,31,.99)
-    );
-  border-color:rgba(98,163,255,.19);
+    radial-gradient(circle at 100% 0,rgba(52,190,103,.12),transparent 34%),
+    linear-gradient(145deg,rgba(7,37,51,.98),rgba(4,20,31,.99));
+  border-color:rgba(79,210,128,.18);
 }
 
 .ms710-radar-head{
@@ -50,38 +41,87 @@
   animation:ms710RadarSpin 1s linear infinite;
 }
 
-@keyframes ms710RadarSpin{
-  to{transform:rotate(360deg)}
+@keyframes ms710RadarSpin{to{transform:rotate(360deg)}}
+
+.ms710-radar-mode{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+  padding:5px;
+  width:max-content;
+  max-width:100%;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  background:rgba(255,255,255,.035);
+}
+
+.ms710-radar-mode button{
+  min-height:38px;
+  padding:8px 13px;
+  border-radius:10px;
+  color:#9eb7c0;
+  background:transparent;
+  box-shadow:none;
+}
+
+.ms710-radar-mode button.active{
+  color:#effff5;
+  background:linear-gradient(135deg,rgba(41,194,101,.9),rgba(19,132,73,.95));
+  box-shadow:0 6px 18px rgba(20,142,76,.25);
 }
 
 .ms710-radar-map-wrap{
   position:relative;
   margin-top:12px;
   overflow:hidden;
+  min-height:360px;
+  height:min(58vh,560px);
   border-radius:18px;
   background:#061823;
   border:1px solid rgba(255,255,255,.09);
 }
 
 #ms710RadarMap{
+  display:block;
   width:100%;
-  height:min(55vh,560px);
+  height:100%;
   min-height:360px;
+  border:0;
   background:#061823;
 }
 
-.ms710-radar-map-wrap .leaflet-control-attribution{
-  max-width:70%;
-  overflow:hidden;
-  font-size:8px;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+.ms710-radar-loading{
+  position:absolute;
+  inset:0;
+  z-index:4;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:11px;
+  color:#e9fff1;
+  background:linear-gradient(145deg,rgba(5,27,39,.94),rgba(3,18,29,.97));
+  transition:opacity .2s ease;
+}
+
+.ms710-radar-loading.hidden{
+  opacity:0;
+  pointer-events:none;
+}
+
+.ms710-radar-loading span{
+  width:34px;
+  height:34px;
+  border:4px solid rgba(255,255,255,.14);
+  border-top-color:#4fd280;
+  border-radius:50%;
+  animation:ms710RadarSpin .8s linear infinite;
 }
 
 .ms710-radar-live-badge,
 .ms710-radar-time{
   position:absolute;
-  z-index:600;
+  z-index:5;
   top:10px;
   padding:7px 9px;
   border-radius:999px;
@@ -94,7 +134,7 @@
 }
 
 .ms710-radar-live-badge{
-  left:50px;
+  left:10px;
   display:flex;
   align-items:center;
   gap:6px;
@@ -104,18 +144,14 @@
   width:8px;
   height:8px;
   border-radius:50%;
-  background:#ff5757;
-  box-shadow:0 0 0 4px rgba(255,87,87,.17);
+  background:#4fd280;
+  box-shadow:0 0 0 4px rgba(79,210,128,.17);
   animation:ms710RadarLive 1.4s ease-in-out infinite;
 }
 
-@keyframes ms710RadarLive{
-  50%{opacity:.45}
-}
+@keyframes ms710RadarLive{50%{opacity:.45}}
 
-.ms710-radar-live-badge strong{
-  font-size:10px;
-}
+.ms710-radar-live-badge strong{font-size:10px}
 
 .ms710-radar-time{
   right:10px;
@@ -123,13 +159,9 @@
 }
 
 .ms710-radar-time strong,
-.ms710-radar-time small{
-  display:block;
-}
+.ms710-radar-time small{display:block}
 
-.ms710-radar-time strong{
-  font-size:14px;
-}
+.ms710-radar-time strong{font-size:14px}
 
 .ms710-radar-time small{
   margin-top:1px;
@@ -137,81 +169,21 @@
   font-size:8px;
 }
 
-.ms710-radar-timeline{
-  display:grid;
-  grid-template-columns:auto minmax(0,1fr) auto;
-  align-items:center;
-  gap:9px;
-  margin-top:10px;
-  padding:9px 11px;
-  border-radius:14px;
-  background:rgba(255,255,255,.035);
-  border:1px solid rgba(255,255,255,.065);
-}
-
-.ms710-radar-timeline > span{
-  color:#9eb7c0;
-  font-size:10px;
-  font-weight:850;
-}
-
-.ms710-radar-timeline input{
-  width:100%;
-  margin:0;
-  accent-color:#59d1f4;
-}
-
 .ms710-radar-footer{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  margin-top:9px;
+  margin-top:10px;
 }
 
-.ms710-radar-footer > small{
-  color:#809ca7;
-  text-align:right;
-}
+.ms710-radar-footer > small{color:#809ca7}
+.ms710-radar-footer a{color:#7fe0a3}
 
-.ms710-radar-footer a{
-  color:#7bdcf7;
-}
-
-.ms710-radar-legend{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-}
-
-.ms710-radar-legend span{
-  display:flex;
-  align-items:center;
-  gap:4px;
-  color:#91abb5;
-  font-size:9px;
-}
-
-.ms710-radar-legend i{
-  width:14px;
-  height:7px;
-  border-radius:999px;
-}
-
-.ms710-radar-legend i.dry{
-  background:rgba(255,255,255,.13);
-}
-
-.ms710-radar-legend i.light{
-  background:#4bb4ff;
-}
-
-.ms710-radar-legend i.medium{
-  background:#ffe65a;
-}
-
-.ms710-radar-legend i.heavy{
-  background:#f44964;
+.ms710-radar-open{
+  flex:0 0 auto;
+  min-height:40px;
+  padding:8px 14px;
 }
 
 @media(max-width:700px){
@@ -220,37 +192,38 @@
     flex-direction:column;
   }
 
-  .ms710-radar-actions{
-    justify-content:flex-end;
-  }
+  .ms710-radar-actions{justify-content:flex-end}
 
+  .ms710-radar-map-wrap,
   #ms710RadarMap{
-    height:48vh;
-    min-height:320px;
+    height:52vh;
+    min-height:340px;
   }
 
   .ms710-radar-footer{
     align-items:flex-start;
     flex-direction:column;
   }
-
-  .ms710-radar-footer > small{
-    text-align:left;
-  }
 }
 
 @media(max-width:430px){
-  #ms710RadarMap{
-    min-height:290px;
+  .ms710-radar-mode{
+    width:100%;
   }
 
-  .ms710-radar-live-badge{
-    left:44px;
+  .ms710-radar-mode button{
+    flex:1 1 0;
+    padding-inline:7px;
+  }
+
+  .ms710-radar-map-wrap,
+  #ms710RadarMap{
+    min-height:320px;
   }
 
   .ms710-radar-time{
     top:auto;
     right:8px;
-    bottom:24px;
+    bottom:8px;
   }
 }

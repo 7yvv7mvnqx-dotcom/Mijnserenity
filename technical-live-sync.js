@@ -1,4 +1,4 @@
-/* MijnSerenity 7.10.0 — live Victron- en walstroomwaarden in momentopname */
+/* MijnSerenity 7.10.1 — live Victron- en walstroomwaarden in momentopname */
 (()=>{
   'use strict';
 
