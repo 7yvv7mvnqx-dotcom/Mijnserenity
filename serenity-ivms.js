@@ -1,4 +1,4 @@
-/* MijnSerenity 7.9.6 — live Serenity IVMS startdashboard */
+/* MijnSerenity 7.9.7 — live Serenity IVMS startdashboard */
 (()=>{
   'use strict';
 
@@ -164,8 +164,8 @@
   function updatePhoto(){
     const target=$('ivmsBoatPhoto');
     const source=$('dashboardBoatPhoto');
-    const hero=$('ivmsHero');
-    if(!target||!source||!hero)return;
+    const container=$('ivmsBrandPhoto');
+    if(!target||!source||!container)return;
     const src=source.currentSrc||source.src||'';
     const usable=Boolean(
       src&&
@@ -176,23 +176,23 @@
     if(!usable){
       target.removeAttribute('src');
       target.classList.add('hidden');
-      hero.classList.remove('has-photo');
+      container.classList.remove('has-photo');
       return;
     }
     if(target.src!==src){
       target.onload=()=>{
         target.classList.remove('hidden');
-        hero.classList.add('has-photo');
+        container.classList.add('has-photo');
       };
       target.onerror=()=>{
         target.removeAttribute('src');
         target.classList.add('hidden');
-        hero.classList.remove('has-photo');
+        container.classList.remove('has-photo');
       };
       target.src=src;
     }else if(target.complete&&target.naturalWidth>0){
       target.classList.remove('hidden');
-      hero.classList.add('has-photo');
+      container.classList.add('has-photo');
     }
   }
 

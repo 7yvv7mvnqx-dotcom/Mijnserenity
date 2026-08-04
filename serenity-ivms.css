@@ -1,4 +1,4 @@
-/* MijnSerenity 7.9.6 — Serenity IVMS dashboard */
+/* MijnSerenity 7.9.7 — Serenity IVMS dashboard */
 :root{
   --ivms-bg:#020914;
   --ivms-panel:#061321;
@@ -289,4 +289,186 @@ body.ivms-dashboard-active main{
   .ivms-energy-source strong{font-size:12px}
   .ivms-battery-card{min-height:250px}
   .ivms-hero-placeholder strong{font-size:48px}
+}
+
+
+/* =========================================================
+   MijnSerenity 7.9.7 — compacte IVMS-kop en varende laadintro
+   ========================================================= */
+.ms797-splash{
+  position:fixed;
+  inset:0;
+  z-index:2147483647;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(25,112,175,.24),transparent 38%),
+    linear-gradient(180deg,#020914 0%,#031426 58%,#010711 100%);
+  opacity:1;
+  visibility:visible;
+  transition:opacity .42s ease,visibility .42s ease;
+}
+.ms797-splash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+.ms797-splash img{
+  width:min(100vw,620px);
+  height:100dvh;
+  max-height:100dvh;
+  display:block;
+  object-fit:cover;
+  object-position:center;
+}
+
+body.ms797-dashboard-route .ms750-pagebar{display:none!important}
+body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!important}
+
+.ivms-header{
+  grid-template-columns:minmax(420px,1.15fr) minmax(520px,1.85fr);
+  min-height:176px;
+  align-items:stretch;
+  padding:10px;
+}
+.ivms-brand{
+  display:grid;
+  grid-template-columns:minmax(250px,360px) minmax(120px,1fr);
+  align-items:center;
+  gap:18px;
+}
+.ivms-brand-photo{
+  position:relative;
+  min-width:0;
+  height:154px;
+  overflow:hidden;
+  border:1px solid rgba(122,169,213,.28);
+  border-radius:13px;
+  background:linear-gradient(145deg,#0a2034,#03101e);
+  cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.018);
+}
+.ivms-brand-photo img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center;
+  filter:saturate(.92) contrast(1.05);
+}
+.ivms-brand-photo-fallback{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  background:
+    radial-gradient(circle at 50% 40%,rgba(28,129,209,.22),transparent 35%),
+    linear-gradient(145deg,#071a2b,#020b14);
+  color:#f7fbff;
+  text-align:center;
+}
+.ivms-brand-photo-fallback strong{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:34px;
+  font-style:italic;
+  font-weight:600;
+}
+.ivms-brand-photo-fallback span{color:var(--ivms-muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.ivms-brand-photo.has-photo .ivms-brand-photo-fallback{opacity:0;pointer-events:none}
+.ivms-brand-copy{border-left:0;padding-left:0;align-self:center}
+.ivms-brand-copy strong{font-size:clamp(21px,2.2vw,34px)}
+.ivms-brand-copy span{max-width:250px;font-size:11px;line-height:1.4}
+
+.ivms-header-tools{
+  display:grid;
+  grid-template-columns:minmax(120px,1fr) 70px 70px minmax(166px,1.25fr) minmax(92px,.75fr);
+  align-items:stretch;
+  gap:9px;
+}
+.ivms-more-button{
+  min-width:0;
+  border:1px solid rgba(107,199,239,.34);
+  border-radius:12px;
+  background:linear-gradient(180deg,#174766,#0d3048);
+  color:#fff;
+  font-size:15px;
+  font-weight:750;
+  white-space:nowrap;
+}
+.ivms-more-button span{margin-left:4px}
+.ivms-more-button:active{transform:scale(.98)}
+
+.ivms-command-panel{
+  min-height:430px;
+  display:grid;
+  place-items:center;
+  background:
+    radial-gradient(circle at 50% 55%,rgba(18,97,163,.18),transparent 32%),
+    linear-gradient(180deg,#020b15 0%,#031427 54%,#020a14 100%);
+}
+.ivms-command-panel::before{
+  background:
+    linear-gradient(180deg,rgba(1,8,18,.18),transparent 26%,transparent 74%,rgba(0,6,13,.62) 100%),
+    repeating-linear-gradient(0deg,transparent 0 34px,rgba(93,147,195,.028) 35px);
+}
+.ivms-command-wave{
+  position:absolute;
+  top:46px;
+  left:4%;
+  right:4%;
+  height:45px;
+  opacity:.88;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 48' preserveAspectRatio='none'%3E%3Cpath d='M0 29 C32 38 52 13 84 24 S143 39 176 18 S237 28 274 14 S336 38 400 13' fill='none' stroke='%231688ff' stroke-width='2'/%3E%3C/svg%3E") center/100% 100% no-repeat;
+}
+.ivms-command-compass{
+  position:relative;
+  width:min(58%,280px);
+  aspect-ratio:1;
+  border:1px solid rgba(107,166,216,.12);
+  border-radius:50%;
+  background:
+    radial-gradient(circle,transparent 0 36%,rgba(80,138,188,.10) 36.5% 37%,transparent 37.5% 52%,rgba(80,138,188,.10) 52.5% 53%,transparent 53.5%),
+    conic-gradient(from 0deg,rgba(96,181,255,.12),transparent 4deg 41deg,rgba(96,181,255,.08) 45deg,transparent 49deg 86deg,rgba(96,181,255,.08) 90deg,transparent 94deg 131deg,rgba(96,181,255,.08) 135deg,transparent 139deg 176deg,rgba(96,181,255,.08) 180deg,transparent 184deg 221deg,rgba(96,181,255,.08) 225deg,transparent 229deg 266deg,rgba(96,181,255,.08) 270deg,transparent 274deg 311deg,rgba(96,181,255,.08) 315deg,transparent 319deg 356deg,rgba(96,181,255,.12) 360deg);
+  opacity:.72;
+}
+.ivms-command-compass::before,.ivms-command-compass::after{content:"";position:absolute;background:rgba(97,159,211,.18)}
+.ivms-command-compass::before{left:50%;top:8%;bottom:8%;width:1px}
+.ivms-command-compass::after{top:50%;left:8%;right:8%;height:1px}
+.ivms-command-compass>span{position:absolute;color:#7195b4;font-size:12px}
+.ivms-command-compass .north{top:-24px;left:50%;transform:translateX(-50%)}
+.ivms-command-compass .east{right:-24px;top:50%;transform:translateY(-50%)}
+.ivms-command-compass .south{bottom:-24px;left:50%;transform:translateX(-50%)}
+.ivms-command-compass .west{left:-24px;top:50%;transform:translateY(-50%)}
+.ivms-command-boat{position:absolute;inset:0;display:grid;place-items:center;font-size:46px;filter:grayscale(1);opacity:.34}
+.ivms-hero-name,.ivms-hero-placeholder{display:none!important}
+
+@media(max-width:1180px){
+  .ivms-header{grid-template-columns:minmax(340px,1fr) minmax(460px,1.55fr)}
+  .ivms-brand{grid-template-columns:minmax(210px,280px) 1fr;gap:12px}
+  .ivms-brand-photo{height:142px}
+  .ivms-header-tools{grid-template-columns:minmax(108px,1fr) 60px 60px minmax(145px,1.1fr) 88px;gap:6px}
+}
+@media(max-width:900px){
+  .ivms-header{grid-template-columns:1fr;min-height:auto}
+  .ivms-brand{grid-template-columns:minmax(210px,42%) 1fr}
+  .ivms-brand-photo{height:136px}
+  .ivms-header-tools{grid-template-columns:minmax(105px,1fr) 58px 58px minmax(145px,1.25fr) 92px;overflow:visible}
+  .ivms-command-panel{min-height:360px}
+}
+@media(max-width:620px){
+  body.ms797-dashboard-route main{padding-top:env(safe-area-inset-top)!important}
+  .ivms-header{padding:8px}
+  .ivms-brand{grid-template-columns:minmax(145px,46%) 1fr;gap:10px}
+  .ivms-brand-photo{height:105px}
+  .ivms-brand-photo-fallback strong{font-size:25px}
+  .ivms-brand-copy strong{font-size:17px}
+  .ivms-brand-copy span{font-size:8px}
+  .ivms-header-tools{grid-template-columns:minmax(84px,1fr) 50px 50px minmax(108px,1.25fr) 78px;gap:5px}
+  .ivms-more-button{font-size:12px;padding:6px}
+  .ivms-command-panel{min-height:300px}
+  .ivms-command-compass{width:min(54%,210px)}
+  .ms797-splash img{width:100vw;height:100dvh}
+}
+@media(prefers-reduced-motion:reduce){
+  .ms797-splash{transition:none}
 }

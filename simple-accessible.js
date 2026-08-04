@@ -1,8 +1,8 @@
-/* MijnSerenity 7.9.6 — stabiele eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.9.7 — stabiele eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.9.6';
+  const BUILD='7.9.7';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -488,6 +488,7 @@
   }
 
   function updatePageBar(route){
+    document.body.classList.toggle('ms797-dashboard-route',route==='dashboard');
     const meta=PAGE_META[route]||{title:'MijnSerenity'};
     if(pageTitle)pageTitle.textContent=meta.title;
     if(homeButton){
@@ -853,6 +854,7 @@
     window.ms753Navigate=navigate;
     window.ms755OpenSearch=openSearch;
     window.ms755OpenRadio=openRadio;
+    window.ms797OpenMore=openMore;
     console.info(`MijnSerenity ${BUILD}: eenvoudige bediening actief.`);
   }
 
