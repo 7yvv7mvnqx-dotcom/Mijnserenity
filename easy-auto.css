@@ -283,7 +283,7 @@ body.ms701-simple-mode #live .live-controls{
   }
 }
 
-/* 7.10.1: vaarwegberichten blijven ook in eenvoudige vaarmodus zichtbaar. */
+/* 8.0.0: vaarwegberichten blijven ook in eenvoudige vaarmodus zichtbaar. */
 body.ms701-simple-mode #live .rws-live-card{display:block!important}
 /* Expliciet zichtbaar gehouden: gebruiker wil zonne-opbrengst en roerstand op het vaarscherm. */
 body.ms701-simple-mode #live .live-detail-metrics{display:grid!important}

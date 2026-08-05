@@ -1,4 +1,4 @@
-/* MijnSerenity 7.10.1 — Serenity IVMS dashboard */
+/* MijnSerenity 8.0.0 — Serenity IVMS dashboard */
 :root{
   --ivms-bg:#020914;
   --ivms-panel:#061321;
@@ -293,7 +293,7 @@ body.ivms-dashboard-active main{
 
 
 /* =========================================================
-   MijnSerenity 7.10.1 — compacte IVMS-kop en varende laadintro
+   MijnSerenity 8.0.0 — compacte IVMS-kop en varende laadintro
    ========================================================= */
 .ms797-splash{
   position:fixed;
