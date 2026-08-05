@@ -1,4 +1,4 @@
-/* MijnSerenity 8.0.0 — live Serenity IVMS startdashboard */
+/* MijnSerenity 8.0.1 — live Serenity IVMS startdashboard */
 (()=>{
   'use strict';
 

@@ -1,4 +1,4 @@
-/* MijnSerenity 8.0.0 — Serenity IVMS dashboard */
+/* MijnSerenity 8.0.1 — Serenity IVMS dashboard */
 :root{
   --ivms-bg:#020914;
   --ivms-panel:#061321;
@@ -293,7 +293,7 @@ body.ivms-dashboard-active main{
 
 
 /* =========================================================
-   MijnSerenity 8.0.0 — compacte IVMS-kop en varende laadintro
+   MijnSerenity 8.0.1 — compacte IVMS-kop en varende laadintro
    ========================================================= */
 .ms797-splash{
   position:fixed;
@@ -471,4 +471,46 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
 }
 @media(prefers-reduced-motion:reduce){
   .ms797-splash{transition:none}
+}
+
+/* MijnSerenity 8.0.1 — definitieve iPhone headerfix */
+@media (max-width:620px){
+  .serenity-ivms{width:100%;max-width:100%;overflow:hidden;padding-inline:0!important}
+  .ivms-header{width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;padding:8px!important}
+  .ivms-brand{grid-template-columns:44% minmax(0,1fr)!important;width:100%;gap:10px!important}
+  .ivms-brand-photo{min-width:0!important;width:100%!important;height:100px!important}
+  .ivms-brand-copy{min-width:0!important;overflow:hidden}
+  .ivms-brand-copy strong{font-size:17px!important}
+  .ivms-brand-copy span{font-size:8px!important;line-height:1.35!important;white-space:normal!important;overflow-wrap:anywhere!important}
+
+  .ivms-header-tools{
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1.25fr) 52px 52px minmax(0,1.65fr)!important;
+    gap:5px!important;
+    overflow:hidden!important;
+  }
+  .ivms-header-tools>*{min-width:0!important;width:100%!important;box-sizing:border-box!important}
+  .ivms-clock{padding:9px 5px!important}
+  .ivms-clock strong{font-size:22px!important}
+  .ivms-clock span{font-size:10px!important}
+  .ivms-icon-button{min-width:0!important;padding:6px!important;font-size:22px!important}
+  .ivms-system-status{min-width:0!important;padding:8px!important;gap:5px!important}
+  .ivms-system-status small{font-size:8px!important;letter-spacing:.03em!important}
+  .ivms-system-status strong{font-size:13px!important}
+  .ivms-status-dot{width:9px!important;height:9px!important;flex:0 0 9px!important}
+  .ivms-more-button{display:none!important}
+
+  .ivms-main-grid{margin-top:10px!important;gap:10px!important}
+  .ivms-nav-strip{margin-bottom:0!important}
+  .ivms-command-panel{min-height:275px!important;height:auto!important}
+}
+
+@media (max-width:390px){
+  .ivms-header-tools{grid-template-columns:minmax(0,1.18fr) 48px 48px minmax(0,1.55fr)!important}
+  .ivms-clock strong{font-size:20px!important}
+  .ivms-system-status small{font-size:7px!important}
+  .ivms-system-status strong{font-size:12px!important}
 }
