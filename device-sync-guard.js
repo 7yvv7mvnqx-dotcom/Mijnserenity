@@ -7,7 +7,7 @@
 (()=>{
   'use strict';
 
-  const BUILD='8.0.1';
+  const BUILD='7.10.2';
   const FIELD='sharedAutomaticVaren';
   let shared={
     known:false,

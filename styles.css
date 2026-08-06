@@ -8646,7 +8646,7 @@ main,
 }
 
 
-/* MijnSerenity 8.0.1 — actuele zonne-opbrengst op het vaarscherm */
+/* MijnSerenity 7.10.2 — actuele zonne-opbrengst op het vaarscherm */
 .live-solar-yield-metric{
   position:relative;
   overflow:hidden;
@@ -8742,16 +8742,4 @@ main,
 }
 @media(max-width:760px){
   .live-solar-yield-metric{min-height:145px}
-}
-
-
-/* v8.0 iPhone optimization */
-@media (max-width:600px){
-html,body{overflow-x:hidden;}
-main{padding:12px 12px 180px!important;}
-.card,.hero,section{margin-bottom:12px!important;}
-[class*="header"],[class*="hero"]{min-height:auto!important;height:auto!important;}
-[class*="menu"][class*="top"],.top-menu-button,.header-menu,.side-menu-button{display:none!important;}
-[class*="compass"]{min-height:300px!important;height:auto!important;}
-img{max-width:100%;height:auto;}
 }

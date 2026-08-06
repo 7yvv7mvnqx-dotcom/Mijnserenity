@@ -1,6 +1,6 @@
 
 /* ============================================================
-   MijnSerenity Cloud 8.0.1 — hersteld native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.10.2 — hersteld native iPhone/iPad paginavegen
    ============================================================ */
 
 const ms708PageOrder=[
@@ -81,7 +81,7 @@ function ms708HandlePointerUp(event){
 
 function ms708SinglePageMode(){
   /*
-     8.0.1: één zichtbare pagina tegelijk voorkomt dat iOS tijdens een
+     7.10.2: één zichtbare pagina tegelijk voorkomt dat iOS tijdens een
      paginawissel terugveert naar de vorige pagina. Links/rechts vegen
      blijft beschikbaar via een gecontroleerd swipegebaar, zonder een
      horizontaal scrollvlak onder knoppen, formulieren en kaarten.

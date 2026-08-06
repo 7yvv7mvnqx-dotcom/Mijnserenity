@@ -1,8 +1,8 @@
-/* MijnSerenity 8.0.1 — actuele vaarwegberichten rond Serenity via EuRIS/Rijkswaterstaat */
+/* MijnSerenity 7.10.2 — actuele vaarwegberichten rond Serenity via EuRIS/Rijkswaterstaat */
 (()=>{
   'use strict';
 
-  const BUILD='8.0.1';
+  const BUILD='7.10.2';
   const API_URL='/api/euris-nts';
   const DIRECT_API='https://www.eurisportal.eu/api/v3/nts';
   const RADIUS_KEY='mijnserenity-rws-radius-km';

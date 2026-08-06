@@ -1,4 +1,4 @@
-/* MijnSerenity 8.0.1 — live Serenity IVMS startdashboard */
+/* MijnSerenity 7.10.2 — live Serenity IVMS startdashboard */
 (()=>{
   'use strict';
 
@@ -242,7 +242,13 @@
     const haBatteryPower=exactHa('sensor.vrm_battery_power')||findHa(['vrm battery power','battery power','accuvermogen','accu vermogen'],'W');
     const haTimeToGo=exactHa('sensor.vrm_time_to_go')||findHa(['time to go','resterende tijd','battery runtime'],'h');
     const haSolar=exactHa('sensor.vrm_solar_charger_power')||exactHa('sensor.vrm_pv_power')||findHa(['pv power','solar charger power','solar power','mppt power','zonnepaneel vermogen'],'W');
-    const haCabin=findHa(['salon temperature','cabine temperatuur','cabin temperature','inside temperature','interieur temperatuur'],'°C');
+    let ruuviClimate=null;
+    try{ruuviClimate=typeof window.ms7102GetRuuviClimate==='function'?window.ms7102GetRuuviClimate():null}catch{}
+    const haCabin=ruuviClimate?.salon?.temperatureEntity||findHa(['salon serenity temperature','salon temperature','cabine temperatuur','cabin temperature','inside temperature','interieur temperatuur'],'°C');
+    const haForward=ruuviClimate?.forward?.temperatureEntity||findHa(['voorhut serenity temperature','voorhut temperatuur','slaapcabine temperatuur','forward cabin temperature'],'°C');
+    const haCabinHumidity=ruuviClimate?.salon?.humidityEntity||null;
+    const haForwardHumidity=ruuviClimate?.forward?.humidityEntity||null;
+    const haClimatePressure=ruuviClimate?.salon?.pressureEntity||ruuviClimate?.forward?.pressureEntity||null;
     const haShorePower=findHaBinary(['shore power','walstroom','ac input connected','grid connected']);
     const haShoreVoltage=findHa(['shore voltage','walstroom spanning','ac input voltage','grid voltage'],'V');
     const haShoreFrequency=findHa(['shore frequency','walstroom frequentie','ac input frequency','grid frequency'],'Hz');
@@ -293,7 +299,15 @@
     setText('ivmsSolarBattery',solar!==null?(solar>0?'LADEN':'STANDBY'):'NIET GEKOPPELD');
 
     const cabinTemp=finite(haCabin?.state)?Number(haCabin.state):null;
+    const forwardTemp=finite(haForward?.state)?Number(haForward.state):null;
+    const cabinHumidity=finite(haCabinHumidity?.state)?Number(haCabinHumidity.state):null;
+    const forwardHumidity=finite(haForwardHumidity?.state)?Number(haForwardHumidity.state):null;
+    const climatePressure=finite(haClimatePressure?.state)?Number(haClimatePressure.state):null;
     setText('ivmsCabinTemp',cabinTemp!==null?`${nl(cabinTemp,1)} °C`:'– °C');
+    setText('ivmsForwardTemp',forwardTemp!==null?`${nl(forwardTemp,1)} °C`:'– °C');
+    setText('ivmsCabinHumidity',cabinHumidity!==null?`${nl(cabinHumidity,0)} % RV`:'– % RV');
+    setText('ivmsForwardHumidity',forwardHumidity!==null?`${nl(forwardHumidity,0)} % RV`:'– % RV');
+    setText('ivmsClimatePressure',climatePressure!==null?`Luchtdruk ${nl(climatePressure,0)} ${haClimatePressure?.attributes?.unit_of_measurement||'hPa'}`:'Luchtdruk –');
 
     setText('ivmsPeople',String(peopleOnboard()));
 
@@ -380,6 +394,7 @@
     setInterval(update,3000);
     setInterval(refreshSources,60000);
     window.addEventListener('mijnserenity-ha-state-updated',update);
+    window.addEventListener('mijnserenity-ruuvi-config-updated',update);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshSources()});
     const photo=$('dashboardBoatPhoto');
     if(photo)new MutationObserver(updatePhoto).observe(photo,{attributes:true,attributeFilter:['src','class']});
