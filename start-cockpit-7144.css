@@ -1,0 +1,212 @@
+/* MijnSerenity 7.14.4 — startscherm cockpit */
+.ms-start-cockpit{
+  margin:0 0 14px;
+  padding:14px;
+  border-radius:28px;
+  background:
+    radial-gradient(circle at top right,rgba(78,186,255,.13),transparent 26%),
+    linear-gradient(180deg,rgba(12,29,46,.98),rgba(7,18,31,.99));
+  border:1px solid rgba(122,180,233,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 18px 42px rgba(0,0,0,.18);
+}
+.ms-start-cockpit-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:12px;
+}
+.ms-start-cockpit-head h2{
+  margin:0;
+  font-size:1.08rem;
+  line-height:1.1;
+  color:#fff;
+}
+.ms-start-cockpit-head p{
+  margin:4px 0 0;
+  font-size:.78rem;
+  line-height:1.2;
+  color:#a9bfd2;
+}
+.ms-start-badge{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.08);
+  color:#e2edf8;
+  font-size:.66rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.ms-start-cockpit-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.ms-cockpit-card{
+  min-width:0;
+  padding:12px;
+  border-radius:20px;
+  background:linear-gradient(180deg,rgba(15,34,53,.96),rgba(9,20,33,.98));
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:8px;
+}
+.ms-cockpit-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.ms-cockpit-label{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#fff;
+  font-size:.8rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  font-weight:700;
+}
+.ms-cockpit-label b{ font-size:1.02rem; line-height:1; }
+.ms-cockpit-chip{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:.62rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  background:rgba(255,255,255,.07);
+  color:#dce9f6;
+  border:1px solid rgba(255,255,255,.06);
+}
+.ms-cockpit-chip.good{ color:#b8f0c0; background:rgba(119,225,143,.12); border-color:rgba(119,225,143,.18); }
+.ms-cockpit-chip.warning{ color:#ffe08a; background:rgba(255,211,107,.12); border-color:rgba(255,211,107,.18); }
+.ms-cockpit-chip.critical{ color:#ffc0b6; background:rgba(255,140,124,.12); border-color:rgba(255,140,124,.18); }
+.ms-cockpit-value{
+  font-size:1.72rem;
+  line-height:1;
+  font-weight:800;
+  color:#fff;
+  letter-spacing:-.03em;
+}
+.ms-cockpit-meta{
+  font-size:.76rem;
+  line-height:1.18;
+  color:#a9bfd2;
+}
+.ms-cockpit-tanks{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.ms-cockpit-tank-row{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:8px;
+  font-size:.72rem;
+  color:#dbe8f4;
+}
+.ms-cockpit-track{
+  position:relative;
+  height:9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  overflow:hidden;
+}
+.ms-cockpit-fill{
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width:var(--fill,50%);
+  border-radius:999px;
+  background:linear-gradient(90deg,#4bd0ff,#77e18f);
+}
+.ms-cockpit-fill.warning{ background:linear-gradient(90deg,#ffcc6b,#ffe08a); }
+.ms-cockpit-fill.critical{ background:linear-gradient(90deg,#ff8475,#ffc0b6); }
+.ms-cockpit-footer{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-top:12px;
+}
+.ms-cockpit-action{
+  border:none;
+  border-radius:15px;
+  padding:9px 6px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.06);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+.ms-cockpit-action span{ font-size:1rem; line-height:1; }
+.ms-cockpit-action small{ font-size:.62rem; color:#d7e5f2; }
+/* soepeler welkomstoverlay */
+body.ms-welcome-active main,
+body.ms-welcome-active #appUpdateBanner,
+body.ms-welcome-active #appToast{ filter:blur(7px) !important; }
+.ms-screen-welcome{
+  background:rgba(6,15,25,.38) !important;
+  transition:opacity .45s ease !important;
+}
+.ms-screen-welcome-panel{ gap:8px !important; }
+#msScreenWelcomeTitle7140{
+  animation:msWelcomeTitleSoft .62s cubic-bezier(.19,.78,.23,1) both !important;
+}
+#msScreenWelcomeSub7140{
+  animation:msWelcomeSubSoft .48s ease .10s both !important;
+}
+.ms-screen-welcome-art{
+  animation:msWelcomeArtSoft .54s ease both !important;
+}
+@keyframes msWelcomeTitleSoft{
+  0%{ transform:translateY(18px) scale(1.12); opacity:0; }
+  100%{ transform:translateY(0) scale(1); opacity:1; }
+}
+@keyframes msWelcomeSubSoft{
+  0%{ transform:translateY(10px); opacity:0; }
+  100%{ transform:translateY(0); opacity:1; }
+}
+@keyframes msWelcomeArtSoft{
+  0%{ transform:translateY(10px) scale(.94); opacity:0; }
+  100%{ transform:translateY(0) scale(1); opacity:1; }
+}
+@media (max-width:430px){
+  .ms-start-cockpit{
+    padding:12px 10px;
+    border-radius:22px;
+    min-height:calc(100dvh - 168px);
+    display:flex;
+    flex-direction:column;
+  }
+  .ms-start-cockpit-head{ margin-bottom:10px; }
+  .ms-start-cockpit-head h2{ font-size:1rem; }
+  .ms-start-cockpit-head p{ font-size:.72rem; }
+  .ms-start-badge{ font-size:.60rem; padding:5px 8px; }
+  .ms-start-cockpit-grid{ gap:8px; flex:1; }
+  .ms-cockpit-card{ padding:10px; border-radius:17px; gap:6px; }
+  .ms-cockpit-label{ font-size:.72rem; gap:6px; }
+  .ms-cockpit-label b{ font-size:.96rem; }
+  .ms-cockpit-chip{ font-size:.58rem; padding:4px 7px; }
+  .ms-cockpit-value{ font-size:1.48rem; }
+  .ms-cockpit-meta{ font-size:.69rem; }
+  .ms-cockpit-tank-row{ font-size:.67rem; gap:6px; }
+  .ms-cockpit-footer{ gap:6px; margin-top:10px; }
+  .ms-cockpit-action{ border-radius:13px; padding:8px 5px; }
+  .ms-cockpit-action small{ font-size:.58rem; }
+}
