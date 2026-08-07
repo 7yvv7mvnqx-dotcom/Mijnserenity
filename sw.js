@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.13.0-maritime-home-r1';
+const CACHE_NAME='mijnserenity-7.13.2-iphone-fit-r1';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -30,6 +30,7 @@ const APP_SHELL=[
   '/tank-humor.css?v=71110',
   '/technical-cartoon.css?v=71200',
   '/home-cartoon.css?v=71300',
+  '/iphone-compact-7132.css?v=71320',
   '/auth-bootstrap.js?v=71100',
   '/app.js?v=71100',
   '/receipt-reader-pro.js?v=71100',

@@ -204,3 +204,27 @@
     animation:none !important;
   }
 }
+
+
+/* 7.13.1 rustige emoji-weergave */
+.tank-humor-emoji{
+  animation:none !important;
+  display:grid;
+  place-items:center;
+  font-size:32px;
+  line-height:1;
+}
+.tank-humor-emoji img{ display:none !important; }
+.tank-humor-joke{
+  animation:none !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  margin-top:2px !important;
+  opacity:.82 !important;
+}
+.tank-humor-joke::before{ content:none !important; display:none !important; }
+@media (prefers-reduced-motion: reduce){
+  .tank-humor-emoji, .tank-humor-joke{ animation:none !important; }
+}

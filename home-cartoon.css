@@ -239,3 +239,37 @@
     animation:none !important;
   }
 }
+
+
+/* 7.13.1 rustige emoji-weergave */
+.home-cartoon-art{
+  animation:none !important;
+  display:grid;
+  place-items:center;
+  font-size:32px;
+  line-height:1;
+}
+.home-cartoon-art img{ display:none !important; }
+.home-cartoon-speech{
+  animation:none !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  margin-top:2px !important;
+  opacity:.82 !important;
+}
+.home-cartoon-speech::before{ content:none !important; display:none !important; }
+@media (prefers-reduced-motion: reduce){
+  .home-cartoon-art, .home-cartoon-speech{ animation:none !important; }
+}
+
+.home-cartoon-dock::before,
+.home-cartoon-dock::after,
+.home-cartoon-card::after,
+.serenity-ivms.maritime-mode::before,
+.serenity-ivms.maritime-mode .ivms-hero .ivms-command-wave,
+.serenity-ivms.maritime-mode .ivms-command-boat{
+  animation:none !important;
+}
+.home-cartoon-art{font-size:30px;}

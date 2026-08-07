@@ -1,0 +1,153 @@
+
+/* MijnSerenity 7.13.2 — iPhone compact & playful */
+
+/* Home cartoon: speelser, maar rustig */
+.home-cartoon-dock{
+  margin:14px 0 16px;
+  padding:12px;
+  border-radius:20px;
+}
+.home-cartoon-head{ margin-bottom:10px; }
+.home-cartoon-title strong{ font-size:.98rem; }
+.home-cartoon-title span{ font-size:.78rem; }
+.home-cartoon-badge{ padding:6px 10px; font-size:.76rem; }
+.home-cartoon-grid{ gap:10px; }
+.home-cartoon-card{
+  min-height:112px;
+  padding:11px;
+  border-radius:16px;
+}
+.home-cartoon-art{
+  width:52px;
+  height:52px;
+  border-radius:16px;
+  font-size:28px !important;
+}
+.home-cartoon-copy b{ font-size:.64rem; }
+.home-cartoon-copy strong{ font-size:.95rem; }
+.home-cartoon-copy span{ font-size:.77rem; }
+.home-cartoon-speech{
+  font-size:.76rem !important;
+  line-height:1.2;
+}
+
+/* Techniek kaarten compacter */
+.technical-overview-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.technical-gauge{
+  min-width:0;
+  padding:12px 10px;
+  border-radius:16px;
+}
+.technical-gauge > span:not(.technical-gauge-icon){
+  font-size:.84rem;
+  line-height:1.15;
+}
+.technical-gauge > strong{
+  font-size:1rem;
+  line-height:1.1;
+}
+.technical-gauge > small{
+  font-size:.74rem;
+  line-height:1.2;
+}
+.technical-gauge-icon{
+  font-size:1.25rem;
+}
+.technical-cartoon,
+.tank-humor{
+  gap:8px;
+  padding:8px;
+  border-radius:14px;
+}
+.technical-cartoon-art,
+.tank-humor-emoji{
+  width:42px !important;
+  height:42px !important;
+  min-width:42px;
+  font-size:24px !important;
+  border-radius:12px;
+}
+.technical-cartoon-copy,
+.tank-humor-copy{
+  gap:2px;
+}
+.technical-cartoon-title,
+.tank-humor-title{
+  font-size:.6rem;
+  padding:2px 6px;
+}
+.technical-cartoon-text,
+.tank-humor-text{
+  font-size:.86rem !important;
+  line-height:1.15;
+}
+.technical-cartoon-joke,
+.tank-humor-joke{
+  font-size:.72rem !important;
+  line-height:1.18;
+}
+
+/* IVMS quick nav en onderste balken iPhone-proof */
+.ivms-quick-nav{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+}
+.ivms-quick-nav button{
+  min-width:0;
+  padding:8px 4px;
+}
+.ivms-quick-nav button small{
+  font-size:.68rem;
+  line-height:1.1;
+}
+
+.bottom-nav,
+.bottom-nav.compact{
+  gap:6px;
+}
+.bottom-nav button,
+.bottom-nav .nav-button,
+.bottom-nav .tab{
+  min-width:0;
+  padding-left:6px;
+  padding-right:6px;
+}
+
+/* Cards on iPhone */
+@media (max-width: 900px){
+  .home-cartoon-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 640px){
+  .ivms-bottom-grid{ grid-template-columns:1fr 1fr; gap:10px; }
+}
+@media (max-width: 430px){
+  .home-cartoon-dock{ padding:10px; border-radius:18px; }
+  .home-cartoon-grid{ grid-template-columns:1fr; gap:8px; }
+  .home-cartoon-card{ min-height:96px; padding:10px; }
+  .home-cartoon-art{ width:48px; height:48px; font-size:26px !important; }
+
+  .technical-overview-grid{ grid-template-columns:1fr 1fr; gap:8px; }
+  .technical-gauge{ padding:10px 8px; }
+  .technical-gauge > span:not(.technical-gauge-icon){ font-size:.8rem; }
+  .technical-gauge > strong{ font-size:.96rem; }
+  .technical-gauge > small{ font-size:.7rem; }
+
+  .technical-cartoon,
+  .tank-humor{ padding:7px; gap:7px; }
+  .technical-cartoon-art,
+  .tank-humor-emoji{ width:38px !important; height:38px !important; font-size:21px !important; }
+  .technical-cartoon-text,
+  .tank-humor-text{ font-size:.8rem !important; }
+  .technical-cartoon-joke,
+  .tank-humor-joke{ font-size:.68rem !important; }
+
+  .ivms-quick-nav{ grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  .ivms-quick-nav button small{ font-size:.64rem; }
+
+  .ivms-bottom-grid{ grid-template-columns:1fr; }
+}

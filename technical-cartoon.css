@@ -173,3 +173,27 @@
     animation:none !important;
   }
 }
+
+
+/* 7.13.1 rustige emoji-weergave */
+.technical-cartoon-art{
+  animation:none !important;
+  display:grid;
+  place-items:center;
+  font-size:32px;
+  line-height:1;
+}
+.technical-cartoon-art img{ display:none !important; }
+.technical-cartoon-joke{
+  animation:none !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  margin-top:2px !important;
+  opacity:.82 !important;
+}
+.technical-cartoon-joke::before{ content:none !important; display:none !important; }
+@media (prefers-reduced-motion: reduce){
+  .technical-cartoon-art, .technical-cartoon-joke{ animation:none !important; }
+}

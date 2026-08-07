@@ -10,66 +10,66 @@
   const text=id=>String($(id)?.textContent||'').trim();
 
   function waterMood(level){
-    if(!finite(level))return {state:'warning',asset:'tank-water-mid.svg',title:'Drinkwater',text:'Nog geen tankstand',joke:'Zonder slokje data blijft dit poppetje in onzekerheid.'};
+    if(!finite(level))return {state:'warning',emoji:'🥤',title:'Drinkwater',text:'Nog geen tankstand',joke:'Zonder slokje data blijft dit poppetje in onzekerheid.'};
     const value=Math.max(0,Math.min(100,Number(level)));
-    if(value>=80)return {state:'good',asset:'tank-water-full.svg',title:'Drinkwater',text:'Watervoorraad top',joke:'Douchen, koffie en afwassen? Dit poppetje juicht alvast.'};
-    if(value>=55)return {state:'good',asset:'tank-water-good.svg',title:'Drinkwater',text:'Netjes op peil',joke:'Nog geen dorstdrama in zicht.'};
-    if(value>=30)return {state:'warning',asset:'tank-water-mid.svg',title:'Drinkwater',text:'Rustig aan met sproeien',joke:'Het poppetje telt stiekem al de kopjes koffie.'};
-    if(value>=15)return {state:'critical',asset:'tank-water-low.svg',title:'Drinkwater',text:'Dorstalarm nadert',joke:'Hij kijkt alsof iemand het laatste flesje al heeft gepakt.'};
-    return {state:'critical',asset:'tank-water-empty.svg',title:'Drinkwater',text:'Bijna kurkdroog',joke:'Nog even en hij vraagt om regenwater met een rietje.'};
+    if(value>=80)return {state:'good',emoji:'💧',title:'Drinkwater',text:'Watervoorraad top',joke:'Douchen, koffie en afwassen? Dit poppetje juicht alvast.'};
+    if(value>=55)return {state:'good',emoji:'🚰',title:'Drinkwater',text:'Netjes op peil',joke:'Nog geen dorstdrama in zicht.'};
+    if(value>=30)return {state:'warning',emoji:'🥤',title:'Drinkwater',text:'Rustig aan met sproeien',joke:'Het poppetje telt stiekem al de kopjes koffie.'};
+    if(value>=15)return {state:'critical',emoji:'🥵',title:'Drinkwater',text:'Dorstalarm nadert',joke:'Hij kijkt alsof iemand het laatste flesje al heeft gepakt.'};
+    return {state:'critical',emoji:'🏜️',title:'Drinkwater',text:'Bijna kurkdroog',joke:'Nog even en hij vraagt om regenwater met een rietje.'};
   }
 
   function wasteMood(level){
-    if(!finite(level))return {state:'warning',asset:'tank-waste-mid.svg',title:'Vuilwater',text:'Nog geen tankstand',joke:'Zonder meting blijft het een geurige gok.'};
+    if(!finite(level))return {state:'warning',emoji:'😬',title:'Vuilwater',text:'Nog geen tankstand',joke:'Zonder meting blijft het een geurige gok.'};
     const value=Math.max(0,Math.min(100,Number(level)));
-    if(value<=15)return {state:'good',asset:'tank-waste-empty.svg',title:'Vuilwater',text:'Lekker leeg',joke:'Frisse neus, brede glimlach.'};
-    if(value<=49)return {state:'good',asset:'tank-waste-good.svg',title:'Vuilwater',text:'Ruimte zat',joke:'Nog sociaal verantwoord in de machinekamer.'};
-    if(value<=74)return {state:'warning',asset:'tank-waste-mid.svg',title:'Vuilwater',text:'Begint te pruttelen',joke:'Het poppetje houdt zijn adem al iets langer in.'};
-    if(value<=89)return {state:'critical',asset:'tank-waste-high.svg',title:'Vuilwater',text:'Tijd om te legen',joke:'De eerste denkbeeldige dampwolken melden zich.'};
-    return {state:'critical',asset:'tank-waste-full.svg',title:'Vuilwater',text:'Stinkalarm',joke:'Volle bak — dit poppetje vergast bijna de hele boot.'};
+    if(value<=15)return {state:'good',emoji:'🚽',title:'Vuilwater',text:'Lekker leeg',joke:'Frisse neus, brede glimlach.'};
+    if(value<=49)return {state:'good',emoji:'🙂',title:'Vuilwater',text:'Ruimte zat',joke:'Nog sociaal verantwoord in de machinekamer.'};
+    if(value<=74)return {state:'warning',emoji:'😬',title:'Vuilwater',text:'Begint te pruttelen',joke:'Het poppetje houdt zijn adem al iets langer in.'};
+    if(value<=89)return {state:'critical',emoji:'🤢',title:'Vuilwater',text:'Tijd om te legen',joke:'De eerste denkbeeldige dampwolken melden zich.'};
+    return {state:'critical',emoji:'💨',title:'Vuilwater',text:'Stinkalarm',joke:'Volle bak — dit poppetje vergast bijna de hele boot.'};
   }
 
   function batteryMood(voltage,label='Accu'){
-    if(!finite(voltage))return {state:'warning',asset:'tech-battery-warn.svg',title:label,text:'Nog geen spanning',joke:'Zelfs een accu wil af en toe een glamourshot met spanning.'};
+    if(!finite(voltage))return {state:'warning',emoji:'🔋',title:label,text:'Nog geen spanning',joke:'Gids: nog geen meting.'};
     const v=Number(voltage);
-    if(v>=12.45)return {state:'good',asset:'tech-battery-good.svg',title:label,text:'Lekker vol',joke:'Dit batterijtje bruist van de energie.'};
-    if(v>=12.15)return {state:'warning',asset:'tech-battery-warn.svg',title:label,text:'Kan een laadje gebruiken',joke:'Hij hoopt subtiel op zon of walstroom.'};
-    return {state:'critical',asset:'tech-battery-crit.svg',title:label,text:'Laag in spanning',joke:'Deze accu kijkt alsof hij nog maar 1% batterij heeft.'};
+    if(v>=12.45)return {state:'good',emoji:'🔋',title:label,text:'Lekker vol',joke:'Gids: accu is goed.'};
+    if(v>=12.15)return {state:'warning',emoji:'🔋',title:label,text:'Kan een laadje gebruiken',joke:'Gids: laden is handig.'};
+    return {state:'critical',emoji:'🪫',title:label,text:'Laag in spanning',joke:'Gids: accu is laag.'};
   }
 
   function fuelMood(level){
-    if(!finite(level))return {state:'warning',asset:'tech-fuel-warn.svg',title:'Dieseltank',text:'Nog geen tankstand',joke:'Deze tank houdt zijn lippen stijf op elkaar over de liters.'};
+    if(!finite(level))return {state:'warning',emoji:'⛽',title:'Dieseltank',text:'Nog geen tankstand',joke:'Gids: tankstand ontbreekt.'};
     const value=Math.max(0,Math.min(100,Number(level)));
-    if(value>=55)return {state:'good',asset:'tech-fuel-good.svg',title:'Dieseltank',text:'Mooie voorraad',joke:'Deze tank kan nog wel even vooruit brommen.'};
-    if(value>=25)return {state:'warning',asset:'tech-fuel-warn.svg',title:'Dieseltank',text:'Denk aan bijtanken',joke:'Niet direct stress, wel alvast een station in de gaten houden.'};
-    return {state:'critical',asset:'tech-fuel-crit.svg',title:'Dieseltank',text:'Bijna op reservegevoel',joke:'Het tankpoppetje wordt ineens heel zuinig.'};
+    if(value>=55)return {state:'good',emoji:'⛽',title:'Dieseltank',text:'Mooie voorraad',joke:'Gids: genoeg voorraad.'};
+    if(value>=25)return {state:'warning',emoji:'⛽',title:'Dieseltank',text:'Denk aan bijtanken',joke:'Gids: denk aan bijtanken.'};
+    return {state:'critical',emoji:'⛽',title:'Dieseltank',text:'Bijna op reservegevoel',joke:'Gids: bijna tijd om te tanken.'};
   }
 
   function engineMood(){
     const service=text('techEngineService').toLowerCase();
-    if(!service || service.includes('nog geen'))return {state:'warning',asset:'tech-engine-warn.svg',title:'Motor',text:'Onderhoud nog onbekend',joke:'De monteur poseert al, maar de checklist wil nog in beeld.'};
-    if(service.includes('over')||service.includes('beurt')||service.includes('binnenkort'))return {state:'warning',asset:'tech-engine-warn.svg',title:'Motor',text:'Onderhoud in beeld',joke:'De motor mompelt: even een liefdevolle beurt graag.'};
-    return {state:'good',asset:'tech-engine-good.svg',title:'Motor',text:'Loopt tevreden',joke:'Alles snort alsof de motor zelf ook vakantie heeft.'};
+    if(!service || service.includes('nog geen'))return {state:'warning',emoji:'⚙️',title:'Motor',text:'Onderhoud nog onbekend',joke:'Gids: gegevens aanvullen.'};
+    if(service.includes('over')||service.includes('beurt')||service.includes('binnenkort'))return {state:'warning',emoji:'⚙️',title:'Motor',text:'Onderhoud in beeld',joke:'Gids: onderhoud komt eraan.'};
+    return {state:'good',emoji:'⚙️',title:'Motor',text:'Loopt tevreden',joke:'Gids: motorstatus is prima.'};
   }
 
   function solarMood(){
     const power=numFromText('techSolarPower');
     const shore=text('techShorePowerStatus').toLowerCase();
-    if(finite(power) && power>20)return {state:'good',asset:'tech-solar-good.svg',title:'Zonnepaneel',text:'Lekker aan het laden',joke:'De zon doet vrolijk mee aan boord.'};
-    if(shore.includes('walstroom'))return {state:'good',asset:'tech-solar-idle.svg',title:'Zonnepaneel',text:'Mag even uitrusten',joke:'Walstroom heeft de dienst nu even overgenomen.'};
-    return {state:'warning',asset:'tech-solar-idle.svg',title:'Zonnepaneel',text:'Even rustig',joke:'De zon is even backstage voor een korte koffiepauze.'};
+    if(finite(power) && power>20)return {state:'good',emoji:'☀️',title:'Zonnepaneel',text:'Lekker aan het laden',joke:'Gids: laden actief.'};
+    if(shore.includes('walstroom'))return {state:'good',emoji:'🌤️',title:'Zonnepaneel',text:'Mag even uitrusten',joke:'Gids: walstroom helpt mee.'};
+    return {state:'warning',emoji:'🌤️',title:'Zonnepaneel',text:'Even rustig',joke:'Gids: weinig zonopbrengst.'};
   }
 
   function systemMood(){
     const heater=text('techHeaterStatus').toLowerCase();
     const bilge=text('techBilgeStatus').toLowerCase();
     if(heater.includes('storing') || bilge.includes('alarm') || bilge.includes('actief')){
-      return {state:'critical',asset:'tech-system-crit.svg',title:'Systemen',text:'Aandacht nodig',joke:'Dit poppetje heeft de hulplijn al bijna op speed dial.'};
+      return {state:'critical',emoji:'🚨',title:'Systemen',text:'Aandacht nodig',joke:'Gids: storing vraagt aandacht.'};
     }
     if(heater.includes('onbekend') || bilge.includes('onbekend') || heater.includes('onderhoud')){
-      return {state:'warning',asset:'tech-system-warn.svg',title:'Systemen',text:'Even controleren',joke:'Hij knijpt één oog dicht totdat alles gecheckt is.'};
+      return {state:'warning',emoji:'🛠️',title:'Systemen',text:'Even controleren',joke:'Gids: even controleren.'};
     }
-    return {state:'good',asset:'tech-system-good.svg',title:'Systemen',text:'Alles in orde',joke:'Verwarming en bilge gedragen zich voorbeeldig.'};
+    return {state:'good',emoji:'🔥',title:'Systemen',text:'Alles in orde',joke:'Gids: systemen zijn in orde.'};
   }
 
   function cardFor(id){ return $(id)?.closest('.technical-gauge') || null; }
@@ -81,7 +81,7 @@
     el=document.createElement('div');
     el.id=id;
     el.className='technical-cartoon';
-    el.innerHTML='<div class="technical-cartoon-art"><img alt="Techniek illustratie"></div><div class="technical-cartoon-copy"><span class="technical-cartoon-title"></span><strong class="technical-cartoon-text"></strong><span class="technical-cartoon-joke"></span></div>';
+    el.innerHTML='<div class="technical-cartoon-art" aria-hidden="true"></div><div class="technical-cartoon-copy"><span class="technical-cartoon-title"></span><strong class="technical-cartoon-text"></strong><span class="technical-cartoon-joke"></span></div>';
     host.appendChild(el);
     return el;
   }
@@ -90,11 +90,11 @@
     if(!el||!mood)return;
     el.classList.remove('good','warning','critical');
     el.classList.add(mood.state);
-    const img=el.querySelector('img');
+    const art=el.querySelector('.technical-cartoon-art');
     const title=el.querySelector('.technical-cartoon-title');
     const textEl=el.querySelector('.technical-cartoon-text');
     const joke=el.querySelector('.technical-cartoon-joke');
-    if(img){ img.src=mood.asset; img.alt=`${mood.title} cartoon`; }
+    if(art){ art.textContent=mood.emoji || '🙂'; art.setAttribute('aria-label', `${mood.title} symbool`); }
     if(title) title.textContent=mood.title;
     if(textEl) textEl.textContent=mood.text;
     if(joke) joke.textContent=mood.joke;
