@@ -1,0 +1,101 @@
+/* MijnSerenity 7.14.1 — dashboard analoge klokken */
+.ms-dashboard-analog{
+  margin:0 0 14px;
+  padding:14px;
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(11,25,40,.98),rgba(7,18,30,.98));
+  border:1px solid rgba(122,180,233,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 28px rgba(0,0,0,.18);
+}
+.ms-dashboard-analog-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.ms-dashboard-analog-head h3{
+  margin:0;
+  font-size:1rem;
+  line-height:1.15;
+  color:#fff;
+}
+.ms-dashboard-analog-head p{
+  margin:3px 0 0;
+  font-size:.78rem;
+  line-height:1.2;
+  color:#a9bfd3;
+}
+.ms-dashboard-analog-badge{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:.68rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#d9e9f7;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.08);
+}
+.ms-dashboard-analog-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.ms-dashboard-dial-card{
+  min-width:0;
+  padding:10px 8px 8px;
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(16,35,54,.96),rgba(9,20,34,.98));
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  gap:4px;
+}
+.ms-dashboard-dial-card .ms-analog-dial{
+  width:88px;
+  height:88px;
+}
+.ms-dashboard-dial-title{
+  margin-top:2px;
+  font-size:.72rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#8fb9dd;
+}
+.ms-dashboard-dial-value{
+  font-size:.95rem;
+  line-height:1.08;
+  color:#fff;
+  font-weight:700;
+}
+.ms-dashboard-dial-meta{
+  font-size:.69rem;
+  line-height:1.15;
+  color:#b8cada;
+}
+@media (max-width:640px){
+  .ms-dashboard-analog-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:430px){
+  .ms-dashboard-analog{ padding:12px 10px; border-radius:18px; }
+  .ms-dashboard-analog-head{ margin-bottom:10px; }
+  .ms-dashboard-analog-head h3{ font-size:.96rem; }
+  .ms-dashboard-analog-head p{ font-size:.74rem; }
+  .ms-dashboard-analog-badge{ font-size:.64rem; padding:5px 8px; }
+  .ms-dashboard-analog-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .ms-dashboard-dial-card{ padding:9px 7px 8px; border-radius:16px; }
+  .ms-dashboard-dial-card .ms-analog-dial{ width:80px; height:80px; }
+  .ms-dashboard-dial-title{ font-size:.68rem; }
+  .ms-dashboard-dial-value{ font-size:.90rem; }
+  .ms-dashboard-dial-meta{ font-size:.66rem; }
+}
+@media (max-width:355px){
+  .ms-dashboard-analog-grid{ grid-template-columns:1fr; }
+}

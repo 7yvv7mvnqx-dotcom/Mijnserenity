@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.14.0-analog-future-r1';
+const CACHE_NAME='mijnserenity-7.14.1-dashboard-analog-r1';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -27,9 +27,11 @@ const APP_SHELL=[
   '/ruuvi-climate.css?v=71100',
   '/movement-presence.css?v=71100',
   '/futuristic-analog-7140.css?v=71400',
+  '/dashboard-analog-7141.css?v=71410',
   '/captain-ux-711.css?v=71100',
   '/auth-bootstrap.js?v=71100',
   '/futuristic-analog-7140.js?v=71400',
+  '/dashboard-analog-7141.js?v=71410',
   '/app.js?v=71100',
   '/receipt-reader-pro.js?v=71100',
   '/mission-control.js?v=71100',
