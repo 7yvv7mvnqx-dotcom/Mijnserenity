@@ -1,4 +1,4 @@
-/* MijnSerenity 7.10.2 — Serenity IVMS dashboard */
+/* MijnSerenity 7.11.0 — Serenity IVMS dashboard */
 :root{
   --ivms-bg:#020914;
   --ivms-panel:#061321;
@@ -293,31 +293,9 @@ body.ivms-dashboard-active main{
 
 
 /* =========================================================
-   MijnSerenity 7.10.2 — compacte IVMS-kop en varende laadintro
+   MijnSerenity 7.11.0 — compacte IVMS-kop en varende laadintro
    ========================================================= */
-.ms797-splash{
-  position:fixed;
-  inset:0;
-  z-index:2147483647;
-  display:grid;
-  place-items:center;
-  overflow:hidden;
-  background:
-    radial-gradient(circle at 50% 42%,rgba(25,112,175,.24),transparent 38%),
-    linear-gradient(180deg,#020914 0%,#031426 58%,#010711 100%);
-  opacity:1;
-  visibility:visible;
-  transition:opacity .42s ease,visibility .42s ease;
-}
-.ms797-splash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
-.ms797-splash img{
-  width:min(100vw,620px);
-  height:100dvh;
-  max-height:100dvh;
-  display:block;
-  object-fit:cover;
-  object-position:center;
-}
+
 
 body.ms797-dashboard-route .ms750-pagebar{display:none!important}
 body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!important}
@@ -467,8 +445,70 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
   .ivms-more-button{font-size:12px;padding:6px}
   .ivms-command-panel{min-height:300px}
   .ivms-command-compass{width:min(54%,210px)}
-  .ms797-splash img{width:100vw;height:100dvh}
 }
-@media(prefers-reduced-motion:reduce){
-  .ms797-splash{transition:none}
+
+
+/* 7.11.0 — iPhone-kop: foto volledig breed, bediening eronder zonder overflow. */
+@media(max-width:620px){
+  .ivms-header{
+    display:block!important;
+    width:100%;
+    min-width:0;
+    padding:8px!important;
+    overflow:hidden;
+  }
+  .ivms-brand{
+    display:block!important;
+    position:relative;
+    width:100%;
+    min-width:0;
+  }
+  .ivms-brand-photo{
+    width:100%!important;
+    height:auto!important;
+    min-height:0;
+    aspect-ratio:16/9;
+    border-radius:14px;
+  }
+  .ivms-brand-photo img{width:100%!important;height:100%!important;object-fit:cover;object-position:center}
+  .ivms-brand-copy{
+    position:absolute;
+    left:12px;
+    right:12px;
+    bottom:10px;
+    z-index:3;
+    padding:26px 10px 8px;
+    border-radius:10px;
+    background:linear-gradient(180deg,transparent,rgba(1,9,18,.72));
+    pointer-events:none;
+  }
+  .ivms-brand-copy strong{font-size:20px!important;text-shadow:0 1px 8px #000}
+  .ivms-brand-copy span{display:block;max-width:100%;font-size:8px!important;white-space:normal;overflow-wrap:anywhere;text-shadow:0 1px 7px #000}
+  .ivms-header-tools{
+    display:grid!important;
+    width:100%;
+    min-width:0;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:6px!important;
+    margin-top:8px;
+    overflow:visible!important;
+  }
+  .ivms-clock{grid-column:span 2;min-width:0!important;width:100%!important}
+  .ivms-icon-button{min-width:0!important;width:100%!important;padding:6px!important}
+  .ivms-system-status{grid-column:span 3;min-width:0!important;width:100%!important;padding:7px 8px!important}
+  .ivms-more-button{grid-column:span 1;min-width:0!important;width:100%!important;padding:7px 5px!important;font-size:12px!important}
+  .ivms-header-tools>*{max-width:100%;box-sizing:border-box}
+}
+@media(max-width:380px){
+  .ivms-brand-photo{aspect-ratio:15/9}
+  .ivms-header-tools{gap:5px!important}
+  .ivms-clock strong{font-size:19px!important}
+  .ivms-clock span{font-size:10px!important}
+  .ivms-system-status small{font-size:7px!important}
+  .ivms-system-status strong{font-size:11px!important}
+  .ivms-more-button span{display:none}
+}
+@media(max-width:620px){
+  .serenity-ivms{box-sizing:border-box!important;width:100%!important;max-width:100%!important}
+  .ivms-header,.ivms-brand,.ivms-brand-photo,.ivms-header-tools,.ivms-header-tools>*{box-sizing:border-box!important}
 }

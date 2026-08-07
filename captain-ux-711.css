@@ -1,0 +1,180 @@
+/* MijnSerenity 7.11.0 — Captain UX: rustiger, slimmer, mobieler */
+:root{
+  --ms711-surface:rgba(8,27,44,.92);
+  --ms711-surface-soft:rgba(13,39,60,.82);
+  --ms711-border:rgba(133,211,242,.18);
+  --ms711-muted:#a9c3d3;
+  --ms711-ok:#7ee6a8;
+  --ms711-warn:#ffd36c;
+  --ms711-danger:#ff8d8d;
+}
+
+#ms711CaptainStatus,
+#ms711SmartOverview,
+#ms711AlertCard{box-sizing:border-box}
+
+.ms711-status-strip{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+  margin-top:10px;
+}
+.ms711-status-pill{
+  min-width:0;
+  padding:8px 9px;
+  border:1px solid var(--ms711-border);
+  border-radius:13px;
+  background:rgba(2,14,25,.72);
+  color:#fff;
+  text-align:center;
+}
+.ms711-status-pill small{
+  display:block;
+  margin-bottom:2px;
+  color:var(--ms711-muted);
+  font-size:10px;
+  font-weight:750;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.ms711-status-pill strong{
+  display:block;
+  overflow:hidden;
+  font-size:13px;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.ms711-status-pill.is-ok strong{color:var(--ms711-ok)}
+.ms711-status-pill.is-warn strong{color:var(--ms711-warn)}
+
+.ms711-overview{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px;
+  margin-top:12px;
+}
+.ms711-smart-card{
+  position:relative;
+  min-width:0;
+  min-height:138px;
+  padding:14px;
+  overflow:hidden;
+  border:1px solid var(--ms711-border);
+  border-radius:20px;
+  background:linear-gradient(155deg,rgba(14,43,65,.96),rgba(4,18,31,.96));
+  color:#fff;
+  text-align:left;
+  box-shadow:0 12px 28px rgba(0,0,0,.16);
+}
+.ms711-smart-card:active{transform:scale(.985)}
+.ms711-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ms711-card-head span:first-child{font-size:25px}
+.ms711-card-head small{color:var(--ms711-muted);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.ms711-smart-card strong.ms711-main-value{display:block;margin-top:13px;font-size:27px;line-height:1.05}
+.ms711-smart-card p{margin:5px 0 0;color:#c4d6e0;font-size:12px;line-height:1.35}
+.ms711-smart-card .ms711-subvalue{display:flex;align-items:center;gap:7px;margin-top:10px;color:#e7f4fb;font-size:12px;font-weight:700}
+
+.ms711-energy-flow{
+  display:grid;
+  grid-template-columns:auto 1fr auto 1fr auto;
+  align-items:center;
+  gap:5px;
+  margin-top:10px;
+  color:#d6edf8;
+  font-size:10px;
+  font-weight:750;
+}
+.ms711-energy-flow i{height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(126,230,168,.25),rgba(126,230,168,.95));animation:ms711pulse 1.8s ease-in-out infinite}
+@keyframes ms711pulse{50%{opacity:.45}}
+
+.ms711-alert-card{
+  margin-top:12px;
+  padding:13px 14px;
+  border:1px solid rgba(126,230,168,.22);
+  border-radius:17px;
+  background:rgba(7,35,35,.68);
+  color:#eefcff;
+}
+.ms711-alert-card.is-warning{border-color:rgba(255,211,108,.30);background:rgba(48,38,9,.72)}
+.ms711-alert-line{display:flex;align-items:flex-start;gap:10px}
+.ms711-alert-icon{font-size:21px;line-height:1.1}
+.ms711-alert-copy strong{display:block;font-size:15px}
+.ms711-alert-copy small{display:block;margin-top:2px;color:#bed0d8;font-size:12px;line-height:1.35}
+
+.ms711-start-row{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,.8fr);gap:10px;margin-top:12px}
+.ms711-start-row button{
+  min-height:58px;
+  border:1px solid var(--ms711-border);
+  border-radius:18px;
+  background:var(--ms711-surface-soft);
+  color:#fff;
+  font-size:15px;
+  font-weight:800;
+}
+.ms711-start-row .ms711-start-sailing{
+  background:linear-gradient(135deg,#167fc1,#0c557f);
+  box-shadow:0 10px 24px rgba(16,112,168,.24);
+}
+
+.ms711-ruuvi-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+.ms711-ruuvi-mini{padding:10px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075)}
+.ms711-ruuvi-mini small{display:block;color:var(--ms711-muted);font-size:10px;font-weight:750;text-transform:uppercase}
+.ms711-ruuvi-mini strong{display:block;margin-top:4px;font-size:16px}
+.ms711-ruuvi-mini em{display:block;margin-top:2px;color:#bdd0db;font-size:10px;font-style:normal}
+
+/* Rustiger startscherm: de slimme kaarten vervangen de lange tegelwand. */
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) #ms750SimpleDashboard > .ms750-primary-grid{
+  display:none!important;
+}
+body.ms750-simple-ui:not(.ms750-dashboard-expanded) #ms750SimpleDashboard > .ms750-auto-card{
+  margin-top:11px;
+}
+
+/* Bottom nav: vijf knoppen verdelen altijd exact over de beschikbare breedte. */
+body.ms750-simple-ui > .bottom-nav.ms744-compact-nav,
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav{
+  gap:0!important;
+  padding-left:5px!important;
+  padding-right:5px!important;
+  overflow-x:hidden!important;
+  justify-content:stretch!important;
+}
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item,
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav.ms709-icon-nav .bottom-nav-item{
+  flex:1 1 20%!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item small{
+  display:block!important;
+  margin-top:2px!important;
+  overflow:hidden;
+  font-size:9px!important;
+  line-height:1!important;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item span{
+  font-size:19px!important;
+}
+
+/* Live varen krijgt op mobiel de belangrijkste instrumenten eerder in beeld. */
+@media(max-width:620px){
+  .ms711-status-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ms711-overview{grid-template-columns:1fr}
+  .ms711-smart-card{min-height:124px}
+  .ms711-start-row{grid-template-columns:1fr .72fr}
+  .ms711-start-row button{min-height:56px}
+  .ms711-ruuvi-row{grid-template-columns:1fr 1fr}
+  #live .live-hero-card,
+  #live .live-navigation-card{scroll-margin-top:82px}
+}
+
+@media(max-width:380px){
+  .ms711-start-row{grid-template-columns:1fr}
+  .ms711-smart-card strong.ms711-main-value{font-size:24px}
+  body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item small{font-size:8px!important}
+}
+
+@media(prefers-reduced-motion:reduce){.ms711-energy-flow i{animation:none}}

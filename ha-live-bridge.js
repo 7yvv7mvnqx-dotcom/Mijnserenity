@@ -6,7 +6,7 @@
   const OAUTH_STATE_KEY='mijnserenity-ha-oauth-state-v733';
   const SELECT_KEY='mijnserenity-ha-selection-v733';
   const LIVE_CAMERA_KEY='mijnserenity-ha-live-cameras-v733';
-  const ALLOWED_DOMAINS=new Set(['light','media_player','remote','camera','switch','scene','sensor','binary_sensor']);
+  const ALLOWED_DOMAINS=new Set(['light','media_player','remote','camera','switch','scene','sensor','binary_sensor','device_tracker','person']);
   let installed=false;
   let discovered=[];
   let stateMap=new Map();
@@ -187,6 +187,29 @@
       stateSubscriptionActive=true;
     }
     return discovered;
+  }
+
+  async function getHistory(entityIds,startTime,endTime){
+    const auth=authData();
+    if(!auth?.baseUrl)throw new Error('Home Assistant is nog niet gekoppeld.');
+    const ids=(Array.isArray(entityIds)?entityIds:[entityIds]).map(String).filter(Boolean);
+    if(!ids.length)return [];
+    const token=await currentAccessToken();
+    const start=startTime instanceof Date?startTime.toISOString():String(startTime||'');
+    const end=endTime instanceof Date?endTime.toISOString():String(endTime||'');
+    if(!start)throw new Error('Begintijd ontbreekt.');
+    const url=new URL(`${auth.baseUrl}/api/history/period/${encodeURIComponent(start)}`);
+    url.searchParams.set('filter_entity_id',ids.join(','));
+    if(end)url.searchParams.set('end_time',end);
+    url.searchParams.set('minimal_response','');
+    url.searchParams.set('no_attributes','');
+    const response=await fetch(url.toString(),{
+      headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+      cache:'no-store'
+    });
+    if(!response.ok)throw new Error(`Home Assistant-geschiedenis kon niet worden gelezen (${response.status}).`);
+    const data=await response.json();
+    return Array.isArray(data)?data:[];
   }
 
   async function callService(domain,service,entityIds,serviceData={}){
@@ -556,6 +579,7 @@
       attributes:{...(item.attributes||{})}
     }));
     window.ms730RefreshStateSnapshot=()=>getStates();
+    window.ms730GetHistory=getHistory;
     window.ms730ToggleAdvanced=toggleAdvanced;
     window.ms712SendCommand=sendCommand;
     window.ms712OpenHomeAssistant=()=>{

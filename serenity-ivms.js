@@ -1,4 +1,4 @@
-/* MijnSerenity 7.10.2 — live Serenity IVMS startdashboard */
+/* MijnSerenity 7.11.0 — live Serenity IVMS startdashboard */
 (()=>{
   'use strict';
 
@@ -141,6 +141,10 @@
     return `mijnserenity-ivms-people-${boat}`;
   }
   function peopleOnboard(){
+    try{
+      const summary=window.ms7103GetPresenceSummary?.();
+      if(summary?.configured)return Number(summary.count)||0;
+    }catch{}
     const value=Number(localStorage.getItem(peopleKey()));
     return Number.isInteger(value)&&value>=0?value:2;
   }
@@ -309,7 +313,9 @@
     setText('ivmsForwardHumidity',forwardHumidity!==null?`${nl(forwardHumidity,0)} % RV`:'– % RV');
     setText('ivmsClimatePressure',climatePressure!==null?`Luchtdruk ${nl(climatePressure,0)} ${haClimatePressure?.attributes?.unit_of_measurement||'hPa'}`:'Luchtdruk –');
 
+    const presence=(()=>{try{return window.ms7103GetPresenceSummary?.()}catch{return null}})();
     setText('ivmsPeople',String(peopleOnboard()));
+    setText('ivmsPeopleMode',presence?.configured?'Automatisch via wifi / HA':'Handmatig · tik voor aanwezigheid');
 
     let bilgeState=String(state.bilge||'unknown');
     if(haBilge){
@@ -395,6 +401,8 @@
     setInterval(refreshSources,60000);
     window.addEventListener('mijnserenity-ha-state-updated',update);
     window.addEventListener('mijnserenity-ruuvi-config-updated',update);
+    window.addEventListener('mijnserenity-presence-updated',update);
+    window.addEventListener('mijnserenity-presence-config-updated',update);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshSources()});
     const photo=$('dashboardBoatPhoto');
     if(photo)new MutationObserver(updatePhoto).observe(photo,{attributes:true,attributeFilter:['src','class']});

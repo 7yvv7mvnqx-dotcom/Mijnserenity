@@ -1,8 +1,8 @@
-/* MijnSerenity 7.10.2 — stabiele eenvoudige en toegankelijke bediening */
+/* MijnSerenity 7.11.0 — stabiele eenvoudige en toegankelijke bediening */
 (()=>{
   'use strict';
 
-  const BUILD='7.10.2';
+  const BUILD='7.11.0';
   const SIMPLE_KEY='ms750-simple-ui';
   const LARGE_TEXT_KEY='ms750-large-text';
   const EXPANDED_KEY='ms750-dashboard-expanded';
@@ -17,6 +17,7 @@
     rws:{title:'Vaarwegberichten',icon:'📢'},
     planner:{title:'Reisplanner',icon:'🧭'},
     entertainment:{title:'Home Assistant',icon:'🏡'},
+    presence:{title:'Beweging & aanwezigheid',icon:'📈'},
     technical:{title:'Techniek',icon:'⚙️'},
     pois:{title:'POI’s',icon:'📍'},
     costs:{title:'Kosten',icon:'🧾'},
@@ -429,6 +430,7 @@
           ${moreRoute('pois')}
           ${moreRoute('technical')}
           ${moreRoute('entertainment')}
+          ${moreRoute('presence')}
           ${moreRoute('costs')}
           ${moreRoute('finance')}
           ${moreRoute('settings')}
@@ -506,6 +508,7 @@
     updatePageBar(currentRoute);
     closeMore(false);
     if(currentRoute==='rws')window.setTimeout(()=>window.initRwsPage?.(),30);
+    if(currentRoute==='presence')window.setTimeout(()=>window.ms7103InitPresencePage?.(),30);
     window.scrollTo({top:0,left:0,behavior:'auto'});
   }
 
@@ -552,7 +555,7 @@
   }
 
   function restoreNativePagerMode(){
-    /* 7.10.2: behoud de stabiele één-paginamodus. Het oude herstel maakte
+    /* 7.11.0: behoud de stabiele één-paginamodus. Het oude herstel maakte
        alle pagina's tegelijk zichtbaar en kon een klik direct terugdraaien. */
     document.body.classList.add('ms755-single-page-nav');
 

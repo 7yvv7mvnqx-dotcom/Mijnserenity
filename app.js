@@ -12923,6 +12923,10 @@ function captainNavigate(id, sourceButton=null){
     setTimeout(()=>initEntertainmentPage(),50);
   }
 
+  if(id==='presence'&&typeof window.ms7103InitPresencePage==='function'){
+    setTimeout(()=>window.ms7103InitPresencePage(),40);
+  }
+
   if(id==='technical'&&typeof initTechnicalDashboard==='function'){
     setTimeout(()=>initTechnicalDashboard(),60);
   }
@@ -14619,7 +14623,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.10.2"
+<gpx version="1.1" creator="MijnSerenity 7.11.0"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14873,7 +14877,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.10.2';
+const APP_VERSION='7.11.0';
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -14950,7 +14954,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js?v=71002',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=71100',{updateViaCache:'none'});
 
     await registration.update();
 
@@ -18171,7 +18175,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.10.2"
+ creator="MijnSerenity 7.11.0"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>
