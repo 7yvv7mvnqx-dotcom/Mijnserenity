@@ -7,7 +7,7 @@
 (()=>{
   'use strict';
 
-  const BUILD='7.11.0';
+  const BUILD=window.MIJSERENITY_BUILD||'7.14.2';
   const FIELD='sharedAutomaticVaren';
   let shared={
     known:false,

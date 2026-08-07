@@ -1,5 +1,5 @@
 /* ============================================================
-   MijnSerenity Cloud 7.11.0 — Buienradar op actuele positie
+   MijnSerenity Cloud 7.14.2 — Buienradar op actuele positie
    ============================================================ */
 
 const MS710_RADAR_REFRESH_MS=5*60*1000;

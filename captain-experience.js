@@ -1,12 +1,12 @@
 /* ============================================================
-   MijnSerenity 7.11.0 — Captain Experience
+   MijnSerenity 7.14.2 — Captain Experience
    Contextdashboard, live status, Captain, routebeleving,
    Home Assistant-groepen, radio-minispeler en automatische thema's.
    ============================================================ */
 (()=>{
   'use strict';
 
-  const BUILD='7.11.0';
+  const BUILD=window.MIJSERENITY_BUILD||'7.14.2';
   const THEME_KEY='ms760-theme';
   const DASHBOARD_ID='ms760CaptainDashboard';
   const REPLAY_ID='ms760ReplayLayer';

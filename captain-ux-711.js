@@ -1,7 +1,7 @@
-/* MijnSerenity 7.11.0 — Captain UX: contextueel startscherm en slimme status */
+/* MijnSerenity 7.14.2 — Captain UX: contextueel startscherm en slimme status */
 (()=>{
   'use strict';
-  const BUILD='7.11.0';
+  const BUILD=window.MIJSERENITY_BUILD||'7.14.2';
   const $=id=>document.getElementById(id);
   const clean=value=>String(value??'').replace(/\s+/g,' ').trim();
   const txt=(id,fallback='–')=>clean($(id)?.textContent)||fallback;

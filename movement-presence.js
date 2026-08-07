@@ -1,7 +1,7 @@
-/* MijnSerenity 7.11.0 — Ruuvi beweging & automatische aanwezigheid via Home Assistant */
+/* MijnSerenity 7.14.2 — Ruuvi beweging & automatische aanwezigheid via Home Assistant */
 (()=>{
   'use strict';
-  const BUILD='7.11.0';
+  const BUILD=window.MIJSERENITY_BUILD||'7.14.2';
   const CONFIG_KEY='mijnserenity-presence-v1';
   const GROUP_ID='ms7103PresenceGroup';
   const SLOT_LABELS={salon:'Salon',forward:'Voorhut'};

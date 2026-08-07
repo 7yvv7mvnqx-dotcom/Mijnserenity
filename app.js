@@ -3496,6 +3496,7 @@ async function initialise(session){
   }
 
   $('appView').classList.remove('hidden');
+  syncDisplayedAppVersion();
   startPresenceHeartbeat();
   applyAdminVisibility();
   renderDynamicWelcome(true);
@@ -14744,7 +14745,7 @@ function createLiveGpxFile(title){
 
   const safeTitle=xmlEscape(title||'Live vaartocht');
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MijnSerenity 7.11.0"
+<gpx version="1.1" creator="MijnSerenity 7.14.2"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata><name>${safeTitle}</name></metadata>
  ${photoWaypoints}
@@ -14998,7 +14999,14 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',persistLiveState);
 
 
-const APP_VERSION='7.11.0';
+const APP_VERSION=window.MIJSERENITY_BUILD||'7.14.2';
+
+function syncDisplayedAppVersion(){
+  const build=window.MIJSERENITY_BUILD||APP_VERSION;
+  if($('settingsAppVersion'))$('settingsAppVersion').textContent=build;
+  document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=build);
+}
+
 let deferredInstallPrompt=null;
 let waitingServiceWorker=null;
 
@@ -18296,7 +18304,7 @@ ms640PlannerGpx=function(plan){
 
   const gpx=`<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1"
- creator="MijnSerenity 7.11.0"
+ creator="MijnSerenity 7.14.2"
  xmlns="http://www.topografix.com/GPX/1/1">
  <metadata>
   <name>${ms640Xml(title)}</name>

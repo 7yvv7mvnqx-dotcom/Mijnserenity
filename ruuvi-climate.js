@@ -1,4 +1,4 @@
-/* MijnSerenity 7.11.0 — twee Ruuvi-klimaatsensoren via Home Assistant */
+/* MijnSerenity 7.14.2 — twee Ruuvi-klimaatsensoren via Home Assistant */
 (()=>{
   'use strict';
 

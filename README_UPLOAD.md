@@ -1,12 +1,14 @@
-MIJNSERENITY 7.14.1 — DASHBOARD MET ANALOGE KLOKKEN
-==================================================
+MIJNSERENITY 7.14.2 — VERSIEBEHEER HERSTELD
+============================================
 
 Upload alle bestanden uit deze ZIP naar de hoofdmap van je GitHub-repository.
-Overschrijf bestaande bestanden wanneer GitHub daarom vraagt.
+Overschrijf bestaande bestanden.
 
-Nieuw in deze versie:
-- Ook op het dashboard/home-scherm een sjieke analoge boordstatus-sectie toegevoegd.
-- Belangrijkste gegevens direct zichtbaar als mooie analoge klokken.
-- Kaarten voor huishoudaccu, diesel, drinkwater, vuilwater, zonnepaneel en motoruren.
-- Tik op een kaart om direct naar Techniek te gaan.
-- Future-stijl en iPhone-proof layout blijven behouden.
+Belangrijk in deze versie:
+- Instellingen toont voortaan de echte buildversie: 7.14.2.
+- De script-bootstrap gebruikt dezelfde versie en cachecode.
+- Alle lokale CSS/JS-bestanden krijgen een nieuwe cachecode (71420).
+- Service Worker cache is vernieuwd en oude MijnSerenity-caches worden verwijderd.
+- Synchronisatie- en rapportagemodules gebruiken voortaan de centrale buildversie.
+
+Na upload: open MijnSerenity en tik één keer op Ververs. Als iOS nog de oude PWA toont, gebruik bij inloggen 'App herstellen en vernieuwen'.
