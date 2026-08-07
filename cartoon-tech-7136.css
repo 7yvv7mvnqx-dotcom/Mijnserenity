@@ -1,0 +1,88 @@
+/* MijnSerenity 7.13.6 — maritieme cartoonstatus */
+.technical-gauge-icon{
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  margin:0 auto 7px;
+  border-radius:17px;
+  overflow:hidden;
+  border:2px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.06);
+  box-shadow:0 6px 14px rgba(0,0,0,.18);
+}
+.technical-gauge-icon img{width:100%;height:100%;object-fit:cover;display:block;}
+.technical-gauge-icon[data-state="good"]{border-color:#6de39a;box-shadow:0 0 0 2px rgba(109,227,154,.10),0 6px 14px rgba(0,0,0,.18);}
+.technical-gauge-icon[data-state="warning"]{border-color:#ffd36b;box-shadow:0 0 0 2px rgba(255,211,107,.10),0 6px 14px rgba(0,0,0,.18);}
+.technical-gauge-icon[data-state="critical"]{border-color:#ff8b7a;box-shadow:0 0 0 2px rgba(255,139,122,.12),0 6px 14px rgba(0,0,0,.18);}
+.technical-gauge-icon[data-state="normal"]{border-color:#8ab8e8;}
+.technical-overview-grid>.technical-gauge{min-width:0;overflow:hidden;}
+.technical-overview-grid>.technical-gauge>span,
+.technical-overview-grid>.technical-gauge>strong,
+.technical-overview-grid>.technical-gauge>small{max-width:100%;overflow-wrap:anywhere;}
+@media(max-width:430px){
+  .technical-overview-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;}
+  .technical-overview-grid>.technical-gauge{width:auto!important;min-width:0!important;padding:9px 7px!important;border-radius:15px!important;}
+  .technical-gauge-icon{width:50px;height:50px;margin-bottom:5px;border-radius:15px;}
+  .technical-overview-grid>.technical-gauge>span:not(.technical-gauge-icon){font-size:.78rem!important;line-height:1.12!important;}
+  .technical-overview-grid>.technical-gauge>strong{font-size:.96rem!important;line-height:1.08!important;}
+  .technical-overview-grid>.technical-gauge>small{font-size:.67rem!important;line-height:1.14!important;}
+  .bottom-nav{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:0!important;width:100%!important;}
+  .bottom-nav-item{min-width:0!important;width:100%!important;padding-left:2px!important;padding-right:2px!important;}
+  .bottom-nav-item span{font-size:20px!important;}
+  .bottom-nav-item small{max-width:100%!important;font-size:9.5px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .ivms-quick-nav{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important;}
+  .ivms-quick-nav button{min-width:0!important;padding:7px 3px!important;}
+  .ivms-quick-nav button small{font-size:.63rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+}
+@media(max-width:355px){.technical-overview-grid{grid-template-columns:1fr!important;}}
+
+
+/* MijnSerenity 7.13.7 — welkomkaart */
+.ms-welcome-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:0 0 12px;
+  padding:14px;
+  border-radius:18px;
+  background:linear-gradient(135deg, rgba(14,46,74,.96), rgba(10,30,48,.96));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 10px 24px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.ms-welcome-art{
+  flex:0 0 auto;
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  font-size:30px;
+  border-radius:16px;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.10);
+}
+.ms-welcome-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;}
+.ms-welcome-eyebrow{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:#a7c4db;}
+.ms-welcome-copy h2{margin:0;font-size:1.15rem;line-height:1.15;color:#fff;}
+.ms-welcome-copy p{margin:0;font-size:.82rem;line-height:1.25;color:#d3e1ec;}
+.ms-welcome-action{
+  flex:0 0 auto;
+  border:none;
+  border-radius:999px;
+  padding:10px 12px;
+  background:#ffffff;
+  color:#0e2e4a;
+  font-weight:700;
+  font-size:.82rem;
+}
+@media(max-width:430px){
+  .ms-welcome-card{padding:12px 10px;gap:10px;border-radius:16px;}
+  .ms-welcome-art{width:48px;height:48px;font-size:26px;border-radius:14px;}
+  .ms-welcome-copy h2{font-size:1rem;}
+  .ms-welcome-copy p{font-size:.75rem;}
+  .ms-welcome-action{padding:8px 10px;font-size:.74rem;}
+}
+@media(max-width:355px){
+  .ms-welcome-card{flex-wrap:wrap;}
+  .ms-welcome-action{width:100%;}
+}

@@ -323,6 +323,122 @@ function getLoggedInFirstName(){
   return raw.charAt(0).toUpperCase()+raw.slice(1);
 }
 
+const msWelcomeVariants=[
+  {
+    title:({name,part})=>`${part} ${name}, de kapitein van dienst meldt zich weer.`,
+    short:({name})=>`Welkom aan boord, ${name}`,
+    sub:({name})=>`Serenity ligt al klaar, ${name} — de trossen kijken hoopvol jouw kant op.`
+  },
+  {
+    title:({name})=>`Ahoy ${name}, Serenity heeft haar beste boeglach opgezet.`,
+    short:({name})=>`Ahoy ${name}`,
+    sub:()=>`Zelfs de meerlijnen staan bijna in de houding voor vertrek.`
+  },
+  {
+    title:({name,part})=>`${part} ${name}, klaar voor koers koffie en comfort?`,
+    short:({name})=>`Fijn dat je er bent, ${name}`,
+    sub:()=>`Het dashboard staat warm, de boot koel en de plannen varen vanzelf binnen.`
+  },
+  {
+    title:({name})=>`Welkom terug ${name} — kapiteinspet virtueel opgepoetst.`,
+    short:({name})=>`Welkom terug, ${name}`,
+    sub:()=>`Serenity doet alsof alles onder controle is… en dat is stiekem ook bijna zo.`
+  },
+  {
+    title:({name})=>`Goed je te zien ${name}, de stuurstand miste je al.`,
+    short:({name})=>`Goed je te zien, ${name}`,
+    sub:()=>`De boot is er klaar voor, nu de kapitein nog even elegant op start tikt.`
+  },
+  {
+    title:({name,part})=>`${part} ${name}, jouw drijvende commandocentrum is wakker.`,
+    short:({name})=>`Welkom, ${name}`,
+    sub:()=>`Serenity knipoogt maritiem: alles in één oogwenk duidelijk, zonder nat pak.`
+  },
+  {
+    title:({name})=>`Aan dek met ${name}! Serenity doet vandaag extra haar best.`,
+    short:({name})=>`Aan dek, ${name}`,
+    sub:()=>`Zelfs de techniek lijkt netter zodra jij inlogt — toeval zeggen we dan maar.`
+  },
+  {
+    title:({name})=>`Welkom kapitein ${name}, het water wacht netjes op instructies.`,
+    short:({name})=>`Welkom kapitein ${name}`,
+    sub:()=>`De route, systemen en tankstanden staan al keurig in de rij voor je.`
+  },
+  {
+    title:({name})=>`Hallo ${name}, Serenity is weer helemaal in de stemming.`,
+    short:({name})=>`Hallo ${name}`,
+    sub:()=>`Als boten konden grijnzen, zou deze dat nu overduidelijk doen.`
+  },
+  {
+    title:({name,part})=>`${part} ${name}, klaar om stijlvol uit te varen of slim te plannen?`,
+    short:({name})=>`Welkom aan boord, ${name}`,
+    sub:()=>`De boot is paraat, het dashboard staat scherp en de humor dobbert mee.`
+  }
+];
+
+let msWelcomeProfileCache=null;
+
+function msDayPartGreeting(){
+  const hour=new Date().getHours();
+  return hour<12?'Goedemorgen':hour<18?'Goedemiddag':'Goedenavond';
+}
+
+function msWelcomeStorageKey(){
+  return `mijnserenity-welcome-variant:${currentUser?.id||'guest'}`;
+}
+
+function msBuildWelcomeProfile(forceNew=false){
+  const name=getLoggedInFirstName();
+  const part=msDayPartGreeting();
+  const storageKey=msWelcomeStorageKey();
+  let previousIndex=-1;
+
+  try{ previousIndex=Number(localStorage.getItem(storageKey)); }
+  catch(error){ previousIndex=-1; }
+
+  let index=Number.isInteger(previousIndex)&&previousIndex>=0&&previousIndex<msWelcomeVariants.length
+    ?previousIndex
+    :Math.floor(Math.random()*msWelcomeVariants.length);
+
+  if(forceNew||!msWelcomeProfileCache){
+    if(msWelcomeVariants.length>1){
+      let safety=0;
+      while(index===previousIndex&&safety<12){
+        index=Math.floor(Math.random()*msWelcomeVariants.length);
+        safety++;
+      }
+    }
+    try{ localStorage.setItem(storageKey,String(index)); }catch(error){}
+  }
+
+  const variant=msWelcomeVariants[index]||msWelcomeVariants[0];
+  const profile={
+    name,
+    part,
+    index,
+    title:variant.title({name,part}),
+    short:variant.short({name,part}),
+    subtitle:variant.sub({name,part})
+  };
+
+  msWelcomeProfileCache=profile;
+  window.MIJNSERENITY_WELCOME_PROFILE=profile;
+  return profile;
+}
+
+function renderDynamicWelcome(forceNew=false){
+  const profile=msBuildWelcomeProfile(forceNew);
+  if($('welcome'))$('welcome').textContent=profile.short;
+  if($('captainGreeting'))$('captainGreeting').textContent=profile.title;
+  window.dispatchEvent(new CustomEvent('mijnserenity-welcome-updated',{detail:profile}));
+  return profile;
+}
+
+window.msGetWelcomeProfile=function(forceNew=false){
+  return renderDynamicWelcome(forceNew);
+};
+
+
 async function refreshMijnSerenity(button){
   const sync=$('dSync');
   button?.classList.add('is-refreshing');
@@ -3198,7 +3314,7 @@ async function saveAccountProfile(){
     if(error)throw error;
 
     currentUser=data.user||currentUser;
-    $('welcome').textContent='Welkom aan boord, '+getLoggedInFirstName();
+    renderDynamicWelcome(true);
     await touchAccountPresence();
     setAccountMsg('Profielnaam opgeslagen ✅');
   }catch(error){
@@ -3382,7 +3498,7 @@ async function initialise(session){
   $('appView').classList.remove('hidden');
   startPresenceHeartbeat();
   applyAdminVisibility();
-  $('welcome').textContent='Welkom aan boord, '+getLoggedInFirstName();
+  renderDynamicWelcome(true);
   resetPoiFilters(false);
 
   await loadMembership();
@@ -3419,6 +3535,13 @@ async function initialise(session){
 sb.auth.onAuthStateChange((event,session)=>{
   setTimeout(()=>handleAuthStateChange(event,session),0);
 });
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&currentUser){
+    renderDynamicWelcome(true);
+    try{ if(typeof renderCaptainCommandCenter==='function')renderCaptainCommandCenter(); }catch(error){}
+  }
+},{passive:true}); // mijnserenity-welcome-visibility
 
 async function loadMembership(){const {data,error}=await sb.from('boat_members').select('role,boat_id,boats(id,name,created_by)').eq('user_id',currentUser.id).limit(1);if(error){alert('Lidmaatschap laden mislukt: '+error.message);return}if(data?.length){currentRole=data[0].role;currentBoat=data[0].boats}else{currentRole=null;currentBoat=null}}
 function renderBoat(){
@@ -10915,9 +11038,7 @@ function captainFormatDate(value){
 }
 
 function captainGreetingText(){
-  const hour=new Date().getHours();
-  const part=hour<12?'Goedemorgen':hour<18?'Goedemiddag':'Goedenavond';
-  return `${part}, ${getLoggedInFirstName()}`;
+  return (msBuildWelcomeProfile(false)||{}).title||`${msDayPartGreeting()} ${getLoggedInFirstName()}`;
 }
 
 function captainSeasonTrips(){

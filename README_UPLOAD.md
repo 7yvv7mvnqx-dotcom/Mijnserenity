@@ -1,18 +1,12 @@
-MIJNSERENITY 7.13.5 — WELKOM + VAAR-DASHBOARD
-=========================================
+MIJNSERENITY 7.13.8 — PERSOONLIJK HUMORISTISCH WELKOM
+====================================================
 
-Upload alle bestanden uit deze ZIP naar de hoofdmap van GitHub en overschrijf de bestaande bestanden.
+Upload alle bestanden uit deze ZIP naar de hoofdmap van je GitHub-repository.
+Overschrijf bestaande bestanden wanneer GitHub daarom vraagt.
 
-Aangepast:
-- Gewone emoticons op de knoppen van Techniek.
-- Geen cartoons, animaties, gidsregels of extra statuskaarten.
-- Drinkwater en vuilwater krijgen automatisch een passende gezichtsexpressie op basis van het niveau.
-- iPhone-indeling compact gehouden; ondernavigatie past in vijf gelijke knoppen.
-- Oude releasebestanden en niet-meer-gebruikte afbeeldingen verwijderd.
-
-
-Nieuw in 7.13.5:
-- Grappige wisselende tijdgebonden begroeting voor Desi & Michel bij iedere start.
-- Tijdens actieve vaart keert MijnSerenity na 10 seconden automatisch terug naar het Dashboard.
-- Ook na omlaag scrollen op het Dashboard springt het vaaroverzicht na 10 seconden weer naar boven.
-- Terugkeer is alleen actief wanneer een vaartocht actief is of echte snelheid wordt gemeten.
+Nieuw in deze versie:
+- Welkomstbericht is nu gericht op de ingelogde gebruiker.
+- De voornaam wordt uit het accountprofiel of e-mailadres gehaald.
+- Bij elke nieuwe aanmelding én bij het opnieuw openen van het scherm verschijnt een andere humoristische welkom.
+- Het grote dashboardwelkom, Captain Command Center en de extra welkomstkaart lopen nu gelijk.
+- Maritieme cartoonstatussen en iPhone-proof layout blijven behouden.
