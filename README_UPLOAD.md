@@ -1,14 +1,15 @@
-MIJNSERENITY 7.14.2 — VERSIEBEHEER HERSTELD
-============================================
+MIJNSERENITY 7.14.3 — MOOIER DASHBOARD + SOEPELER WELKOM
+=======================================================
 
 Upload alle bestanden uit deze ZIP naar de hoofdmap van je GitHub-repository.
-Overschrijf bestaande bestanden.
+Overschrijf bestaande bestanden wanneer GitHub daarom vraagt.
 
-Belangrijk in deze versie:
-- Instellingen toont voortaan de echte buildversie: 7.14.2.
-- De script-bootstrap gebruikt dezelfde versie en cachecode.
-- Alle lokale CSS/JS-bestanden krijgen een nieuwe cachecode (71420).
-- Service Worker cache is vernieuwd en oude MijnSerenity-caches worden verwijderd.
-- Synchronisatie- en rapportagemodules gebruiken voortaan de centrale buildversie.
-
-Na upload: open MijnSerenity en tik één keer op Ververs. Als iOS nog de oude PWA toont, gebruik bij inloggen 'App herstellen en vernieuwen'.
+Verbeterd in deze versie:
+- Nieuw premium dashboard-overzicht toegevoegd bovenaan het Home-scherm.
+- Rustiger, overzichtelijker en gelikter uiterlijk.
+- Duidelijke blokken voor boordnet, tanks, navigatie en veiligheid.
+- Snelle actieknoppen voor Live varen, Techniek, Route en Weer.
+- Onnodige dubbele blokken op dashboard opgeruimd.
+- Welkomstkaart staat nu bovenaan het dashboard.
+- Fullscreen welkom start soepeler en vloeiender.
+- Welkomoverlay wordt minder schokkerig getoond en rustiger weggefade.

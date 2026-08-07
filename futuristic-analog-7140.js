@@ -4,6 +4,8 @@
   let overlayTimer=null;
   let overlayCleanupTimer=null;
   let suppressWelcomeEvent=false;
+  let lastOverlayAt=0;
+  let initialWelcomeShown=false;
 
   function numberFrom(id){
     const raw=String($(id)?.textContent||'').replace(',','.');
@@ -79,14 +81,20 @@
   function ensureWelcomeCard(){
     const dashboard=$('dashboard');
     const captainStrip=document.querySelector('#dashboard .captain-strip');
+    const ivms=$('serenityIvms');
     if(!dashboard || !captainStrip) return;
     let card=$('msWelcomeCard7140');
     if(!card){
       card=document.createElement('section');
       card.id='msWelcomeCard7140';
       card.className='ms-welcome-card';
-      card.innerHTML='<div class="ms-welcome-art" aria-hidden="true">🧭</div><div class="ms-welcome-copy"><span class="ms-welcome-eyebrow">WELKOM AAN BOORD</span><h2 id="msWelcomeTitle7140">Welkom aan boord</h2><p id="msWelcomeText7140">Serenity ligt klaar voor vertrek.</p></div><button type="button" class="ms-welcome-action" onclick="captainNavigate(\'live\')">Start varen</button>';
-      captainStrip.parentNode.insertBefore(card, captainStrip);
+      card.innerHTML="<div class='ms-welcome-art' aria-hidden='true'>🧭</div><div class='ms-welcome-copy'><span class='ms-welcome-eyebrow'>WELKOM AAN BOORD</span><h2 id='msWelcomeTitle7140'>Welkom aan boord</h2><p id='msWelcomeText7140'>Serenity ligt klaar voor vertrek.</p></div><button type='button' class='ms-welcome-action' onclick=\"captainNavigate('live')\">Start varen</button>";
+    }
+    const target=ivms || captainStrip;
+    if(target && card.parentNode!==dashboard){
+      dashboard.insertBefore(card,target);
+    }else if(target && card.nextElementSibling!==target){
+      dashboard.insertBefore(card,target);
     }
     const profile=window.MIJNSERENITY_WELCOME_PROFILE || (typeof window.msGetWelcomeProfile==='function' ? window.msGetWelcomeProfile(false) : null);
     const title=card.querySelector('#msWelcomeTitle7140');
@@ -109,19 +117,27 @@
   function hideWelcomeOverlay(){
     const overlay=$('msScreenWelcome7140'); if(!overlay)return;
     clearTimeout(overlayTimer); clearTimeout(overlayCleanupTimer);
-    overlay.classList.add('hide'); overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true');
-    overlayCleanupTimer=setTimeout(()=>{ document.body.classList.remove('ms-welcome-active'); overlay.classList.remove('hide'); },1200);
+    overlay.classList.add('hide');
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden','true');
+    overlayCleanupTimer=setTimeout(()=>{ document.body.classList.remove('ms-welcome-active'); overlay.classList.remove('hide'); },900);
   }
   function showWelcomeOverlay(profile){
     if(!dashboardVisible() || !profile) return;
+    const now=Date.now();
+    if(now-lastOverlayAt<3600) return;
+    lastOverlayAt=now;
     const overlay=ensureWelcomeOverlay();
     const title=$('msScreenWelcomeTitle7140'); const sub=$('msScreenWelcomeSub7140');
     if(title) title.textContent=profile.short || profile.title || 'Welkom aan boord';
     if(sub) sub.textContent=profile.title || profile.subtitle || 'Serenity ligt klaar voor vertrek.';
     clearTimeout(overlayTimer); clearTimeout(overlayCleanupTimer);
-    overlay.classList.remove('hide'); overlay.classList.add('show'); overlay.setAttribute('aria-hidden','false');
+    overlay.classList.remove('hide');
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden','false');
     document.body.classList.add('ms-welcome-active');
-    overlayTimer=setTimeout(hideWelcomeOverlay,3000);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>overlay.classList.add('show')));
+    overlayTimer=setTimeout(hideWelcomeOverlay,3200);
   }
   function refreshWelcome(forceNew=false,showOverlayNow=false){
     if(typeof window.msGetWelcomeProfile!=='function') return null;
@@ -149,7 +165,7 @@
     ensureWelcomeCard();
     ensureWelcomeOverlay();
     update();
-    setTimeout(()=>{ if(dashboardVisible()) refreshWelcome(true,true); },700);
+    setTimeout(()=>{ if(dashboardVisible() && !initialWelcomeShown){ initialWelcomeShown=true; refreshWelcome(true,true); } },520);
     setTimeout(update,800);
     setInterval(update,4000);
     window.addEventListener('mijnserenity-ha-state-updated',update);
@@ -160,7 +176,7 @@
     });
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='visible' && dashboardVisible()){
-        setTimeout(()=>{ ensureWelcomeCard(); update(); refreshWelcome(true,true); },140);
+        setTimeout(()=>{ ensureWelcomeCard(); update(); refreshWelcome(true,true); },220);
       }
     });
   }

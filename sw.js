@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.14.2-version-sync-r1';
+const CACHE_NAME='mijnserenity-7.14.3-dashboard-polish-r1';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -28,10 +28,12 @@ const APP_SHELL=[
   '/movement-presence.css?v=71420',
   '/futuristic-analog-7140.css?v=71420',
   '/dashboard-analog-7141.css?v=71420',
+  '/dashboard-premium-7143.css?v=71430',
   '/captain-ux-711.css?v=71420',
   '/auth-bootstrap.js?v=71420',
   '/futuristic-analog-7140.js?v=71420',
   '/dashboard-analog-7141.js?v=71420',
+  '/dashboard-premium-7143.js?v=71430',
   '/app.js?v=71420',
   '/receipt-reader-pro.js?v=71420',
   '/mission-control.js?v=71420',

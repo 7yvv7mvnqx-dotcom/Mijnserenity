@@ -37,8 +37,10 @@
     section.id='msDashboardAnalog7141';
     section.className='ms-dashboard-analog';
     section.innerHTML=`<div class="ms-dashboard-analog-head"><div><h3>Boordstatus in één oogopslag</h3><p>De belangrijkste gegevens als analoge klokken op je dashboard.</p></div><div class="ms-dashboard-analog-badge">Captain View</div></div><div class="ms-dashboard-analog-grid" id="msDashboardAnalogGrid7141"></div>`;
+    const premium=$('msDashboardPremium7143');
     const welcome=$('msWelcomeCard7140') || $('msWelcomeCard7137');
-    if(welcome && welcome.parentNode) welcome.insertAdjacentElement('afterend',section);
+    if(premium && premium.parentNode) premium.insertAdjacentElement('afterend',section);
+    else if(welcome && welcome.parentNode) welcome.insertAdjacentElement('afterend',section);
     else captainStrip.parentNode.insertBefore(section,captainStrip);
     return section;
   }
