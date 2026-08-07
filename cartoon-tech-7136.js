@@ -1,11 +1,17 @@
 (()=>{
   'use strict';
   const $=id=>document.getElementById(id);
+  let overlayTimer=null;
+  let overlayCleanupTimer=null;
+  let suppressWelcomeEvent=false;
+  let overlayVisible=false;
+
   function numberFrom(id){
     const raw=String($(id)?.textContent||'').replace(',','.');
     const match=raw.match(/-?\d+(?:\.\d+)?/);
     return match?Number(match[0]):null;
   }
+
   function setImage(id,src,label,state='normal'){
     const el=$(id);
     if(!el)return;
@@ -22,6 +28,7 @@
     el.setAttribute('title',label);
     el.dataset.state=state;
   }
+
   function battery(v){
     if(!Number.isFinite(v))return ['cartoon-battery.png','Accuspanning nog onbekend','warning'];
     if(v>=12.45)return ['cartoon-battery.png','Accu goed','good'];
@@ -69,11 +76,17 @@
     return ['cartoon-motor.png','Systemen in orde','good'];
   }
 
+  function dashboardVisible(){
+    const authView=$('authView');
+    const dashboard=$('dashboard');
+    return (!authView || authView.classList.contains('hidden')) && (!!dashboard);
+  }
+
   function ensureWelcomeCard(){
-    const dashboard=document.getElementById('dashboard');
+    const dashboard=$('dashboard');
     const captainStrip=document.querySelector('#dashboard .captain-strip');
     if(!dashboard || !captainStrip) return;
-    let card=document.getElementById('msWelcomeCard7137');
+    let card=$('msWelcomeCard7137');
     if(!card){
       card=document.createElement('section');
       card.id='msWelcomeCard7137';
@@ -88,13 +101,71 @@
         + '<button type="button" class="ms-welcome-action" onclick="captainNavigate(\'live\')">Start varen</button>';
       captainStrip.parentNode.insertBefore(card, captainStrip);
     }
+    const profile=window.MIJNSERENITY_WELCOME_PROFILE || (typeof window.msGetWelcomeProfile==='function' ? window.msGetWelcomeProfile(false) : null);
     const title=card.querySelector('#msWelcomeTitle7137');
-    const text=card.querySelector('#msWelcomeText7137');
-    const profile=typeof window.msGetWelcomeProfile==='function'
-      ?window.msGetWelcomeProfile(false)
-      :(window.MIJNSERENITY_WELCOME_PROFILE||null);
+    const copy=card.querySelector('#msWelcomeText7137');
     if(title) title.textContent=profile?.title||'Welkom aan boord';
-    if(text) text.textContent=profile?.subtitle||'Serenity · VriJon Contessa 37E · Alles in één oogopslag gereed';
+    if(copy) copy.textContent=profile?.subtitle||'Serenity · VriJon Contessa 37E · Alles in één oogopslag gereed';
+  }
+
+  function ensureWelcomeOverlay(){
+    let overlay=$('msScreenWelcome7139');
+    if(overlay) return overlay;
+    overlay=document.createElement('div');
+    overlay.id='msScreenWelcome7139';
+    overlay.className='ms-screen-welcome';
+    overlay.setAttribute('aria-hidden','true');
+    overlay.innerHTML=''
+      + '<div class="ms-screen-welcome-panel">'
+      + '  <div class="ms-screen-welcome-badge">WELKOM AAN BOORD</div>'
+      + '  <div class="ms-screen-welcome-art" aria-hidden="true">⛵</div>'
+      + '  <h1 id="msScreenWelcomeTitle7139">Welkom aan boord</h1>'
+      + '  <p id="msScreenWelcomeSub7139">Serenity ligt klaar voor vertrek.</p>'
+      + '</div>';
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  function hideWelcomeOverlay(){
+    const overlay=$('msScreenWelcome7139');
+    if(!overlay)return;
+    clearTimeout(overlayTimer);
+    clearTimeout(overlayCleanupTimer);
+    overlay.classList.add('hide');
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden','true');
+    overlayVisible=false;
+    overlayCleanupTimer=setTimeout(()=>{
+      document.body.classList.remove('ms-welcome-active');
+      overlay.classList.remove('hide');
+    },1200);
+  }
+
+  function showWelcomeOverlay(profile){
+    if(!dashboardVisible() || !profile) return;
+    const overlay=ensureWelcomeOverlay();
+    const title=$('msScreenWelcomeTitle7139');
+    const sub=$('msScreenWelcomeSub7139');
+    if(title) title.textContent=profile.short || profile.title || 'Welkom aan boord';
+    if(sub) sub.textContent=profile.title || profile.subtitle || 'Serenity ligt klaar voor vertrek.';
+    clearTimeout(overlayTimer);
+    clearTimeout(overlayCleanupTimer);
+    overlay.classList.remove('hide');
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden','false');
+    document.body.classList.add('ms-welcome-active');
+    overlayVisible=true;
+    overlayTimer=setTimeout(hideWelcomeOverlay,3000);
+  }
+
+  function refreshWelcome(forceNew=false,showOverlayNow=false){
+    if(typeof window.msGetWelcomeProfile!=='function') return null;
+    suppressWelcomeEvent=true;
+    const profile=window.msGetWelcomeProfile(forceNew);
+    suppressWelcomeEvent=false;
+    ensureWelcomeCard();
+    if(showOverlayNow) showWelcomeOverlay(profile);
+    return profile;
   }
 
   function update(){
@@ -107,15 +178,27 @@
     m=solar(); setImage('techSolarIcon',...m);
     m=systems(); setImage('techSystemIcon',...m);
   }
+
   function install(){
     ensureWelcomeCard();
+    ensureWelcomeOverlay();
     update();
-    window.addEventListener('mijnserenity-welcome-updated',()=>ensureWelcomeCard());
+    setTimeout(()=>{ if(dashboardVisible()) refreshWelcome(true,true); },700);
     setTimeout(update,800);
     setInterval(update,4000);
     window.addEventListener('mijnserenity-ha-state-updated',update);
-    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ setTimeout(()=>{ ensureWelcomeCard(); update(); },100); } });
+    window.addEventListener('mijnserenity-welcome-updated',event=>{
+      ensureWelcomeCard();
+      if(suppressWelcomeEvent) return;
+      showWelcomeOverlay(event?.detail || window.MIJNSERENITY_WELCOME_PROFILE || null);
+    });
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible' && dashboardVisible()){
+        setTimeout(()=>{ ensureWelcomeCard(); update(); refreshWelcome(true,true); },140);
+      }
+    });
   }
+
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
 })();
