@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.13.2">
+<meta name="mijnserenity-build" content="7.13.5">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='7.13.2';
+window.MIJSERENITY_BUILD='7.13.5';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -57,11 +57,8 @@ window.repairMijnSerenity=async function(){
   <link rel="stylesheet" href="technical-live-sync.css?v=71100">
   <link rel="stylesheet" href="ruuvi-climate.css?v=71100">
   <link rel="stylesheet" href="movement-presence.css?v=71100">
+  <link rel="stylesheet" href="emoji-tech-7134.css?v=71340">
   <link rel="stylesheet" href="captain-ux-711.css?v=71100">
-  <link rel="stylesheet" href="tank-humor.css?v=71110">
-  <link rel="stylesheet" href="technical-cartoon.css?v=71200">
-  <link rel="stylesheet" href="home-cartoon.css?v=71300">
-  <link rel="stylesheet" href="iphone-compact-7132.css?v=71320">
 
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=71100">
   <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=71100">
@@ -2647,7 +2644,7 @@ window.repairMijnSerenity=async function(){
     <div class="technical-overview-grid">
       <button type="button" class="card technical-gauge"
         onclick="openTechnicalSnapshotForm('engine')">
-        <span class="technical-gauge-icon">⚙️</span>
+        <span id="techEngineIcon" class="technical-gauge-icon">😐</span>
         <span>Motoruren</span>
         <strong id="techEngineHours">0,0</strong>
         <small id="techEngineService">Nog geen onderhoudsgegevens</small>
@@ -2659,7 +2656,7 @@ window.repairMijnSerenity=async function(){
 
       <button type="button" class="card technical-gauge"
         onclick="openTechnicalSnapshotForm('battery')">
-        <span class="technical-gauge-icon">🔋</span>
+        <span id="techHouseIcon" class="technical-gauge-icon">😐</span>
         <span>Huishoudaccu</span>
         <strong id="techHouseVoltage">– V</strong>
         <small id="techHouseBatteryStatus">Nog niet gemeten</small>
@@ -2667,7 +2664,7 @@ window.repairMijnSerenity=async function(){
 
       <button type="button" class="card technical-gauge"
         onclick="openTechnicalSnapshotForm('battery')">
-        <span class="technical-gauge-icon">🔌</span>
+        <span id="techStartIcon" class="technical-gauge-icon">😐</span>
         <span>Startaccu</span>
         <strong id="techStartVoltage">– V</strong>
         <small id="techStartBatteryStatus">Nog niet gemeten</small>
@@ -2675,7 +2672,7 @@ window.repairMijnSerenity=async function(){
 
       <button type="button" class="card technical-gauge"
         onclick="openTechnicalSnapshotForm('tanks')">
-        <span class="technical-gauge-icon">⛽</span>
+        <span id="techFuelIcon" class="technical-gauge-icon">😐</span>
         <span>Dieseltank</span>
         <strong id="techFuelLevel">–%</strong>
         <small id="techFuelLiters">Inhoud onbekend</small>
@@ -2683,7 +2680,7 @@ window.repairMijnSerenity=async function(){
 
       <button type="button" class="card technical-gauge"
         onclick="openTechnicalSnapshotForm('tanks')">
-        <span class="technical-gauge-icon">💧</span>
+        <span id="techWaterIcon" class="technical-gauge-icon">😐</span>
         <span>Drinkwater</span>
         <strong id="techWaterLevel">–%</strong>
         <small>Beschikbare voorraad</small>
@@ -2691,7 +2688,7 @@ window.repairMijnSerenity=async function(){
 
       <button type="button" class="card technical-gauge"
         onclick="openTechnicalSnapshotForm('tanks')">
-        <span class="technical-gauge-icon">🚽</span>
+        <span id="techWasteIcon" class="technical-gauge-icon">😐</span>
         <span>Vuilwatertank</span>
         <strong id="techWasteLevel">–%</strong>
         <small id="techWasteStatus">Nog niet gemeten</small>
@@ -2699,7 +2696,7 @@ window.repairMijnSerenity=async function(){
 
       <button type="button" class="card technical-gauge"
         onclick="openTechnicalSnapshotForm('energy')">
-        <span class="technical-gauge-icon">☀️</span>
+        <span id="techSolarIcon" class="technical-gauge-icon">😐</span>
         <span>Zonnepaneel</span>
         <strong id="techSolarPower">– W</strong>
         <small id="techShorePowerStatus">Walstroom onbekend</small>
@@ -2707,7 +2704,7 @@ window.repairMijnSerenity=async function(){
 
       <button type="button" class="card technical-gauge"
         onclick="openTechnicalSnapshotForm('systems')">
-        <span class="technical-gauge-icon">🔥</span>
+        <span id="techSystemIcon" class="technical-gauge-icon">😐</span>
         <span>Verwarming</span>
         <strong id="techHeaterStatus">Onbekend</strong>
         <small id="techBilgeStatus">Bilge onbekend</small>
@@ -4681,8 +4678,7 @@ window.repairMijnSerenity=async function(){
 </div>
 
 <script src="auth-bootstrap.js?v=71100"></script>
-<script src="tank-humor.js?v=71110"></script>
-<script src="technical-cartoon.js?v=71200"></script>
-<script src="home-cartoon.js?v=71300"></script>
+<script src="emoji-tech-7134.js?v=71340"></script>
+<script src="welcome-voyage-7135.js?v=71350"></script>
 </body>
 </html>

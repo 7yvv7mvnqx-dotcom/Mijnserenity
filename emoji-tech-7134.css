@@ -1,0 +1,110 @@
+/* MijnSerenity 7.13.4 — eenvoudige emoji-status + iPhone-fit */
+
+.technical-gauge-icon{
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  margin:0 auto 6px;
+  font-size:28px;
+  line-height:1;
+}
+
+.technical-overview-grid > .technical-gauge{
+  min-width:0;
+  overflow:hidden;
+}
+
+.technical-overview-grid > .technical-gauge > span,
+.technical-overview-grid > .technical-gauge > strong,
+.technical-overview-grid > .technical-gauge > small{
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+
+@media (max-width:430px){
+  .technical-overview-grid{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+
+  .technical-overview-grid > .technical-gauge{
+    width:auto !important;
+    min-width:0 !important;
+    padding:10px 8px !important;
+    border-radius:15px !important;
+  }
+
+  .technical-gauge-icon{
+    width:38px;
+    height:38px;
+    margin-bottom:4px;
+    font-size:24px;
+  }
+
+  .technical-overview-grid > .technical-gauge > span:not(.technical-gauge-icon){
+    font-size:.78rem !important;
+    line-height:1.12 !important;
+  }
+
+  .technical-overview-grid > .technical-gauge > strong{
+    font-size:.98rem !important;
+    line-height:1.08 !important;
+  }
+
+  .technical-overview-grid > .technical-gauge > small{
+    font-size:.68rem !important;
+    line-height:1.15 !important;
+  }
+
+  .bottom-nav{
+    display:grid !important;
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    gap:0 !important;
+    width:100% !important;
+  }
+
+  .bottom-nav-item{
+    min-width:0 !important;
+    width:100% !important;
+    padding-left:2px !important;
+    padding-right:2px !important;
+  }
+
+  .bottom-nav-item span{
+    font-size:20px !important;
+  }
+
+  .bottom-nav-item small{
+    max-width:100% !important;
+    font-size:9.5px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  .ivms-quick-nav{
+    display:grid !important;
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    gap:6px !important;
+  }
+
+  .ivms-quick-nav button{
+    min-width:0 !important;
+    padding:7px 3px !important;
+  }
+
+  .ivms-quick-nav button small{
+    font-size:.63rem !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+}
+
+@media (max-width:355px){
+  .technical-overview-grid{
+    grid-template-columns:1fr !important;
+  }
+}
