@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.13.9-fullscreen-welcome-r1';
+const CACHE_NAME='mijnserenity-7.14.0-analog-future-r1';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -26,10 +26,10 @@ const APP_SHELL=[
   '/technical-live-sync.css?v=71100',
   '/ruuvi-climate.css?v=71100',
   '/movement-presence.css?v=71100',
-  '/cartoon-tech-7136.css?v=71390',
+  '/futuristic-analog-7140.css?v=71400',
   '/captain-ux-711.css?v=71100',
   '/auth-bootstrap.js?v=71100',
-  '/cartoon-tech-7136.js?v=71390',
+  '/futuristic-analog-7140.js?v=71400',
   '/app.js?v=71100',
   '/receipt-reader-pro.js?v=71100',
   '/mission-control.js?v=71100',
@@ -61,14 +61,6 @@ const APP_SHELL=[
   '/icon-512.png?v=71100',
   '/waterkaarten-dashboard.png?v=71100',
   '/mijnserenity-logo.png?v=71100',
-  '/cartoon-motor.png',
-  '/cartoon-battery.png',
-  '/cartoon-fuel.png',
-  '/cartoon-water-full.png',
-  '/cartoon-water-low.png',
-  '/cartoon-waste-empty.png',
-  '/cartoon-waste-full.png',
-  '/cartoon-solar.png',
 ];
 
 async function cacheFile(cache,path){

@@ -1,0 +1,207 @@
+/* MijnSerenity 7.14.0 — analoge klokken & future style */
+.technical-overview-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.technical-gauge{
+  position:relative;
+  min-width:0;
+  overflow:hidden;
+  padding:14px 12px 12px !important;
+  border-radius:22px !important;
+  background:
+    linear-gradient(180deg,rgba(15,31,49,.96),rgba(9,20,34,.98)),
+    radial-gradient(circle at top right,rgba(78,186,255,.12),transparent 40%);
+  border:1px solid rgba(109,171,232,.14) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 12px 28px rgba(0,0,0,.18);
+}
+.technical-gauge::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:14px 14px;
+  opacity:.25;
+  pointer-events:none;
+}
+.technical-gauge > span:not(.technical-gauge-icon),
+.technical-gauge > strong,
+.technical-gauge > small{ position:relative; z-index:1; }
+.technical-gauge > span:not(.technical-gauge-icon){
+  display:block;
+  margin-top:2px;
+  font-size:.8rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#8fb9dd;
+}
+.technical-gauge > strong{
+  display:block;
+  margin-top:5px;
+  font-size:1.1rem;
+  line-height:1.05;
+  color:#fff;
+}
+.technical-gauge > small{
+  display:block;
+  margin-top:4px;
+  font-size:.74rem;
+  line-height:1.2;
+  color:#c4d5e4;
+}
+.technical-auto-hours-note{ color:#88a3bb !important; }
+.technical-gauge-icon{
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:104px;
+  margin:0 0 6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.ms-analog-dial{
+  --dial-color:#62d8ff;
+  --needle-angle:-130deg;
+  position:relative;
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(9,23,38,.95) 0 46%, transparent 47%),
+    conic-gradient(from -140deg, rgba(255,255,255,.08) 0deg, rgba(255,255,255,.03) 60deg, rgba(255,255,255,.08) 180deg, rgba(255,255,255,.03) 260deg, rgba(255,255,255,.08) 320deg, rgba(255,255,255,.08) 360deg);
+  border:1px solid rgba(149,199,242,.18);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 3px rgba(104,196,255,.05), 0 14px 30px rgba(0,0,0,.22);
+}
+.ms-analog-dial::before{
+  content:'';
+  position:absolute;
+  inset:6px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 0 18px color-mix(in srgb, var(--dial-color) 35%, transparent);
+}
+.ms-analog-dial::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:conic-gradient(from -140deg, transparent 0 10%, color-mix(in srgb, var(--dial-color) 28%, transparent) 10% 72%, transparent 72% 100%);
+  -webkit-mask:radial-gradient(circle at center, transparent 0 63%, #000 64% 76%, transparent 77%);
+  mask:radial-gradient(circle at center, transparent 0 63%, #000 64% 76%, transparent 77%);
+  opacity:.9;
+}
+.ms-analog-dial[data-state="good"]{ --dial-color:#77e18f; }
+.ms-analog-dial[data-state="warning"]{ --dial-color:#ffd36b; }
+.ms-analog-dial[data-state="critical"]{ --dial-color:#ff8c7c; }
+.ms-analog-dial[data-state="normal"]{ --dial-color:#6cc9ff; }
+.ms-dial-center{
+  position:absolute;
+  inset:23px;
+  border-radius:50%;
+  background:radial-gradient(circle at 50% 35%, rgba(255,255,255,.15), rgba(255,255,255,.02) 65%), #10253c;
+  border:1px solid rgba(255,255,255,.08);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+.ms-dial-emoji{ font-size:28px; line-height:1; filter:drop-shadow(0 4px 8px rgba(0,0,0,.25)); }
+.ms-dial-needle{
+  position:absolute;
+  left:50%;
+  bottom:50%;
+  width:4px;
+  height:34px;
+  margin-left:-2px;
+  border-radius:999px;
+  transform-origin:50% 100%;
+  transform:rotate(var(--needle-angle));
+  background:linear-gradient(180deg, #f9fdff, color-mix(in srgb, var(--dial-color) 75%, #fff));
+  box-shadow:0 0 12px color-mix(in srgb, var(--dial-color) 60%, transparent);
+}
+.ms-dial-cap{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:12px;
+  height:12px;
+  margin:-6px 0 0 -6px;
+  border-radius:50%;
+  background:#f5fbff;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--dial-color) 35%, transparent), 0 0 10px color-mix(in srgb, var(--dial-color) 50%, transparent);
+}
+.ms-dial-label{
+  position:absolute;
+  left:50%;
+  bottom:9px;
+  transform:translateX(-50%);
+  padding:2px 7px;
+  border-radius:999px;
+  font-size:.58rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#dceaf6;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.08);
+  white-space:nowrap;
+}
+.ms-dial-tick{ position:absolute; left:50%; top:50%; width:2px; height:10px; background:rgba(232,243,252,.26); transform-origin:50% -33px; margin-left:-1px; border-radius:999px; }
+.ms-dial-tick.major{ height:14px; background:rgba(241,248,255,.46); }
+
+.ms-welcome-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:0 0 12px;
+  padding:14px;
+  border-radius:18px;
+  background:linear-gradient(135deg, rgba(14,46,74,.96), rgba(10,30,48,.96));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 10px 24px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.ms-welcome-art{ flex:0 0 auto; width:58px; height:58px; display:grid; place-items:center; font-size:30px; border-radius:16px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.10); }
+.ms-welcome-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;}
+.ms-welcome-eyebrow{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:#a7c4db;}
+.ms-welcome-copy h2{margin:0;font-size:1.15rem;line-height:1.15;color:#fff;}
+.ms-welcome-copy p{margin:0;font-size:.82rem;line-height:1.25;color:#d3e1ec;}
+.ms-welcome-action{ flex:0 0 auto; border:none; border-radius:999px; padding:10px 12px; background:#ffffff; color:#0e2e4a; font-weight:700; font-size:.82rem; }
+
+main,#appUpdateBanner,#appToast{ transition:filter 1.6s ease, opacity 1.6s ease; }
+body.ms-welcome-active main,body.ms-welcome-active #appUpdateBanner,body.ms-welcome-active #appToast{ filter:blur(12px); }
+.ms-screen-welcome{ position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(4,14,24,.30); opacity:0; pointer-events:none; transition:opacity .65s ease; }
+.ms-screen-welcome.show{ opacity:1; pointer-events:auto; }
+.ms-screen-welcome.hide{ opacity:0; pointer-events:none; }
+.ms-screen-welcome-panel{ width:min(96vw,980px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; color:#fff; }
+.ms-screen-welcome-badge{ display:inline-flex; align-items:center; justify-content:center; padding:7px 12px; border-radius:999px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.12); font-size:.8rem; letter-spacing:.1em; text-transform:uppercase; color:#d9ebf8; backdrop-filter:blur(8px); }
+.ms-screen-welcome-art{ font-size:clamp(44px,8vw,84px); line-height:1; filter:drop-shadow(0 10px 24px rgba(0,0,0,.22)); animation:msWelcomeFloat 2.9s ease-in-out forwards; }
+#msScreenWelcomeTitle7139{ margin:0; font-size:clamp(44px,10vw,112px); line-height:.98; letter-spacing:-.03em; text-wrap:balance; text-shadow:0 10px 30px rgba(0,0,0,.22); animation:msWelcomeZoomBack 2.8s cubic-bezier(.14,.83,.2,1) forwards; transform-origin:center center; }
+#msScreenWelcomeSub7139{ width:min(90vw,860px); margin:0; font-size:clamp(15px,2.8vw,27px); line-height:1.28; color:#d7e8f4; text-wrap:balance; text-shadow:0 8px 24px rgba(0,0,0,.18); animation:msWelcomeFadeIn 1.4s ease .18s both; }
+@keyframes msWelcomeZoomBack{ 0%{ transform:scale(1.85); opacity:0; } 16%{ opacity:1; } 100%{ transform:scale(1); opacity:1; } }
+@keyframes msWelcomeFadeIn{ 0%{ opacity:0; transform:translateY(20px); } 100%{ opacity:1; transform:translateY(0); } }
+@keyframes msWelcomeFloat{ 0%{ transform:translateY(12px) scale(.96); opacity:0; } 100%{ transform:translateY(0) scale(1); opacity:1; } }
+
+@media (max-width:430px){
+  .technical-overview-grid{ gap:8px; }
+  .technical-gauge{ padding:12px 10px 10px !important; border-radius:18px !important; }
+  .technical-gauge-icon{ height:92px; margin-bottom:5px; }
+  .ms-analog-dial{ width:88px; height:88px; }
+  .ms-dial-center{ inset:21px; }
+  .ms-dial-emoji{ font-size:24px; }
+  .ms-dial-needle{ height:30px; transform-origin:50% 100%; }
+  .technical-gauge > span:not(.technical-gauge-icon){ font-size:.75rem; }
+  .technical-gauge > strong{ font-size:1rem; }
+  .technical-gauge > small{ font-size:.70rem; }
+  body.ms-welcome-active main, body.ms-welcome-active #appUpdateBanner, body.ms-welcome-active #appToast{ filter:blur(10px); }
+  .ms-screen-welcome{ padding:18px; }
+  .ms-screen-welcome-badge{ font-size:.68rem; padding:6px 10px; }
+  #msScreenWelcomeTitle7139{ font-size:clamp(34px,12vw,72px); }
+  #msScreenWelcomeSub7139{ font-size:clamp(13px,4.4vw,19px); width:min(92vw,420px); }
+  .ms-welcome-card{ padding:12px 10px; gap:10px; border-radius:16px; }
+  .ms-welcome-art{ width:48px; height:48px; font-size:26px; border-radius:14px; }
+  .ms-welcome-copy h2{ font-size:1rem; }
+  .ms-welcome-copy p{ font-size:.75rem; }
+  .ms-welcome-action{ padding:8px 10px; font-size:.74rem; }
+}
+@media (max-width:355px){ .technical-overview-grid{ grid-template-columns:1fr; } .ms-welcome-card{ flex-wrap:wrap; } .ms-welcome-action{ width:100%; } }
