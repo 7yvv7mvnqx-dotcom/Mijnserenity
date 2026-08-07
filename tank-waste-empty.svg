@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none">
+<rect width="160" height="160" rx="28" fill="#0E2033"/>
+
+<circle cx="80" cy="76" r="38" fill="#8BE28B" stroke="#D6FFD8" stroke-width="4"/>
+<rect x="62" y="111" width="36" height="14" rx="7" fill="#8BE28B" stroke="#D6FFD8" stroke-width="3"/>
+<ellipse cx="66" cy="72" rx="6" ry="8" fill="#1F3B23"/>
+<ellipse cx="94" cy="72" rx="6" ry="8" fill="#1F3B23"/>
+<path d="M63 92 Q80 106 97 92" stroke="#1F3B23" stroke-width="6" stroke-linecap="round"/>
+<path d="M118 70 q11 5 12 18" stroke="#FFE388" stroke-width="7" stroke-linecap="round"/>
+<text x="80" y="149" text-anchor="middle" font-family="Arial" font-size="16" fill="#D7FFD9">Lekker leeg</text>
+
+</svg>

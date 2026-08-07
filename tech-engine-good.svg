@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="160" viewBox="0 0 180 160" fill="none">
+<rect width="180" height="160" rx="24" fill="#10263A"/>
+
+<circle cx="78" cy="76" r="34" fill="#9EE57D" stroke="#E7FFD9" stroke-width="4"/>
+<rect x="60" y="104" width="36" height="12" rx="6" fill="#9EE57D" stroke="#E7FFD9" stroke-width="3"/>
+<circle cx="65" cy="74" r="5" fill="#23422B"/><circle cx="91" cy="74" r="5" fill="#23422B"/>
+<path d="M64 92 Q78 102 92 92" stroke="#23422B" stroke-width="6" stroke-linecap="round"/>
+<path d="M118 56 h18 l8 10 -8 10 h-18 l-8 -10z" fill="#6EA2FF" stroke="#DCE9FF" stroke-width="4"/>
+<circle cx="123" cy="66" r="7" fill="#27456C"/><circle cx="145" cy="66" r="7" fill="#27456C"/>
+<path d="M34 96 l14 -22 12 8 -12 20z" fill="#FFD067" stroke="#FFF2C8" stroke-width="4"/>
+<text x="90" y="147" text-anchor="middle" font-family="Arial" font-size="15" fill="#E9FFF3">Motor blij</text>
+
+</svg>

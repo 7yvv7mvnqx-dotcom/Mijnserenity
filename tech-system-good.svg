@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="160" viewBox="0 0 180 160" fill="none">
+<rect width="180" height="160" rx="24" fill="#10263A"/>
+
+<circle cx="74" cy="76" r="34" fill="#8FE088" stroke="#E5FFDF" stroke-width="4"/>
+<circle cx="61" cy="74" r="5" fill="#1D3E22"/><circle cx="87" cy="74" r="5" fill="#1D3E22"/>
+<path d="M60 92 Q74 102 88 92" stroke="#1D3E22" stroke-width="6" stroke-linecap="round"/>
+<path d="M116 102 q-8 -18 6 -30 q-3 -12 10 -18 q16 9 12 24 q13 10 6 24 z" fill="#FF9A53" stroke="#FFD9B4" stroke-width="4"/>
+<text x="90" y="146" text-anchor="middle" font-family="Arial" font-size="15" fill="#ECFFF0">Alles snort</text>
+
+</svg>

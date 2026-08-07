@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none">
+<rect width="160" height="160" rx="28" fill="#0E2033"/>
+
+<circle cx="80" cy="76" r="38" fill="#AEC85A" stroke="#F0FFD4" stroke-width="4"/>
+<rect x="62" y="111" width="36" height="14" rx="7" fill="#AEC85A" stroke="#F0FFD4" stroke-width="3"/>
+<ellipse cx="66" cy="76" rx="6" ry="8" fill="#3E421A"/>
+<ellipse cx="94" cy="76" rx="6" ry="8" fill="#3E421A"/>
+<path d="M65 102 Q80 86 95 102" stroke="#3E421A" stroke-width="6" stroke-linecap="round"/>
+<path d="M118 46 c8 -10 18 3 8 12 c11 -2 16 10 5 14" stroke="#89D17C" stroke-width="5" stroke-linecap="round" fill="none"/>
+<text x="80" y="149" text-anchor="middle" font-family="Arial" font-size="16" fill="#F0FFD4">Stinkalarm nadert</text>
+
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="160" viewBox="0 0 180 160" fill="none">
+<rect width="180" height="160" rx="24" fill="#10263A"/>
+
+<path d="M60 34 h30 l16 16 v50 c0 16 -12 28 -28 28 h-18 c-16 0 -28 -12 -28 -28 V50z" fill="#7ADAC3" stroke="#D9FFF7" stroke-width="4"/>
+<path d="M90 34 v18 h16" stroke="#D9FFF7" stroke-width="4"/>
+<circle cx="68" cy="73" r="5" fill="#1D3C39"/><circle cx="92" cy="73" r="5" fill="#1D3C39"/>
+<path d="M66 91 Q80 102 94 91" stroke="#1D3C39" stroke-width="6" stroke-linecap="round"/>
+<path d="M118 57 q14 2 18 13" stroke="#FFE07A" stroke-width="7" stroke-linecap="round"/>
+<text x="90" y="146" text-anchor="middle" font-family="Arial" font-size="15" fill="#E7FFF9">Tank tevreden</text>
+
+</svg>

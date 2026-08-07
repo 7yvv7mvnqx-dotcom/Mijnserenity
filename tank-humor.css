@@ -1,0 +1,206 @@
+.tank-humor{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  margin-top:12px;
+  padding:12px;
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 22px rgba(0,0,0,.16);
+}
+
+.tank-humor.inline{
+  margin-top:8px;
+  padding:9px 10px;
+  border-radius:14px;
+  gap:10px;
+}
+
+.tank-humor-emoji{
+  flex:0 0 auto;
+  width:64px;
+  height:64px;
+  display:grid;
+  place-items:center;
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,.10));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 6px 16px rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.18);
+  overflow:hidden;
+}
+
+.tank-humor-emoji img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+}
+
+.tank-humor.inline .tank-humor-emoji{
+  width:52px;
+  height:52px;
+  border-radius:12px;
+}
+
+.tank-humor-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.tank-humor-title{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  max-width:100%;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:.68rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  opacity:.9;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.1);
+}
+
+.tank-humor-text{
+  font-weight:700;
+  line-height:1.2;
+}
+
+.tank-humor-joke{
+  position:relative;
+  margin-top:4px;
+  padding:8px 10px;
+  border-radius:14px;
+  font-size:.8rem;
+  opacity:.96;
+  line-height:1.25;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+.tank-humor-joke::before{
+  content:"";
+  position:absolute;
+  left:12px;
+  top:-6px;
+  width:12px;
+  height:12px;
+  background:inherit;
+  border-left:1px solid rgba(255,255,255,.12);
+  border-top:1px solid rgba(255,255,255,.12);
+  transform:rotate(45deg);
+}
+
+.tank-humor.cartoonish .tank-humor-text{
+  font-size:.98rem;
+}
+
+.tank-humor.good{
+  background:linear-gradient(135deg,rgba(31,176,120,.18),rgba(255,255,255,.04));
+  border-color:rgba(31,176,120,.25);
+}
+.tank-humor.warning{
+  background:linear-gradient(135deg,rgba(255,177,66,.16),rgba(255,255,255,.04));
+  border-color:rgba(255,177,66,.25);
+}
+.tank-humor.critical{
+  background:linear-gradient(135deg,rgba(255,92,92,.16),rgba(255,255,255,.04));
+  border-color:rgba(255,92,92,.28);
+}
+
+.technical-gauge .tank-humor{
+  text-align:left;
+}
+
+.ivms-card .tank-humor{
+  margin-top:14px;
+}
+
+.ivms-tank-row .tank-humor.inline{
+  margin-left:auto;
+  max-width:220px;
+}
+
+@media (max-width: 700px){
+  .tank-humor{padding:10px;gap:10px}
+  .tank-humor-emoji{width:56px;height:56px}
+  .tank-humor-joke{font-size:.76rem;padding:7px 9px}
+  .ivms-tank-row{
+    flex-wrap:wrap;
+    row-gap:8px;
+  }
+  .ivms-tank-row .tank-humor.inline{
+    width:100%;
+    max-width:none;
+    margin-left:0;
+  }
+}
+
+
+@keyframes msTankFloat {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes msTankPulse {
+  0%,100% { transform: scale(1); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 6px 16px rgba(0,0,0,.18); }
+  50% { transform: scale(1.03); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 10px 24px rgba(0,0,0,.22); }
+}
+
+@keyframes msTankWiggle {
+  0%,100% { transform: rotate(0deg) translateY(0); }
+  20% { transform: rotate(-1.5deg) translateY(-1px); }
+  40% { transform: rotate(1.2deg) translateY(0); }
+  60% { transform: rotate(-1deg) translateY(-2px); }
+  80% { transform: rotate(1deg) translateY(0); }
+}
+
+@keyframes msTankBubbleGlow {
+  0%,100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+  50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 0 0 2px rgba(255,255,255,.03); }
+}
+
+.tank-humor-emoji{
+  animation: msTankFloat 3.8s ease-in-out infinite;
+  transform-origin:center center;
+  will-change: transform;
+}
+
+.tank-humor-joke{
+  animation: msTankBubbleGlow 4s ease-in-out infinite;
+}
+
+.tank-humor.warning .tank-humor-emoji{
+  animation: msTankPulse 2.8s ease-in-out infinite;
+}
+
+.tank-humor.critical .tank-humor-emoji{
+  animation: msTankWiggle 1.8s ease-in-out infinite;
+}
+
+.tank-humor.good .tank-humor-title::before,
+.tank-humor.warning .tank-humor-title::before,
+.tank-humor.critical .tank-humor-title::before{
+  content:'';
+  width:7px;
+  height:7px;
+  border-radius:999px;
+  display:inline-block;
+  margin-right:6px;
+}
+
+.tank-humor.good .tank-humor-title::before{ background:#6de39a; box-shadow:0 0 10px rgba(109,227,154,.45); }
+.tank-humor.warning .tank-humor-title::before{ background:#ffd36b; box-shadow:0 0 10px rgba(255,211,107,.45); }
+.tank-humor.critical .tank-humor-title::before{ background:#ff8b7a; box-shadow:0 0 10px rgba(255,139,122,.5); }
+
+@media (prefers-reduced-motion: reduce){
+  .tank-humor-emoji,
+  .tank-humor-joke{
+    animation:none !important;
+  }
+}

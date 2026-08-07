@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none">
+<rect width="160" height="160" rx="28" fill="#0E2033"/>
+
+<path d="M80 18 C94 42 116 61 116 87 C116 111 100 129 80 129 C60 129 44 111 44 87 C44 61 66 42 80 18 Z" fill="#C9EAF8" stroke="#F6FEFF" stroke-width="4" stroke-dasharray="6 6"/>
+<ellipse cx="66" cy="79" rx="6" ry="8" fill="#15314A"/>
+<ellipse cx="94" cy="79" rx="6" ry="8" fill="#15314A"/>
+<path d="M65 104 Q80 88 95 104" stroke="#15314A" stroke-width="6" stroke-linecap="round"/>
+<path d="M38 111 q22 8 43 4" stroke="#EAB565" stroke-width="5" stroke-linecap="round"/>
+<circle cx="125" cy="48" r="15" fill="#F7C45B"/>
+<path d="M118 49 q7 7 14 0" stroke="#E8A949" stroke-width="4" stroke-linecap="round"/>
+<text x="80" y="149" text-anchor="middle" font-family="Arial" font-size="16" fill="#D8F4FF">Uitgedroogd</text>
+
+</svg>

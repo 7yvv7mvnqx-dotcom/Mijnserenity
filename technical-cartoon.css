@@ -1,0 +1,175 @@
+.technical-gauge{
+  position:relative;
+  overflow:hidden;
+}
+
+.technical-cartoon{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  margin-top:10px;
+  padding:12px;
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 22px rgba(0,0,0,.16);
+  text-align:left;
+}
+
+.technical-cartoon.good{
+  background:linear-gradient(135deg,rgba(39,192,123,.16),rgba(255,255,255,.04));
+  border-color:rgba(39,192,123,.24);
+}
+
+.technical-cartoon.warning{
+  background:linear-gradient(135deg,rgba(255,193,79,.16),rgba(255,255,255,.04));
+  border-color:rgba(255,193,79,.26);
+}
+
+.technical-cartoon.critical{
+  background:linear-gradient(135deg,rgba(255,104,104,.16),rgba(255,255,255,.04));
+  border-color:rgba(255,104,104,.28);
+}
+
+.technical-cartoon-art{
+  flex:0 0 auto;
+  width:64px;
+  height:64px;
+  border-radius:18px;
+  overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,.10));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 6px 16px rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.18);
+}
+
+.technical-cartoon-art img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.technical-cartoon-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.technical-cartoon-title{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  max-width:100%;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:.68rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  opacity:.9;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.1);
+}
+
+.technical-cartoon-text{
+  font-size:.95rem;
+  font-weight:700;
+  line-height:1.2;
+}
+
+.technical-cartoon-joke{
+  position:relative;
+  margin-top:4px;
+  padding:8px 10px;
+  border-radius:14px;
+  font-size:.8rem;
+  line-height:1.24;
+  opacity:.96;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+.technical-cartoon-joke::before{
+  content:"";
+  position:absolute;
+  left:12px;
+  top:-6px;
+  width:12px;
+  height:12px;
+  background:inherit;
+  border-left:1px solid rgba(255,255,255,.12);
+  border-top:1px solid rgba(255,255,255,.12);
+  transform:rotate(45deg);
+}
+
+@media (max-width:700px){
+  .technical-cartoon{padding:10px;gap:10px}
+  .technical-cartoon-art{width:56px;height:56px}
+  .technical-cartoon-text{font-size:.9rem}
+  .technical-cartoon-joke{font-size:.76rem;padding:7px 9px}
+}
+
+
+@keyframes msTechFloat {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes msTechPulse {
+  0%,100% { transform: scale(1); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 6px 16px rgba(0,0,0,.18); }
+  50% { transform: scale(1.03); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 10px 24px rgba(0,0,0,.22); }
+}
+
+@keyframes msTechWiggle {
+  0%,100% { transform: rotate(0deg) translateY(0); }
+  20% { transform: rotate(-1.5deg) translateY(-1px); }
+  40% { transform: rotate(1.2deg) translateY(0); }
+  60% { transform: rotate(-1deg) translateY(-2px); }
+  80% { transform: rotate(1deg) translateY(0); }
+}
+
+@keyframes msBubbleGlow {
+  0%,100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+  50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 0 0 2px rgba(255,255,255,.03); }
+}
+
+.technical-cartoon-art{
+  animation: msTechFloat 3.6s ease-in-out infinite;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.technical-cartoon-joke{
+  animation: msBubbleGlow 3.8s ease-in-out infinite;
+}
+
+.technical-cartoon.warning .technical-cartoon-art{
+  animation: msTechPulse 2.8s ease-in-out infinite;
+}
+
+.technical-cartoon.critical .technical-cartoon-art{
+  animation: msTechWiggle 1.8s ease-in-out infinite;
+}
+
+.technical-cartoon.good .technical-cartoon-title::before,
+.technical-cartoon.warning .technical-cartoon-title::before,
+.technical-cartoon.critical .technical-cartoon-title::before{
+  content:'';
+  width:7px;
+  height:7px;
+  border-radius:999px;
+  display:inline-block;
+  margin-right:6px;
+}
+
+.technical-cartoon.good .technical-cartoon-title::before{ background:#6de39a; box-shadow:0 0 10px rgba(109,227,154,.45); }
+.technical-cartoon.warning .technical-cartoon-title::before{ background:#ffd36b; box-shadow:0 0 10px rgba(255,211,107,.45); }
+.technical-cartoon.critical .technical-cartoon-title::before{ background:#ff8b7a; box-shadow:0 0 10px rgba(255,139,122,.5); }
+
+@media (prefers-reduced-motion: reduce){
+  .technical-cartoon-art,
+  .technical-cartoon-joke{
+    animation:none !important;
+  }
+}

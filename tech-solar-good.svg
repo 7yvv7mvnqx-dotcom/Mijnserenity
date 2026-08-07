@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="160" viewBox="0 0 180 160" fill="none">
+<rect width="180" height="160" rx="24" fill="#10263A"/>
+
+<circle cx="58" cy="62" r="22" fill="#FFD76B" stroke="#FFF1BA" stroke-width="4"/>
+<path d="M58 28 v-10 M58 106 v10 M24 62 H14 M102 62 h10 M34 38 l-8 -8 M82 38 l8 -8 M34 86 l-8 8 M82 86 l8 8" stroke="#FFD76B" stroke-width="5" stroke-linecap="round"/>
+<circle cx="50" cy="58" r="4" fill="#6A4E12"/><circle cx="66" cy="58" r="4" fill="#6A4E12"/>
+<path d="M48 72 Q58 80 68 72" stroke="#6A4E12" stroke-width="5" stroke-linecap="round"/>
+<rect x="96" y="70" width="50" height="28" rx="4" fill="#5FA3FF" stroke="#E6F0FF" stroke-width="4"/>
+<path d="M104 78 h34 M104 86 h34" stroke="#214B7B" stroke-width="3"/>
+<path d="M121 98 v18" stroke="#E6F0FF" stroke-width="4" stroke-linecap="round"/>
+<text x="90" y="146" text-anchor="middle" font-family="Arial" font-size="15" fill="#FFF9DD">Zon aan het werk</text>
+
+</svg>

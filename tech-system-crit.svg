@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="160" viewBox="0 0 180 160" fill="none">
+<rect width="180" height="160" rx="24" fill="#10263A"/>
+
+<circle cx="74" cy="76" r="34" fill="#FF8B7A" stroke="#FFD6D0" stroke-width="4"/>
+<circle cx="61" cy="76" r="5" fill="#4A1D18"/><circle cx="87" cy="76" r="5" fill="#4A1D18"/>
+<path d="M60 100 Q74 82 88 100" stroke="#4A1D18" stroke-width="6" stroke-linecap="round"/>
+<path d="M116 102 q-8 -18 6 -30 q-3 -12 10 -18 q16 9 12 24 q13 10 6 24 z" fill="#FF7E47" stroke="#FFD1B5" stroke-width="4"/>
+<path d="M34 52 c11 -13 25 6 11 16 c16 -1 20 16 5 19" stroke="#7BEC7B" stroke-width="6" stroke-linecap="round" fill="none"/>
+<text x="90" y="146" text-anchor="middle" font-family="Arial" font-size="15" fill="#FFF1F0">Help, storing!</text>
+
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="160" viewBox="0 0 180 160" fill="none">
+<rect width="180" height="160" rx="24" fill="#10263A"/>
+
+<circle cx="78" cy="76" r="34" fill="#FFD36B" stroke="#FFF0C9" stroke-width="4"/>
+<rect x="60" y="104" width="36" height="12" rx="6" fill="#FFD36B" stroke="#FFF0C9" stroke-width="3"/>
+<circle cx="65" cy="74" r="5" fill="#4A3A17"/><circle cx="91" cy="74" r="5" fill="#4A3A17"/>
+<path d="M64 96 Q78 88 92 96" stroke="#4A3A17" stroke-width="6" stroke-linecap="round"/>
+<path d="M118 56 h18 l8 10 -8 10 h-18 l-8 -10z" fill="#9FA6B7" stroke="#EEF2FB" stroke-width="4"/>
+<circle cx="123" cy="66" r="7" fill="#475269"/><circle cx="145" cy="66" r="7" fill="#475269"/>
+<path d="M37 98 l16 -18" stroke="#FF8B5C" stroke-width="6" stroke-linecap="round"/>
+<path d="M45 80 l10 10" stroke="#FF8B5C" stroke-width="6" stroke-linecap="round"/>
+<text x="90" y="147" text-anchor="middle" font-family="Arial" font-size="15" fill="#FFF7D6">Motor moppert</text>
+
+</svg>

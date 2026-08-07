@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none">
+<rect width="160" height="160" rx="28" fill="#0E2033"/>
+
+<circle cx="80" cy="76" r="38" fill="#C1E06E" stroke="#F3FFD0" stroke-width="4"/>
+<rect x="62" y="111" width="36" height="14" rx="7" fill="#C1E06E" stroke="#F3FFD0" stroke-width="3"/>
+<ellipse cx="66" cy="74" rx="6" ry="8" fill="#37421C"/>
+<ellipse cx="94" cy="74" rx="6" ry="8" fill="#37421C"/>
+<path d="M65 98 Q80 90 95 98" stroke="#37421C" stroke-width="6" stroke-linecap="round"/>
+<path d="M117 44 q6 -7 14 -1" stroke="#9ED38C" stroke-width="4" stroke-linecap="round"/>
+<text x="80" y="149" text-anchor="middle" font-family="Arial" font-size="16" fill="#ECFFD7">Begint te vullen</text>
+
+</svg>

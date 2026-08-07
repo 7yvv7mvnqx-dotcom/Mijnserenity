@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none">
+<rect width="160" height="160" rx="28" fill="#0E2033"/>
+
+<path d="M80 18 C94 42 116 61 116 87 C116 111 100 129 80 129 C60 129 44 111 44 87 C44 61 66 42 80 18 Z" fill="#93D7F7" stroke="#E8F9FF" stroke-width="4"/>
+<ellipse cx="66" cy="77" rx="6" ry="8" fill="#15314A"/>
+<ellipse cx="94" cy="77" rx="6" ry="8" fill="#15314A"/>
+<path d="M65 101 Q80 90 95 101" stroke="#15314A" stroke-width="6" stroke-linecap="round"/>
+<path d="M118 116 q-10 -5 -22 -2" stroke="#FFD37A" stroke-width="6" stroke-linecap="round"/>
+<rect x="106" y="101" width="14" height="12" rx="3" fill="#FFD37A"/>
+<text x="80" y="149" text-anchor="middle" font-family="Arial" font-size="16" fill="#D8F4FF">Dorstig</text>
+
+</svg>

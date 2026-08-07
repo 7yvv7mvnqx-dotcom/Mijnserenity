@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none">
+<rect width="160" height="160" rx="28" fill="#0E2033"/>
+
+<circle cx="80" cy="76" r="38" fill="#96B04A" stroke="#F4FFD0" stroke-width="4"/>
+<rect x="62" y="111" width="36" height="14" rx="7" fill="#96B04A" stroke="#F4FFD0" stroke-width="3"/>
+<ellipse cx="66" cy="78" rx="6" ry="8" fill="#3C3215"/>
+<ellipse cx="94" cy="78" rx="6" ry="8" fill="#3C3215"/>
+<path d="M65 104 Q80 84 95 104" stroke="#3C3215" stroke-width="6" stroke-linecap="round"/>
+<path d="M34 52 c11 -13 25 6 11 16 c16 -1 20 16 5 19" stroke="#6BE36B" stroke-width="6" stroke-linecap="round" fill="none"/>
+<path d="M118 42 c11 -13 25 6 11 16 c16 -1 20 16 5 19" stroke="#6BE36B" stroke-width="6" stroke-linecap="round" fill="none"/>
+<text x="80" y="149" text-anchor="middle" font-family="Arial" font-size="16" fill="#F4FFD0">Vol & vergassend</text>
+
+</svg>

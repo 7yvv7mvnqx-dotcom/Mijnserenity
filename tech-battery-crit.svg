@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="160" viewBox="0 0 180 160" fill="none">
+<rect width="180" height="160" rx="24" fill="#10263A"/>
+
+<rect x="40" y="42" width="72" height="52" rx="12" fill="#FF8B7B" stroke="#FFD6D0" stroke-width="4"/>
+<rect x="112" y="56" width="12" height="24" rx="4" fill="#FF8B7B" stroke="#FFD6D0" stroke-width="4"/>
+<circle cx="61" cy="66" r="5" fill="#4A1D18"/><circle cx="89" cy="66" r="5" fill="#4A1D18"/>
+<path d="M59 84 Q75 68 91 84" stroke="#4A1D18" stroke-width="6" stroke-linecap="round"/>
+<path d="M54 60 h18" stroke="#4A1D18" stroke-width="4" stroke-linecap="round"/>
+<path d="M136 100 l10 20 M146 100 l-10 20" stroke="#FFF6A5" stroke-width="6" stroke-linecap="round"/>
+<text x="90" y="144" text-anchor="middle" font-family="Arial" font-size="15" fill="#FFF0F0">Ik ben leeg!</text>
+
+</svg>
