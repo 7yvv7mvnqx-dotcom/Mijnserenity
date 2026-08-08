@@ -1,12 +1,15 @@
-MIJNSERENITY 7.14.6 — KNOPPEN/KAARTEN IN STIJL VAN TEMPERATUUR & BILGE
-===================================================================
+MIJNSERENITY 7.14.7 — RUUVI RECHTSTREEKS VIA VICTRON VRM
 
-Upload alle bestanden uit deze ZIP naar de hoofdmap van je GitHub-repository.
-Overschrijf bestaande bestanden wanneer GitHub daarom vraagt.
+Nieuw:
+- Salon Serenity = Ruuvi instance 24
+- Machinekamer Serenity = Ruuvi instance 25
+- Directe VRM-uitlezing via beveiligde Netlify Function
+- Home Assistant blijft fallback en kan later verder worden afgerond
 
-Aangepast in deze versie:
-- De startscherm-kaarten/knoppen zijn nu vormgegeven in dezelfde stijl als de kaarten Temperatuur en Bilgestatus.
-- Rustige donkere kaartachtergrond, subtiele rand en dezelfde visuele lijn.
-- Waarden zijn duidelijker leesbaar en blijven op 1 scherm overzichtelijk.
-- Actieknoppen onderaan volgen nu ook meer dezelfde kaartstijl.
-- Welkomstoverlay en cockpitindeling blijven behouden.
+Na upload/deploy:
+1. Open MijnSerenity > Meer > Home Assistant > Instellen > Ruuvi / klimaat.
+2. Plak één keer je bestaande Victron VRM API-token in het nieuwe veld.
+3. Tik Opslaan & VRM testen.
+4. De token wordt lokaal op jouw apparaat bewaard en wordt via de Netlify proxy naar VRM gestuurd.
+
+Optioneel veiliger: zet in Netlify de environment variable VRM_API_TOKEN; dan kan de function zonder browser-token werken.

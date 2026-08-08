@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.14.6-cockpit-card-style-r1';
+const CACHE_NAME='mijnserenity-7.14.7-ruuvi-vrm-r1';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -51,7 +51,7 @@ const APP_SHELL=[
   '/ais-page.js?v=71420',
   '/entertainment-page.js?v=71420',
   '/ha-live-bridge.js?v=71420',
-  '/ruuvi-climate.js?v=71420',
+  '/ruuvi-climate.js?v=71470',
   '/movement-presence.js?v=71420',
   '/technical-live-sync.js?v=71420',
   '/live-cameras.js?v=71420',

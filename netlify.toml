@@ -46,6 +46,13 @@
   status = 200
   force = true
 
+# MijnSerenity 7.14.7 — beveiligde VRM proxy voor RuuviTags
+[[redirects]]
+  from = "/api/vrm-ruuvi"
+  to = "/.netlify/functions/vrm-ruuvi"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

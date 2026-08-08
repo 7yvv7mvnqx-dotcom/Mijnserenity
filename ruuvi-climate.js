@@ -1,10 +1,14 @@
-/* MijnSerenity 7.14.6 — Ruuvi Salon + Machinekamer via Home Assistant */
+/* MijnSerenity 7.14.7 — Ruuvi via VRM direct, met Home Assistant fallback */
 (()=>{
   'use strict';
 
   const CONFIG_KEY='mijnserenity-ruuvi-climate-v7102';
   const GROUP_ID='ms7102RuuviClimateGroup';
-  const SLOT_LABELS={salon:'Salon Serenity',machine:'Machinekamer Serenity'};
+  const SLOT_LABELS={salon:'Salon Serenity',forward:'Machinekamer Serenity'};
+  const VRM_SITE_ID=1003203;
+  const VRM_INSTANCES={salon:24,forward:25};
+  let vrmClimate={salon:null,forward:null,updatedAt:null,error:''};
+  let vrmTimer=0;
   let renderQueued=false;
 
   const escape=value=>String(value??'').replace(/[&<>'"]/g,char=>({
@@ -22,19 +26,15 @@
   function readConfig(){
     try{
       const value=JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-      const saved=value&&typeof value==='object'?value:{};
-      return {
-        salonTemperature:String(saved.salonTemperature||'sensor.salon_serenity_temperatuur'),
-        machineTemperature:String(saved.machineTemperature||saved.forwardTemperature||'sensor.machinekamer_serenity_temperatuur'),
-        ...saved
-      };
+      return value&&typeof value==='object'?value:{};
     }catch{return {}}
   }
 
   function saveConfig(value){
     const next={
-      salonTemperature:String(value?.salonTemperature||'sensor.salon_serenity_temperatuur'),
-      machineTemperature:String(value?.machineTemperature||value?.forwardTemperature||'sensor.machinekamer_serenity_temperatuur'),
+      salonTemperature:String(value?.salonTemperature||''),
+      forwardTemperature:String(value?.forwardTemperature||''),
+      vrmToken:String(value?.vrmToken||readConfig()?.vrmToken||''),
       updatedAt:new Date().toISOString()
     };
     localStorage.setItem(CONFIG_KEY,JSON.stringify(next));
@@ -125,9 +125,51 @@
     return valid(entity)?Number(Number(entity.state).toFixed(digits)):null;
   }
 
+  function virtualEntity(slot,kind,value,unitValue,deviceClassValue){
+    if(!Number.isFinite(Number(value)))return null;
+    const suffix=kind==='temperature'?'temperatuur':kind==='humidity'?'luchtvochtigheid':'luchtdruk';
+    return {
+      entity_id:`sensor.${slot==='salon'?'salon_serenity':'machinekamer_serenity'}_${suffix}`,
+      domain:'sensor',
+      name:`${SLOT_LABELS[slot]} ${suffix}`,
+      state:String(value),
+      attributes:{unit_of_measurement:unitValue,device_class:deviceClassValue,source:'Victron VRM'}
+    };
+  }
+
+  function directSlot(slot){
+    const data=vrmClimate?.[slot];
+    if(!data||!Number.isFinite(Number(data.temperature)))return null;
+    const temperature=virtualEntity(slot,'temperature',data.temperature,'°C','temperature');
+    const humidity=virtualEntity(slot,'humidity',data.humidity,'%','humidity');
+    const pressure=virtualEntity(slot,'pressure',data.pressure,'hPa','pressure');
+    return {
+      slot,label:SLOT_LABELS[slot],temperatureEntity:temperature,humidityEntity:humidity,pressureEntity:pressure,
+      temperature:Number.isFinite(Number(data.temperature))?Number(Number(data.temperature).toFixed(1)):null,
+      humidity:Number.isFinite(Number(data.humidity))?Math.round(Number(data.humidity)):null,
+      pressure:Number.isFinite(Number(data.pressure))?Math.round(Number(data.pressure)):null,
+      source:'vrm'
+    };
+  }
+
+  async function refreshVrm(){
+    const token=String(readConfig().vrmToken||'').trim();
+    if(!token){vrmClimate.error='VRM-token ontbreekt';return;}
+    try{
+      const response=await fetch('/api/vrm-ruuvi',{headers:{'X-VRM-Token':token},cache:'no-store'});
+      const payload=await response.json().catch(()=>({}));
+      if(!response.ok||payload?.success===false)throw new Error(payload?.error||payload?.message||`HTTP ${response.status}`);
+      vrmClimate={salon:payload.salon||null,forward:payload.machinekamer||null,updatedAt:payload.updatedAt||new Date().toISOString(),error:''};
+      window.dispatchEvent(new CustomEvent('mijnserenity-ruuvi-vrm-updated',{detail:vrmClimate}));
+      queueRender();
+    }catch(error){vrmClimate.error=String(error?.message||error||'VRM niet bereikbaar');}
+  }
+
   function resolveSlot(slot,states=snapshot()){
+    const direct=directSlot(slot);
+    if(direct)return direct;
     const config=readConfig();
-    const key=slot==='salon'?'salonTemperature':'machineTemperature';
+    const key=slot==='salon'?'salonTemperature':'forwardTemperature';
     const temperature=entityById(config[key],states);
     const humidity=findSibling(temperature,'humidity',states);
     const pressure=findSibling(temperature,'pressure',states);
@@ -145,7 +187,7 @@
 
   function climate(){
     const states=snapshot();
-    return {salon:resolveSlot('salon',states),machine:resolveSlot('machine',states)};
+    return {salon:resolveSlot('salon',states),forward:resolveSlot('forward',states)};
   }
 
   function temperatureCandidates(){
@@ -190,25 +232,26 @@
     const count=temperatureCandidates().length;
     group.innerHTML=`
       <h5>🌡️ Ruuvi / klimaat <small>(2 meetpunten)</small></h5>
-      <p class="ms7102-ruuvi-help">Kies per ruimte de temperatuur-entiteit. MijnSerenity koppelt luchtvochtigheid en luchtdruk van dezelfde RuuviTag automatisch.</p>
+      <p class="ms7102-ruuvi-help">MijnSerenity leest de twee RuuviTags rechtstreeks via Victron VRM. Home Assistant blijft als fallback beschikbaar.</p>
+      <label><strong>Victron VRM API-token</strong><input id="ms7102VrmToken" type="password" autocomplete="off" value="${escape(config.vrmToken||'')}" placeholder="Plak hier je bestaande VRM-token"><small>Wordt alleen lokaal op dit apparaat bewaard. Site ${VRM_SITE_ID} · Salon ${VRM_INSTANCES.salon} · Machinekamer ${VRM_INSTANCES.forward}</small></label>
       <div class="ms7102-ruuvi-grid">
         <label><strong>Salon</strong><select id="ms7102SalonTemperature">${optionList(config.salonTemperature)}</select><small id="ms7102SalonDetection">${escape(detectionText(config.salonTemperature))}</small></label>
-        <label><strong>Machinekamer Serenity</strong><select id="ms7102MachineTemperature">${optionList(config.machineTemperature||config.forwardTemperature)}</select><small id="ms7102MachineDetection">${escape(detectionText(config.machineTemperature||config.forwardTemperature))}</small></label>
+        <label><strong>Machinekamer Serenity</strong><select id="ms7102ForwardTemperature">${optionList(config.forwardTemperature)}</select><small id="ms7102ForwardDetection">${escape(detectionText(config.forwardTemperature))}</small></label>
       </div>
       <div class="ms730-wizard-actions ms7102-ruuvi-actions">
-        <button type="button" onclick="ms7102SaveRuuviClimate()">✓ Klimaatsensoren gebruiken</button>
-        <span>${count?`${count} temperatuursensor${count===1?'':'en'} gevonden`:'Nog geen Ruuvi-temperatuursensoren in Home Assistant gevonden'}</span>
+        <button type="button" onclick="ms7102SaveRuuviClimate()">✓ Opslaan & VRM testen</button>
+        <span>${vrmClimate.error?escape(vrmClimate.error):(vrmClimate.updatedAt?'VRM live verbonden ✅':(count?`${count} HA-temperatuursensor${count===1?'':'en'} gevonden`:'VRM-token nog instellen'))}</span>
       </div>`;
     const salon=group.querySelector('#ms7102SalonTemperature');
-    const machine=group.querySelector('#ms7102MachineTemperature');
+    const forward=group.querySelector('#ms7102ForwardTemperature');
     const updateHints=()=>{
       const salonHint=group.querySelector('#ms7102SalonDetection');
-      const machineHint=group.querySelector('#ms7102MachineDetection');
+      const forwardHint=group.querySelector('#ms7102ForwardDetection');
       if(salonHint)salonHint.textContent=detectionText(salon?.value||'');
-      if(machineHint)machineHint.textContent=detectionText(machine?.value||'');
+      if(forwardHint)forwardHint.textContent=detectionText(forward?.value||'');
     };
     salon?.addEventListener('change',updateHints);
-    machine?.addEventListener('change',updateHints);
+    forward?.addEventListener('change',updateHints);
   }
 
   function queueRender(){
@@ -219,13 +262,15 @@
 
   function saveFromUi(){
     const salon=document.getElementById('ms7102SalonTemperature')?.value||'';
-    const machine=document.getElementById('ms7102MachineTemperature')?.value||'';
-    if(salon&&machine&&salon===machine){
+    const forward=document.getElementById('ms7102ForwardTemperature')?.value||'';
+    const vrmToken=document.getElementById('ms7102VrmToken')?.value?.trim()||readConfig().vrmToken||'';
+    if(salon&&forward&&salon===forward){
       window.showAppToast?.('Kies twee verschillende Ruuvi-sensoren.');
       return false;
     }
-    saveConfig({salonTemperature:salon,machineTemperature:machine});
-    window.showAppToast?.('Ruuvi-klimaatsensoren gekoppeld ✅');
+    saveConfig({salonTemperature:salon,forwardTemperature:forward,vrmToken});
+    refreshVrm();
+    window.showAppToast?.('Ruuvi-instellingen opgeslagen · VRM wordt getest ✅');
     queueRender();
     return true;
   }
@@ -234,6 +279,8 @@
     window.ms7102GetRuuviClimate=climate;
     window.ms7102GetRuuviClimateConfig=readConfig;
     window.ms7102SaveRuuviClimate=saveFromUi;
+    window.ms7102RefreshRuuviVrm=refreshVrm;
+    if(readConfig().vrmToken){refreshVrm();vrmTimer=window.setInterval(refreshVrm,60000);}
     window.addEventListener('mijnserenity-ha-state-updated',queueRender);
     window.addEventListener('mijnserenity-ha-connected',queueRender);
     if(document.getElementById('ms730DeviceGroups')){
