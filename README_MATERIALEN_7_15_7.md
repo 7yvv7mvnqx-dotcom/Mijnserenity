@@ -1,4 +1,4 @@
-# MijnSerenity 7.15.7 — materialen uit bon/factuur
+# MijnSerenity 7.15.8 — materialen uit bon/factuur
 
 Verbeterd:
 - Artikel- en materiaalregels worden ook herkend wanneer OCR de factuurkolommen over meerdere regels splitst.

@@ -512,3 +512,31 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
   .serenity-ivms{box-sizing:border-box!important;width:100%!important;max-width:100%!important}
   .ivms-header,.ivms-brand,.ivms-brand-photo,.ivms-header-tools,.ivms-header-tools>*{box-sizing:border-box!important}
 }
+
+
+/* MijnSerenity 7.15.8 — compact startdashboard iPhone */
+@media(max-width:620px){
+  .ivms-main-grid{gap:6px!important;margin-top:6px!important}
+  .ivms-center{width:100%!important;order:-1!important}
+  .ivms-nav-strip{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    min-height:0!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    border-radius:12px!important;
+  }
+  .ivms-nav-stat{padding:10px 12px!important;min-height:72px!important}
+  .ivms-nav-stat strong{font-size:20px!important}
+  .ivms-nav-stat small{font-size:10px!important}
+  .ivms-nav-stat>span{font-size:20px!important}
+
+  /* Grote lege commandocentrale verdwijnt; vaarwaarden sluiten direct aan op de rest. */
+  .ivms-command-panel,.ivms-hero{display:none!important}
+  .ivms-side{gap:6px!important}
+  .ivms-card{border-radius:12px!important}
+  .ivms-gauge-card,.ivms-info-card{min-height:0!important}
+  .ivms-bottom-grid{gap:6px!important}
+  .ivms-bottom-card{min-height:112px!important}
+  .ivms-quick-nav{margin-top:6px!important}
+}

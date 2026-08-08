@@ -110,7 +110,7 @@
     overlay.id='msScreenWelcome7140';
     overlay.className='ms-screen-welcome';
     overlay.setAttribute('aria-hidden','true');
-    overlay.innerHTML='<div class="ms-screen-welcome-panel"><div class="ms-screen-welcome-badge">WELKOM AAN BOORD</div><div class="ms-screen-welcome-art" aria-hidden="true">🧭</div><h1 id="msScreenWelcomeTitle7140">Welkom aan boord</h1><p id="msScreenWelcomeSub7140">Serenity ligt klaar voor vertrek.</p></div>';
+    overlay.innerHTML='<div class="ms-screen-welcome-panel"><h1 id="msScreenWelcomeTitle7140">Welkom aan boord</h1></div>';
     document.body.appendChild(overlay);
     return overlay;
   }
@@ -126,7 +126,7 @@
     overlayCleanupTimer=setTimeout(()=>{
       document.body.classList.remove('ms-welcome-leaving');
       overlay.classList.remove('hide');
-    },1900);
+    },850);
   }
   function showWelcomeOverlay(profile){
     if(!dashboardVisible() || !profile) return;
@@ -136,7 +136,7 @@
     const overlay=ensureWelcomeOverlay();
     const title=$('msScreenWelcomeTitle7140'); const sub=$('msScreenWelcomeSub7140');
     if(title) title.textContent=profile.short || profile.title || 'Welkom aan boord';
-    if(sub) sub.textContent=profile.title || profile.subtitle || 'Serenity ligt klaar voor vertrek.';
+    if(sub) sub.textContent='';
     clearTimeout(overlayTimer); clearTimeout(overlayCleanupTimer);
     overlay.classList.remove('hide');
     overlay.classList.remove('show');
@@ -145,7 +145,7 @@
     document.body.classList.add('ms-welcome-active');
     requestAnimationFrame(()=>requestAnimationFrame(()=>overlay.classList.add('show')));
     // Geef de begroeting voldoende tijd om te landen voordat de interface scherp wordt.
-    overlayTimer=setTimeout(hideWelcomeOverlay,6100);
+    overlayTimer=setTimeout(hideWelcomeOverlay,3200);
   }
   function refreshWelcome(forceNew=false,showOverlayNow=false){
     if(typeof window.msGetWelcomeProfile!=='function') return null;
