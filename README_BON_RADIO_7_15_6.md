@@ -1,4 +1,4 @@
-# MijnSerenity 7.15.9 — factuurherkenning + compacte radio
+# MijnSerenity 7.16.0 — factuurherkenning + compacte radio
 
 - PartsPoint / PartsPoint Hengelo wordt expliciet herkend als leverancier.
 - `Voldaan` en `Betaald` gelden als sterke eindtotaal-labels; op de testfactuur wordt €6,30 gekozen in plaats van €5,21 netto.

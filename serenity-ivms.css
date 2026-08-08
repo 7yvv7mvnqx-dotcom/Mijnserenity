@@ -514,7 +514,7 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
 }
 
 
-/* MijnSerenity 7.15.9 — compact startdashboard iPhone */
+/* MijnSerenity 7.16.0 — compact startdashboard iPhone */
 @media(max-width:620px){
   .ivms-main-grid{gap:6px!important;margin-top:6px!important}
   .ivms-center{width:100%!important;order:-1!important}
@@ -542,7 +542,7 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
 }
 
 
-/* MijnSerenity 7.15.9 — echte full-width compacte start op iPhone */
+/* MijnSerenity 7.16.0 — echte full-width compacte start op iPhone */
 @media(max-width:620px){
   /* Geen kunstmatige schermhoogte meer: inhoud sluit direct op elkaar aan */
   .serenity-ivms{
@@ -632,5 +632,38 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
 
   .ivms-quick-nav{
     margin-top:4px!important;
+  }
+}
+
+/* 7.16.0 — huishoud- en startaccu's duidelijk gescheiden */
+@media(max-width:620px){
+  .ivms-battery-card{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  .ivms-battery-card::before{
+    content:"HUISHOUDACCU'S";
+    grid-column:1;
+    display:block;
+    padding:10px 12px 2px;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.08em;
+    color:#9fb2c6;
+  }
+  .ivms-battery-card::after{
+    content:"STARTACCU'S";
+    grid-column:2;
+    grid-row:1;
+    display:block;
+    padding:10px 12px 2px;
+    border-left:1px solid rgba(120,170,205,.18);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.08em;
+    color:#9fb2c6;
   }
 }

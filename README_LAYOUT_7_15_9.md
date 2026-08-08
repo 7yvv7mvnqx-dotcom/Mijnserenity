@@ -1,4 +1,4 @@
-# MijnSerenity 7.15.9 — full-width compact start
+# MijnSerenity 7.16.0 — full-width compact start
 
 - Mobiele IVMS minimum schermhoogte verwijderd.
 - Grote lege ruimte onder Snelheid/Koers/Diepte/Wind verwijderd.
