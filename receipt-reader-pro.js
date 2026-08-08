@@ -475,6 +475,64 @@
     return results;
   }
 
+  function crossLineItemRows(text){
+    const normalized=normalizeDocumentText(text);
+    const docLines=lines(normalized);
+    const results=[];
+    const codePattern=/\b([A-Z]{1,5}(?:-[A-Z0-9]{2,}){1,3})\b/i;
+    const stopPattern=/\b(?:totaal|subtotaal|voldaan|betaald|btw|vat|factuurnr|factuurnummer|ordernummer|bestelnummer|pakbon|dealer|referentie|debiteur|vestiging|woonplaats|telefoon|datum)\b/i;
+
+    for(let i=0;i<docLines.length;i++){
+      const base=String(docLines[i]||'').trim();
+      const codeMatch=base.match(codePattern);
+      if(!codeMatch)continue;
+      const code=codeMatch[1];
+      if(/^(?:IBAN|BIC|BTW|KVK)-/i.test(code))continue;
+
+      // OCR van facturen splitst kolommen vaak over meerdere regels. Combineer
+      // daarom de artikelregel met maximaal drie regels erna.
+      const windowLines=[base];
+      for(let j=1;j<=3 && i+j<docLines.length;j++){
+        const candidate=String(docLines[i+j]||'').trim();
+        if(!candidate)continue;
+        if(stopPattern.test(candidate))break;
+        windowLines.push(candidate);
+      }
+      const joined=windowLines.join(' ').replace(/\s+/g,' ').trim();
+      const monies=moneyValues(joined);
+      if(!monies.length)continue;
+
+      const codeIndex=joined.toUpperCase().indexOf(code.toUpperCase());
+      let after=joined.slice(codeIndex+code.length).trim();
+      const firstMoney=monies[0];
+      const absoluteFirstMoney=joined.indexOf(firstMoney.raw,codeIndex+code.length);
+      if(absoluteFirstMoney>=0)after=joined.slice(codeIndex+code.length,absoluteFirstMoney).trim();
+
+      // Verwijder kolomwaarden voor aantal/eenheid/btw uit de omschrijving.
+      const qtyMatch=joined.match(/\b(\d+(?:[,.]\d+)?)\s*(ST|STK|PCS|EA|SET|X)\b/i);
+      let quantity=qtyMatch?Number(qtyMatch[1].replace(',','.')):1;
+      if(!Number.isFinite(quantity)||quantity<=0)quantity=1;
+      after=after
+        .replace(/^[-:;|]+\s*/,'')
+        .replace(/\b\d+(?:[,.]\d+)?\s*(?:ST|STK|PCS|EA|SET|X)\b[\s\S]*$/i,'')
+        .replace(/\b\d{1,2}\s*%\b[\s\S]*$/i,'')
+        .replace(/\s+/g,' ')
+        .trim();
+
+      if(after.length<3)continue;
+      const amount=monies[monies.length-1].value;
+      if(amount===null)continue;
+      results.push({description:`${code} · ${after}`,quantity,amount});
+    }
+
+    const seen=new Set();
+    return results.filter(item=>{
+      const key=`${item.description.toLowerCase()}|${item.amount.toFixed(2)}`;
+      if(seen.has(key))return false;
+      seen.add(key);return true;
+    });
+  }
+
   function extractItems(text){
     if(isInsurancePolicy(text))return [];
     const partsRows=partsPointItemRows(text);
@@ -483,6 +541,8 @@
     if(invoiceRows.length)return invoiceRows.slice(0,30);
     const structured=structuredItemRows(text);
     if(structured.length)return structured.slice(0,20);
+    const crossLine=crossLineItemRows(text);
+    if(crossLine.length)return crossLine.slice(0,20);
     // Alleen duidelijk gestructureerde artikelregels automatisch overnemen.
     return [];
   }
@@ -554,7 +614,9 @@
     const debtorNumber=findLabelValue(normalized,/\bdeb\.?\s*nr\.?\s*:?[ ]*([A-Z0-9-]+)/i);
     const subject=findLabelValue(normalized,/\bbetreft\s*:?[ ]*(.+)$/i);
     const orderNumber=findLabelValue(normalized,/\bbestelnummer\s*:?\s*([A-Z0-9-]+)/i)
-      ||findLabelValue(normalized,/\border(?:nummer)?\s*#?\s*:?\s*([A-Z0-9-]+)/i);
+      ||findLabelValue(normalized,/\border(?:nummer)?\s*#?\s*:?\s*([A-Z0-9-]+)/i)
+      ||((normalized.match(/\bordernummer\b[\s\S]{0,80}?\b(\d{6,12})\b/i)||[])[1]||'')
+      ||((normalized.match(/\buw\s+referentie\b[\s\S]{0,80}?\b(\d{6,12})\b/i)||[])[1]||'');
     const subtotal=findMoneyByLabel(normalized,/\bsubtotaal\b/i);
     const shipping=findMoneyByLabel(normalized,/\bverzend(?:ing)?[-\s]+en[-\s]+afhandelingskosten\b/i);
     const exclusive=findMoneyByLabel(normalized,/\btotaal\s+excl\.?\s*btw\b/i)
@@ -574,7 +636,7 @@
 
     if(items.length){
       result.push('');
-      result.push('Artikelen:');
+      result.push('Materialen / artikelen:');
       items.forEach(item=>{
         const quantity=item.quantity>1?`${Number(item.quantity).toLocaleString('nl-NL',{maximumFractionDigits:2})} × `:'';
         const unit=item.unitPrice!==undefined&&item.quantity>1
@@ -627,9 +689,10 @@
       document.getElementById('costDescription').value=parsed.merchant;
       found.push(`omschrijving ${parsed.merchant}`);
     }
+    // Categorie moet bewust door de gebruiker worden gekozen.
+    // De scanner mag die nooit automatisch invullen.
     if(parsed.category){
-      document.getElementById('costCategory').value=parsed.category;
-      found.push(`categorie ${parsed.category}`);
+      found.push(`categorie-suggestie ${parsed.category}`);
     }
     if(parsed.details){
       window.showCostReceiptDetails(parsed.details);

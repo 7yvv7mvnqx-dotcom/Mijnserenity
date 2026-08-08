@@ -5318,8 +5318,7 @@ function applyReceiptOcrResult(text){
     found.push(`omschrijving ${merchant}`);
   }
   if(category){
-    $('costCategory').value=category;
-    found.push(`categorie ${category}`);
+    found.push(`categorie-suggestie ${category}`);
   }
   if(details){
     showCostReceiptDetails(details);
