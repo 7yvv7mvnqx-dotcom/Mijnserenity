@@ -3,7 +3,7 @@
   'use strict';
 
   const BUILD=window.MIJSERENITY_BUILD||'7.14.8';
-  const VERSION='71610';
+  const VERSION='71620';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `receipt-reader-pro.js?v=${VERSION}`,
