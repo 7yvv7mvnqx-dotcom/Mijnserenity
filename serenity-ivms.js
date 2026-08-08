@@ -59,6 +59,26 @@
       .sort((a,b)=>b.score-a.score)[0]?.entity||null;
   }
 
+  function dedicatedChargerEntities(){
+    return haStates().filter(entity=>{
+      const t=`${entity?.entity_id||''} ${entity?.name||''}`.toLowerCase();
+      if(/solar|zonne|mppt|pv/.test(t))return false;
+      return /charger|lader/.test(t);
+    });
+  }
+
+  function findDedicatedChargerStatus(){
+    return dedicatedChargerEntities()
+      .filter(entity=>!['unknown','unavailable','none',''].includes(String(entity?.state||'').toLowerCase()))
+      .sort((a,b)=>scoreEntity(b,['charger status','lader status','charger','lader'])-scoreEntity(a,['charger status','lader status','charger','lader']))[0]||null;
+  }
+
+  function findDedicatedChargerPower(){
+    return dedicatedChargerEntities()
+      .filter(entity=>finite(entity?.state)&&String(entity?.attributes?.unit_of_measurement||'').toLowerCase()==='w')
+      .sort((a,b)=>scoreEntity(b,['charger power','lader vermogen','charger','lader'],'W')-scoreEntity(a,['charger power','lader vermogen','charger','lader'],'W'))[0]||null;
+  }
+
   function exactHa(entityId){
     return haStates().find(entity=>entity?.entity_id===entityId&&!['unknown','unavailable','none',''].includes(String(entity?.state||'').toLowerCase()))||null;
   }
@@ -246,6 +266,8 @@
     const haBatteryPower=exactHa('sensor.vrm_battery_power')||findHa(['vrm battery power','battery power','accuvermogen','accu vermogen'],'W');
     const haTimeToGo=exactHa('sensor.vrm_time_to_go')||findHa(['time to go','resterende tijd','battery runtime'],'h');
     const haSolar=exactHa('sensor.vrm_solar_charger_power')||exactHa('sensor.vrm_pv_power')||findHa(['pv power','solar charger power','solar power','mppt power','zonnepaneel vermogen'],'W');
+    const haChargerStatus=findDedicatedChargerStatus();
+    const haChargerPower=findDedicatedChargerPower();
     let ruuviClimate=null;
     try{ruuviClimate=typeof window.ms7102GetRuuviClimate==='function'?window.ms7102GetRuuviClimate():null}catch{}
     const haCabin=ruuviClimate?.salon?.temperatureEntity||findHa(['salon serenity temperature','salon temperature','cabine temperatuur','cabin temperature','inside temperature','interieur temperatuur'],'°C');
@@ -301,6 +323,17 @@
     const solar=finite(haSolar?.state)?Number(haSolar.state):null;
     setText('ivmsSolarPower',solar!==null?`${nl(solar,0)} W`:'– W');
     setText('ivmsSolarBattery',solar!==null?(solar>0?'LADEN':'STANDBY'):'NIET GEKOPPELD');
+
+    const chargerPower=finite(haChargerPower?.state)?Number(haChargerPower.state):null;
+    const chargerState=String(haChargerStatus?.state||'').trim();
+    const chargerKey=chargerState.toLowerCase();
+    let chargerLabel='NIET GEKOPPELD';
+    if(haChargerStatus){
+      const labels={on:'AAN',off:'UIT',charging:'LADEN',bulk:'BULK',absorption:'ABSORPTIE',float:'FLOAT',storage:'OPSLAG',standby:'STANDBY',idle:'STANDBY',active:'AAN'};
+      chargerLabel=labels[chargerKey]||chargerState.toUpperCase();
+    }
+    setText('ivmsChargerPower',chargerPower!==null?`${nl(chargerPower,0)} W`:'– W');
+    setText('ivmsChargerStatus',chargerLabel);
 
     const cabinTemp=finite(haCabin?.state)?Number(haCabin.state):null;
     const forwardTemp=finite(haForward?.state)?Number(haForward.state):null;
