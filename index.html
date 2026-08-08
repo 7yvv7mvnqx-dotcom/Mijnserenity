@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.16.0">
+<meta name="mijnserenity-build" content="7.16.1">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='7.16.0';
+window.MIJSERENITY_BUILD='7.16.1';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -29,61 +29,62 @@ window.repairMijnSerenity=async function(){
   window.location.replace(url.toString());
 };
 </script>
-<link rel="manifest" href="manifest.json?v=71600">
+<link rel="manifest" href="manifest.json?v=71610">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=71600">
-  <link rel="stylesheet" href="ha-live-bridge.css?v=71600">
-  <link rel="stylesheet" href="live-cameras.css?v=71600">
-  <link rel="stylesheet" href="mission-control.css?v=71600">
-  <link rel="stylesheet" href="easy-auto.css?v=71600">
-<link rel="stylesheet" href="auto-track-reliability.css?v=71600">
-<link rel="stylesheet" href="gps-continuity-guard.css?v=71600">
-<link rel="stylesheet" href="waterkaarten-split-launch.css?v=71600">
-  <link rel="stylesheet" href="live-split.css?v=71600">
-  <link rel="stylesheet" href="route-control.css?v=71600">
-  <link rel="stylesheet" href="page-swipe.css?v=71600">
-  <link rel="stylesheet" href="weather-page.css?v=71600">
-  <link rel="stylesheet" href="weather-radar.css?v=71600">
-  <link rel="stylesheet" href="rws-nearby.css?v=71600">
-  <link rel="stylesheet" href="ais-page.css?v=71600">
-  <link rel="stylesheet" href="entertainment-page.css?v=71600">
-  <link rel="stylesheet" href="navigation-compact.css?v=71600">
-  <link rel="stylesheet" href="simple-accessible.css?v=71600">
-  <link rel="stylesheet" href="home-assistant-contrast.css?v=71600">
-  <link rel="stylesheet" href="captain-experience.css?v=71600">
-  <link rel="stylesheet" href="serenity-ivms.css?v=71600">
-  <link rel="stylesheet" href="technical-live-sync.css?v=71600">
-  <link rel="stylesheet" href="ruuvi-climate.css?v=71600">
-  <link rel="stylesheet" href="movement-presence.css?v=71600">
-  <link rel="stylesheet" href="futuristic-analog-7140.css?v=71600">
-  <link rel="stylesheet" href="dashboard-analog-7141.css?v=71600">
+<link rel="stylesheet" href="styles.css?v=71610">
+  <link rel="stylesheet" href="ha-live-bridge.css?v=71610">
+  <link rel="stylesheet" href="live-cameras.css?v=71610">
+  <link rel="stylesheet" href="mission-control.css?v=71610">
+  <link rel="stylesheet" href="easy-auto.css?v=71610">
+<link rel="stylesheet" href="auto-track-reliability.css?v=71610">
+<link rel="stylesheet" href="gps-continuity-guard.css?v=71610">
+<link rel="stylesheet" href="waterkaarten-split-launch.css?v=71610">
+  <link rel="stylesheet" href="live-split.css?v=71610">
+  <link rel="stylesheet" href="route-control.css?v=71610">
+  <link rel="stylesheet" href="page-swipe.css?v=71610">
+  <link rel="stylesheet" href="weather-page.css?v=71610">
+  <link rel="stylesheet" href="weather-radar.css?v=71610">
+  <link rel="stylesheet" href="rws-nearby.css?v=71610">
+  <link rel="stylesheet" href="ais-page.css?v=71610">
+  <link rel="stylesheet" href="entertainment-page.css?v=71610">
+  <link rel="stylesheet" href="navigation-compact.css?v=71610">
+  <link rel="stylesheet" href="simple-accessible.css?v=71610">
+  <link rel="stylesheet" href="home-assistant-contrast.css?v=71610">
+  <link rel="stylesheet" href="captain-experience.css?v=71610">
+  <link rel="stylesheet" href="serenity-ivms.css?v=71610">
+  <link rel="stylesheet" href="technical-live-sync.css?v=71610">
+  <link rel="stylesheet" href="ruuvi-climate.css?v=71610">
+  <link rel="stylesheet" href="movement-presence.css?v=71610">
+  <link rel="stylesheet" href="futuristic-analog-7140.css?v=71610">
+  <link rel="stylesheet" href="dashboard-analog-7141.css?v=71610">
   <link rel="stylesheet" href="dashboard-premium-7143.css?v=71430">
   <link rel="stylesheet" href="start-cockpit-7144.css?v=71450">
-  <link rel="stylesheet" href="captain-ux-711.css?v=71600">
+  <link rel="stylesheet" href="captain-ux-711.css?v=71610">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=71600">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=71600">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=71610">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=71610">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
 
 <script>
 window.msSyncBuildVersion=function(){
-  const build=window.MIJSERENITY_BUILD||document.querySelector('meta[name="mijnserenity-build"]')?.content||'7.16.0';
+  const build=window.MIJSERENITY_BUILD||document.querySelector('meta[name="mijnserenity-build"]')?.content||'7.16.1';
   const version=document.getElementById('settingsAppVersion');
   if(version)version.textContent=build;
   document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=build);
 };
 document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:true});
 </script>
+  <link rel="stylesheet" href="mobile-dashboard-7161.css?v=71610">
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=71600" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=71610" alt="MijnSerenity">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -125,7 +126,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
 
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=71600" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=71610" alt="MijnSerenity">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -166,7 +167,86 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
 
   <section id="dashboard">
 
-    <section id="serenityIvms" class="serenity-ivms" aria-label="Serenity geïntegreerd vaartuigdashboard">
+    
+<section id="ms7161Dashboard" class="ms7161-dashboard" aria-label="Serenity compact dashboard">
+  <div class="ms7161-top">
+    <button class="ms7161-system" type="button" onclick="captainNavigate('technical')">
+      <span>SYSTEEMSTATUS</span>
+      <strong id="ms7161System">NORMAAL</strong>
+      <i id="ms7161SystemDot"></i>
+    </button>
+    <button class="ms7161-more" type="button" onclick="window.ms797OpenMore?.()">☰ <b>Meer</b></button>
+  </div>
+
+  <div class="ms7161-main-metrics">
+    <button type="button" class="ms7161-metric" onclick="captainNavigate('live')">
+      <span class="ms7161-icon">◴</span><span class="ms7161-copy"><small>SNELHEID</small>
+      <strong><b id="ms7161Speed">0</b> <em>km/u</em></strong><span id="ms7161SpeedKn">0 kn</span></span><i>›</i>
+    </button>
+
+    <button type="button" class="ms7161-metric" onclick="captainNavigate('live')">
+      <span class="ms7161-rpm-icon"><i></i></span><span class="ms7161-copy"><small>TOERENTAL</small>
+      <strong><b id="ms7161Rpm">0</b> <em>rpm</em></strong><span id="ms7161RpmSub">0 u/min</span></span><i>›</i>
+    </button>
+
+    <button type="button" class="ms7161-metric" onclick="captainNavigate('live')">
+      <span class="ms7161-icon">≋</span><span class="ms7161-copy"><small>DIEPTE</small>
+      <strong><b id="ms7161Depth">–</b> <em>m</em></strong><span id="ms7161DepthSub">nog niet gekoppeld</span></span><i>›</i>
+    </button>
+
+    <button type="button" class="ms7161-metric" onclick="captainNavigate('weather')">
+      <span class="ms7161-icon">≋</span><span class="ms7161-copy"><small>WIND</small>
+      <strong><b id="ms7161Wind">–</b> <em>km/u</em></strong><span id="ms7161WindBft">– Bft</span></span><i>›</i>
+    </button>
+  </div>
+
+  <div class="ms7161-pair">
+    <button type="button" class="ms7161-small-card" onclick="captainNavigate('technical')">
+      <span class="ms7161-small-icon">⛽</span><span><small>BRANDSTOF</small><strong id="ms7161Fuel">–%</strong></span>
+      <i class="ms7161-bar"><b id="ms7161FuelBar"></b></i>
+    </button>
+    <button type="button" class="ms7161-small-card" onclick="captainNavigate('weather')">
+      <span class="ms7161-small-icon">🌡️</span><span><small>WATERTEMP.</small><strong id="ms7161WaterTemp">– °C</strong></span>
+      <i class="ms7161-bar"><b id="ms7161WaterBar"></b></i>
+    </button>
+  </div>
+
+  <div class="ms7161-batteries">
+    <button type="button" class="ms7161-battery" onclick="captainNavigate('technical')">
+      <span class="ms7161-battery-icon">🔋</span>
+      <span><small>HUISHOUDACCU'S</small><strong id="ms7161HouseV">– V</strong></span>
+      <span><small>VERBRUIK</small><strong id="ms7161HouseA">– A</strong></span>
+      <span><small>RESTEREND</small><strong id="ms7161HouseSoc">–%</strong></span>
+    </button>
+    <button type="button" class="ms7161-start-battery" onclick="captainNavigate('technical')">
+      <span>STARTACCU'S</span><strong id="ms7161StartV">– V</strong>
+    </button>
+  </div>
+
+  <div class="ms7161-quick">
+    <button onclick="captainNavigate('map')"><span>📍</span><b>NAVIGATIE</b></button>
+    <button onclick="captainNavigate('pois')"><span>⚓</span><b>HAVENS</b></button>
+    <button onclick="captainNavigate('weather')"><span>🌤️</span><b>WEER</b></button>
+    <button onclick="captainNavigate('settings')"><span>⚙️</span><b>INSTELLINGEN</b></button>
+  </div>
+
+  <button class="ms7161-rudder" type="button" onclick="captainNavigate('live')">
+    <span class="ms7161-rudder-title">ROERSTAND</span>
+    <div class="ms7161-rudder-scale">
+      <span class="bb">BB<br><b>35°</b></span>
+      <div class="ms7161-arc">
+        <i class="red"></i><i class="green"></i>
+        <span class="center">0°</span>
+        <b id="ms7161RudderNeedle"></b>
+        <em>▲</em>
+      </div>
+      <span class="sb">SB<br><b>35°</b></span>
+    </div>
+    <strong id="ms7161RudderText">Midden</strong>
+  </button>
+</section>
+
+<section id="serenityIvms" class="serenity-ivms" aria-label="Serenity geïntegreerd vaartuigdashboard">
       <header class="ivms-header">
         <div class="ivms-brand">
           <div id="ivmsBrandPhoto" class="ivms-brand-photo" onclick="captainNavigate('settings')" role="button" tabindex="0" aria-label="Foto van Serenity aanpassen">
@@ -739,7 +819,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
         aria-label="Waterkaarten openen via Opdrachten"
         onclick="openWaterkaarten()">
         <span class="tile-icon-shell waterkaarten-icon-shell">
-          <img src="waterkaarten-dashboard.png?v=71600" alt="">
+          <img src="waterkaarten-dashboard.png?v=71610" alt="">
         </span>
         <span class="tile-copy"><b>Waterkaarten</b><small>Open via Opdrachten</small></span>
         <span class="tile-arrow">›</span>
@@ -833,7 +913,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.16.0</div>
+          <div class="label">Sync · v7.16.1</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1875,7 +1955,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.16.0</span>
+        <span class="planner-version-badge">7.16.1</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -4050,7 +4130,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
     <div class="card ms752-app-info-card" aria-label="Appinformatie">
       <div class="ms752-app-info-copy">
         <span class="eyebrow">MIJNSERENITY</span>
-        <strong>Versie <span id="settingsAppVersion">7.16.0</span></strong>
+        <strong>Versie <span id="settingsAppVersion">7.16.1</span></strong>
         <small id="settingsAppStatus">Live en gesynchroniseerd</small>
       </div>
       <button id="settingsRefreshButton" type="button" class="secondary ms752-small-refresh"
@@ -4722,9 +4802,9 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   </div>
 </div>
 
-<script src="auth-bootstrap.js?v=71600"></script>
-<script src="futuristic-analog-7140.js?v=71600"></script>
-<script src="dashboard-analog-7141.js?v=71600"></script>
+<script src="auth-bootstrap.js?v=71610"></script>
+<script src="futuristic-analog-7140.js?v=71610"></script>
+<script src="dashboard-analog-7141.js?v=71610"></script>
 <script src="dashboard-premium-7143.js?v=71430"></script>
 <script src="start-cockpit-7144.js?v=71450"></script>
 
@@ -4844,5 +4924,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
 })();
 </script>
 
+  <script src="mobile-dashboard-7161.js?v=71610"></script>
 </body>
 </html>
