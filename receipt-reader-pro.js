@@ -247,7 +247,7 @@
     }
 
     const candidates=[];
-    const strongTotal=/\b(totale?\s+kosten|totaal\s+te\s+betalen|eindtotaal|te\s*betalen|verschuldigd|amount\s*due|grand\s*total|total\s*costs?|order\s*total|net\s*payable)\b/i;
+    const strongTotal=/\b(totale?\s+kosten|totaal\s+te\s+betalen|eindtotaal|te\s*betalen|voldaan|betaald|verschuldigd|amount\s*due|grand\s*total|total\s*costs?|order\s*total|net\s*payable)\b/i;
     const regularTotal=/\b(totaal|total)\b/i;
     const subtotal=/\b(subtotaal|subtotal)\b/i;
 
@@ -316,6 +316,8 @@
     if(/\bkranerweerd\b/i.test(normalized))return 'Jachthaven de Kranerweerd B.V.';
     if(/\bvolvo\s*penta\b/i.test(normalized)&&/\b(?:orderbevestiging|bestelnummer|onderdeelnummer)\b/i.test(normalized))return 'Volvo Penta';
     if(/\bda\s+giorgio\b/i.test(normalized))return 'Da Giorgio';
+    if(/\bparts?point\b|parts?point\.nl|info@parts?point\.nl/i.test(normalized))return /\bhengelo\b/i.test(normalized)?'PartsPoint Hengelo':'PartsPoint';
+    
 
     const docLines=lines(normalized);
     const legalEntity=docLines.find(line=>
@@ -331,7 +333,7 @@
         .trim();
     }
 
-    const reject=/\b(?:factuur|invoice|orderbevestiging|bestelbevestiging|factuuradres|bezorgadres|klantreferentie|aanvullende informatie|onderdeelnummer|beschrijving|samenvatting|subtotaal|totale kosten|bestelnummer|besteldatum|orderklasse|bezorgwijze|betalingsmethode|nettogewicht|klant|bedrijf|e-?mail|telefoon|betreft|deb\.?\s*nr|pagina)\b/i;
+    const reject=/\b(?:factuur|invoice|orderbevestiging|bestelbevestiging|factuuradres|bezorgadres|klantreferentie|aanvullende informatie|onderdeelnummer|beschrijving|samenvatting|subtotaal|totale kosten|bestelnummer|besteldatum|orderklasse|bezorgwijze|betalingsmethode|nettogewicht|klant|bedrijf|e-?mail|telefoon|betreft|deb\.?\s*nr|pagina|ordernummer|pakbon|dealer|referentie|vestiging|uw\s+referentie|geholpen\s+door)\b/i;
     const candidates=[];
 
     docLines.slice(0,40).forEach((line,index)=>{
@@ -445,8 +447,38 @@
     return results;
   }
 
+  function partsPointItemRows(text){
+    const results=[];
+    for(const rawLine of lines(text)){
+      const line=String(rawLine||'').replace(/\s{2,}/g,' ').trim();
+      if(!/\b[A-Z]{1,4}-[A-Z0-9-]{3,}\b/i.test(line))continue;
+      if(!/\b(?:ST|STK|PCS|EA)\b/i.test(line))continue;
+      const code=(line.match(/\b([A-Z]{1,4}-[A-Z0-9-]{3,})\b/i)||[])[1];
+      if(!code)continue;
+      const amounts=moneyValues(line);
+      if(!amounts.length)continue;
+      const codeIndex=line.toUpperCase().indexOf(code.toUpperCase());
+      let tail=line.slice(codeIndex+code.length).trim();
+      // Stop omschrijving vóór aantal + eenheid of vóór de eerste geldkolom.
+      tail=tail.replace(/\s+\d+(?:[,.]\d+)?\s*(?:ST|STK|PCS|EA)\b[\s\S]*$/i,'').trim();
+      if(!tail){
+        const firstMoney=amounts[0];
+        tail=line.slice(codeIndex+code.length,firstMoney.index).trim();
+      }
+      tail=tail.replace(/^[-:;]+\s*/,'').replace(/\s{2,}/g,' ').trim();
+      const qtyMatch=line.match(/\b(\d+(?:[,.]\d+)?)\s*(?:ST|STK|PCS|EA)\b/i);
+      const quantity=qtyMatch?Number(qtyMatch[1].replace(',','.')):1;
+      const amount=amounts[amounts.length-1].value;
+      if(!tail||tail.length<3||amount===null)continue;
+      results.push({description:`${code} · ${tail}`,quantity:Number.isFinite(quantity)?quantity:1,amount});
+    }
+    return results;
+  }
+
   function extractItems(text){
     if(isInsurancePolicy(text))return [];
+    const partsRows=partsPointItemRows(text);
+    if(partsRows.length)return partsRows.slice(0,20);
     const invoiceRows=invoiceItemRows(text);
     if(invoiceRows.length)return invoiceRows.slice(0,30);
     const structured=structuredItemRows(text);

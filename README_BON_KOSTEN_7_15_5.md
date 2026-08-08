@@ -1,4 +1,4 @@
-# MijnSerenity 7.15.5 — Bonherkenning en verplichte categorie
+# MijnSerenity 7.15.6 — Bonherkenning en verplichte categorie
 
 - Geen standaard Havengeld meer.
 - Categorie moet bewust worden geselecteerd.

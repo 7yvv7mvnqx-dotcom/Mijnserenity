@@ -788,3 +788,45 @@ body.ms760-captain-experience button:hover{filter:brightness(1.055);}
   .ms760-dashboard > *{animation:none !important;}
   .ms760-radio-player,body.ms760-captain-experience button{transition:none !important;}
 }
+
+
+/* 7.15.6 — compacte Radio/Sonos dock op iPhone, zodat formulieren vrij blijven */
+@media (max-width:560px){
+  .ms760-radio-player:not(.expanded){
+    left:auto;
+    right:9px;
+    width:min(310px,calc(100% - 78px));
+    transform:none;
+    border-radius:17px;
+  }
+  .ms760-radio-player:not(.expanded) .ms760-radio-main{
+    grid-template-columns:38px minmax(0,1fr) 40px 36px;
+    min-height:48px;
+    gap:5px;
+    padding:5px 6px;
+  }
+  .ms760-radio-player:not(.expanded) .ms760-radio-icon{
+    width:36px;height:36px;border-radius:12px;font-size:19px;
+  }
+  .ms760-radio-player:not(.expanded) [data-ms760-radio="previous"],
+  .ms760-radio-player:not(.expanded) [data-ms760-radio="next"]{display:none !important;}
+  body.ms750-simple-ui .ms760-radio-player:not(.expanded) .ms760-radio-control{
+    width:40px;min-width:40px;min-height:38px;border-radius:12px;
+  }
+  body.ms750-simple-ui .ms760-radio-player:not(.expanded) .ms760-radio-expand{
+    width:34px;min-width:34px;min-height:38px;border-radius:12px;
+  }
+  .ms760-radio-player:not(.expanded) .ms760-radio-copy strong{font-size:13px;}
+  .ms760-radio-player:not(.expanded) .ms760-radio-copy small{font-size:9px !important;}
+  body.ms760-radio-visible{--ms760-radio-height:56px;}
+
+  /* Op invoerschermen extra smal; uitklappen geeft de volledige bediening terug. */
+  body:has(#costs:not(.hidden)) .ms760-radio-player:not(.expanded),
+  body:has(#logbook:not(.hidden)) .ms760-radio-player:not(.expanded),
+  body:has(#settings:not(.hidden)) .ms760-radio-player:not(.expanded){
+    width:min(238px,calc(100% - 96px));
+  }
+  body:has(#costs:not(.hidden)) .ms760-radio-player:not(.expanded) .ms760-radio-copy small,
+  body:has(#logbook:not(.hidden)) .ms760-radio-player:not(.expanded) .ms760-radio-copy small,
+  body:has(#settings:not(.hidden)) .ms760-radio-player:not(.expanded) .ms760-radio-copy small{display:none;}
+}
