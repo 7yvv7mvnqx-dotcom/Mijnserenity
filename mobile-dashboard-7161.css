@@ -86,7 +86,7 @@
 }
 
 
-/* 7.16.3 — login/sessie fix */
+/* 7.16.4 — login/sessie fix */
 #authGate,
 .auth-gate,
 .auth-screen,
@@ -118,7 +118,7 @@ body:not(.auth-ready) .ms7161-dashboard{
 }
 
 
-/* 7.16.3 — harde iPhone loginfix: echt authView gebruiken */
+/* 7.16.4 — harde iPhone loginfix: echt authView gebruiken */
 #authView{
   position:relative!important;
   z-index:2147483647!important;
