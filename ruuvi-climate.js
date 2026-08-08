@@ -1,10 +1,10 @@
-/* MijnSerenity 7.14.2 — twee Ruuvi-klimaatsensoren via Home Assistant */
+/* MijnSerenity 7.14.6 — Ruuvi Salon + Machinekamer via Home Assistant */
 (()=>{
   'use strict';
 
   const CONFIG_KEY='mijnserenity-ruuvi-climate-v7102';
   const GROUP_ID='ms7102RuuviClimateGroup';
-  const SLOT_LABELS={salon:'Salon',forward:'Voorhut / slaapcabine'};
+  const SLOT_LABELS={salon:'Salon Serenity',machine:'Machinekamer Serenity'};
   let renderQueued=false;
 
   const escape=value=>String(value??'').replace(/[&<>'"]/g,char=>({
@@ -22,14 +22,19 @@
   function readConfig(){
     try{
       const value=JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-      return value&&typeof value==='object'?value:{};
+      const saved=value&&typeof value==='object'?value:{};
+      return {
+        salonTemperature:String(saved.salonTemperature||'sensor.salon_serenity_temperatuur'),
+        machineTemperature:String(saved.machineTemperature||saved.forwardTemperature||'sensor.machinekamer_serenity_temperatuur'),
+        ...saved
+      };
     }catch{return {}}
   }
 
   function saveConfig(value){
     const next={
-      salonTemperature:String(value?.salonTemperature||''),
-      forwardTemperature:String(value?.forwardTemperature||''),
+      salonTemperature:String(value?.salonTemperature||'sensor.salon_serenity_temperatuur'),
+      machineTemperature:String(value?.machineTemperature||value?.forwardTemperature||'sensor.machinekamer_serenity_temperatuur'),
       updatedAt:new Date().toISOString()
     };
     localStorage.setItem(CONFIG_KEY,JSON.stringify(next));
@@ -122,7 +127,7 @@
 
   function resolveSlot(slot,states=snapshot()){
     const config=readConfig();
-    const key=slot==='salon'?'salonTemperature':'forwardTemperature';
+    const key=slot==='salon'?'salonTemperature':'machineTemperature';
     const temperature=entityById(config[key],states);
     const humidity=findSibling(temperature,'humidity',states);
     const pressure=findSibling(temperature,'pressure',states);
@@ -140,7 +145,7 @@
 
   function climate(){
     const states=snapshot();
-    return {salon:resolveSlot('salon',states),forward:resolveSlot('forward',states)};
+    return {salon:resolveSlot('salon',states),machine:resolveSlot('machine',states)};
   }
 
   function temperatureCandidates(){
@@ -188,22 +193,22 @@
       <p class="ms7102-ruuvi-help">Kies per ruimte de temperatuur-entiteit. MijnSerenity koppelt luchtvochtigheid en luchtdruk van dezelfde RuuviTag automatisch.</p>
       <div class="ms7102-ruuvi-grid">
         <label><strong>Salon</strong><select id="ms7102SalonTemperature">${optionList(config.salonTemperature)}</select><small id="ms7102SalonDetection">${escape(detectionText(config.salonTemperature))}</small></label>
-        <label><strong>Voorhut / slaapcabine</strong><select id="ms7102ForwardTemperature">${optionList(config.forwardTemperature)}</select><small id="ms7102ForwardDetection">${escape(detectionText(config.forwardTemperature))}</small></label>
+        <label><strong>Machinekamer Serenity</strong><select id="ms7102MachineTemperature">${optionList(config.machineTemperature||config.forwardTemperature)}</select><small id="ms7102MachineDetection">${escape(detectionText(config.machineTemperature||config.forwardTemperature))}</small></label>
       </div>
       <div class="ms730-wizard-actions ms7102-ruuvi-actions">
         <button type="button" onclick="ms7102SaveRuuviClimate()">✓ Klimaatsensoren gebruiken</button>
         <span>${count?`${count} temperatuursensor${count===1?'':'en'} gevonden`:'Nog geen Ruuvi-temperatuursensoren in Home Assistant gevonden'}</span>
       </div>`;
     const salon=group.querySelector('#ms7102SalonTemperature');
-    const forward=group.querySelector('#ms7102ForwardTemperature');
+    const machine=group.querySelector('#ms7102MachineTemperature');
     const updateHints=()=>{
       const salonHint=group.querySelector('#ms7102SalonDetection');
-      const forwardHint=group.querySelector('#ms7102ForwardDetection');
+      const machineHint=group.querySelector('#ms7102MachineDetection');
       if(salonHint)salonHint.textContent=detectionText(salon?.value||'');
-      if(forwardHint)forwardHint.textContent=detectionText(forward?.value||'');
+      if(machineHint)machineHint.textContent=detectionText(machine?.value||'');
     };
     salon?.addEventListener('change',updateHints);
-    forward?.addEventListener('change',updateHints);
+    machine?.addEventListener('change',updateHints);
   }
 
   function queueRender(){
@@ -214,12 +219,12 @@
 
   function saveFromUi(){
     const salon=document.getElementById('ms7102SalonTemperature')?.value||'';
-    const forward=document.getElementById('ms7102ForwardTemperature')?.value||'';
-    if(salon&&forward&&salon===forward){
+    const machine=document.getElementById('ms7102MachineTemperature')?.value||'';
+    if(salon&&machine&&salon===machine){
       window.showAppToast?.('Kies twee verschillende Ruuvi-sensoren.');
       return false;
     }
-    saveConfig({salonTemperature:salon,forwardTemperature:forward});
+    saveConfig({salonTemperature:salon,machineTemperature:machine});
     window.showAppToast?.('Ruuvi-klimaatsensoren gekoppeld ✅');
     queueRender();
     return true;

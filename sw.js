@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.14.5-cockpit-card-style-r1';
+const CACHE_NAME='mijnserenity-7.14.6-cockpit-card-style-r1';
 const APP_SHELL=[
   '/',
   '/index.html',
