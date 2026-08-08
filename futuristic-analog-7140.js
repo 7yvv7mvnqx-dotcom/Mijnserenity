@@ -120,7 +120,13 @@
     overlay.classList.add('hide');
     overlay.classList.remove('show');
     overlay.setAttribute('aria-hidden','true');
-    overlayCleanupTimer=setTimeout(()=>{ document.body.classList.remove('ms-welcome-active'); overlay.classList.remove('hide'); },900);
+    // Start blur -> scherp tegelijk met het rustig verdwijnen van de intro.
+    document.body.classList.remove('ms-welcome-active');
+    document.body.classList.add('ms-welcome-leaving');
+    overlayCleanupTimer=setTimeout(()=>{
+      document.body.classList.remove('ms-welcome-leaving');
+      overlay.classList.remove('hide');
+    },1900);
   }
   function showWelcomeOverlay(profile){
     if(!dashboardVisible() || !profile) return;
@@ -135,9 +141,11 @@
     overlay.classList.remove('hide');
     overlay.classList.remove('show');
     overlay.setAttribute('aria-hidden','false');
+    document.body.classList.remove('ms-welcome-leaving');
     document.body.classList.add('ms-welcome-active');
     requestAnimationFrame(()=>requestAnimationFrame(()=>overlay.classList.add('show')));
-    overlayTimer=setTimeout(hideWelcomeOverlay,3200);
+    // Geef de begroeting voldoende tijd om te landen voordat de interface scherp wordt.
+    overlayTimer=setTimeout(hideWelcomeOverlay,6100);
   }
   function refreshWelcome(forceNew=false,showOverlayNow=false){
     if(typeof window.msGetWelcomeProfile!=='function') return null;

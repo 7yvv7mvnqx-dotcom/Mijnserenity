@@ -328,3 +328,97 @@ body.ms-welcome-active #appToast{ filter:blur(7px) !important; }
   .ms-cockpit-card::after{ left:12px; right:12px; bottom:9px; }
   .ms-cockpit-action{ min-height:70px; }
 }
+
+
+/* MijnSerenity 7.15.4 — rustige luxe opstart */
+main,#appUpdateBanner,#appToast{
+  transition:filter 1.85s cubic-bezier(.22,.72,.18,1), opacity 1.45s ease !important;
+  will-change:filter;
+}
+body.ms-welcome-active main,
+body.ms-welcome-active #appUpdateBanner,
+body.ms-welcome-active #appToast{
+  filter:blur(14px) saturate(.82) brightness(.78) !important;
+}
+body.ms-welcome-leaving main,
+body.ms-welcome-leaving #appUpdateBanner,
+body.ms-welcome-leaving #appToast{
+  filter:blur(0) saturate(1) brightness(1) !important;
+}
+.ms-screen-welcome{
+  background:
+    radial-gradient(circle at 50% 42%,rgba(64,135,185,.22),transparent 42%),
+    linear-gradient(180deg,rgba(4,12,22,.58),rgba(5,20,31,.42)) !important;
+  backdrop-filter:blur(2px) !important;
+  -webkit-backdrop-filter:blur(2px) !important;
+  transition:opacity 1.15s cubic-bezier(.22,.72,.18,1), backdrop-filter 1.4s ease !important;
+}
+.ms-screen-welcome.show{ opacity:1 !important; }
+.ms-screen-welcome.hide{ opacity:0 !important; backdrop-filter:blur(0) !important; -webkit-backdrop-filter:blur(0) !important; }
+.ms-screen-welcome-panel{
+  gap:12px !important;
+  transform:translateZ(0);
+}
+.ms-screen-welcome-badge,
+.ms-screen-welcome-art,
+#msScreenWelcomeTitle7140,
+#msScreenWelcomeSub7140{ animation:none !important; }
+.ms-screen-welcome.show .ms-screen-welcome-badge{
+  animation:msWelcomeBadgeLuxury .9s ease .18s both !important;
+}
+.ms-screen-welcome.show .ms-screen-welcome-art{
+  animation:msWelcomeArtLuxury 1.45s cubic-bezier(.18,.8,.2,1) .05s both !important;
+}
+.ms-screen-welcome.show #msScreenWelcomeTitle7140{
+  margin:0;
+  font-size:clamp(42px,10vw,108px);
+  line-height:.98;
+  letter-spacing:-.035em;
+  text-wrap:balance;
+  text-shadow:0 16px 42px rgba(0,0,0,.28);
+  transform-origin:center center;
+  animation:msWelcomeTitleLuxury 2.15s cubic-bezier(.12,.78,.16,1) both !important;
+}
+.ms-screen-welcome.show #msScreenWelcomeSub7140{
+  width:min(90vw,820px);
+  margin:0;
+  font-size:clamp(15px,2.7vw,25px);
+  line-height:1.3;
+  color:#deedf7;
+  text-wrap:balance;
+  text-shadow:0 8px 24px rgba(0,0,0,.22);
+  animation:msWelcomeSubLuxury 1.25s ease .72s both !important;
+}
+@keyframes msWelcomeTitleLuxury{
+  0%{ transform:translateY(12px) scale(1.62); opacity:0; filter:blur(5px); }
+  18%{ opacity:1; }
+  62%{ filter:blur(0); }
+  100%{ transform:translateY(0) scale(1); opacity:1; filter:blur(0); }
+}
+@keyframes msWelcomeSubLuxury{
+  0%{ transform:translateY(14px); opacity:0; }
+  100%{ transform:translateY(0); opacity:1; }
+}
+@keyframes msWelcomeArtLuxury{
+  0%{ transform:translateY(16px) scale(.86) rotate(-5deg); opacity:0; filter:blur(4px); }
+  65%{ opacity:1; filter:blur(0); }
+  100%{ transform:translateY(0) scale(1) rotate(0); opacity:1; filter:blur(0); }
+}
+@keyframes msWelcomeBadgeLuxury{
+  0%{ transform:translateY(-7px); opacity:0; letter-spacing:.18em; }
+  100%{ transform:translateY(0); opacity:1; letter-spacing:.10em; }
+}
+@media (max-width:430px){
+  body.ms-welcome-active main,
+  body.ms-welcome-active #appUpdateBanner,
+  body.ms-welcome-active #appToast{ filter:blur(11px) saturate(.84) brightness(.78) !important; }
+  .ms-screen-welcome.show #msScreenWelcomeTitle7140{ font-size:clamp(36px,12vw,68px); }
+  .ms-screen-welcome.show #msScreenWelcomeSub7140{ font-size:clamp(14px,4.3vw,18px); width:min(90vw,390px); }
+}
+@media (prefers-reduced-motion:reduce){
+  .ms-screen-welcome.show .ms-screen-welcome-badge,
+  .ms-screen-welcome.show .ms-screen-welcome-art,
+  .ms-screen-welcome.show #msScreenWelcomeTitle7140,
+  .ms-screen-welcome.show #msScreenWelcomeSub7140{ animation-duration:.01ms !important; }
+  main,#appUpdateBanner,#appToast,.ms-screen-welcome{ transition-duration:.01ms !important; }
+}

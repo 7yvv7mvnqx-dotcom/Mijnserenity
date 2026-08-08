@@ -848,8 +848,9 @@
     wrapNavigation();
     installReliableStartNavigation();
     observeAutomaticVaren();
+    // Alleen de zichtbare status initialiseren. app.js kiest één keer het startscherm;
+    // geen extra geforceerde dashboardnavigatie meer na 120/450 ms.
     afterNavigate('dashboard');
-    [0,120,450].forEach(delay=>setTimeout(()=>navigate('dashboard'),delay));
     openRequestedRoute();
     document.addEventListener('keydown',handleKeyboard);
     window.ms753RefreshSimpleAutomaticUi=syncAutomaticVaren;

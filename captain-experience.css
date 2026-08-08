@@ -583,7 +583,7 @@ body.ms750-simple-ui .ms760-trip-replay-inline{
   color:#fff;
 }
 
-/* Home Assistant groepen — 7.15.3: niet meer sticky; scrolt gewoon met de pagina mee */
+/* Home Assistant groepen — 7.15.4: niet meer sticky; scrolt gewoon met de pagina mee */
 .ms760-ha-groups{
   position:relative;
   top:auto;

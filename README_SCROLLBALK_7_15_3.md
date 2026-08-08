@@ -1,4 +1,4 @@
-# MijnSerenity 7.15.3
+# MijnSerenity 7.15.4
 
 ## Opgelost
 - De categorie-balk **Alles · Media · Verlichting · Camera** op de Home Assistant-pagina blijft niet meer in beeld hangen tijdens scrollen.
