@@ -1,4 +1,4 @@
-/* MijnSerenity 7.14.7 — Ruuvi via VRM direct, met Home Assistant fallback */
+/* MijnSerenity 7.14.8 — Ruuvi via VRM direct, met Home Assistant fallback */
 (()=>{
   'use strict';
 
@@ -6,6 +6,7 @@
   const GROUP_ID='ms7102RuuviClimateGroup';
   const SLOT_LABELS={salon:'Salon Serenity',forward:'Machinekamer Serenity'};
   const VRM_SITE_ID=1003203;
+  const VRM_ENDPOINT='https://wufslczbtguvtgmfufid.supabase.co/functions/v1/vrm-ruuvi';
   const VRM_INSTANCES={salon:24,forward:25};
   let vrmClimate={salon:null,forward:null,updatedAt:null,error:''};
   let vrmTimer=0;
@@ -154,15 +155,66 @@
 
   async function refreshVrm(){
     const token=String(readConfig().vrmToken||'').trim();
-    if(!token){vrmClimate.error='VRM-token ontbreekt';return;}
+    if(!token){vrmClimate.error='VRM-token ontbreekt';updateStaticVrmUi();return false;}
     try{
-      const response=await fetch('/api/vrm-ruuvi',{headers:{'X-VRM-Token':token},cache:'no-store'});
+      setStaticVrmStatus('VRM wordt getest…','busy');
+      const response=await fetch(VRM_ENDPOINT,{headers:{'X-VRM-Token':token,'Accept':'application/json'},cache:'no-store'});
       const payload=await response.json().catch(()=>({}));
       if(!response.ok||payload?.success===false)throw new Error(payload?.error||payload?.message||`HTTP ${response.status}`);
       vrmClimate={salon:payload.salon||null,forward:payload.machinekamer||null,updatedAt:payload.updatedAt||new Date().toISOString(),error:''};
       window.dispatchEvent(new CustomEvent('mijnserenity-ruuvi-vrm-updated',{detail:vrmClimate}));
+      updateStaticVrmUi();
       queueRender();
-    }catch(error){vrmClimate.error=String(error?.message||error||'VRM niet bereikbaar');}
+      return true;
+    }catch(error){
+      vrmClimate.error=String(error?.message||error||'VRM niet bereikbaar');
+      updateStaticVrmUi();
+      return false;
+    }
+  }
+
+  function setStaticVrmStatus(message,state=''){
+    const el=document.getElementById('ms7148VrmStatus');
+    if(el){el.textContent=message;el.classList.remove('success','error');if(state==='success')el.classList.add('success');if(state==='error')el.classList.add('error');}
+  }
+
+  function updateStaticVrmUi(){
+    const input=document.getElementById('ms7148VrmToken');
+    const badge=document.getElementById('ms7148VrmBadge');
+    const config=readConfig();
+    if(input && document.activeElement!==input && !input.value) input.value=config.vrmToken||'';
+    if(vrmClimate.updatedAt && !vrmClimate.error){
+      if(badge){badge.textContent='VRM live';badge.classList.remove('offline');badge.classList.add('online');}
+      const s=vrmClimate.salon||{}, m=vrmClimate.forward||{};
+      const fmt=v=>Number.isFinite(Number(v))?`${Number(v).toFixed(1)} °C`:'—';
+      setStaticVrmStatus(`Verbonden ✅ · Salon ${fmt(s.temperature)} · Machinekamer ${fmt(m.temperature)}`,'success');
+    }else if(vrmClimate.error){
+      if(badge){badge.textContent='Niet verbonden';badge.classList.add('offline');badge.classList.remove('online');}
+      setStaticVrmStatus(vrmClimate.error,'error');
+    }else{
+      if(badge){badge.textContent=config.vrmToken?'Klaar om te testen':'Niet gekoppeld';badge.classList.add('offline');badge.classList.remove('online');}
+      setStaticVrmStatus(config.vrmToken?'Token opgeslagen · tik op Opslaan & testen.':'Plak eerst je Victron VRM API-token.');
+    }
+  }
+
+  async function staticSaveAndTest(){
+    const input=document.getElementById('ms7148VrmToken');
+    const token=String(input?.value||'').trim();
+    if(!token){setStaticVrmStatus('Plak eerst je Victron VRM API-token.','error');input?.focus();return false;}
+    const current=readConfig();
+    saveConfig({...current,vrmToken:token});
+    const ok=await refreshVrm();
+    if(ok && !vrmTimer) vrmTimer=window.setInterval(refreshVrm,60000);
+    return ok;
+  }
+
+  function toggleStaticToken(button){
+    const input=document.getElementById('ms7148VrmToken');
+    if(!input)return;
+    const show=input.type==='password';
+    input.type=show?'text':'password';
+    if(button)button.textContent=show?'Verberg':'Toon';
+    input.focus();
   }
 
   function resolveSlot(slot,states=snapshot()){
@@ -280,6 +332,10 @@
     window.ms7102GetRuuviClimateConfig=readConfig;
     window.ms7102SaveRuuviClimate=saveFromUi;
     window.ms7102RefreshRuuviVrm=refreshVrm;
+    window.ms7148SaveAndTestVrm=staticSaveAndTest;
+    window.ms7148RefreshVrm=refreshVrm;
+    window.ms7148ToggleVrmToken=toggleStaticToken;
+    window.setTimeout(updateStaticVrmUi,100);
     if(readConfig().vrmToken){refreshVrm();vrmTimer=window.setInterval(refreshVrm,60000);}
     window.addEventListener('mijnserenity-ha-state-updated',queueRender);
     window.addEventListener('mijnserenity-ha-connected',queueRender);
