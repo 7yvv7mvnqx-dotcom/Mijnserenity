@@ -249,7 +249,7 @@
     let ruuviClimate=null;
     try{ruuviClimate=typeof window.ms7102GetRuuviClimate==='function'?window.ms7102GetRuuviClimate():null}catch{}
     const haCabin=ruuviClimate?.salon?.temperatureEntity||findHa(['salon serenity temperature','salon temperature','cabine temperatuur','cabin temperature','inside temperature','interieur temperatuur'],'°C');
-    const haForward=ruuviClimate?.forward?.temperatureEntity||findHa(['voorhut serenity temperature','voorhut temperatuur','slaapcabine temperatuur','forward cabin temperature'],'°C');
+    const haForward=ruuviClimate?.forward?.temperatureEntity||findHa(['machinekamer serenity temperature','machinekamer temperatuur','engine room temperature','voorhut serenity temperature','voorhut temperatuur','slaapcabine temperatuur','forward cabin temperature'],'°C');
     const haCabinHumidity=ruuviClimate?.salon?.humidityEntity||null;
     const haForwardHumidity=ruuviClimate?.forward?.humidityEntity||null;
     const haClimatePressure=ruuviClimate?.salon?.pressureEntity||ruuviClimate?.forward?.pressureEntity||null;
@@ -401,6 +401,7 @@
     setInterval(refreshSources,60000);
     window.addEventListener('mijnserenity-ha-state-updated',update);
     window.addEventListener('mijnserenity-ruuvi-config-updated',update);
+    window.addEventListener('mijnserenity-ruuvi-vrm-updated',update);
     window.addEventListener('mijnserenity-presence-updated',update);
     window.addEventListener('mijnserenity-presence-config-updated',update);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshSources()});

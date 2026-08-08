@@ -1,4 +1,4 @@
-/* MijnSerenity 7.14.8 — Ruuvi via VRM direct, met Home Assistant fallback */
+/* MijnSerenity 7.14.9 — Ruuvi via VRM direct, met Home Assistant fallback */
 (()=>{
   'use strict';
 
