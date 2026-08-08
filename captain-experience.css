@@ -583,11 +583,11 @@ body.ms750-simple-ui .ms760-trip-replay-inline{
   color:#fff;
 }
 
-/* Home Assistant groepen */
+/* Home Assistant groepen — 7.15.3: niet meer sticky; scrolt gewoon met de pagina mee */
 .ms760-ha-groups{
-  position:sticky;
-  top:calc(66px + env(safe-area-inset-top));
-  z-index:12;
+  position:relative;
+  top:auto;
+  z-index:1;
   display:flex;
   gap:7px;
   overflow-x:auto;
