@@ -290,12 +290,15 @@
     }
 
     candidates.sort((a,b)=>b.score-a.score||b.value-a.value);
-    return candidates[0]?.value??null;
+    const best=candidates[0];
+    if(!best || (!best.isStrong && !best.isIncl && best.score<500)) return null;
+    return best.value;
   }
 
   function merchantLooksLikeItem(value){
     const line=String(value||'').trim();
     if(!line)return true;
+    if(/^(?:nederland|nederlan|netherlands?|holland|voldaan|betaald|betaling|pin|maestro|visa|mastercard)$/i.test(line))return true;
     if(/^\d{1,3}(?:[,.]\d{1,2})?\s+/.test(line))return true;
     if(moneyValues(line).length)return true;
     if(/\b(?:aantal|stukprijs|bedrag|arbeid|materiaal|vetkoord|impeller|pakking|afdichtring|o-ring)\b/i.test(line))return true;
@@ -448,9 +451,8 @@
     if(invoiceRows.length)return invoiceRows.slice(0,30);
     const structured=structuredItemRows(text);
     if(structured.length)return structured.slice(0,20);
-    return typeof original.extractReceiptItems==='function'
-      ?original.extractReceiptItems(text)
-      :[];
+    // Alleen duidelijk gestructureerde artikelregels automatisch overnemen.
+    return [];
   }
 
   function findLabelValue(text,labelPattern){

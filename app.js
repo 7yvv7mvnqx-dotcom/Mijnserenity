@@ -5469,7 +5469,7 @@ function cancelCostEdit(){
   $('costDescription').value='';
   $('costReceiptDetails').value='';
   $('costReceiptDetailsWrap')?.classList.add('hidden');
-  $('costCategory').value='Havengeld';
+  $('costCategory').value='';
   $('costFormTitle').textContent='Kosten toevoegen';
   $('costSaveButton').textContent='Kosten opslaan';
   $('costCancelButton').classList.add('hidden');
@@ -5488,12 +5488,18 @@ async function addCost(){
     return alert('Vul een geldig bedrag in.');
   }
 
+  const category=String($('costCategory').value||'').trim();
+  if(!category){
+    $('costCategory').focus();
+    return alert('Selecteer eerst een categorie. Zonder categorie kan de kostenpost niet worden opgeslagen.');
+  }
+
   const row={
     boat_id:currentBoat.id,
     created_by:currentUser.id,
     expense_date:$('costDate').value,
     amount,
-    category:$('costCategory').value,
+    category,
     description:composeCostDescription(
       $('costDescription').value.trim(),
       $('costReceiptDetails')?.value.trim()||''
