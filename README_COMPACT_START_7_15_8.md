@@ -1,4 +1,4 @@
-# MijnSerenity 7.15.8 — compact startscherm
+# MijnSerenity 7.15.9 — compact startscherm
 
 - Snelheid, koers, diepte en wind gebruiken op iPhone de volledige beschikbare breedte.
 - De grote Captain Command Center-zone is verwijderd van het startscherm.
