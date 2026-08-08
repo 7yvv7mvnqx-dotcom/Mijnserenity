@@ -86,7 +86,7 @@
 }
 
 
-/* 7.16.2 — login/sessie fix */
+/* 7.16.3 — login/sessie fix */
 #authGate,
 .auth-gate,
 .auth-screen,
@@ -115,4 +115,56 @@
 }
 body:not(.auth-ready) .ms7161-dashboard{
   pointer-events:none!important;
+}
+
+
+/* 7.16.3 — harde iPhone loginfix: echt authView gebruiken */
+#authView{
+  position:relative!important;
+  z-index:2147483647!important;
+  pointer-events:auto!important;
+  isolation:isolate!important;
+}
+#authView .auth-card{
+  position:relative!important;
+  z-index:2147483647!important;
+  pointer-events:auto!important;
+}
+#authView input,
+#authView textarea,
+#authView select,
+#authView button,
+#authView label,
+#authView .password-field{
+  position:relative!important;
+  z-index:2147483647!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+#authView input{
+  -webkit-user-select:text!important;
+  user-select:text!important;
+  -webkit-touch-callout:default!important;
+}
+
+/* Tijdens login mogen geen vaste app-lagen aanrakingen onderscheppen */
+body.ms-auth-visible .bottom-nav,
+body.ms-auth-visible .ms760-radio-dock,
+body.ms-auth-visible .ms760-radio-bar,
+body.ms-auth-visible .ms-screen-welcome,
+body.ms-auth-visible #msScreenWelcome7140,
+body.ms-auth-visible #appUpdateBanner,
+body.ms-auth-visible #appToast,
+body.ms-auth-visible .ms7161-dashboard,
+body.ms-auth-visible #appView{
+  display:none!important;
+  pointer-events:none!important;
+}
+body.ms-auth-visible{
+  overflow-y:auto!important;
+}
+body.ms-auth-visible main{
+  filter:none!important;
+  opacity:1!important;
+  pointer-events:auto!important;
 }

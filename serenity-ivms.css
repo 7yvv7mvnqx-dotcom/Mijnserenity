@@ -514,7 +514,7 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
 }
 
 
-/* MijnSerenity 7.16.2 — compact startdashboard iPhone */
+/* MijnSerenity 7.16.3 — compact startdashboard iPhone */
 @media(max-width:620px){
   .ivms-main-grid{gap:6px!important;margin-top:6px!important}
   .ivms-center{width:100%!important;order:-1!important}
@@ -542,7 +542,7 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
 }
 
 
-/* MijnSerenity 7.16.2 — echte full-width compacte start op iPhone */
+/* MijnSerenity 7.16.3 — echte full-width compacte start op iPhone */
 @media(max-width:620px){
   /* Geen kunstmatige schermhoogte meer: inhoud sluit direct op elkaar aan */
   .serenity-ivms{
@@ -635,7 +635,7 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
   }
 }
 
-/* 7.16.2 — huishoud- en startaccu's duidelijk gescheiden */
+/* 7.16.3 — huishoud- en startaccu's duidelijk gescheiden */
 @media(max-width:620px){
   .ivms-battery-card{
     display:grid!important;
