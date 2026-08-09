@@ -179,7 +179,6 @@
             const c=b.getCenter();
             center=[c.lat,c.lng];
           }
-          /* Een zoomniveau lager verdubbelt de zichtbreedte: ca. 20 km. */
           return this.setView(center,11,{animate:false});
         }
       }catch(e){
@@ -204,4 +203,42 @@
   }else{
     init();
   }
+})();
+
+/* MijnSerenity 7.15.20 — iPad gebruikt hetzelfde actuele dashboard, maar benut extra ruimte. */
+(function(){
+  'use strict';
+  if(window.__ms71520IPadLayout)return;
+  window.__ms71520IPadLayout=true;
+
+  async function installIPadLayout(){
+    try{
+      const width=Math.max(window.innerWidth||0,document.documentElement.clientWidth||0);
+      if(width<=1024 || width>1400)return;
+      const response=await fetch('start-dashboard-71510.css?v=715141',{cache:'no-store'});
+      if(!response.ok)return;
+      let css=await response.text();
+      css=css.replace('@media(max-width:1024px)','@media(max-width:1400px)');
+      const style=document.createElement('style');
+      style.id='ms71520IPadDashboardStyle';
+      style.textContent=css+`
+@media (min-width:1025px) and (max-width:1400px){
+  #appView:not(.hidden) #dashboard{max-width:1220px;margin:0 auto!important;padding-left:18px!important;padding-right:18px!important}
+  .ms71510-dashboard{gap:10px!important}
+  .ms71514-hero{height:220px!important}
+  .ms71510-metrics{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important}
+  .ms71510-metric{height:132px!important}
+  .ms71510-twins{gap:10px!important}
+  .ms71510-battery-row{grid-template-columns:minmax(0,1fr) 220px!important;gap:10px!important}
+  .ms71510-shortcuts{gap:10px!important}
+  .ms71510-rudder{height:220px!important}
+}`;
+      document.head.appendChild(style);
+    }catch(error){
+      console.warn('iPad-dashboard kon niet worden uitgebreid',error);
+    }
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installIPadLayout,{once:true});
+  else installIPadLayout();
 })();
