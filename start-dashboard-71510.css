@@ -270,3 +270,25 @@
   .ms71510-rudder{padding-left:12px!important;padding-right:12px!important}
   .ms71510-rudder-body{grid-template-columns:52px minmax(0,1fr) 52px}
 }
+
+/* iPhone overflow fix: lange waarden en labels blijven binnen hun kaart */
+@media(max-width:620px){
+  .ms71510-dashboard{overflow-x:hidden}
+  .ms71510-twins>*,.ms71510-tile>div,.ms71510-house-battery>div,.ms71510-shortcuts button{min-width:0}
+  .ms71510-tile strong{
+    max-width:100%;font-size:clamp(16px,4.7vw,25px);line-height:1.05;
+    white-space:normal;overflow-wrap:normal;word-break:normal
+  }
+  #ms71510WaterTemp{
+    max-width:100%;font-size:clamp(15px,4.25vw,22px);line-height:1.05;
+    white-space:normal;overflow-wrap:normal;word-break:normal
+  }
+  .ms71510-house-battery small{
+    font-size:clamp(7px,1.9vw,8px);line-height:1.1;white-space:nowrap;
+    overflow-wrap:normal;word-break:normal;hyphens:none
+  }
+  .ms71510-shortcuts b{
+    font-size:clamp(7px,2vw,9px);line-height:1.1;white-space:nowrap;
+    overflow-wrap:normal;word-break:normal;hyphens:none;letter-spacing:0
+  }
+}
