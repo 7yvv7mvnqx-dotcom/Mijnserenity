@@ -392,3 +392,18 @@
   window.addEventListener('mijnserenity:routechange',queue,{passive:true});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()},{passive:true});
 })();
+
+/* MijnSerenity 7.15.22 — roerstand direct onder wind op startscherm. */
+(function(){
+  'use strict';
+  function placeRudder(){
+    const metrics=document.querySelector('#ms71510Dashboard .ms71510-metrics');
+    const rudder=document.querySelector('#ms71510Dashboard .ms71510-rudder');
+    if(!metrics||!rudder)return;
+    if(metrics.nextElementSibling!==rudder){
+      metrics.insertAdjacentElement('afterend',rudder);
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',placeRudder,{once:true});
+  else placeRudder();
+})();
