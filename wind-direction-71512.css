@@ -134,3 +134,119 @@
     bottom:6px!important;
   }
 }
+
+/* 7.15.15 — Rijkswaterstaat watertemperatuur */
+.ms71515-rws-water-panel{
+  margin:18px 0 20px;
+  padding:18px;
+  border:1px solid rgba(61,190,226,.34);
+  border-radius:26px;
+  background:linear-gradient(145deg,rgba(12,63,76,.96),rgba(8,38,50,.98));
+  box-shadow:0 18px 42px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.04);
+  scroll-margin-top:88px;
+  overflow:hidden;
+}
+.ms71515-rws-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:14px;
+}
+.ms71515-rws-head>div{
+  min-width:0;
+  display:grid;
+  gap:5px;
+}
+.ms71515-rws-head span{
+  color:#93b7c4;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.ms71515-rws-head strong{
+  color:#dff8ff;
+  font-size:32px;
+  line-height:1.05;
+}
+.ms71515-rws-head small{
+  color:#a7c0ca;
+  font-size:15px;
+  line-height:1.35;
+}
+#ms71515RwsRefresh{
+  flex:0 0 auto;
+  width:44px;
+  height:44px;
+  min-height:44px;
+  padding:0;
+  margin:0;
+  border:1px solid rgba(88,202,235,.32);
+  border-radius:15px;
+  background:rgba(22,105,128,.35);
+  color:#bdefff;
+  font-size:23px;
+  font-weight:900;
+}
+.ms71515-rws-water-map{
+  width:100%;
+  height:280px;
+  border-radius:20px;
+  overflow:hidden;
+  border:1px solid rgba(114,210,237,.2);
+  background:#09232d;
+}
+.ms71515-rws-water-map .leaflet-control-attribution{
+  font-size:9px;
+}
+.ms71515-rws-detail{
+  display:grid;
+  grid-template-columns:1.4fr .8fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+.ms71515-rws-detail>div{
+  min-width:0;
+  padding:12px 13px;
+  border:1px solid rgba(112,198,222,.16);
+  border-radius:16px;
+  background:rgba(255,255,255,.035);
+  display:grid;
+  gap:4px;
+}
+.ms71515-rws-detail small{
+  color:#7fa9b7;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.ms71515-rws-detail strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#eafaff;
+  font-size:14px;
+  line-height:1.25;
+}
+#ms71515RwsWaterNote{
+  margin:12px 2px 0;
+  color:#88aab6;
+  font-size:12px;
+  line-height:1.45;
+}
+@media(max-width:620px){
+  .ms71515-rws-water-panel{
+    margin:14px 0 18px;
+    padding:14px;
+    border-radius:22px;
+  }
+  .ms71515-rws-head strong{font-size:28px}
+  .ms71515-rws-head small{font-size:13px}
+  .ms71515-rws-water-map{height:235px}
+  .ms71515-rws-detail{
+    grid-template-columns:1fr 1fr;
+  }
+  .ms71515-rws-detail>div:first-child{
+    grid-column:1/-1;
+  }
+}
