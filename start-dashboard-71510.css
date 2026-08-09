@@ -27,6 +27,16 @@
     box-sizing:border-box;
     -webkit-tap-highlight-color:transparent;
   }
+  .ms71514-hero{
+    position:relative;display:block!important;width:100%;height:clamp(170px,31vw,280px);
+    padding:0!important;overflow:hidden;text-align:left;border:1px solid rgba(95,164,209,.34)!important;
+    border-radius:18px!important;background:#061827!important
+  }
+  .ms71514-hero img{width:100%;height:100%;display:block;object-fit:cover;object-position:center 58%}
+  .ms71514-hero:after{content:"";position:absolute;inset:42% 0 0;background:linear-gradient(transparent,rgba(1,12,21,.88));pointer-events:none}
+  .ms71514-hero>span{position:absolute;z-index:1;left:18px;bottom:14px;display:flex;flex-direction:column}
+  .ms71514-hero strong{font-size:24px;line-height:1;color:#fff}
+  .ms71514-hero small{margin-top:4px;color:#d5e3ed;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
   .ms71510-system,.ms71510-more,.ms71510-metric,.ms71510-tile,
   .ms71510-house-battery,.ms71510-start-battery,.ms71510-shortcuts button,.ms71510-rudder{
     border:1px solid rgba(95,164,209,.34)!important;
@@ -227,17 +237,35 @@
 }
 
 @media(max-width:620px){
-  #appView:not(.hidden) #dashboard{padding-left:10px!important;padding-right:10px!important}
-  .ms71510-top{grid-template-columns:minmax(0,1fr) 145px}
+  #appView:not(.hidden) #dashboard{
+    padding-left:10px!important;padding-right:10px!important;
+    padding-bottom:calc(250px + env(safe-area-inset-bottom))!important;
+  }
+  .ms71514-hero{height:clamp(165px,48vw,220px)}
+  .ms71510-top{grid-template-columns:minmax(0,1fr) minmax(104px,36%)}
   .ms71510-metric{height:118px;grid-template-columns:86px minmax(0,1fr) 28px;padding:8px 14px!important}
   .ms71510-value strong b{font-size:38px}
   .ms71510-value strong em{font-size:18px}
-  .ms71510-house-battery{grid-template-columns:54px 1.25fr .9fr .9fr;padding:10px!important}
-  .ms71510-house-battery small{font-size:9px}
-  .ms71510-house-battery strong{font-size:18px}
-  .ms71510-house-battery>div:nth-child(2) strong{font-size:23px}
-  .ms71510-battery-row{grid-template-columns:minmax(0,1fr) 125px}
-  .ms71510-shortcuts button{height:98px}
+  .ms71510-tile{grid-template-columns:52px minmax(0,1fr);padding-left:10px!important;padding-right:10px!important}
+  .ms71510-tile-icon{font-size:36px}
+  .ms71510-tile strong{font-size:clamp(20px,6vw,27px);white-space:nowrap}
+  .ms71510-battery-row{grid-template-columns:1fr 1fr}
+  .ms71510-house-battery{grid-column:1/-1;grid-template-columns:44px repeat(3,minmax(0,1fr));padding:12px!important}
+  .ms71510-house-battery>div{min-width:0}
+  .ms71510-house-battery small{font-size:8px;white-space:normal;overflow-wrap:anywhere}
+  .ms71510-house-battery strong{font-size:clamp(15px,4.5vw,19px);overflow:hidden;text-overflow:ellipsis}
+  .ms71510-house-battery>div:nth-child(2) strong{font-size:clamp(18px,5.2vw,23px)}
+  .ms71510-start-battery{grid-column:1/-1;min-height:82px;align-items:center;text-align:center}
+  .ms71510-shortcuts button{width:100%;min-width:0;height:98px;overflow:hidden}
   .ms71510-shortcuts span{font-size:34px}
-  .ms71510-shortcuts b{font-size:10px}
+  .ms71510-shortcuts b{display:block;width:100%;font-size:clamp(7px,2.35vw,10px);line-height:1.15;white-space:normal;overflow-wrap:anywhere;text-align:center}
+  .ms71510-rudder{margin-bottom:20px!important}
+}
+
+@media(max-width:370px){
+  .ms71510-shortcuts{gap:4px}
+  .ms71510-shortcuts button{height:90px;padding:7px 2px!important}
+  .ms71510-shortcuts span{font-size:29px}
+  .ms71510-rudder{padding-left:12px!important;padding-right:12px!important}
+  .ms71510-rudder-body{grid-template-columns:52px minmax(0,1fr) 52px}
 }

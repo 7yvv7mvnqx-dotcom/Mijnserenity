@@ -67,8 +67,16 @@
     );
   }
 
+  let frame=0;
+  const queueSync=()=>{
+    if(frame)return;
+    frame=requestAnimationFrame(()=>{frame=0;syncDashboard()});
+  };
   document.addEventListener('DOMContentLoaded',()=>{
-    syncDashboard();
-    setInterval(syncDashboard,800);
+    queueSync();
+    ['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated','mijnserenity:routechange']
+      .forEach(name=>window.addEventListener(name,queueSync,{passive:true}));
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)queueSync()},{passive:true});
+    setInterval(()=>{if(!document.hidden)queueSync()},5000);
   },{once:true});
 })();
