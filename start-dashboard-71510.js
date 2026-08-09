@@ -16,6 +16,17 @@
     const dash=$('ms71510Dashboard');
     if(!dash)return;
 
+    const savedPhoto=$('dashboardBoatPhoto');
+    const heroPhoto=$('ms71514HeroPhoto');
+    const savedSource=savedPhoto?.currentSrc||savedPhoto?.src||'';
+    if(heroPhoto && savedSource && !savedPhoto?.classList.contains('hidden')){
+      if(heroPhoto.src!==savedSource)heroPhoto.src=savedSource;
+      heroPhoto.classList.remove('hidden');
+    }else if(heroPhoto){
+      heroPhoto.removeAttribute('src');
+      heroPhoto.classList.add('hidden');
+    }
+
     const sys=(text('ivmsSystemLabel')||'NORMAAL').toUpperCase();
     set('ms71510SystemLabel',sys);
     const system=$('ms71510SystemLabel')?.closest('.ms71510-system');
@@ -77,6 +88,8 @@
     ['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated','mijnserenity:routechange']
       .forEach(name=>window.addEventListener(name,queueSync,{passive:true}));
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)queueSync()},{passive:true});
+    const savedPhoto=$('dashboardBoatPhoto');
+    if(savedPhoto)new MutationObserver(queueSync).observe(savedPhoto,{attributes:true,attributeFilter:['src','class']});
     setInterval(()=>{if(!document.hidden)queueSync()},5000);
   },{once:true});
 })();

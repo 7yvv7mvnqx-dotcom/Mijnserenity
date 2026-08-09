@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.15.14-ha-filter-scroll';
+const CACHE_NAME='mijnserenity-7.15.14-serenity-photo';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -30,12 +30,14 @@ const APP_SHELL=[
   '/dashboard-analog-7141.css?v=715140',
   '/dashboard-premium-7143.css?v=71430',
   '/start-cockpit-7144.css?v=71450',
+  '/start-dashboard-71510.css?v=715141',
   '/captain-ux-711.css?v=715140',
   '/auth-bootstrap.js?v=715140',
   '/futuristic-analog-7140.js?v=715140',
   '/dashboard-analog-7141.js?v=715140',
   '/dashboard-premium-7143.js?v=71430',
   '/start-cockpit-7144.js?v=71450',
+  '/start-dashboard-71510.js?v=715141',
   '/app.js?v=715140',
   '/receipt-reader-pro.js?v=715140',
   '/mission-control.js?v=715140',
@@ -66,7 +68,6 @@ const APP_SHELL=[
   '/icon-192.png?v=715140',
   '/icon-512.png?v=715140',
   '/waterkaarten-dashboard.png?v=715140',
-  '/serenity-ivms-hero.png?v=715140',
   '/mijnserenity-logo.png?v=715140',
 ];
 
