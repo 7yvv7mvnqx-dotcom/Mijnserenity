@@ -54,7 +54,10 @@
     set('ms71510Fuel',fuel===null?'–%':`${Math.round(fuel)}%`);
     if($('ms71510FuelBar')) $('ms71510FuelBar').style.width=`${Math.max(0,Math.min(100,fuel??0))}%`;
 
-    const waterTemp=text('ms793WeatherWaterTemp')||'– °C';
+    const rwsTemp=window.liveNavState?.weather?.waterTemperature;
+    const waterTemp=Number.isFinite(Number(rwsTemp))
+      ?`${Number(rwsTemp).toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})} °C`
+      :(text('ms793WeatherWaterTemp')||'– °C');
     set('ms71510WaterTemp',waterTemp);
     const wt=number(waterTemp);
     if($('ms71510WaterTempBar')){
@@ -92,4 +95,21 @@
     if(savedPhoto)new MutationObserver(queueSync).observe(savedPhoto,{attributes:true,attributeFilter:['src','class']});
     setInterval(()=>{if(!document.hidden)queueSync()},5000);
   },{once:true});
+})();
+
+/* MijnSerenity 7.15.16 — RWS WaterWebservices door dezelfde Netlify-origin sturen.
+   Safari/iOS blokkeerde de rechtstreekse cross-origin POST met "Load failed". */
+(function(){
+  'use strict';
+  if(window.__msRwsFetchProxyInstalled)return;
+  window.__msRwsFetchProxyInstalled=true;
+  const nativeFetch=window.fetch.bind(window);
+  const catalog='https://ddapi20-waterwebservices.rijkswaterstaat.nl/METADATASERVICES/OphalenCatalogus';
+  const latest='https://ddapi20-waterwebservices.rijkswaterstaat.nl/ONLINEWAARNEMINGENSERVICES/OphalenLaatsteWaarnemingen';
+  window.fetch=function(input,init){
+    const url=typeof input==='string'?input:input?.url;
+    if(url===catalog)return nativeFetch('/api/rws-water-catalogus',init);
+    if(url===latest)return nativeFetch('/api/rws-water-latest',init);
+    return nativeFetch(input,init);
+  };
 })();
