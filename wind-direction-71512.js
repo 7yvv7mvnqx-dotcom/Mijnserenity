@@ -113,9 +113,9 @@
 
     if(dir)dir.textContent=`${directionName(wind)} · ${Math.round(wind)}°`;
 
-    // Windrichting is geografisch. Trek de apparaatkoers af zodat
-    // de pijl op het scherm naar de werkelijke richting blijft wijzen.
-    const displayRotation=deviceHeading===null ? wind : norm360(wind-deviceHeading);
+    // De tekst blijft de meteorologische windrichting (waar de wind vandaan komt).
+    // Alleen de pijl wijst 180 graden omgekeerd: waar de wind naartoe waait.
+    const displayRotation=deviceHeading===null ? norm360(wind+180) : norm360(wind+180-deviceHeading);
     if(arrow)arrow.style.transform=`translate(-50%,-100%) rotate(${displayRotation}deg)`;
   }
 

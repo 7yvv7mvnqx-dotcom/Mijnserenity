@@ -514,7 +514,7 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
 }
 
 
-/* MijnSerenity 7.15.12 — compact startdashboard iPhone */
+/* MijnSerenity 7.15.13 — compact startdashboard iPhone */
 @media(max-width:620px){
   .ivms-main-grid{gap:6px!important;margin-top:6px!important}
   .ivms-center{width:100%!important;order:-1!important}
@@ -542,7 +542,7 @@ body.ms797-dashboard-route main{padding-top:max(8px,env(safe-area-inset-top))!im
 }
 
 
-/* MijnSerenity 7.15.12 — echte full-width compacte start op iPhone */
+/* MijnSerenity 7.15.13 — echte full-width compacte start op iPhone */
 @media(max-width:620px){
   /* Geen kunstmatige schermhoogte meer: inhoud sluit direct op elkaar aan */
   .serenity-ivms{
