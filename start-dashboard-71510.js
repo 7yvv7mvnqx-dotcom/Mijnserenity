@@ -242,3 +242,153 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installIPadLayout,{once:true});
   else installIPadLayout();
 })();
+
+/* MijnSerenity 7.15.21 — correcte RWS meetdatum + brede weerlayout. */
+(function(){
+  'use strict';
+  if(window.__ms71521WeatherLayout)return;
+  window.__ms71521WeatherLayout=true;
+
+  const dayNames=['zo','ma','di','wo','do','vr','za'];
+  let queued=false;
+
+  function rwsCard(){
+    const map=document.getElementById('ms71515RwsWaterMap');
+    if(!map)return null;
+    return map.closest('.card, article, section')||map.parentElement;
+  }
+
+  function inferMeasuredDate(text){
+    const match=String(text||'').trim().match(/^(zo|ma|di|wo|do|vr|za)\s+(\d{1,2})-(\d{1,2})(?:-(\d{4}))?\s*,?\s*(\d{1,2}):(\d{2})$/i);
+    if(!match)return null;
+    const weekday=match[1].toLowerCase();
+    const day=Number(match[2]);
+    const month=Number(match[3])-1;
+    const hour=Number(match[5]);
+    const minute=Number(match[6]);
+    const now=new Date();
+
+    if(match[4]){
+      const date=new Date(Number(match[4]),month,day,hour,minute,0,0);
+      return Number.isNaN(date.getTime())?null:date;
+    }
+
+    const candidates=[];
+    for(let year=now.getFullYear()-3;year<=now.getFullYear()+1;year++){
+      const date=new Date(year,month,day,hour,minute,0,0);
+      if(date.getMonth()!==month||date.getDate()!==day)continue;
+      if(dayNames[date.getDay()]!==weekday)continue;
+      candidates.push(date);
+    }
+    if(!candidates.length)return null;
+
+    const futureTolerance=6*60*60*1000;
+    const past=candidates.filter(date=>date.getTime()<=now.getTime()+futureTolerance);
+    return (past.length?past:candidates).sort((a,b)=>Math.abs(now-a)-Math.abs(now-b))[0];
+  }
+
+  function formatMeasuredDate(date){
+    const weekday=dayNames[date.getDay()];
+    const pad=value=>String(value).padStart(2,'0');
+    return `${weekday} ${pad(date.getDate())}-${pad(date.getMonth()+1)}-${date.getFullYear()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  function correctMeasuredDate(){
+    const card=rwsCard();
+    if(!card)return;
+    const now=Date.now();
+    const nodes=[...card.querySelectorAll('div,span,strong,p')];
+    for(const node of nodes){
+      if(node.children.length)continue;
+      const raw=(node.textContent||'').trim();
+      if(!/^(zo|ma|di|wo|do|vr|za)\s+\d{1,2}-\d{1,2}/i.test(raw))continue;
+      const date=inferMeasuredDate(raw);
+      if(!date)continue;
+      const age=now-date.getTime();
+      const future=date.getTime()-now;
+      const stale=age>36*60*60*1000;
+      const impossibleFuture=future>6*60*60*1000;
+      const formatted=formatMeasuredDate(date);
+      node.textContent=(stale||impossibleFuture)?`Verouderd · ${formatted}`:formatted;
+      node.style.color=(stale||impossibleFuture)?'#ffbf5b':'';
+      node.title=(stale||impossibleFuture)
+        ?'Deze Rijkswaterstaat-meting is niet actueel en wordt daarom als verouderd gemarkeerd.'
+        :'Actuele meettijd';
+      break;
+    }
+  }
+
+  function installPairStyle(){
+    if(document.getElementById('ms71521WeatherPairStyle'))return;
+    const style=document.createElement('style');
+    style.id='ms71521WeatherPairStyle';
+    style.textContent=`
+.ms71521-weather-pair{display:block;width:100%}
+@media (min-width:900px){
+  .ms71521-weather-pair{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    gap:14px!important;
+    align-items:start!important;
+  }
+  .ms71521-weather-pair>.card,
+  .ms71521-weather-pair>article,
+  .ms71521-weather-pair>section{
+    width:auto!important;
+    min-width:0!important;
+    margin-top:0!important;
+    margin-bottom:0!important;
+  }
+  .ms71521-weather-pair #ms71515RwsWaterMap{min-height:300px!important}
+  .ms71521-weather-pair .ms710-radar-card{height:100%!important}
+}
+@media (max-width:899px){
+  .ms71521-weather-pair>*+*{margin-top:14px!important}
+}`;
+    document.head.appendChild(style);
+  }
+
+  function pairWeatherCards(){
+    const rws=rwsCard();
+    const radar=document.querySelector('.ms710-radar-card');
+    if(!rws||!radar||rws===radar)return;
+    let pair=document.getElementById('ms71521WeatherPair');
+    if(!pair){
+      pair=document.createElement('div');
+      pair.id='ms71521WeatherPair';
+      pair.className='ms71521-weather-pair';
+      rws.parentNode.insertBefore(pair,rws);
+    }
+    if(rws.parentNode!==pair)pair.appendChild(rws);
+    if(radar.parentNode!==pair)pair.appendChild(radar);
+    setTimeout(()=>{
+      try{
+        const map=window.L&&document.getElementById('ms71515RwsWaterMap')?document.getElementById('ms71515RwsWaterMap')._leaflet_id:null;
+        if(map&&window.L){
+          for(const key in window){
+            void key;
+          }
+        }
+      }catch(e){}
+      window.dispatchEvent(new Event('resize'));
+    },60);
+  }
+
+  function run(){
+    queued=false;
+    installPairStyle();
+    correctMeasuredDate();
+    pairWeatherCards();
+  }
+  function queue(){
+    if(queued)return;
+    queued=true;
+    requestAnimationFrame(run);
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',queue,{once:true});
+  else queue();
+  new MutationObserver(queue).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+  window.addEventListener('mijnserenity:routechange',queue,{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()},{passive:true});
+})();
