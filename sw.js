@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.15.14-serenity-photo';
+const CACHE_NAME='mijnserenity-7.15.15-rws-water-temperature';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -32,6 +32,7 @@ const APP_SHELL=[
   '/start-cockpit-7144.css?v=71450',
   '/start-dashboard-71510.css?v=715141',
   '/captain-ux-711.css?v=715140',
+  '/wind-direction-71512.css?v=715140',
   '/auth-bootstrap.js?v=715140',
   '/futuristic-analog-7140.js?v=715140',
   '/dashboard-analog-7141.js?v=715140',
@@ -64,6 +65,7 @@ const APP_SHELL=[
   '/captain-experience.js?v=715140',
   '/serenity-ivms.js?v=715140',
   '/captain-ux-711.js?v=715140',
+  '/wind-direction-71512.js?v=715140',
   '/manifest.json?v=715140',
   '/icon-192.png?v=715140',
   '/icon-512.png?v=715140',
