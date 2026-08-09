@@ -114,7 +114,7 @@
   };
 })();
 
-/* MijnSerenity 7.15.17 — RWS watertemperatuur opschonen + kaart 10 km doorsnede */
+/* MijnSerenity 7.15.18 — RWS kaart standaard ca. 10 km doorsnede */
 (function(){
   'use strict';
 
@@ -125,7 +125,8 @@
 
   function currentCoords(){
     try{
-      const point=window.liveNavState?.points?.at?.(-1);
+      const points=window.liveNavState?.points;
+      const point=Array.isArray(points)&&points.length?points[points.length-1]:null;
       const lat=Number(point?.lat);
       const lon=Number(point?.lon);
       if(Number.isFinite(lat)&&Number.isFinite(lon))return {lat,lon};
@@ -140,28 +141,53 @@
     return null;
   }
 
+  function firstRwsMarker(map){
+    let found=null;
+    try{
+      map.eachLayer(layer=>{
+        if(found)return;
+        if(layer?.getLayers){
+          const layers=layer.getLayers();
+          for(const child of layers){
+            if(child?.getLatLng && !child?.getBounds){
+              const p=child.getLatLng();
+              if(Number.isFinite(Number(p?.lat))&&Number.isFinite(Number(p?.lng))){
+                found={lat:Number(p.lat),lon:Number(p.lng)};
+                break;
+              }
+            }
+          }
+        }
+      });
+    }catch(e){}
+    return found;
+  }
+
   function patchRwsMapZoom(){
     const proto=window.L?.Map?.prototype;
-    if(!proto||proto.__ms71517TenKmFitBounds)return;
+    if(!proto||proto.__ms71518TenKmFitBounds)return;
     const original=proto.fitBounds;
     proto.fitBounds=function(bounds,options){
       try{
         if(this.getContainer?.()?.id==='ms71515RwsWaterMap'){
-          const coords=currentCoords();
+          const coords=currentCoords()||firstRwsMarker(this);
+          let center=null;
           if(coords){
-            const circle=window.L.circle([coords.lat,coords.lon],{radius:5000});
-            const nextOptions={...(options||{})};
-            delete nextOptions.maxZoom;
-            nextOptions.padding=[8,8];
-            return original.call(this,circle.getBounds(),nextOptions);
+            center=[coords.lat,coords.lon];
+          }else{
+            const b=window.L.latLngBounds(bounds);
+            const c=b.getCenter();
+            center=[c.lat,c.lng];
           }
+          /* Zoom 12 geeft rond Nederland op dit kaartformaat ongeveer 10 km zichtbreedte. */
+          return this.setView(center,12,{animate:false});
         }
       }catch(e){
         console.warn('RWS kaart kon niet op 10 km doorsnede worden gezet',e);
       }
       return original.call(this,bounds,options);
     };
-    proto.__ms71517TenKmFitBounds=true;
+    proto.__ms71518TenKmFitBounds=true;
   }
 
   function init(){
