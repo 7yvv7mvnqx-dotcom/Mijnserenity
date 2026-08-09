@@ -38,7 +38,6 @@
   force = true
 
 
-
 # MijnSerenity 7.10.2 — EuRIS Notice to Skippers voor vaarwegberichten
 [[redirects]]
   from = "/api/euris-nts"
@@ -50,6 +49,20 @@
 [[redirects]]
   from = "/api/vrm-ruuvi"
   to = "/.netlify/functions/vrm-ruuvi"
+  status = 200
+  force = true
+
+# MijnSerenity 7.15.16 — RWS WaterWebservices via same-origin proxy
+# Nodig voor iOS/Safari: directe cross-origin POST naar RWS gaf "Load failed".
+[[redirects]]
+  from = "/api/rws-water-catalogus"
+  to = "https://ddapi20-waterwebservices.rijkswaterstaat.nl/METADATASERVICES/OphalenCatalogus"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/rws-water-latest"
+  to = "https://ddapi20-waterwebservices.rijkswaterstaat.nl/ONLINEWAARNEMINGENSERVICES/OphalenLaatsteWaarnemingen"
   status = 200
   force = true
 
@@ -110,5 +123,10 @@
 
 [[headers]]
   for = "/rws-nearby.css"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/start-dashboard-71510.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
