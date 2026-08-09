@@ -114,7 +114,7 @@
   };
 })();
 
-/* MijnSerenity 7.15.18 — RWS kaart standaard ca. 10 km doorsnede */
+/* MijnSerenity 7.15.19 — RWS kaart standaard ca. 20 km doorsnede */
 (function(){
   'use strict';
 
@@ -165,7 +165,7 @@
 
   function patchRwsMapZoom(){
     const proto=window.L?.Map?.prototype;
-    if(!proto||proto.__ms71518TenKmFitBounds)return;
+    if(!proto||proto.__ms71519TwentyKmFitBounds)return;
     const original=proto.fitBounds;
     proto.fitBounds=function(bounds,options){
       try{
@@ -179,15 +179,15 @@
             const c=b.getCenter();
             center=[c.lat,c.lng];
           }
-          /* Zoom 12 geeft rond Nederland op dit kaartformaat ongeveer 10 km zichtbreedte. */
-          return this.setView(center,12,{animate:false});
+          /* Een zoomniveau lager verdubbelt de zichtbreedte: ca. 20 km. */
+          return this.setView(center,11,{animate:false});
         }
       }catch(e){
-        console.warn('RWS kaart kon niet op 10 km doorsnede worden gezet',e);
+        console.warn('RWS kaart kon niet op 20 km doorsnede worden gezet',e);
       }
       return original.call(this,bounds,options);
     };
-    proto.__ms71518TenKmFitBounds=true;
+    proto.__ms71519TwentyKmFitBounds=true;
   }
 
   function init(){
