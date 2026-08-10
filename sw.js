@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.15.24-dashboard-visual';
+const CACHE_NAME='mijnserenity-7.15.26-auto-update-prompt';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -34,6 +34,7 @@ const APP_SHELL=[
   '/captain-ux-711.css?v=715140',
   '/wind-direction-71512.css?v=715140',
   '/dashboard-visual-71523.css?v=715240',
+  '/update-prompt.js?v=715260',
   '/auth-bootstrap.js?v=715140',
   '/futuristic-analog-7140.js?v=715140',
   '/dashboard-analog-7141.js?v=715140',
@@ -87,7 +88,6 @@ self.addEventListener('install',event=>{
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache=>Promise.all(APP_SHELL.map(path=>cacheFile(cache,path))))
-      .then(()=>self.skipWaiting())
   );
 });
 
@@ -106,6 +106,12 @@ self.addEventListener('activate',event=>{
 self.addEventListener('message',event=>{
   if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });
+
+function injectUpdatePrompt(html){
+  if(html.includes('update-prompt.js'))return html;
+  const script='<script src="/update-prompt.js?v=715260"></script>';
+  return html.includes('</body>')?html.replace('</body>',`${script}</body>`):`${html}${script}`;
+}
 
 self.addEventListener('fetch',event=>{
   const request=event.request;
@@ -132,23 +138,24 @@ self.addEventListener('fetch',event=>{
   }
 
   if(request.mode==='navigate'){
-    event.respondWith(
-      fetch(request,{cache:'no-store'})
-        .then(response=>{
-          if(response.ok){
-            const copy=response.clone();
-            caches.open(CACHE_NAME).then(cache=>cache.put('/index.html',copy));
-          }
-          return response;
-        })
-        .catch(async()=>
-          (await caches.match('/index.html'))||
-          new Response('<h1>MijnSerenity is tijdelijk offline</h1><p>Open de app opnieuw zodra er verbinding is.</p>',{
-            status:503,
-            headers:{'Content-Type':'text/html; charset=utf-8'}
-          })
-        )
-    );
+    event.respondWith((async()=>{
+      try{
+        const response=await fetch(request,{cache:'no-store'});
+        if(!response.ok)return response;
+        const html=injectUpdatePrompt(await response.text());
+        const result=new Response(html,{status:response.status,statusText:response.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
+        const copy=result.clone();
+        caches.open(CACHE_NAME).then(cache=>cache.put('/index.html',copy));
+        return result;
+      }catch(error){
+        const cached=await caches.match('/index.html');
+        if(cached){
+          const html=injectUpdatePrompt(await cached.text());
+          return new Response(html,{status:200,headers:{'Content-Type':'text/html; charset=utf-8'}});
+        }
+        return new Response('<h1>MijnSerenity is tijdelijk offline</h1><p>Open de app opnieuw zodra er verbinding is.</p>',{status:503,headers:{'Content-Type':'text/html; charset=utf-8'}});
+      }
+    })());
     return;
   }
 
