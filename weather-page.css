@@ -613,3 +613,12 @@
     min-width:50px;
   }
 }
+
+/* MijnSerenity 7.15.25 — komende 12 uur direct bovenaan na het vaaradvies */
+#weather:not(.hidden){display:flex;flex-direction:column}
+#weather > .ms709-weather-hero{order:1}
+#weather > .ms709-weather-card:has(#ms709HourlyForecast){order:2}
+#weather > .ms71521-weather-pair{order:3}
+#weather > .ms710-radar-card{order:3}
+#weather > .ms709-weather-card:has(#ms709DailyForecast){order:4}
+#weather > .ms709-weather-card:has(#ms709WeatherAdvice){order:5}
