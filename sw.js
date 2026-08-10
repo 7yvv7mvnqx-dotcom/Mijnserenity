@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.15.15-rws-water-temperature';
+const CACHE_NAME='mijnserenity-7.15.24-dashboard-visual';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -33,6 +33,7 @@ const APP_SHELL=[
   '/start-dashboard-71510.css?v=715141',
   '/captain-ux-711.css?v=715140',
   '/wind-direction-71512.css?v=715140',
+  '/dashboard-visual-71523.css?v=715240',
   '/auth-bootstrap.js?v=715140',
   '/futuristic-analog-7140.js?v=715140',
   '/dashboard-analog-7141.js?v=715140',
@@ -113,6 +114,22 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
+
+  if(url.pathname==='/wind-direction-71512.css'){
+    event.respondWith((async()=>{
+      try{
+        const [base,visual]=await Promise.all([
+          fetch(request,{cache:'no-store'}),
+          fetch('/dashboard-visual-71523.css?v=715240',{cache:'no-store'})
+        ]);
+        const css=`${base.ok?await base.text():''}\n${visual.ok?await visual.text():''}`;
+        return new Response(css,{status:200,headers:{'Content-Type':'text/css; charset=utf-8','Cache-Control':'no-store'}});
+      }catch(error){
+        return (await caches.match(request))||new Response('',{status:503});
+      }
+    })());
+    return;
+  }
 
   if(request.mode==='navigate'){
     event.respondWith(
