@@ -1,4 +1,4 @@
-/* MijnSerenity 7.15.24 — gekozen eerste dashboardvariant, zichtbaar op iPhone en iPad */
+/* MijnSerenity 7.15.27 — gekozen eerste dashboardvariant, zichtbaar op iPhone en iPad */
 .ms71514-hero{background:#061827!important;overflow:hidden!important}
 .ms71514-hero img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center center!important;background:#061827!important}
 
@@ -16,9 +16,9 @@
 #ms71512WindArrow:after{display:none!important}
 #ms71512WindDirection:before{content:'WIND UIT ';color:#91a9b8;font-size:.78em;font-weight:800;letter-spacing:.04em}
 
-/* Zichtbare build, ook zolang de oude HTML-meta nog in cache staat. */
+/* Zichtbare buildversie. */
 #settingsAppVersion{font-size:0!important}
-#settingsAppVersion:after{content:'7.15.24';font-size:14px!important}
+#settingsAppVersion:after{content:'7.15.27';font-size:14px!important}
 
 @media(min-width:621px){.ms71514-hero{height:clamp(250px,31vw,390px)!important}}
 @media(max-width:620px){.ms71514-hero{min-height:190px!important;height:clamp(190px,54vw,245px)!important}.ms71512-compass-ring{width:66px!important;height:66px!important}}
