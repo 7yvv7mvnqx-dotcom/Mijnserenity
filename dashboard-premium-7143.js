@@ -104,3 +104,112 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
 })();
+
+/* MijnSerenity 7.15.30 — veilige live stroomflow bij huishoudaccu */
+(function(){
+  'use strict';
+  if(window.__ms71530BatteryFlow)return;
+  window.__ms71530BatteryFlow=true;
+
+  function byId(id){return document.getElementById(id);}
+  function parseNumber(text){
+    var match=String(text||'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
+    if(!match)return null;
+    var value=Number(match[0]);
+    return Number.isFinite(value)?value:null;
+  }
+  function readCurrent(){
+    var ids=['ivmsBatteryCurrent','ms71510HouseCurrent','techHouseCurrent','liveHouseCurrent'];
+    for(var i=0;i<ids.length;i++){
+      var el=byId(ids[i]);
+      var value=parseNumber(el&&el.textContent);
+      if(value!==null)return value;
+    }
+    return null;
+  }
+  function readSolar(){
+    var el=byId('techSolarPower');
+    return parseNumber(el&&el.textContent);
+  }
+  function sourceLabel(){
+    var shore=String((byId('techShorePowerStatus')||{}).textContent||'').toLowerCase();
+    var solar=readSolar();
+    if(shore.indexOf('walstroom')!==-1 && shore.indexOf('geen')===-1 && shore.indexOf('niet')===-1)return 'WALSTROOM';
+    if(solar!==null && solar>5)return 'ZON / BOORDNET';
+    return 'BOORDNET';
+  }
+  function installStyle(){
+    if(byId('ms71530BatteryFlowStyle'))return;
+    var style=document.createElement('style');
+    style.id='ms71530BatteryFlowStyle';
+    style.textContent='#ms71530BatteryFlow{grid-column:1/-1;display:grid;grid-template-columns:54px minmax(90px,1fr) 54px;align-items:center;gap:9px;margin-top:8px;padding:10px;border:1px solid rgba(105,204,235,.17);border-radius:15px;background:rgba(255,255,255,.035);overflow:hidden}'+
+      '#ms71530BatteryFlow .node{display:grid;place-items:center;text-align:center;color:#dff8ff;font-size:9px;font-weight:900;letter-spacing:.04em}'+
+      '#ms71530BatteryFlow .node b{font-size:22px;line-height:1.1;margin-bottom:3px}'+
+      '#ms71530BatteryFlow .track{position:relative;height:9px;border-radius:999px;background:rgba(139,183,199,.13);overflow:hidden}'+
+      '#ms71530BatteryFlow .dot{position:absolute;top:50%;left:-12px;width:8px;height:8px;border-radius:50%;background:#d8f9ff;box-shadow:0 0 10px rgba(118,226,255,.95);transform:translateY(-50%);animation:ms71530Right var(--flow-speed,1.8s) linear infinite}'+
+      '#ms71530BatteryFlow .dot:nth-child(2){animation-delay:-.45s}#ms71530BatteryFlow .dot:nth-child(3){animation-delay:-.9s}#ms71530BatteryFlow .dot:nth-child(4){animation-delay:-1.35s}'+
+      '#ms71530BatteryFlow[data-direction="out"] .dot{animation-name:ms71530Left}#ms71530BatteryFlow[data-direction="idle"] .dot{animation-play-state:paused;opacity:.18}'+
+      '#ms71530BatteryFlow .meta{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:7px;color:#9fbcc7;font-size:11px;font-weight:800;text-align:center}'+
+      '#ms71530BatteryFlow .meta strong{color:#eafaff;font-size:12px}'+
+      '@keyframes ms71530Right{from{left:-12px}to{left:calc(100% + 12px)}}@keyframes ms71530Left{from{left:calc(100% + 12px)}to{left:-12px}}'+
+      '@media(max-width:520px){#ms71530BatteryFlow{grid-template-columns:44px minmax(70px,1fr) 44px;padding:8px;gap:6px}#ms71530BatteryFlow .node{font-size:8px}#ms71530BatteryFlow .node b{font-size:19px}}'+
+      '@media(prefers-reduced-motion:reduce){#ms71530BatteryFlow .dot{animation:none!important;left:50%!important}}';
+    document.head.appendChild(style);
+  }
+  function ensureFlow(){
+    installStyle();
+    var existing=byId('ms71530BatteryFlow');
+    if(existing)return existing;
+    var host=document.querySelector('#ms71510Dashboard .ms71510-battery-row');
+    if(!host)return null;
+    var flow=document.createElement('div');
+    flow.id='ms71530BatteryFlow';
+    flow.dataset.direction='idle';
+    flow.innerHTML='<div class="node"><b>🔌</b><span id="ms71530Source">BOORDNET</span></div>'+ '<div class="track" aria-hidden="true"><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>'+ '<div class="node"><b>🔋</b><span>ACCU</span></div>'+ '<div class="meta"><strong id="ms71530Label">Geen stroommeting</strong><span id="ms71530Current">– A</span></div>';
+    host.appendChild(flow);
+    return flow;
+  }
+  function update(){
+    try{
+      var flow=ensureFlow();
+      if(!flow)return;
+      var current=readCurrent();
+      var label=byId('ms71530Label');
+      var amount=byId('ms71530Current');
+      var source=byId('ms71530Source');
+      if(source)source.textContent=sourceLabel();
+      if(current===null){
+        flow.dataset.direction='idle';
+        flow.style.setProperty('--flow-speed','2.2s');
+        if(label)label.textContent='Geen stroommeting';
+        if(amount)amount.textContent='– A';
+        return;
+      }
+      var abs=Math.abs(current);
+      var speed=Math.max(.65,Math.min(2.4,2.4-(Math.min(abs,50)/50)*1.75));
+      flow.style.setProperty('--flow-speed',speed.toFixed(2)+'s');
+      if(amount)amount.textContent=current.toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})+' A';
+      if(abs<0.15){
+        flow.dataset.direction='idle';
+        if(label)label.textContent='Nagenoeg geen stroom';
+      }else if(current>0){
+        flow.dataset.direction='in';
+        if(label)label.textContent='Accu wordt geladen →';
+      }else{
+        flow.dataset.direction='out';
+        if(label)label.textContent='← Accu levert stroom';
+      }
+    }catch(error){
+      console.warn('Accu-stroomanimatie kon niet bijwerken:',error);
+    }
+  }
+  function install(){
+    update();
+    setTimeout(update,800);
+    setInterval(function(){if(!document.hidden)update();},1500);
+    ['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated'].forEach(function(name){window.addEventListener(name,update,{passive:true});});
+    document.addEventListener('visibilitychange',function(){if(!document.hidden)setTimeout(update,100);},{passive:true});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
+  else install();
+})();
