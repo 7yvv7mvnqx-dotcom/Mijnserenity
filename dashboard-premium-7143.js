@@ -105,11 +105,11 @@
   else install();
 })();
 
-/* MijnSerenity 7.15.30 — veilige live stroomflow bij huishoudaccu */
+/* MijnSerenity 7.15.31 — stroomflow compact in huishoudaccuknop + vermogen in watt */
 (function(){
   'use strict';
-  if(window.__ms71530BatteryFlow)return;
-  window.__ms71530BatteryFlow=true;
+  if(window.__ms71531BatteryFlow)return;
+  window.__ms71531BatteryFlow=true;
 
   function byId(id){return document.getElementById(id);}
   function parseNumber(text){
@@ -118,8 +118,7 @@
     var value=Number(match[0]);
     return Number.isFinite(value)?value:null;
   }
-  function readCurrent(){
-    var ids=['ivmsBatteryCurrent','ms71510HouseCurrent','techHouseCurrent','liveHouseCurrent'];
+  function readFrom(ids){
     for(var i=0;i<ids.length;i++){
       var el=byId(ids[i]);
       var value=parseNumber(el&&el.textContent);
@@ -127,77 +126,92 @@
     }
     return null;
   }
-  function readSolar(){
-    var el=byId('techSolarPower');
-    return parseNumber(el&&el.textContent);
-  }
+  function readCurrent(){return readFrom(['ivmsBatteryCurrent','techHouseCurrent','liveHouseCurrent','ms71510HouseCurrent']);}
+  function readVoltage(){return readFrom(['ivmsBatteryVoltage','techHouseVoltage','liveHouseVoltage','ms71510HouseVoltage']);}
   function sourceLabel(){
     var shore=String((byId('techShorePowerStatus')||{}).textContent||'').toLowerCase();
-    var solar=readSolar();
-    if(shore.indexOf('walstroom')!==-1 && shore.indexOf('geen')===-1 && shore.indexOf('niet')===-1)return 'WALSTROOM';
-    if(solar!==null && solar>5)return 'ZON / BOORDNET';
-    return 'BOORDNET';
+    var solar=readFrom(['techSolarPower']);
+    if(shore.indexOf('walstroom')!==-1 && shore.indexOf('geen')===-1 && shore.indexOf('niet')===-1)return 'WAL';
+    if(solar!==null && solar>5)return 'ZON';
+    return 'BOORD';
   }
   function installStyle(){
-    if(byId('ms71530BatteryFlowStyle'))return;
+    if(byId('ms71531BatteryFlowStyle'))return;
     var style=document.createElement('style');
-    style.id='ms71530BatteryFlowStyle';
-    style.textContent='#ms71530BatteryFlow{grid-column:1/-1;display:grid;grid-template-columns:54px minmax(90px,1fr) 54px;align-items:center;gap:9px;margin-top:8px;padding:10px;border:1px solid rgba(105,204,235,.17);border-radius:15px;background:rgba(255,255,255,.035);overflow:hidden}'+
-      '#ms71530BatteryFlow .node{display:grid;place-items:center;text-align:center;color:#dff8ff;font-size:9px;font-weight:900;letter-spacing:.04em}'+
-      '#ms71530BatteryFlow .node b{font-size:22px;line-height:1.1;margin-bottom:3px}'+
-      '#ms71530BatteryFlow .track{position:relative;height:9px;border-radius:999px;background:rgba(139,183,199,.13);overflow:hidden}'+
-      '#ms71530BatteryFlow .dot{position:absolute;top:50%;left:-12px;width:8px;height:8px;border-radius:50%;background:#d8f9ff;box-shadow:0 0 10px rgba(118,226,255,.95);transform:translateY(-50%);animation:ms71530Right var(--flow-speed,1.8s) linear infinite}'+
-      '#ms71530BatteryFlow .dot:nth-child(2){animation-delay:-.45s}#ms71530BatteryFlow .dot:nth-child(3){animation-delay:-.9s}#ms71530BatteryFlow .dot:nth-child(4){animation-delay:-1.35s}'+
-      '#ms71530BatteryFlow[data-direction="out"] .dot{animation-name:ms71530Left}#ms71530BatteryFlow[data-direction="idle"] .dot{animation-play-state:paused;opacity:.18}'+
-      '#ms71530BatteryFlow .meta{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:7px;color:#9fbcc7;font-size:11px;font-weight:800;text-align:center}'+
-      '#ms71530BatteryFlow .meta strong{color:#eafaff;font-size:12px}'+
-      '@keyframes ms71530Right{from{left:-12px}to{left:calc(100% + 12px)}}@keyframes ms71530Left{from{left:calc(100% + 12px)}to{left:-12px}}'+
-      '@media(max-width:520px){#ms71530BatteryFlow{grid-template-columns:44px minmax(70px,1fr) 44px;padding:8px;gap:6px}#ms71530BatteryFlow .node{font-size:8px}#ms71530BatteryFlow .node b{font-size:19px}}'+
-      '@media(prefers-reduced-motion:reduce){#ms71530BatteryFlow .dot{animation:none!important;left:50%!important}}';
+    style.id='ms71531BatteryFlowStyle';
+    style.textContent='#ms71530BatteryFlow{display:none!important}'+
+      '#ms71531BatteryFlow{grid-column:1/-1;width:100%;display:grid;grid-template-columns:auto minmax(70px,1fr) auto;align-items:center;gap:7px;margin-top:9px;padding-top:8px;border-top:1px solid rgba(105,204,235,.16);pointer-events:none}'+
+      '#ms71531BatteryFlow .node{font-size:9px;font-weight:900;letter-spacing:.05em;color:#b9d5df;white-space:nowrap}'+
+      '#ms71531BatteryFlow .track{position:relative;height:7px;border-radius:999px;background:rgba(139,183,199,.14);overflow:hidden}'+
+      '#ms71531BatteryFlow .dot{position:absolute;top:50%;left:-10px;width:7px;height:7px;border-radius:50%;background:#d8f9ff;box-shadow:0 0 9px rgba(118,226,255,.95);transform:translateY(-50%);animation:ms71531Right var(--flow-speed,1.8s) linear infinite}'+
+      '#ms71531BatteryFlow .dot:nth-child(2){animation-delay:-.45s}#ms71531BatteryFlow .dot:nth-child(3){animation-delay:-.9s}#ms71531BatteryFlow .dot:nth-child(4){animation-delay:-1.35s}'+
+      '#ms71531BatteryFlow[data-direction="out"] .dot{animation-name:ms71531Left}#ms71531BatteryFlow[data-direction="idle"] .dot{animation-play-state:paused;opacity:.18}'+
+      '#ms71531BatteryFlow .meta{grid-column:1/-1;display:flex;justify-content:center;gap:7px;align-items:center;color:#9fbcc7;font-size:10px;font-weight:800;text-align:center;white-space:nowrap}'+
+      '#ms71531BatteryFlow .meta strong{color:#eafaff;font-size:11px}'+
+      '@keyframes ms71531Right{from{left:-10px}to{left:calc(100% + 10px)}}@keyframes ms71531Left{from{left:calc(100% + 10px)}to{left:-10px}}'+
+      '@media(max-width:520px){#ms71531BatteryFlow{gap:5px;margin-top:7px;padding-top:7px}#ms71531BatteryFlow .node{font-size:8px}#ms71531BatteryFlow .meta{font-size:9px;gap:5px}#ms71531BatteryFlow .meta strong{font-size:10px}}'+
+      '@media(prefers-reduced-motion:reduce){#ms71531BatteryFlow .dot{animation:none!important;left:50%!important}}';
     document.head.appendChild(style);
   }
   function ensureFlow(){
     installStyle();
-    var existing=byId('ms71530BatteryFlow');
+    var old=byId('ms71530BatteryFlow');
+    if(old)old.style.display='none';
+    var existing=byId('ms71531BatteryFlow');
     if(existing)return existing;
-    var host=document.querySelector('#ms71510Dashboard .ms71510-battery-row');
+    var host=document.querySelector('#ms71510Dashboard .ms71510-house-battery');
     if(!host)return null;
-    var flow=document.createElement('div');
-    flow.id='ms71530BatteryFlow';
+    var flow=document.createElement('span');
+    flow.id='ms71531BatteryFlow';
     flow.dataset.direction='idle';
-    flow.innerHTML='<div class="node"><b>🔌</b><span id="ms71530Source">BOORDNET</span></div>'+ '<div class="track" aria-hidden="true"><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>'+ '<div class="node"><b>🔋</b><span>ACCU</span></div>'+ '<div class="meta"><strong id="ms71530Label">Geen stroommeting</strong><span id="ms71530Current">– A</span></div>';
+    flow.innerHTML='<span class="node" id="ms71531Source">BOORD</span><span class="track" aria-hidden="true"><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></span><span class="node">ACCU</span><span class="meta"><strong id="ms71531Label">Geen stroommeting</strong><span id="ms71531Power">– W</span></span>';
     host.appendChild(flow);
     return flow;
+  }
+  function updateMainPower(power,current){
+    var value=byId('ms71510HouseCurrent');
+    if(!value)return;
+    var box=value.parentElement;
+    var title=box&&box.querySelector('small');
+    if(title)title.textContent='VERMOGEN';
+    if(power===null){value.textContent='– W';return;}
+    var rounded=Math.round(Math.abs(power));
+    value.textContent=rounded.toLocaleString('nl-NL')+' W';
+    value.title=(current!==null?current.toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})+' A · ':'')+'vermogen huishoudaccu';
   }
   function update(){
     try{
       var flow=ensureFlow();
       if(!flow)return;
       var current=readCurrent();
-      var label=byId('ms71530Label');
-      var amount=byId('ms71530Current');
-      var source=byId('ms71530Source');
+      var voltage=readVoltage();
+      var power=(current!==null && voltage!==null)?voltage*current:null;
+      var absCurrent=current===null?0:Math.abs(current);
+      var absPower=power===null?null:Math.abs(power);
+      var label=byId('ms71531Label');
+      var amount=byId('ms71531Power');
+      var source=byId('ms71531Source');
       if(source)source.textContent=sourceLabel();
-      if(current===null){
+      updateMainPower(power,current);
+      if(current===null || voltage===null){
         flow.dataset.direction='idle';
         flow.style.setProperty('--flow-speed','2.2s');
-        if(label)label.textContent='Geen stroommeting';
-        if(amount)amount.textContent='– A';
+        if(label)label.textContent='Geen vermogensmeting';
+        if(amount)amount.textContent='– W';
         return;
       }
-      var abs=Math.abs(current);
-      var speed=Math.max(.65,Math.min(2.4,2.4-(Math.min(abs,50)/50)*1.75));
+      var speed=Math.max(.65,Math.min(2.4,2.4-(Math.min(absCurrent,50)/50)*1.75));
       flow.style.setProperty('--flow-speed',speed.toFixed(2)+'s');
-      if(amount)amount.textContent=current.toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})+' A';
-      if(abs<0.15){
+      if(amount)amount.textContent=Math.round(absPower).toLocaleString('nl-NL')+' W';
+      if(absCurrent<0.15){
         flow.dataset.direction='idle';
         if(label)label.textContent='Nagenoeg geen stroom';
       }else if(current>0){
         flow.dataset.direction='in';
-        if(label)label.textContent='Accu wordt geladen →';
+        if(label)label.textContent='Laden →';
       }else{
         flow.dataset.direction='out';
-        if(label)label.textContent='← Accu levert stroom';
+        if(label)label.textContent='← Levert';
       }
     }catch(error){
       console.warn('Accu-stroomanimatie kon niet bijwerken:',error);
