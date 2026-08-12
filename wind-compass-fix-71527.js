@@ -14,6 +14,13 @@
     return Number.isFinite(n)?((n%360)+360)%360:null;
   }
 
+  function directionName(deg){
+    const value=norm360(deg);
+    if(value===null)return '–';
+    const names=['N','NNO','NO','ONO','O','OZO','ZO','ZZO','Z','ZZW','ZW','WZW','W','WNW','NW','NNW'];
+    return names[Math.round(value/22.5)%16];
+  }
+
   function screenRotationClockwise(){
     try{
       const angle=Number(screen.orientation?.angle);
@@ -37,11 +44,20 @@
 
   function render(){
     const arrow=$('ms71512WindArrow');
+    const dir=$('ms71512WindDirection');
     const wind=weatherDirection();
-    if(!arrow||wind===null)return;
+    if(wind===null){
+      if(dir)dir.textContent='–';
+      return;
+    }
+
+    // Toon alleen de windrichting als kompasnaam, nooit als graden.
+    if(dir)dir.textContent=directionName(wind);
+
+    // De pijl wijst waar de wind naartoe waait en blijft relatief aan het toestel.
     const windTo=norm360(wind+180);
     const rotation=heading===null?windTo:norm360(windTo-heading);
-    arrow.style.setProperty('transform',`translate(-50%,-100%) rotate(${rotation}deg)`,'important');
+    if(arrow)arrow.style.setProperty('transform',`translate(-50%,-100%) rotate(${rotation}deg)`,'important');
   }
 
   function sensor(event){
@@ -63,7 +79,7 @@
     if(btn){
       btn.classList.remove('hidden');
       btn.classList.add('active');
-      btn.textContent=`🧭 Kompas actief · ${Math.round(heading)}°`;
+      btn.textContent='🧭 Kompas actief';
     }
     render();
   }
