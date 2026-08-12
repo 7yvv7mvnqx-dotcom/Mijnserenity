@@ -38,23 +38,27 @@
     return null;
   }
 
-  function screenAngle(){
+  function screenRotationClockwise(){
+    // Screen Orientation API gebruikt positieve graden met de klok mee.
     try{
       if(screen.orientation && Number.isFinite(Number(screen.orientation.angle))){
         return Number(screen.orientation.angle);
       }
     }catch(e){}
-    return Number(window.orientation)||0;
+
+    // Safari's legacy window.orientation gebruikt precies het omgekeerde teken:
+    // rechtsom draaien geeft -90. Maak beide API's hier gelijkwaardig.
+    const legacy=Number(window.orientation);
+    return Number.isFinite(legacy)?-legacy:0;
   }
 
   function handleOrientation(event){
     let heading=null;
 
-    // iOS Safari geeft de absolute kompasrichting hier.
+    // iOS Safari geeft met webkitCompassHeading een absolute richting t.o.v. noord.
     if(Number.isFinite(Number(event.webkitCompassHeading))){
       heading=Number(event.webkitCompassHeading);
     }else if(event.absolute && Number.isFinite(Number(event.alpha))){
-      // Bij absolute DeviceOrientation is alpha rotatie t.o.v. geografisch noord.
       heading=360-Number(event.alpha);
     }else if(Number.isFinite(Number(event.alpha))){
       // Beste fallback; niet op elk toestel magnetisch noord.
@@ -62,7 +66,9 @@
     }
 
     if(heading!==null){
-      heading=norm360(heading + screenAngle());
+      // DeviceOrientation is gekoppeld aan het natuurlijke toestel-frame. Corrigeer
+      // voor portrait/landscape zodat 'boven' altijd de bovenzijde van het scherm is.
+      heading=norm360(heading-screenRotationClockwise());
       deviceHeading=heading;
       permissionGranted=true;
       update();
@@ -113,9 +119,10 @@
 
     if(dir)dir.textContent=`${directionName(wind)} · ${Math.round(wind)}°`;
 
-    // De tekst blijft de meteorologische windrichting (waar de wind vandaan komt).
-    // Alleen de pijl wijst 180 graden omgekeerd: waar de wind naartoe waait.
-    const displayRotation=deviceHeading===null ? norm360(wind+180) : norm360(wind+180-deviceHeading);
+    // Weerdata = waar de wind vandaan komt. De pijl wijst juist waar de wind
+    // naartoe waait en compenseert live voor de richting van iPhone/iPad.
+    const windTo=norm360(wind+180);
+    const displayRotation=deviceHeading===null ? windTo : norm360(windTo-deviceHeading);
     if(arrow)arrow.style.transform=`translate(-50%,-100%) rotate(${displayRotation}deg)`;
   }
 
@@ -134,6 +141,9 @@
   },{once:true});
 
   window.addEventListener('orientationchange',()=>setTimeout(update,150));
+  try{
+    screen.orientation?.addEventListener?.('change',()=>setTimeout(update,100));
+  }catch(e){}
 })();
 
 /* ============================================================
