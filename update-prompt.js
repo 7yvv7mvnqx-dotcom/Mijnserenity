@@ -1,5 +1,15 @@
 (function(){
   'use strict';
+  if(window.__ms71527CompassLoader)return;
+  window.__ms71527CompassLoader=true;
+  const script=document.createElement('script');
+  script.src='/wind-compass-fix-71527.js?v=715270';
+  script.async=false;
+  document.head.appendChild(script);
+})();
+
+(function(){
+  'use strict';
   if(window.__msUpdatePromptInstalled)return;
   window.__msUpdatePromptInstalled=true;
 
