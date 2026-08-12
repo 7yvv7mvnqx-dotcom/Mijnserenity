@@ -10,6 +10,22 @@
 
 (function(){
   'use strict';
+  if(window.__msCaptainModeLoader800)return;
+  window.__msCaptainModeLoader800=true;
+
+  const css=document.createElement('link');
+  css.rel='stylesheet';
+  css.href='/captain-mode-800.css?v=800001';
+  document.head.appendChild(css);
+
+  const script=document.createElement('script');
+  script.src='/captain-mode-800.js?v=800001';
+  script.async=false;
+  document.head.appendChild(script);
+})();
+
+(function(){
+  'use strict';
   if(window.__msUpdatePromptInstalled)return;
   window.__msUpdatePromptInstalled=true;
 
