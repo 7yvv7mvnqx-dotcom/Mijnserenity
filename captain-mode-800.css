@@ -1,0 +1,87 @@
+/* MijnSerenity 8.0 — Captain Mode */
+#msCaptainModeBadge{
+  display:none;
+  position:sticky;
+  top:8px;
+  z-index:90;
+  align-self:center;
+  margin:0 auto 4px;
+  width:max-content;
+  max-width:calc(100% - 24px);
+  padding:7px 13px;
+  border:1px solid rgba(55,190,255,.58);
+  border-radius:999px;
+  background:rgba(4,39,59,.94);
+  box-shadow:0 8px 28px rgba(0,0,0,.3),0 0 16px rgba(39,149,255,.22);
+  color:#dff7ff;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.08em;
+  line-height:1;
+  text-transform:uppercase;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+html.ms-captain-sailing #msCaptainModeBadge{display:flex;align-items:center;gap:7px}
+html.ms-captain-sailing #msCaptainModeBadge:before{content:'⚓';font-size:14px;letter-spacing:0}
+
+@media(max-width:1400px){
+  html.ms-captain-sailing #ms71510Dashboard{
+    gap:8px!important;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71514-hero{
+    max-height:155px!important;
+    min-height:120px!important;
+    transition:max-height .28s ease,min-height .28s ease;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-top{
+    grid-template-columns:minmax(0,1fr) minmax(120px,20%)!important;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-metrics{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-metric,
+  html.ms-captain-sailing #ms71510Dashboard .ms71512-wind-card{
+    min-width:0!important;
+    height:132px!important;
+    border-color:rgba(71,176,237,.56)!important;
+    box-shadow:inset 0 0 0 1px rgba(52,158,224,.06),0 0 18px rgba(24,120,183,.08)!important;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-value strong b{
+    font-size:48px!important;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-rudder{
+    height:218px!important;
+    border-color:rgba(71,176,237,.46)!important;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-twins,
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-battery-row,
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-shortcuts{
+    opacity:.82;
+  }
+}
+
+@media(max-width:620px){
+  #msCaptainModeBadge{top:5px;padding:6px 10px;font-size:9px}
+  html.ms-captain-sailing #ms71510Dashboard .ms71514-hero{
+    min-height:92px!important;
+    height:110px!important;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-metrics{
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-metric,
+  html.ms-captain-sailing #ms71510Dashboard .ms71512-wind-card{
+    height:118px!important;
+  }
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-value strong b{font-size:40px!important}
+  html.ms-captain-sailing #ms71510Dashboard .ms71510-rudder{height:215px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html.ms-captain-sailing #ms71510Dashboard .ms71514-hero{transition:none}
+}
