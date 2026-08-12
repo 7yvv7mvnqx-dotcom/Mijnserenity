@@ -1,24 +1,50 @@
-/* MijnSerenity 7.15.27 — gekozen eerste dashboardvariant, zichtbaar op iPhone en iPad */
+/* MijnSerenity 7.15.28 — gekozen eerste dashboardvariant, zichtbaar op iPhone en iPad */
 .ms71514-hero{background:#061827!important;overflow:hidden!important}
 .ms71514-hero img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center center!important;background:#061827!important}
 
-/* Werkelijke windzak in de bestaande kompasring; rotatie blijft door live JS aangestuurd. */
+/* Duidelijke windpijl in de bestaande kompasring; live JS bepaalt de rotatie. */
 .ms71512-compass-ring{overflow:visible!important;box-shadow:inset 0 0 18px rgba(39,149,255,.22),0 0 14px rgba(39,149,255,.28)!important}
 #ms71512WindArrow{
-  width:36px!important;
-  height:14px!important;
-  border-radius:3px!important;
-  background:repeating-linear-gradient(90deg,#f34a4a 0 8px,#fff 8px 16px)!important;
-  clip-path:polygon(0 15%,100% 32%,100% 68%,0 85%)!important;
+  width:6px!important;
+  height:31px!important;
+  border-radius:5px!important;
+  background:#ffffff!important;
+  clip-path:none!important;
   transform-origin:50% 100%!important;
-  box-shadow:0 0 10px rgba(255,255,255,.22)!important;
+  box-shadow:0 0 10px rgba(75,181,255,.8)!important;
 }
-#ms71512WindArrow:after{display:none!important}
+#ms71512WindArrow:before{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  top:-11px!important;
+  transform:translateX(-50%)!important;
+  width:0!important;
+  height:0!important;
+  border-left:9px solid transparent!important;
+  border-right:9px solid transparent!important;
+  border-bottom:14px solid #2fa8ff!important;
+  filter:drop-shadow(0 0 5px rgba(47,168,255,.7));
+}
+#ms71512WindArrow:after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  left:50%!important;
+  bottom:-3px!important;
+  transform:translateX(-50%)!important;
+  width:11px!important;
+  height:11px!important;
+  border-radius:50%!important;
+  background:#dff4ff!important;
+  box-shadow:0 0 6px rgba(75,181,255,.75)!important;
+  border:0!important;
+}
 #ms71512WindDirection:before{content:'WIND UIT ';color:#91a9b8;font-size:.78em;font-weight:800;letter-spacing:.04em}
 
 /* Zichtbare buildversie. */
 #settingsAppVersion{font-size:0!important}
-#settingsAppVersion:after{content:'7.15.27';font-size:14px!important}
+#settingsAppVersion:after{content:'7.15.28';font-size:14px!important}
 
 @media(min-width:621px){.ms71514-hero{height:clamp(250px,31vw,390px)!important}}
-@media(max-width:620px){.ms71514-hero{min-height:190px!important;height:clamp(190px,54vw,245px)!important}.ms71512-compass-ring{width:66px!important;height:66px!important}}
+@media(max-width:620px){.ms71514-hero{min-height:190px!important;height:clamp(190px,54vw,245px)!important}.ms71512-compass-ring{width:66px!important;height:66px!important}#ms71512WindArrow{height:27px!important}}
