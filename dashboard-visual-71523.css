@@ -1,4 +1,4 @@
-/* MijnSerenity 7.15.29 — gekozen eerste dashboardvariant, zichtbaar op iPhone en iPad */
+/* MijnSerenity 7.15.30 — gekozen eerste dashboardvariant, zichtbaar op iPhone en iPad */
 .ms71514-hero{background:#061827!important;overflow:hidden!important}
 .ms71514-hero img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center center!important;background:#061827!important}
 
@@ -42,15 +42,18 @@
 }
 #ms71512WindDirection:before{content:'WIND UIT ';color:#91a9b8;font-size:.78em;font-weight:800;letter-spacing:.04em}
 
-/* iPad/tablet: windkaart exact als de andere metric-kaarten, zonder overlap. */
-@media(min-width:621px) and (max-width:1024px){
+/* iPad/tablet inclusief landscape: windkaart exact als de andere metric-kaarten, zonder overlap. */
+@media(min-width:621px) and (max-width:1400px){
   .ms71512-wind-card{
     width:100%!important;
+    min-width:0!important;
     height:128px!important;
     display:block!important;
     position:relative!important;
     padding:0!important;
+    margin:0!important;
     overflow:hidden!important;
+    box-sizing:border-box!important;
     background:linear-gradient(145deg,#061827,#03131f)!important;
     border:1px solid rgba(95,164,209,.34)!important;
     border-radius:18px!important;
@@ -59,10 +62,13 @@
     position:absolute!important;
     inset:0!important;
     width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
     height:100%!important;
     display:grid!important;
     grid-template-columns:100px minmax(0,1fr) 34px!important;
     align-items:center!important;
+    box-sizing:border-box!important;
     padding:10px 18px!important;
     margin:0!important;
     border:0!important;
@@ -74,26 +80,61 @@
   .ms71512-wind-compass{
     width:100px!important;
     min-width:100px!important;
+    max-width:100px!important;
+    height:100%!important;
     display:grid!important;
     place-items:center!important;
   }
   .ms71512-compass-ring{
+    position:relative!important;
     width:70px!important;
+    min-width:70px!important;
     height:70px!important;
+    border:3px solid #d5e5ef!important;
+    border-radius:50%!important;
+    box-sizing:border-box!important;
+  }
+  .ms71512-compass-ring:before,
+  .ms71512-compass-ring:after{
+    content:""!important;
+    position:absolute!important;
+    background:rgba(213,229,239,.35)!important;
+  }
+  .ms71512-compass-ring:before{left:50%!important;top:8px!important;bottom:8px!important;width:1px!important}
+  .ms71512-compass-ring:after{top:50%!important;left:8px!important;right:8px!important;height:1px!important}
+  .ms71512-compass-ring span{
+    position:absolute!important;
+    left:50%!important;
+    top:-16px!important;
+    transform:translateX(-50%)!important;
+    font-size:10px!important;
+    font-weight:900!important;
+    color:#fff!important;
   }
   .ms71512-wind-card .ms71510-value{
     min-width:0!important;
+    width:auto!important;
     padding-right:150px!important;
   }
+  .ms71512-wind-card .ms71510-value small,
   .ms71512-wind-card .ms71510-value strong,
   .ms71512-wind-card .ms71510-value>span{
+    width:auto!important;
+    max-width:100%!important;
     white-space:nowrap!important;
+  }
+  .ms71512-wind-card .ms71510-chevron{
+    width:34px!important;
+    min-width:34px!important;
+    position:static!important;
   }
   .ms71512-compass-permission{
     position:absolute!important;
     z-index:6!important;
     right:52px!important;
-    bottom:10px!important;
+    bottom:9px!important;
+    left:auto!important;
+    top:auto!important;
     width:auto!important;
     max-width:138px!important;
     min-width:0!important;
@@ -107,12 +148,13 @@
     white-space:nowrap!important;
     overflow:hidden!important;
     text-overflow:ellipsis!important;
+    box-sizing:border-box!important;
   }
 }
 
 /* Zichtbare buildversie. */
 #settingsAppVersion{font-size:0!important}
-#settingsAppVersion:after{content:'7.15.29';font-size:14px!important}
+#settingsAppVersion:after{content:'7.15.30';font-size:14px!important}
 
 @media(min-width:621px){.ms71514-hero{height:clamp(250px,31vw,390px)!important}}
 @media(max-width:620px){.ms71514-hero{min-height:190px!important;height:clamp(190px,54vw,245px)!important}.ms71512-compass-ring{width:66px!important;height:66px!important}#ms71512WindArrow{height:27px!important}}
