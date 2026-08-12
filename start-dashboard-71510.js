@@ -407,3 +407,105 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',placeRudder,{once:true});
   else placeRudder();
 })();
+
+/* MijnSerenity 7.15.27 — temperatuur + relatieve vochtigheid Salon en Motorruimte op startdashboard. */
+(function(){
+  'use strict';
+  if(window.__ms71527ClimateDashboard)return;
+  window.__ms71527ClimateDashboard=true;
+
+  const $=id=>document.getElementById(id);
+  const fmtTemp=value=>Number.isFinite(Number(value))
+    ?Number(value).toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})
+    :'–';
+  const fmtHumidity=value=>Number.isFinite(Number(value))
+    ?Math.round(Number(value)).toLocaleString('nl-NL')
+    :'–';
+
+  function installStyle(){
+    if($('ms71527ClimateStyle'))return;
+    const style=document.createElement('style');
+    style.id='ms71527ClimateStyle';
+    style.textContent=`
+.ms71527-climate-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ms71527-climate-tile{appearance:none;border:0;width:100%;min-width:0;min-height:82px;border-radius:18px;padding:13px 15px;background:linear-gradient(145deg,rgba(19,47,70,.96),rgba(8,28,45,.98));color:#f7fbff;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;text-align:left;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 22px rgba(0,0,0,.16)}
+.ms71527-climate-icon{font-size:25px;line-height:1}
+.ms71527-climate-copy{min-width:0;display:flex;flex-direction:column;gap:3px}
+.ms71527-climate-copy small{font-size:10px;letter-spacing:.09em;font-weight:800;opacity:.72}
+.ms71527-climate-values{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ms71527-climate-values strong{font-size:21px;line-height:1.05;font-weight:900;white-space:nowrap}
+.ms71527-climate-values span{font-size:14px;font-weight:800;opacity:.82;white-space:nowrap}
+.ms71527-climate-chevron{font-size:27px;opacity:.48}
+@media(max-width:430px){
+ .ms71527-climate-row{gap:8px}
+ .ms71527-climate-tile{min-height:76px;padding:11px 10px;gap:8px;border-radius:16px;grid-template-columns:auto minmax(0,1fr)}
+ .ms71527-climate-icon{font-size:21px}
+ .ms71527-climate-copy small{font-size:9px}
+ .ms71527-climate-values{gap:5px}
+ .ms71527-climate-values strong{font-size:17px}
+ .ms71527-climate-values span{font-size:12px}
+ .ms71527-climate-chevron{display:none}
+}
+`;
+    document.head.appendChild(style);
+  }
+
+  function ensureRow(){
+    const dashboard=$('ms71510Dashboard');
+    if(!dashboard)return null;
+    let row=$('ms71527ClimateRow');
+    if(row)return row;
+    row=document.createElement('div');
+    row.id='ms71527ClimateRow';
+    row.className='ms71527-climate-row';
+    row.innerHTML=`
+      <button type="button" class="ms71527-climate-tile" onclick="captainNavigate('technical')" aria-label="Open klimaatmeting Salon">
+        <span class="ms71527-climate-icon" aria-hidden="true">🌡️</span>
+        <span class="ms71527-climate-copy">
+          <small>SALON</small>
+          <span class="ms71527-climate-values"><strong><b id="ms71527SalonTemp">–</b> °C</strong><span><b id="ms71527SalonRv">–</b>% RV</span></span>
+        </span>
+        <span class="ms71527-climate-chevron" aria-hidden="true">›</span>
+      </button>
+      <button type="button" class="ms71527-climate-tile" onclick="captainNavigate('technical')" aria-label="Open klimaatmeting Motorruimte">
+        <span class="ms71527-climate-icon" aria-hidden="true">⚙️</span>
+        <span class="ms71527-climate-copy">
+          <small>MOTORRUIMTE</small>
+          <span class="ms71527-climate-values"><strong><b id="ms71527MotorTemp">–</b> °C</strong><span><b id="ms71527MotorRv">–</b>% RV</span></span>
+        </span>
+        <span class="ms71527-climate-chevron" aria-hidden="true">›</span>
+      </button>`;
+    const twins=dashboard.querySelector('.ms71510-twins');
+    const battery=dashboard.querySelector('.ms71510-battery-row');
+    if(twins)twins.insertAdjacentElement('afterend',row);
+    else if(battery)battery.insertAdjacentElement('beforebegin',row);
+    else dashboard.appendChild(row);
+    return row;
+  }
+
+  function update(){
+    installStyle();
+    if(!ensureRow())return;
+    let climate=null;
+    try{climate=window.ms7102GetRuuviClimate?.()||null;}catch(error){climate=null;}
+    const salon=climate?.salon||{};
+    const motor=climate?.forward||{};
+    if($('ms71527SalonTemp'))$('ms71527SalonTemp').textContent=fmtTemp(salon.temperature);
+    if($('ms71527SalonRv'))$('ms71527SalonRv').textContent=fmtHumidity(salon.humidity);
+    if($('ms71527MotorTemp'))$('ms71527MotorTemp').textContent=fmtTemp(motor.temperature);
+    if($('ms71527MotorRv'))$('ms71527MotorRv').textContent=fmtHumidity(motor.humidity);
+  }
+
+  let frame=0;
+  function queue(){
+    if(frame)return;
+    frame=requestAnimationFrame(()=>{frame=0;update();});
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',queue,{once:true});
+  else queue();
+  ['mijnserenity-ruuvi-vrm-updated','mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity:routechange']
+    .forEach(name=>window.addEventListener(name,queue,{passive:true}));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()},{passive:true});
+  window.setInterval(()=>{if(!document.hidden)queue()},10000);
+})();
