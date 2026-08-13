@@ -42,11 +42,18 @@ function next(){
  return null;
 }
 function fmt(v){const n=num(v);if(n===null||n<0)return '– km';return n<1?`${Math.max(10,Math.round(n*100)*10)} m`:`${n.toLocaleString('nl-NL',{maximumFractionDigits:1})} km`}
-function speed(){const d=num(document.getElementById('ms71510Speed')?.textContent);if(d!==null&&d>=2)return d;try{return Math.max(1,num(window.ms705Settings?.()?.cruiseSpeed)||9)}catch(e){return 9}}
+function speed(){const d=num(document.getElementById('ms71510Speed')?.textContent);if(d!==null&&d>=1)return d;try{return Math.max(1,num(window.ms705Settings?.()?.cruiseSpeed)||9)}catch(e){return 9}}
+function timeLeft(distanceKm){
+ const d=num(distanceKm);if(d===null||d<0)return '';
+ const minutes=Math.max(1,Math.round((d/speed())*60));
+ if(minutes<60)return `nog ${minutes} min`;
+ const h=Math.floor(minutes/60),m=minutes%60;
+ return m?`nog ${h} u ${m} min`:`nog ${h} u`;
+}
 function render(){
  const el=ensure();if(!el)return;const n=nav(),dest=txt(n.destination||document.getElementById('liveTo')?.value),rest=num(n.remainingKm);set('mscrDest',dest&&dest!=='Nog niet gekozen'?dest:'Nog geen actieve route');set('mscrRest',fmt(rest));
  if(rest!==null){const eta=new Date(Date.now()+rest/speed()*3600000);set('mscrEta',eta.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}))}else set('mscrEta','–');
- const o=next();if(o){set('mscrNext',o.name);set('mscrNextDist',o.distance!==null?fmt(o.distance):'Op actieve route');el.classList.add('has-obstacle')}else{set('mscrNext','Nog niet gevonden op route');set('mscrNextDist',dest?'Open reisplanner voor routedetails':'Plan eerst een route');el.classList.remove('has-obstacle')}
+ const o=next();if(o){set('mscrNext',o.name);set('mscrNextDist',o.distance!==null?`${fmt(o.distance)} · ${timeLeft(o.distance)}`:'Op actieve route');el.classList.add('has-obstacle')}else{set('mscrNext','Nog niet gevonden op route');set('mscrNextDist',dest?'Open reisplanner voor routedetails':'Plan eerst een route');el.classList.remove('has-obstacle')}
 }
 function init(){ensure();render();setInterval(render,UPDATE_MS);window.addEventListener('mscaptainmodechange',render)}
 window.msCaptainRoute={refresh:render};
