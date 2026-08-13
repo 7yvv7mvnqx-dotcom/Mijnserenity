@@ -26,6 +26,22 @@
 
 (function(){
   'use strict';
+  if(window.__msCaptainRouteLoader801)return;
+  window.__msCaptainRouteLoader801=true;
+
+  const css=document.createElement('link');
+  css.rel='stylesheet';
+  css.href='/captain-route-801.css?v=801001';
+  document.head.appendChild(css);
+
+  const script=document.createElement('script');
+  script.src='/captain-route-801.js?v=801001';
+  script.async=false;
+  document.head.appendChild(script);
+})();
+
+(function(){
+  'use strict';
   if(window.__msUpdatePromptInstalled)return;
   window.__msUpdatePromptInstalled=true;
 
