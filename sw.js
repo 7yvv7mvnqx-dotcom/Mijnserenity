@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.15.31-pro2';
+const CACHE_NAME='mijnserenity-7.15.31-pro3';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -34,9 +34,11 @@ const APP_SHELL=[
   '/captain-ux-711.css?v=715140',
   '/wind-direction-71512.css?v=715140',
   '/dashboard-visual-71523.css?v=715240',
-  '/dashboard-pro-71531.css?v=715311',
-  '/update-prompt.js?v=715260',
+  '/update-prompt.js?v=715312',
   '/auth-bootstrap.js?v=715310',
+  '/dashboard-pro-71531-loader.js?v=715311',
+  '/dashboard-pro-71531.js?v=715311',
+  '/dashboard-pro-71531.css?v=715311',
   '/futuristic-analog-7140.js?v=715140',
   '/dashboard-analog-7141.js?v=715140',
   '/dashboard-premium-7143.js?v=71430',
@@ -57,8 +59,6 @@ const APP_SHELL=[
   '/ais-page.js?v=715140',
   '/entertainment-page.js?v=715140',
   '/entertainment-pro-802.js?v=715310',
-  '/dashboard-pro-71531-loader.js?v=715311',
-  '/dashboard-pro-71531.js?v=715311',
   '/ha-live-bridge.js?v=715140',
   '/ruuvi-climate.js?v=715140',
   '/movement-presence.js?v=715140',
@@ -76,7 +76,7 @@ const APP_SHELL=[
   '/icon-192.png?v=715140',
   '/icon-512.png?v=715140',
   '/waterkaarten-dashboard.png?v=715140',
-  '/mijnserenity-logo.png?v=715140',
+  '/mijnserenity-logo.png?v=715140'
 ];
 
 async function cacheFile(cache,path){
@@ -99,9 +99,7 @@ self.addEventListener('activate',event=>{
   event.waitUntil(
     caches.keys()
       .then(keys=>Promise.all(
-        keys
-          .filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME)
-          .map(key=>caches.delete(key))
+        keys.filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME).map(key=>caches.delete(key))
       ))
       .then(()=>self.clients.claim())
   );
@@ -113,7 +111,7 @@ self.addEventListener('message',event=>{
 
 function injectUpdatePrompt(html){
   const scripts=[];
-  if(!html.includes('update-prompt.js'))scripts.push('<script src="/update-prompt.js?v=715260"></script>');
+  if(!html.includes('update-prompt.js'))scripts.push('<script src="/update-prompt.js?v=715312"></script>');
   if(!html.includes('entertainment-pro-802.js'))scripts.push('<script src="/entertainment-pro-802.js?v=715310"></script>');
   if(!html.includes('dashboard-pro-71531-loader.js'))scripts.push('<script src="/dashboard-pro-71531-loader.js?v=715311"></script>');
   if(!scripts.length)return html;
@@ -177,8 +175,7 @@ self.addEventListener('fetch',event=>{
         return response;
       })
       .catch(async()=>
-        (await caches.match(request))||
-        new Response('',{status:503,statusText:'Offline'})
+        (await caches.match(request))||new Response('',{status:503,statusText:'Offline'})
       )
   );
 });
