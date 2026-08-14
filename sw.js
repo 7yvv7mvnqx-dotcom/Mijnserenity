@@ -1,13 +1,13 @@
-const CACHE_NAME='mijnserenity-7.15.31-pro6';
+const CACHE_NAME='mijnserenity-7.15.31-pro7';
 const APP_SHELL=[
   '/',
   '/index.html',
   '/styles.css?v=715140',
   '/auth-bootstrap.js?v=715310',
-  '/update-prompt.js?v=715316',
-  '/dashboard-pro-71531-loader.js?v=715311',
-  '/dashboard-pro-71531.js?v=715311',
-  '/dashboard-pro-71531.css?v=715311',
+  '/update-prompt.js?v=715320',
+  '/dashboard-pro-71531-loader.js?v=715320',
+  '/dashboard-pro-71531.js?v=715320',
+  '/dashboard-pro-71531.css?v=715320',
   '/entertainment-pro-802.js?v=715310',
   '/wind-direction-71512.css?v=715140',
   '/dashboard-visual-71523.css?v=715250',
@@ -21,7 +21,7 @@ const APP_SHELL=[
   '/captain-mode-800.js?v=800001',
   '/captain-route-801.css?v=801001',
   '/captain-route-801.js?v=801001',
-  '/wind-compass-fix-71527.js?v=715316',
+  '/wind-compass-fix-71527.js?v=715320',
   '/manifest.json?v=715140',
   '/mijnserenity-logo.png?v=715140'
 ];
@@ -53,9 +53,9 @@ self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')sel
 
 function injectRuntimeExtras(html){
   const scripts=[];
-  if(!html.includes('update-prompt.js'))scripts.push('<script src="/update-prompt.js?v=715316"></script>');
+  if(!html.includes('update-prompt.js'))scripts.push('<script src="/update-prompt.js?v=715320"></script>');
   if(!html.includes('entertainment-pro-802.js'))scripts.push('<script src="/entertainment-pro-802.js?v=715310"></script>');
-  if(!html.includes('dashboard-pro-71531-loader.js'))scripts.push('<script src="/dashboard-pro-71531-loader.js?v=715311"></script>');
+  if(!html.includes('dashboard-pro-71531-loader.js'))scripts.push('<script src="/dashboard-pro-71531-loader.js?v=715320"></script>');
   if(!scripts.length)return html;
   const injection=scripts.join('');
   return html.includes('</body>')?html.replace('</body>',`${injection}</body>`):`${html}${injection}`;
