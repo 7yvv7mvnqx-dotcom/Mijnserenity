@@ -1,4 +1,4 @@
-/* MijnSerenity 7.15.39 — cockpit portal boven legacy pager + interactieve kaarten */
+/* MijnSerenity 7.15.44 — cockpit portal boven legacy pager + interactieve kaarten */
 (()=>{
   'use strict';
   if(window.__msCockpitPortal)return;
@@ -116,7 +116,13 @@
     return true;
   }
 
+  function isNavigationException(target){
+    if(!(target instanceof Element))return false;
+    return Boolean(target.closest('#mscWindCompassEnable,[data-ms-no-dashboard-navigation]'));
+  }
+
   function activateTarget(target,event){
+    if(isNavigationException(target))return false;
     const action=target instanceof Element?target.closest('#msProDashboard [data-go]'):null;
     if(!action||!portal||action.closest('#msProDashboard')!==portal)return false;
     event?.preventDefault?.();
