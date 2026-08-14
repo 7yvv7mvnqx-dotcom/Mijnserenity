@@ -47,7 +47,8 @@
 
   let registration=null;
   let waitingWorker=null;
-  let reloading=false;
+  let restartRequested=false;
+  let reloadTimer=null;
 
   function ensurePrompt(){
     let panel=document.getElementById('msUpdatePrompt');
@@ -77,14 +78,21 @@
   }
 
   function showPrompt(worker){
+    if(restartRequested)return;
     waitingWorker=worker||registration?.waiting||waitingWorker;
-    const panel=ensurePrompt();
-    panel.classList.add('show');
+    ensurePrompt().classList.add('show');
+  }
+
+  function reloadFresh(){
+    if(reloadTimer){clearTimeout(reloadTimer);reloadTimer=null;}
+    const url=new URL(location.href);
+    url.searchParams.set('update',Date.now().toString());
+    location.replace(url.toString());
   }
 
   async function restartIntoUpdate(){
-    if(reloading)return;
-    reloading=true;
+    if(restartRequested)return;
+    restartRequested=true;
     const button=document.getElementById('msUpdateRestartButton');
     if(button){button.disabled=true;button.textContent='Herstarten…';}
 
@@ -92,16 +100,14 @@
       const worker=waitingWorker||registration?.waiting;
       if(worker){
         worker.postMessage({type:'SKIP_WAITING'});
+        reloadTimer=setTimeout(reloadFresh,2200);
         return;
       }
       if(registration)await registration.update();
     }catch(error){
       console.warn('Update activeren mislukt:',error);
     }
-
-    const url=new URL(location.href);
-    url.searchParams.set('update',Date.now().toString());
-    location.replace(url.toString());
+    reloadFresh();
   }
 
   function watchRegistration(reg){
@@ -120,6 +126,7 @@
   }
 
   async function checkForUpdate(){
+    if(restartRequested)return;
     try{
       if(!registration){
         registration=await navigator.serviceWorker.getRegistration();
@@ -143,11 +150,11 @@
     }
 
     navigator.serviceWorker.addEventListener('controllerchange',()=>{
-      if(reloading)return;
-      reloading=true;
-      const url=new URL(location.href);
-      url.searchParams.set('update',Date.now().toString());
-      location.replace(url.toString());
+      if(restartRequested){
+        reloadFresh();
+        return;
+      }
+      reloadFresh();
     });
 
     window.addEventListener('focus',checkForUpdate,{passive:true});
