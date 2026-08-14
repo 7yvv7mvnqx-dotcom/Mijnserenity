@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-7.15.31-pro4';
+const CACHE_NAME='mijnserenity-7.15.31-pro5';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -10,7 +10,7 @@ const APP_SHELL=[
   '/dashboard-pro-71531.css?v=715311',
   '/entertainment-pro-802.js?v=715310',
   '/wind-direction-71512.css?v=715140',
-  '/dashboard-visual-71523.css?v=715240',
+  '/dashboard-visual-71523.css?v=715250',
   '/app.js?v=715140',
   '/ha-live-bridge.js?v=715140',
   '/technical-live-sync.js?v=715140',
@@ -21,7 +21,7 @@ const APP_SHELL=[
   '/captain-mode-800.js?v=800001',
   '/captain-route-801.css?v=801001',
   '/captain-route-801.js?v=801001',
-  '/wind-compass-fix-71527.js?v=715270',
+  '/wind-compass-fix-71527.js?v=715315',
   '/manifest.json?v=715140',
   '/mijnserenity-logo.png?v=715140'
 ];
@@ -77,7 +77,7 @@ self.addEventListener('fetch',event=>{
       try{
         const [base,visual]=await Promise.all([
           fetch(request,{cache:'no-store'}),
-          fetch('/dashboard-visual-71523.css?v=715240',{cache:'no-store'})
+          fetch('/dashboard-visual-71523.css?v=715250',{cache:'no-store'})
         ]);
         const css=`${base.ok?await base.text():''}\n${visual.ok?await visual.text():''}`;
         return new Response(css,{status:200,headers:{'Content-Type':'text/css; charset=utf-8','Cache-Control':'no-store'}});
