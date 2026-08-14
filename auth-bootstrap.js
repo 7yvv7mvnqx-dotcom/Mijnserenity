@@ -1,8 +1,8 @@
-/* MijnSerenity 7.14.8 — betrouwbare loginbootstrap */
+/* MijnSerenity 8.0.2 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD=window.MIJSERENITY_BUILD||'7.14.8';
+  const BUILD='8.0.2';
   const VERSION='715140';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
@@ -19,6 +19,7 @@
     `rws-nearby.js?v=${VERSION}`,
     `ais-page.js?v=${VERSION}`,
     `entertainment-page.js?v=${VERSION}`,
+    `entertainment-pro-802.js?v=80200`,
     `ha-live-bridge.js?v=${VERSION}`,
     `ruuvi-climate.js?v=${VERSION}`,
     `movement-presence.js?v=${VERSION}`,
@@ -36,6 +37,15 @@
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
     'https://unpkg.com/@supabase/supabase-js@2'
   ];
+
+  function syncBuildVersion(){
+    window.MIJSERENITY_BUILD=BUILD;
+    const meta=document.querySelector('meta[name="mijnserenity-build"]');
+    if(meta)meta.content=BUILD;
+    const version=document.getElementById('settingsAppVersion');
+    if(version)version.textContent=BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
+  }
 
   function setAuthStatus(message,isError=false){
     const target=document.getElementById('authMsg');
@@ -92,9 +102,11 @@
 
   async function start(){
     try{
+      syncBuildVersion();
       setAuthStatus('Beveiligde inlog wordt geladen…');
       await ensureSupabase();
       for(const src of APP_SCRIPTS)await loadScript(src,25000);
+      syncBuildVersion();
 
       if(typeof window.signIn!=='function'){
         throw new Error('De inlogfunctie is niet beschikbaar.');
