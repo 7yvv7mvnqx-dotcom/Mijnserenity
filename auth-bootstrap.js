@@ -31,7 +31,8 @@
     `device-sync-guard.js?v=${VERSION}`,
     `captain-experience.js?v=${VERSION}`,
     `serenity-ivms.js?v=${VERSION}`,
-    `captain-ux-711.js?v=${VERSION}`
+    `captain-ux-711.js?v=${VERSION}`,
+    `dashboard-pro-71531-loader.js?v=715311`
   ];
   const SUPABASE_SOURCES=[
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
