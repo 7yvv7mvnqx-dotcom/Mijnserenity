@@ -1,9 +1,9 @@
-/* MijnSerenity 8.0.2 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.15.31 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='8.0.2';
-  const VERSION='715140';
+  const BUILD='7.15.31';
+  const VERSION='715310';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `receipt-reader-pro.js?v=${VERSION}`,
@@ -19,7 +19,7 @@
     `rws-nearby.js?v=${VERSION}`,
     `ais-page.js?v=${VERSION}`,
     `entertainment-page.js?v=${VERSION}`,
-    `entertainment-pro-802.js?v=80200`,
+    `entertainment-pro-802.js?v=715310`,
     `ha-live-bridge.js?v=${VERSION}`,
     `ruuvi-climate.js?v=${VERSION}`,
     `movement-presence.js?v=${VERSION}`,
