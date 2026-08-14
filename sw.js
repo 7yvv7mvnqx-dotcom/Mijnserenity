@@ -1,10 +1,10 @@
-const CACHE_NAME='mijnserenity-7.15.31-pro5';
+const CACHE_NAME='mijnserenity-7.15.31-pro6';
 const APP_SHELL=[
   '/',
   '/index.html',
   '/styles.css?v=715140',
   '/auth-bootstrap.js?v=715310',
-  '/update-prompt.js?v=715313',
+  '/update-prompt.js?v=715316',
   '/dashboard-pro-71531-loader.js?v=715311',
   '/dashboard-pro-71531.js?v=715311',
   '/dashboard-pro-71531.css?v=715311',
@@ -21,7 +21,7 @@ const APP_SHELL=[
   '/captain-mode-800.js?v=800001',
   '/captain-route-801.css?v=801001',
   '/captain-route-801.js?v=801001',
-  '/wind-compass-fix-71527.js?v=715315',
+  '/wind-compass-fix-71527.js?v=715316',
   '/manifest.json?v=715140',
   '/mijnserenity-logo.png?v=715140'
 ];
@@ -30,9 +30,7 @@ async function cacheFile(cache,path){
   try{
     const response=await fetch(path,{cache:'reload'});
     if(response.ok)await cache.put(path,response);
-  }catch(error){
-    console.warn('Bestand niet vooraf gecachet:',path,error);
-  }
+  }catch(error){console.warn('Bestand niet vooraf gecachet:',path,error);}
 }
 
 self.addEventListener('install',event=>{
@@ -51,13 +49,11 @@ self.addEventListener('activate',event=>{
   })());
 });
 
-self.addEventListener('message',event=>{
-  if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
-});
+self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();});
 
 function injectRuntimeExtras(html){
   const scripts=[];
-  if(!html.includes('update-prompt.js'))scripts.push('<script src="/update-prompt.js?v=715313"></script>');
+  if(!html.includes('update-prompt.js'))scripts.push('<script src="/update-prompt.js?v=715316"></script>');
   if(!html.includes('entertainment-pro-802.js'))scripts.push('<script src="/entertainment-pro-802.js?v=715310"></script>');
   if(!html.includes('dashboard-pro-71531-loader.js'))scripts.push('<script src="/dashboard-pro-71531-loader.js?v=715311"></script>');
   if(!scripts.length)return html;
@@ -81,9 +77,7 @@ self.addEventListener('fetch',event=>{
         ]);
         const css=`${base.ok?await base.text():''}\n${visual.ok?await visual.text():''}`;
         return new Response(css,{status:200,headers:{'Content-Type':'text/css; charset=utf-8','Cache-Control':'no-store'}});
-      }catch(error){
-        return (await caches.match(request))||new Response('',{status:503});
-      }
+      }catch(error){return (await caches.match(request))||new Response('',{status:503});}
     })());
     return;
   }
@@ -109,12 +103,8 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  event.respondWith(
-    fetch(request,{cache:'no-cache'})
-      .then(response=>{
-        if(response.ok)caches.open(CACHE_NAME).then(cache=>cache.put(request,response.clone()));
-        return response;
-      })
-      .catch(async()=>(await caches.match(request))||new Response('',{status:503,statusText:'Offline'}))
-  );
+  event.respondWith(fetch(request,{cache:'no-cache'}).then(response=>{
+    if(response.ok)caches.open(CACHE_NAME).then(cache=>cache.put(request,response.clone()));
+    return response;
+  }).catch(async()=>(await caches.match(request))||new Response('',{status:503,statusText:'Offline'})));
 });
