@@ -1,8 +1,8 @@
-/* MijnSerenity 7.15.37 — live energie op Pro-dashboard */
+/* MijnSerenity 7.15.38 — live energie + Ruuvi klimaat op Pro-dashboard */
 (()=>{
   'use strict';
-  if(window.__msEnergyLiveFix71537)return;
-  window.__msEnergyLiveFix71537=true;
+  if(window.__msEnergyLiveFix71538)return;
+  window.__msEnergyLiveFix71538=true;
 
   const $=id=>document.getElementById(id);
   const text=id=>($(id)?.textContent||'').trim();
@@ -52,6 +52,92 @@
     return null;
   }
 
+  function installClimateStyle(){
+    if($('msEnergyClimateStyle71538'))return;
+    const style=document.createElement('style');
+    style.id='msEnergyClimateStyle71538';
+    style.textContent=`
+      .msc-energy .msc-climate-wrap{
+        margin:2px 0 0;
+        padding-top:10px;
+        border-top:1px solid rgba(255,255,255,.09);
+        display:grid;
+        gap:8px;
+      }
+      .msc-energy .msc-climate-row{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto;
+        align-items:center;
+        gap:10px;
+        min-width:0;
+      }
+      .msc-energy .msc-climate-row small{
+        display:block;
+        opacity:.72;
+        font-size:11px;
+        line-height:1.15;
+      }
+      .msc-energy .msc-climate-values{
+        display:flex;
+        align-items:baseline;
+        justify-content:flex-end;
+        gap:8px;
+        white-space:nowrap;
+      }
+      .msc-energy .msc-climate-values strong{
+        color:#b9ff23;
+        font-size:18px;
+        line-height:1;
+      }
+      .msc-energy .msc-climate-values span{
+        color:#eef6ff;
+        font-size:15px;
+        font-weight:700;
+      }
+      @media(max-width:760px){
+        .msc-energy .msc-climate-values{gap:6px}
+        .msc-energy .msc-climate-values strong{font-size:17px}
+        .msc-energy .msc-climate-values span{font-size:14px}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureClimateRows(){
+    const energy=document.querySelector('.msc-energy');
+    if(!energy||$('mscRuuviClimate'))return;
+    const wrap=document.createElement('div');
+    wrap.id='mscRuuviClimate';
+    wrap.className='msc-climate-wrap';
+    wrap.innerHTML=`
+      <div class="msc-climate-row">
+        <div><small>🌡️ SALON</small></div>
+        <div class="msc-climate-values"><strong id="mscSalonTemp">– °C</strong><span id="mscSalonRv">– % RV</span></div>
+      </div>
+      <div class="msc-climate-row">
+        <div><small>🌡️ MACHINEKAMER</small></div>
+        <div class="msc-climate-values"><strong id="mscMachineTemp">– °C</strong><span id="mscMachineRv">– % RV</span></div>
+      </div>`;
+    energy.appendChild(wrap);
+  }
+
+  function ruuviClimate(){
+    try{return typeof window.ms7102GetRuuviClimate==='function'?window.ms7102GetRuuviClimate():null}
+    catch{return null}
+  }
+
+  function syncClimate(){
+    installClimateStyle();
+    ensureClimateRows();
+    const climate=ruuviClimate();
+    const salon=climate?.salon||{};
+    const machine=climate?.forward||{};
+    set('mscSalonTemp',finite(salon.temperature)?`${nl(salon.temperature,1)} °C`:'– °C');
+    set('mscSalonRv',finite(salon.humidity)?`${nl(salon.humidity,0)} % RV`:'– % RV');
+    set('mscMachineTemp',finite(machine.temperature)?`${nl(machine.temperature,1)} °C`:'– °C');
+    set('mscMachineRv',finite(machine.humidity)?`${nl(machine.humidity,0)} % RV`:'– % RV');
+  }
+
   function syncEnergy(){
     if(!$('mscSoc'))return;
 
@@ -87,9 +173,13 @@
       :fallbackText('ivmsSolarPower',fallbackText('techSolarPower','– W'));
     set('mscSolar',solarText);
 
+    syncClimate();
+
     const badge=document.querySelector('.msc-energy .msc-title .ok');
     if(badge){
-      const live=soc!==null||voltage!==null||current!==null||solar!==null||shore!==null||text('ivmsBatteryMeta').toLowerCase().includes('victron live');
+      const climate=ruuviClimate();
+      const climateLive=finite(climate?.salon?.temperature)||finite(climate?.forward?.temperature);
+      const live=soc!==null||voltage!==null||current!==null||solar!==null||shore!==null||climateLive||text('ivmsBatteryMeta').toLowerCase().includes('victron live');
       const next=live?'• Live':'• Wachten op live data';
       if(badge.textContent!==next)badge.textContent=next;
     }
@@ -105,13 +195,20 @@
     }catch(error){
       console.warn('MijnSerenity live energie verversen mislukt:',error);
     }
+    try{
+      if(typeof window.ms7102RefreshRuuviVrm==='function')await window.ms7102RefreshRuuviVrm();
+    }catch(error){
+      console.warn('MijnSerenity Ruuvi verversen mislukt:',error);
+    }
     syncEnergy();
   }
 
   function install(){
+    installClimateStyle();
+    ensureClimateRows();
     syncEnergy();
     refreshNow();
-    ['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated']
+    ['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated','mijnserenity-ruuvi-config-updated']
       .forEach(name=>window.addEventListener(name,syncEnergy,{passive:true}));
     setInterval(syncEnergy,1000);
     setInterval(()=>{if(!document.hidden)refreshNow()},60000);
