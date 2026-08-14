@@ -1,8 +1,8 @@
-/* MijnSerenity 7.15.43 — windpijl blijft geografisch naar de windrichting wijzen */
+/* MijnSerenity 7.15.44 — windpijl blijft geografisch naar de windrichting wijzen */
 (()=>{
   'use strict';
-  if(window.__msWindDirectionFix71543)return;
-  window.__msWindDirectionFix71543=true;
+  if(window.__msWindDirectionFix71544)return;
+  window.__msWindDirectionFix71544=true;
 
   const $=id=>document.getElementById(id);
   const norm=value=>{
@@ -114,10 +114,14 @@
     const button=document.createElement('button');
     button.id='mscWindCompassEnable';
     button.type='button';
+    button.dataset.msNoDashboardNavigation='1';
     button.textContent='🧭 Richting activeren';
     button.setAttribute('aria-label','Activeer iPhone kompas voor geografische windpijl');
-    button.style.cssText='position:absolute;right:14px;top:48px;z-index:5;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:7px 10px;background:rgba(3,20,34,.82);color:#eef6ff;font:700 11px/1 system-ui;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);';
+    button.style.cssText='position:absolute;right:14px;top:48px;z-index:20;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:7px 10px;background:rgba(3,20,34,.92);color:#eef6ff;font:700 11px/1 system-ui;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:manipulation;';
     card.style.position='relative';
+    button.addEventListener('pointerdown',event=>{
+      event.stopPropagation();
+    },true);
     button.addEventListener('click',async event=>{
       event.preventDefault();
       event.stopPropagation();
@@ -154,7 +158,7 @@
         }
       }
       compassEnabled=true;
-      try{localStorage.setItem('ms71543_world_wind_compass','1')}catch{}
+      try{localStorage.setItem('ms71544_world_wind_compass','1')}catch{}
       startListening();
       if(button)button.textContent='🧭 Kompas starten…';
       return true;
@@ -178,7 +182,6 @@
       return;
     }
 
-    // Weerbron = waarVANDAAN de wind komt. MijnSerenity toont waarHEEN hij waait.
     const to=norm(from+180);
     if(to===null)return;
 
@@ -194,9 +197,6 @@
 
     const arrow=$('mscWindArrow');
     if(arrow){
-      // Met kompas: corrigeer voor de richting waarin de bovenkant van het scherm wijst.
-      // Zo blijft de pijlpunt fysiek dezelfde geografische windrichting aanwijzen.
-      // Zonder kompas valt hij tijdelijk terug op noord-boven.
       const displayRotation=deviceHeading===null?to:norm(to-deviceHeading);
       arrow.style.transform=`translate(-50%,-100%) rotate(${displayRotation}deg)`;
       arrow.dataset.windTo=String(to);
@@ -207,10 +207,9 @@
   function install(){
     ensureCompassButton();
     let enabled=false;
-    try{enabled=localStorage.getItem('ms71543_world_wind_compass')==='1'}catch{}
+    try{enabled=localStorage.getItem('ms71544_world_wind_compass')==='1'||localStorage.getItem('ms71543_world_wind_compass')==='1'}catch{}
     if(enabled){
       compassEnabled=true;
-      // Werkt direct wanneer de browser de eerder gegeven toestemming bewaart.
       startListening();
     }
 
@@ -231,7 +230,7 @@
     });
   }
 
-  window.ms71543EnableWorldWindCompass=enableCompass;
+  window.ms71544EnableWorldWindCompass=enableCompass;
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
