@@ -1,4 +1,4 @@
-const CACHE_NAME='mijnserenity-8.0.2-entertainment-pro';
+const CACHE_NAME='mijnserenity-7.15.31-pro';
 const APP_SHELL=[
   '/',
   '/index.html',
@@ -35,7 +35,7 @@ const APP_SHELL=[
   '/wind-direction-71512.css?v=715140',
   '/dashboard-visual-71523.css?v=715240',
   '/update-prompt.js?v=715260',
-  '/auth-bootstrap.js?v=715140',
+  '/auth-bootstrap.js?v=715310',
   '/futuristic-analog-7140.js?v=715140',
   '/dashboard-analog-7141.js?v=715140',
   '/dashboard-premium-7143.js?v=71430',
@@ -55,7 +55,7 @@ const APP_SHELL=[
   '/rws-nearby.js?v=715140',
   '/ais-page.js?v=715140',
   '/entertainment-page.js?v=715140',
-  '/entertainment-pro-802.js?v=80200',
+  '/entertainment-pro-802.js?v=715310',
   '/ha-live-bridge.js?v=715140',
   '/ruuvi-climate.js?v=715140',
   '/movement-presence.js?v=715140',
@@ -111,7 +111,7 @@ self.addEventListener('message',event=>{
 function injectUpdatePrompt(html){
   const scripts=[];
   if(!html.includes('update-prompt.js'))scripts.push('<script src="/update-prompt.js?v=715260"></script>');
-  if(!html.includes('entertainment-pro-802.js'))scripts.push('<script src="/entertainment-pro-802.js?v=80200"></script>');
+  if(!html.includes('entertainment-pro-802.js'))scripts.push('<script src="/entertainment-pro-802.js?v=715310"></script>');
   if(!scripts.length)return html;
   const injection=scripts.join('');
   return html.includes('</body>')?html.replace('</body>',`${injection}</body>`):`${html}${injection}`;
