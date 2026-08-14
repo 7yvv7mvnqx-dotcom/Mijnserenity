@@ -1,4 +1,4 @@
-/* MijnSerenity 7.15.31 — cockpit portal boven legacy pager + interactieve kaarten */
+/* MijnSerenity 7.15.39 — cockpit portal boven legacy pager + interactieve kaarten */
 (()=>{
   'use strict';
   if(window.__msCockpitPortal)return;
@@ -40,15 +40,17 @@
         inset:0 0 calc(72px + env(safe-area-inset-bottom,0px)) 0!important;
         z-index:7000!important;
         display:block!important;
-        overflow:auto!important;
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
         -webkit-overflow-scrolling:touch!important;
+        touch-action:pan-y!important;
         background:#020d18!important;
         padding:0 0 18px!important;
         margin:0!important;
         max-width:none!important;
         width:100%!important;
         height:auto!important;
-        overscroll-behavior:contain;
+        overscroll-behavior-y:contain;
       }
       #msProDashboard.ms-cockpit-portal[hidden]{display:none!important}
       body.ms-cockpit-visible{overflow:hidden!important;background:#020d18!important}
@@ -97,7 +99,6 @@
     document.body.classList.toggle('ms-cockpit-visible',show);
     if(show){
       portal.style.display='block';
-      if(portal.scrollTop>20)portal.scrollTop=0;
       enhanceInteractions();
     }
   }
