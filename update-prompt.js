@@ -3,7 +3,7 @@
   if(window.__ms71527CompassLoader)return;
   window.__ms71527CompassLoader=true;
   const script=document.createElement('script');
-  script.src='/wind-compass-fix-71527.js?v=715315';
+  script.src='/wind-compass-fix-71527.js?v=715316';
   script.async=false;
   document.head.appendChild(script);
 })();
@@ -40,24 +40,18 @@
   'use strict';
   if(window.__msSilentUpdaterInstalled)return;
   window.__msSilentUpdaterInstalled=true;
-
   const removeOldPrompt=()=>document.getElementById('msUpdatePrompt')?.remove();
-
   async function update(){
     if(!('serviceWorker' in navigator))return;
     try{
       const reg=await navigator.serviceWorker.getRegistration();
       await reg?.update();
       if(reg?.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
-    }catch(error){
-      console.warn('Stille updatecontrole mislukt:',error);
-    }
+    }catch(error){console.warn('Stille updatecontrole mislukt:',error);}
   }
-
   removeOldPrompt();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{removeOldPrompt();update();},{once:true});
   else update();
-
   window.addEventListener('focus',update,{passive:true});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)update();},{passive:true});
 })();
