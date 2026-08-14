@@ -2,7 +2,8 @@
 .ms71514-hero{background:#061827!important;overflow:hidden!important}
 .ms71514-hero img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center center!important;background:#061827!important}
 
-/* Grote, altijd zichtbare windpijl. Live JS roteert dit element. */
+/* Windpijl: standaard wijst de vorm recht omhoog. JS hoeft daardoor alleen
+   een echte kompasrotatie toe te passen: 0=N, 90=O, 180=Z, 270=W. */
 .ms71512-compass-ring{overflow:visible!important;box-shadow:inset 0 0 18px rgba(39,149,255,.22),0 0 14px rgba(39,149,255,.28)!important}
 #ms71512WindArrow{
   display:block!important;
@@ -11,16 +12,17 @@
   position:absolute!important;
   left:50%!important;
   top:50%!important;
-  width:46px!important;
-  height:14px!important;
-  margin-left:0!important;
-  margin-top:-7px!important;
-  border-radius:8px 2px 2px 8px!important;
+  width:16px!important;
+  height:50px!important;
+  margin:0!important;
+  border-radius:8px 8px 3px 3px!important;
   background:#2fa8ff!important;
-  clip-path:polygon(0 30%,62% 30%,62% 0,100% 50%,62% 100%,62% 70%,0 70%)!important;
-  transform-origin:0 50%!important;
+  clip-path:polygon(50% 0,100% 34%,70% 34%,70% 100%,30% 100%,30% 34%,0 34%)!important;
+  transform-origin:50% 100%!important;
+  transform:translate(-50%,-100%) rotate(var(--ms-wind-angle,0deg))!important;
   box-shadow:0 0 12px rgba(47,168,255,.95)!important;
   z-index:20!important;
+  transition:transform .22s linear!important;
 }
 #ms71512WindArrow:before,#ms71512WindArrow:after{content:none!important;display:none!important}
 #ms71512WindDirection:before{content:'WIND UIT ';color:#91a9b8;font-size:.78em;font-weight:800;letter-spacing:.04em}
@@ -35,7 +37,7 @@
   .ms71512-compass-ring:before{left:50%!important;top:8px!important;bottom:8px!important;width:1px!important}
   .ms71512-compass-ring:after{top:50%!important;left:8px!important;right:8px!important;height:1px!important}
   .ms71512-compass-ring span{position:absolute!important;left:50%!important;top:-16px!important;transform:translateX(-50%)!important;font-size:10px!important;font-weight:900!important;color:#fff!important}
-  #ms71512WindArrow{width:48px!important;height:16px!important;margin-top:-8px!important}
+  #ms71512WindArrow{width:16px!important;height:50px!important}
   .ms71512-wind-card .ms71510-value{min-width:0!important;width:auto!important;padding-right:150px!important}
   .ms71512-wind-card .ms71510-value small,.ms71512-wind-card .ms71510-value strong,.ms71512-wind-card .ms71510-value>span{width:auto!important;max-width:100%!important;white-space:nowrap!important}
   .ms71512-wind-card .ms71510-chevron{width:34px!important;min-width:34px!important;position:static!important}
@@ -47,4 +49,4 @@
 #settingsAppVersion:after{content:'7.15.31';font-size:14px!important}
 
 @media(min-width:621px){.ms71514-hero{height:clamp(250px,31vw,390px)!important}}
-@media(max-width:620px){.ms71514-hero{min-height:190px!important;height:clamp(190px,54vw,245px)!important}.ms71512-compass-ring{width:66px!important;height:66px!important}#ms71512WindArrow{width:40px!important;height:14px!important;margin-top:-7px!important}}
+@media(max-width:620px){.ms71514-hero{min-height:190px!important;height:clamp(190px,54vw,245px)!important}.ms71512-compass-ring{width:66px!important;height:66px!important}#ms71512WindArrow{width:14px!important;height:43px!important}}
