@@ -100,10 +100,24 @@
     throw lastError||new Error('Geen beveiligde inlogverbinding beschikbaar.');
   }
 
+  async function ensureServiceWorker(){
+    if(!('serviceWorker' in navigator))return null;
+    if(location.protocol!=='https:'&&location.hostname!=='localhost')return null;
+    try{
+      const registration=await navigator.serviceWorker.register('/sw.js',{scope:'/'});
+      registration.update().catch(()=>{});
+      return registration;
+    }catch(error){
+      console.warn('Service worker kon niet worden geregistreerd:',error);
+      return null;
+    }
+  }
+
   async function start(){
     try{
       syncBuildVersion();
       setAuthStatus('Beveiligde inlog wordt geladen…');
+      await ensureServiceWorker();
       await ensureSupabase();
       for(const src of APP_SCRIPTS)await loadScript(src,25000);
       syncBuildVersion();
