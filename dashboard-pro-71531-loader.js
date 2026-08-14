@@ -1,4 +1,4 @@
-/* MijnSerenity 7.15.42 Pro dashboard loader */
+/* MijnSerenity 7.15.43 Pro dashboard loader */
 (()=>{
   'use strict';
   if(document.getElementById('msPro71531Css'))return;
@@ -9,7 +9,7 @@
     ['/dashboard-cockpit-portal.js?v=715390','msCockpitPortal'],
     ['/dashboard-energy-live-fix-71537.js?v=715380','msEnergyLiveFix'],
     ['/dashboard-alarm-live-fix-71540.js?v=715400','msAlarmLiveFix'],
-    ['/dashboard-wind-direction-fix-71541.js?v=715420','msWindDirectionFix']
+    ['/dashboard-wind-direction-fix-71541.js?v=715430','msWindDirectionFix']
   ];
   scripts.forEach(([src,key])=>{
     if(document.querySelector(`script[data-${key}]`))return;
