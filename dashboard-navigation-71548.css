@@ -21,3 +21,20 @@
 .leaflet-control-attribution{font-size:8px!important}
 @media(max-width:1100px){#msProDashboard .msc-main-grid{grid-template-areas:'nav nav' 'wind course' 'energy energy' 'status status' 'depth water' 'weather weather' 'quick quick'}.msn-instruments{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){#msProDashboard .msc-main-grid{grid-template-areas:'nav' 'wind' 'course' 'energy' 'status' 'depth' 'water' 'weather' 'quick'}.msn-head{align-items:flex-start;flex-direction:column}.msn-instruments{grid-template-columns:1fr 1fr}.msn-gauge:last-child{grid-column:1/-1}#msCaptainRouteMap{height:300px}.msn-route-summary{flex-direction:column;gap:3px}}
+
+
+/* 7.15.49 — klassieke VDO-stijl en digitale wisselweergave */
+#msCaptainNavPanel button.msn-gauge{width:100%;font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.msn-vdo{background:linear-gradient(145deg,#1f2930,#05090c 45%,#111a20)!important;border:2px solid #717a80!important;box-shadow:inset 0 0 0 3px #151b1f,inset 0 0 0 5px #b5bcc0,0 5px 15px rgba(0,0,0,.4)!important}
+.msn-vdo>small{color:#f3f4ef!important;text-shadow:0 1px 1px #000}
+.msn-vdo .msn-dial{border:4px solid #c7cbcc!important;box-shadow:inset 0 0 0 3px #30363a,inset 0 0 18px #000,0 2px 5px #000;background:repeating-conic-gradient(from -120deg,#f4f3e9 0 1.4deg,transparent 1.4deg 12deg)!important}
+.msn-vdo .msn-dial:after{inset:7px;background:radial-gradient(circle at 45% 38%,#222 0,#080909 56%,#000 100%)!important;box-shadow:inset 0 0 12px #000}
+.msn-vdo-brand{position:absolute;z-index:4;left:50%;top:20px;transform:translateX(-50%);font:900 10px/1 Arial,sans-serif;letter-spacing:.12em;color:#eee}
+.msn-vdo .msn-needle{z-index:5;width:3px;height:45px;background:#f05a28!important;box-shadow:0 0 3px rgba(255,99,42,.8)}
+.msn-hub{position:absolute;z-index:6;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 35% 30%,#aaa,#222 55%,#000);border:1px solid #bbb}
+.msn-vdo .msn-center{z-index:4;align-content:end;padding-bottom:17px}.msn-vdo .msn-center strong{font-size:17px}.msn-vdo .msn-center span{color:#e5e3d8}
+.msn-switch-hint{display:block;margin-top:2px;color:#8ea6b4;font-size:9px;font-style:normal}
+.msn-vdo.digital .msn-dial{background:#030506!important}.msn-vdo.digital .msn-dial:after{inset:5px;background:#020607!important}
+.msn-vdo.digital .msn-needle,.msn-vdo.digital .msn-hub,.msn-vdo.digital .msn-vdo-brand{display:none}
+.msn-vdo.digital .msn-center{align-content:center;padding:0}.msn-vdo.digital .msn-center strong{font-family:"Courier New",monospace;font-size:33px;color:#75ef58;text-shadow:0 0 9px rgba(117,239,88,.45)}.msn-vdo.digital .msn-center span{font-size:11px;color:#bdeeb1}
+#msn-next{cursor:pointer;border-color:rgba(240,184,62,.48)}#msn-next:active{transform:scale(.985)}
