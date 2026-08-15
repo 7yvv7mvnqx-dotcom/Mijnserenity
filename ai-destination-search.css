@@ -6,3 +6,7 @@
 #msAiDestinationResults{position:absolute;z-index:9500;left:0;right:0;top:82px;max-height:330px;overflow:auto;padding:7px;border:1px solid rgba(104,184,228,.42);border-radius:13px;background:#061827;box-shadow:0 18px 35px rgba(0,0,0,.55)}
 #msAiDestinationResults.hidden{display:none}#msAiDestinationResults button{display:block;width:100%;min-height:55px;margin:0 0 5px!important;padding:9px 11px!important;text-align:left!important;border:1px solid rgba(112,171,205,.18)!important;border-radius:10px!important;background:#0b2639!important;color:#fff!important}#msAiDestinationResults strong,#msAiDestinationResults small{display:block}#msAiDestinationResults small{margin-top:3px;color:#9fb9c7;font-size:10px}
 @media(max-width:600px){.msai-inputrow{grid-template-columns:30px minmax(0,1fr)}.msai-inputrow button{grid-column:1/-1;width:100%;height:40px!important;margin:0!important;border-radius:0!important}#msAiDestinationResults{top:120px}}
+/* 7.15.52 — iPad focusrust en tussenstops uit */
+#msAiDestination,.msai-inputrow,#msAiDestinationInput{touch-action:manipulation;overscroll-behavior:contain}
+#msAiDestinationInput{font-size:17px!important;-webkit-user-select:text;user-select:text}
+.planner-stop-builder{display:none!important}
