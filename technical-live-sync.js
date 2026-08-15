@@ -1,4 +1,4 @@
-/* MijnSerenity 7.14.2 — live Victron- en walstroomwaarden in momentopname */
+/* MijnSerenity 7.15.32 — techniek uitsluitend live/automatisch */
 (()=>{
   'use strict';
 
@@ -10,8 +10,14 @@
     timeToGo:'sensor.vrm_time_to_go'
   };
   const SELECTION_KEY='mijnserenity-ha-selection-v733';
+  const REFRESH_MS=15000;
+
   let installed=false;
   let lastLive={};
+  let refreshBusy=false;
+  let refreshTimer=null;
+  let renderBusy=false;
+  let originalTechnicalWarnings=null;
 
   const $=id=>document.getElementById(id);
   const finite=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
@@ -48,7 +54,7 @@
   function contextScore(entity){
     const text=entityText(entity);
     let score=0;
-    if(/\b(vrm|victron|cerbo|serenity)\b/.test(text))score+=25;
+    if(/\b(vrm|victron|cerbo|serenity|smartshunt)\b/.test(text))score+=25;
     if(/walstroom|landstroom|shore\s*power|shorepower/.test(text))score+=100;
     if(/ac[_\s-]*(input|in)\b/.test(text))score+=55;
     if(/mains\s+connected|netspanning\s+aanwezig/.test(text))score+=50;
@@ -75,8 +81,10 @@
   }
 
   function findNumeric(terms,unit='',minimumScore=25){
+    const selection=savedSelection();
     return states()
       .filter(usable)
+      .filter(entity=>selection[entity.entity_id]!==false)
       .filter(entity=>finite(entity.state))
       .map(entity=>{
         const text=entityText(entity);
@@ -85,7 +93,7 @@
           if(text.includes(String(term).toLowerCase()))score+=40-index;
         });
         if(unit&&String(entity.attributes?.unit_of_measurement||'').toLowerCase()===unit.toLowerCase())score+=10;
-        if(/vrm|victron|cerbo|serenity/.test(text))score+=12;
+        if(/vrm|victron|cerbo|serenity|smartshunt/.test(text))score+=12;
         return {entity,score};
       })
       .filter(item=>item.score>=minimumScore)
@@ -93,11 +101,16 @@
   }
 
   function readLive(){
-    const soc=exact(EXACT.soc);
-    const voltage=exact(EXACT.voltage);
-    const current=exact(EXACT.current);
-    const power=exact(EXACT.power);
-    const timeToGo=exact(EXACT.timeToGo);
+    const soc=exact(EXACT.soc)||
+      findNumeric(['state of charge','battery soc','smartshunt soc','accu percentage','battery percentage','soc'],'%',45);
+    const voltage=exact(EXACT.voltage)||
+      findNumeric(['vrm voltage','smartshunt voltage','battery voltage','house battery voltage','accuspanning','accu spanning'],'V',45);
+    const current=exact(EXACT.current)||
+      findNumeric(['vrm current','smartshunt current','battery current','accustroom','accu stroom'],'A',45);
+    const power=exact(EXACT.power)||
+      findNumeric(['vrm battery power','battery power','accuvermogen','accu vermogen'],'W',45);
+    const timeToGo=exact(EXACT.timeToGo)||
+      findNumeric(['time to go','resterende tijd','battery runtime'],'h',45);
     const solar=exact('sensor.vrm_solar_charger_power')||
       exact('sensor.vrm_pv_power')||
       findNumeric(['solar charger power','mppt power','pv power','zonnepaneel vermogen'],'W',45);
@@ -166,58 +179,6 @@
     }
   }
 
-  function ensureFormFields(){
-    const section=document.querySelector('.technical-form-section[data-tech-section="battery"]');
-    if(!section||$('techInputHouseSoc'))return;
-    const rows=section.querySelectorAll(':scope > .row');
-    const anchor=rows[0]||section.querySelector('.checkline');
-    const wrapper=document.createElement('div');
-    wrapper.className='ms792-live-snapshot-fields';
-    wrapper.innerHTML=`
-      <div class="ms792-live-snapshot-head">
-        <span>🔴 LIVE VIA VICTRON / HOME ASSISTANT</span>
-        <small id="techLiveSnapshotTime">Wachten op live waarden</small>
-      </div>
-      <div class="row">
-        <div>
-          <label for="techInputHouseSoc">Lading huishoudaccu %</label>
-          <input id="techInputHouseSoc" type="number" min="0" max="100" step="0.1" inputmode="decimal" readonly>
-        </div>
-        <div>
-          <label for="techInputHouseCurrent">Accustroom A</label>
-          <input id="techInputHouseCurrent" type="number" step="0.01" inputmode="decimal" readonly>
-        </div>
-      </div>
-      <div class="row">
-        <div>
-          <label for="techInputHousePower">Accuvermogen W</label>
-          <input id="techInputHousePower" type="number" step="1" inputmode="decimal" readonly>
-        </div>
-        <div>
-          <label for="techInputHouseTimeToGo">Resterende tijd uur</label>
-          <input id="techInputHouseTimeToGo" type="number" min="0" step="0.1" inputmode="decimal" readonly>
-        </div>
-      </div>`;
-    if(anchor)anchor.insertAdjacentElement('afterend',wrapper);
-    else section.appendChild(wrapper);
-
-    const checkline=$('techInputShorePower')?.closest('.checkline');
-    if(checkline&&!$('techShorePowerLiveNote')){
-      const note=document.createElement('small');
-      note.id='techShorePowerLiveNote';
-      note.className='ms792-shore-note';
-      note.textContent='Handmatig zolang geen walstroomsensor is gevonden.';
-      checkline.insertAdjacentElement('afterend',note);
-    }
-  }
-
-  function setInput(id,value,{force=false}={}){
-    const input=$(id);
-    if(!input||value===null||value===undefined)return;
-    if(!force&&document.activeElement===input)return;
-    input.value=String(value);
-  }
-
   function timeLabel(hours){
     if(!finite(hours))return '–';
     const total=Math.max(0,Math.round(Number(hours)));
@@ -226,48 +187,150 @@
     return days?`${days}d ${remainder}u`:`${remainder}u`;
   }
 
-  function updateForm(live,{force=false}={}){
-    ensureFormFields();
-    const form=$('technicalSnapshotCard');
-    if(!form||form.classList.contains('hidden'))return;
+  function batteryLevel(live){
+    const state=currentState();
+    const voltage=live.houseVoltage??number(state.houseVoltage);
+    const soc=live.houseSoc??number(state.houseSoc);
 
-    setInput('techInputHouseSoc',live.houseSoc,{force:true});
-    setInput('techInputHouseVoltage',live.houseVoltage,{force});
-    setInput('techInputHouseCurrent',live.houseCurrent,{force:true});
-    setInput('techInputHousePower',live.housePower,{force:true});
-    setInput('techInputHouseTimeToGo',live.houseTimeToGo,{force:true});
-    if(live.solarPower!==null)setInput('techInputSolarPower',live.solarPower,{force});
+    if(finite(voltage)&&typeof window.technicalBatteryStatus==='function'){
+      try{
+        const status=window.technicalBatteryStatus(Number(voltage),state.batteryType||'lead');
+        if(status?.level==='critical')return 'critical';
+        if(status?.level==='warning')return 'warning';
+      }catch{}
+    }else if(finite(voltage)){
+      if(Number(voltage)<=11.9)return 'critical';
+      if(Number(voltage)<=12.2)return 'warning';
+    }
 
-    const shore=$('techInputShorePower');
-    const note=$('techShorePowerLiveNote');
-    if(shore){
-      const detected=live.shorePowerDetected!==null;
-      if(detected)shore.checked=Boolean(live.shorePowerDetected);
-      shore.disabled=detected;
-      shore.dataset.liveDetected=detected?'true':'false';
-      if(note){
-        note.textContent=detected
-          ?`Automatisch gedetecteerd via ${live.shorePowerEntity}: ${live.shorePowerDetected?'AAN':'UIT'}.`
-          :'Geen walstroomsensor gevonden; handmatige keuze blijft mogelijk.';
-        note.classList.toggle('active',detected&&live.shorePowerDetected===true);
+    if(finite(soc)){
+      if(Number(soc)<=15)return 'critical';
+      if(Number(soc)<=30)return 'warning';
+    }
+    return 'good';
+  }
+
+  function liveBatteryWarning(live){
+    const level=batteryLevel(live);
+    if(level==='good')return null;
+    const voltage=live.houseVoltage;
+    const soc=live.houseSoc;
+    const detail=[
+      finite(soc)?`${nl(soc,0)}% lading`:null,
+      finite(voltage)?`${nl(voltage,2)} V`:null
+    ].filter(Boolean).join(' · ');
+    return {
+      level,
+      title:level==='critical'?'Huishoudaccu kritisch':'Huishoudaccu laag',
+      text:detail||'Live Victron-meting vraagt aandacht.',
+      icon:'🔋'
+    };
+  }
+
+  function renderAutomaticAlerts(live){
+    const container=$('technicalAlertList');
+    const badge=$('technicalHealthBadge');
+    if(!container&&!badge)return;
+
+    const batteryWarning=liveBatteryWarning(live);
+    if(container){
+      if(batteryWarning){
+        container.innerHTML=`
+          <div class="technical-alert ${batteryWarning.level}">
+            <span>${batteryWarning.icon}</span>
+            <div><strong>${batteryWarning.title}</strong><small>${batteryWarning.text}</small></div>
+          </div>`;
+      }else if(live.hasVictron){
+        const detail=[
+          finite(live.houseSoc)?`${nl(live.houseSoc,0)}% lading`:null,
+          finite(live.houseVoltage)?`${nl(live.houseVoltage,2)} V`:null
+        ].filter(Boolean).join(' · ');
+        container.innerHTML=`
+          <div class="technical-alert good">
+            <span>✅</span>
+            <div><strong>Live techniek in orde</strong><small>${detail||'Victron is live gekoppeld.'}</small></div>
+          </div>`;
+      }else{
+        container.innerHTML=`
+          <div class="technical-alert info">
+            <span>↻</span>
+            <div><strong>Wachten op live techniek</strong><small>Geen handmatig ingevoerde waarden worden meer gebruikt.</small></div>
+          </div>`;
       }
     }
 
-    const time=$('techLiveSnapshotTime');
-    if(time){
-      time.textContent=live.hasVictron
-        ?`Bijgewerkt ${new Date(live.syncedAt).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`
-        :'Nog geen Victron-sensoren gevonden';
+    if(badge){
+      const level=batteryWarning?.level||'good';
+      badge.className=`technical-health-badge ${level}`;
+      badge.textContent=batteryWarning
+        ?(level==='critical'?'1 dringend':'1 aandachtspunt')
+        :(live.hasVictron?'Live in orde':'Live wacht');
+    }
+  }
+
+  function warningIsAutomatic(item){
+    const title=String(item?.title||'').toLowerCase();
+    if(/huishoudaccu|house battery/.test(title))return Boolean(lastLive.hasVictron);
+    if(/walstroom|shore power/.test(title))return lastLive.shorePowerDetected!==null;
+    if(/zonne|solar|mppt/.test(title))return lastLive.solarPower!==null;
+    return false;
+  }
+
+  function installWarningFilter(){
+    if(originalTechnicalWarnings||typeof window.technicalWarnings!=='function')return;
+    try{
+      originalTechnicalWarnings=window.technicalWarnings;
+      window.technicalWarnings=function(){
+        const warnings=originalTechnicalWarnings.apply(this,arguments);
+        return Array.isArray(warnings)?warnings.filter(warningIsAutomatic):[];
+      };
+    }catch(error){
+      originalTechnicalWarnings=null;
+      console.warn('Automatische waarschuwingenfilter kon niet worden geplaatst:',error);
+    }
+  }
+
+  function hideManualOnlyUi(){
+    const snapshot=$('technicalSnapshotCard');
+    if(snapshot){
+      snapshot.classList.add('hidden','ms792-auto-only-hidden');
+      snapshot.setAttribute('aria-hidden','true');
     }
 
-    const status=$('technicalSnapshotStatus');
-    if(status&&(live.hasVictron||live.shorePowerDetected!==null)){
-      const parts=[];
-      if(live.houseSoc!==null)parts.push(`accu ${nl(live.houseSoc,1)}%`);
-      if(live.houseVoltage!==null)parts.push(`${nl(live.houseVoltage,2)} V`);
-      if(live.shorePowerDetected!==null)parts.push(`walstroom ${live.shorePowerDetected?'aan':'uit'}`);
-      status.textContent=`Momentopname live aangevuld: ${parts.join(' · ')}. Opslaan legt deze waarden vast.`;
-      status.className='status small success';
+    document.querySelectorAll('.technical-hero-actions button').forEach(button=>{
+      const action=String(button.getAttribute('onclick')||'');
+      if(action.includes('openTechnicalSnapshotForm')||/nieuwe momentopname/i.test(button.textContent||'')){
+        button.classList.add('ms792-auto-only-hidden');
+        button.hidden=true;
+      }
+    });
+
+    const grid=document.querySelector('.technical-overview-grid');
+    grid?.querySelectorAll('.technical-gauge').forEach(card=>{
+      const isHouse=Boolean(card.querySelector('#techHouseVoltage'));
+      const isEngine=Boolean(card.querySelector('#techEngineHours'));
+      const isSolar=Boolean(card.querySelector('#techSolarPower'));
+      const keep=isHouse||isEngine||isSolar;
+      if(keep){
+        card.removeAttribute('onclick');
+        card.classList.remove('ms792-auto-only-hidden');
+        card.hidden=false;
+      }else{
+        card.classList.add('ms792-auto-only-hidden');
+        card.hidden=true;
+      }
+    });
+
+    const maintenance=document.querySelector('.technical-maintenance-card');
+    if(maintenance){
+      maintenance.classList.add('ms792-auto-only-hidden');
+      maintenance.hidden=true;
+    }
+
+    const hero=$('technicalHealthBadge')?.closest('.card');
+    const description=hero?.querySelector('p.small');
+    if(description){
+      description.textContent='Alleen live en automatisch bijgewerkte technische gegevens worden getoond.';
     }
   }
 
@@ -281,15 +344,20 @@
 
     const strong=$('techHouseVoltage');
     const detail=$('techHouseBatteryStatus');
-    if(strong&&soc!==null)strong.textContent=`${nl(soc,1)}%`;
-    if(detail&&(voltage!==null||current!==null||power!==null)){
+    if(strong){
+      if(soc!==null)strong.textContent=`${nl(soc,1)}%`;
+      else if(voltage!==null)strong.textContent=`${nl(voltage,2)} V`;
+      else strong.textContent='–';
+    }
+    if(detail){
       detail.textContent=[
         voltage!==null?`${nl(voltage,2)} V`:null,
         current!==null?`${nl(current,2)} A`:null,
         power!==null?`${nl(power,0)} W`:null
-      ].filter(Boolean).join(' · ');
-      detail.classList.add('ms792-live-value');
+      ].filter(Boolean).join(' · ')||(live.hasVictron?'Victron live':'Nog geen live meting');
+      detail.classList.toggle('ms792-live-value',live.hasVictron);
     }
+
     const card=strong?.closest('.technical-gauge');
     if(card){
       let runtime=$('techHouseTimeToGo');
@@ -298,22 +366,25 @@
         runtime.id='techHouseTimeToGo';
         card.appendChild(runtime);
       }
-      runtime.textContent=time!==null?`Resterend ${timeLabel(time)} · Victron live`:(live.hasVictron?'Victron live':'Nog niet gemeten');
+      runtime.textContent=time!==null?`Resterend ${timeLabel(time)} · Victron live`:(live.hasVictron?'Victron live':'Wacht op Victron');
       runtime.classList.toggle('ms792-live-value',live.hasVictron);
     }
 
     const shoreStatus=$('techShorePowerStatus');
-    if(shoreStatus&&live.shorePowerDetected!==null){
-      shoreStatus.textContent=live.shorePowerDetected
-        ?'Walstroom live aangesloten'
-        :'Walstroom live niet aangesloten';
-      shoreStatus.classList.toggle('ms792-shore-on',live.shorePowerDetected===true);
+    if(shoreStatus){
+      if(live.shorePowerDetected!==null){
+        shoreStatus.textContent=live.shorePowerDetected?'Walstroom live aangesloten':'Walstroom live niet aangesloten';
+        shoreStatus.classList.toggle('ms792-shore-on',live.shorePowerDetected===true);
+      }else{
+        shoreStatus.textContent='Walstroomsensor niet gekoppeld';
+        shoreStatus.classList.remove('ms792-shore-on');
+      }
     }
 
     const solar=$('techSolarPower');
-    if(solar&&live.solarPower!==null){
-      solar.textContent=`${nl(live.solarPower,0)} W`;
-      solar.classList.add('ms792-live-value');
+    if(solar){
+      solar.textContent=live.solarPower!==null?`${nl(live.solarPower,0)} W`:'– W';
+      solar.classList.toggle('ms792-live-value',live.solarPower!==null);
     }
   }
 
@@ -322,39 +393,40 @@
     const soc=live.houseSoc??number(state.houseSoc);
     const voltage=live.houseVoltage??number(state.houseVoltage);
     const house=$('liveHouseVoltage');
-    if(house&&(soc!==null||voltage!==null)){
-      house.textContent=[soc!==null?`${nl(soc,1)}%`:null,voltage!==null?`${nl(voltage,2)} V`:null].filter(Boolean).join(' · ');
+    if(house){
+      house.textContent=(soc!==null||voltage!==null)
+        ?[soc!==null?`${nl(soc,1)}%`:null,voltage!==null?`${nl(voltage,2)} V`:null].filter(Boolean).join(' · ')
+        :'–';
       house.title=[
         live.houseCurrent!==null?`Stroom ${nl(live.houseCurrent,2)} A`:null,
         live.housePower!==null?`Vermogen ${nl(live.housePower,0)} W`:null,
         live.houseTimeToGo!==null?`Resterend ${timeLabel(live.houseTimeToGo)}`:null
       ].filter(Boolean).join(' · ');
     }
-    const solarIsLive=live.solarPower!==null;
-    const solarPower=solarIsLive?live.solarPower:number(state.solarPower);
+
+    const solarPower=live.solarPower!==null?live.solarPower:null;
     const solarStrip=$('liveSolarPower');
     if(solarStrip){
       solarStrip.textContent=solarPower!==null?`${nl(solarPower,0)} W`:'– W';
-      solarStrip.classList.toggle('ms792-live-value',solarIsLive);
+      solarStrip.classList.toggle('ms792-live-value',solarPower!==null);
     }
+
     const solarYield=$('liveSolarYieldPower');
     const solarYieldStatus=$('liveSolarYieldStatus');
     const solarYieldDetail=$('liveSolarYieldDetail');
     const solarYieldBar=$('liveSolarYieldBar');
     if(solarYield){
       solarYield.textContent=solarPower!==null?`${nl(solarPower,0)} W`:'– W';
-      const producing=solarIsLive&&solarPower>2;
-      const hasSavedValue=!solarIsLive&&solarPower!==null;
+      const producing=solarPower!==null&&solarPower>2;
       if(solarYieldStatus){
-        solarYieldStatus.textContent=producing?'Live opbrengst':solarIsLive?'Stand-by':hasSavedValue?'Momentopname':'Niet gekoppeld';
+        solarYieldStatus.textContent=producing?'Live opbrengst':solarPower!==null?'Stand-by':'Niet gekoppeld';
         solarYieldStatus.classList.toggle('live',producing);
-        solarYieldStatus.classList.toggle('standby',solarIsLive&&!producing);
+        solarYieldStatus.classList.toggle('standby',solarPower!==null&&!producing);
       }
       if(solarYieldDetail){
         solarYieldDetail.textContent=producing
           ?'Actueel via Victron SmartSolar / Home Assistant'
-          :solarIsLive?'MPPT gekoppeld · momenteel vrijwel geen opbrengst'
-          :hasSavedValue?'Laatst opgeslagen technische waarde · niet live'
+          :solarPower!==null?'MPPT gekoppeld · momenteel vrijwel geen opbrengst'
           :'Wacht op een Victron SmartSolar MPPT-sensor';
       }
       if(solarYieldBar){
@@ -364,119 +436,138 @@
     }
 
     const shore=$('liveShorePower');
-    if(shore&&live.shorePowerDetected!==null){
-      shore.textContent=live.shorePowerDetected?'Aan':'Uit';
-      shore.classList.toggle('ms792-shore-on',live.shorePowerDetected===true);
-      shore.title=live.shorePowerEntity||'Home Assistant-detectie';
+    if(shore){
+      if(live.shorePowerDetected!==null){
+        shore.textContent=live.shorePowerDetected?'Aan':'Uit';
+        shore.classList.toggle('ms792-shore-on',live.shorePowerDetected===true);
+        shore.title=live.shorePowerEntity||'Home Assistant-detectie';
+      }else{
+        shore.textContent='–';
+        shore.classList.remove('ms792-shore-on');
+        shore.title='Walstroomsensor niet gekoppeld';
+      }
     }
+
     const updated=$('liveTechnicalUpdated');
-    if(updated&&(live.hasVictron||live.shorePowerDetected!==null)){
-      updated.textContent=`Live ${new Date(live.syncedAt).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`;
-      updated.classList.add('live');
+    if(updated){
+      if(live.hasVictron||live.shorePowerDetected!==null||live.solarPower!==null){
+        updated.textContent=`Live ${new Date(live.syncedAt).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`;
+        updated.classList.add('live');
+      }else{
+        updated.textContent='Wacht op live data';
+        updated.classList.remove('live');
+      }
     }
   }
 
-  function sync({forceForm=false,render=true}={}){
+  function paint(live,{fullRender=true}={}){
+    if(fullRender&&typeof window.renderTechnicalDashboard==='function'&&!renderBusy){
+      renderBusy=true;
+      try{
+        window.renderTechnicalDashboard();
+      }catch(error){
+        console.warn('Techniekdashboard opnieuw tekenen mislukt:',error);
+      }finally{
+        renderBusy=false;
+      }
+    }
+    enhanceDashboard(live);
+    enhanceLiveStrip(live);
+    hideManualOnlyUi();
+    renderAutomaticAlerts(live);
+  }
+
+  function sync({render=true,fullRender=true}={}){
     lastLive=readLive();
     mergeLiveIntoTechnical(lastLive);
-    updateForm(lastLive,{force:forceForm});
-    if(render){
-      enhanceDashboard(lastLive);
-      enhanceLiveStrip(lastLive);
-    }
+    installWarningFilter();
+    if(render)paint(lastLive,{fullRender});
     return lastLive;
   }
 
-  function storeExtraInputs(){
+  async function refreshLiveSource(){
+    if(refreshBusy)return lastLive;
+    refreshBusy=true;
     try{
-      const state=currentState();
-      const read=id=>number($(id)?.value);
-      const next={
-        ...state,
-        houseSoc:read('techInputHouseSoc')??state.houseSoc??null,
-        houseCurrent:read('techInputHouseCurrent')??state.houseCurrent??null,
-        housePower:read('techInputHousePower')??state.housePower??null,
-        houseTimeToGo:read('techInputHouseTimeToGo')??state.houseTimeToGo??null,
-        shorePowerSource:lastLive.shorePowerEntity||state.shorePowerSource||'',
-        shoreVoltage:lastLive.shoreVoltage??state.shoreVoltage??null,
-        shoreFrequency:lastLive.shoreFrequency??state.shoreFrequency??null,
-        liveTechnicalAt:lastLive.syncedAt||state.liveTechnicalAt||null
-      };
-      technicalStateCache=typeof normaliseTechnicalState==='function'?normaliseTechnicalState(next):next;
+      if(typeof window.ms730RefreshStateSnapshot==='function'){
+        const connected=typeof window.ms730HomeAssistantConnected!=='function'||window.ms730HomeAssistantConnected();
+        if(connected)await window.ms730RefreshStateSnapshot();
+      }
     }catch(error){
-      console.warn('Extra momentopnamevelden bewaren mislukt:',error);
+      console.warn('Live techniek verversen mislukt:',error);
+    }finally{
+      refreshBusy=false;
     }
+    return sync({render:true,fullRender:true});
   }
 
   function wrapFunctions(){
-    const originalFill=window.fillTechnicalSnapshotForm;
-    if(typeof originalFill==='function'){
-      window.fillTechnicalSnapshotForm=function(){
-        const result=originalFill.apply(this,arguments);
-        sync({forceForm:true,render:true});
+    const originalRender=window.renderTechnicalDashboard;
+    if(typeof originalRender==='function'&&!originalRender.ms792AutoOnlyWrapped){
+      const wrapped=function(){
+        lastLive=readLive();
+        mergeLiveIntoTechnical(lastLive);
+        installWarningFilter();
+        const result=originalRender.apply(this,arguments);
+        enhanceDashboard(lastLive);
+        enhanceLiveStrip(lastLive);
+        hideManualOnlyUi();
+        renderAutomaticAlerts(lastLive);
         return result;
       };
+      wrapped.ms792AutoOnlyWrapped=true;
+      window.renderTechnicalDashboard=wrapped;
     }
 
     const originalOpen=window.openTechnicalSnapshotForm;
-    if(typeof originalOpen==='function'){
-      window.openTechnicalSnapshotForm=function(){
-        const result=originalOpen.apply(this,arguments);
-        sync({forceForm:true,render:true});
-        if(typeof window.ms730HomeAssistantConnected==='function'&&window.ms730HomeAssistantConnected()&&typeof window.ms730RefreshStateSnapshot==='function'){
-          window.ms730RefreshStateSnapshot().then(()=>sync({forceForm:true,render:true})).catch(()=>{});
-        }
-        return result;
+    if(typeof originalOpen==='function'&&!originalOpen.ms792AutoOnlyWrapped){
+      const blocked=function(){
+        hideManualOnlyUi();
+        refreshLiveSource();
+        return false;
       };
-    }
-
-    const originalSave=window.saveTechnicalSnapshot;
-    if(typeof originalSave==='function'){
-      window.saveTechnicalSnapshot=async function(){
-        sync({forceForm:true,render:false});
-        storeExtraInputs();
-        const result=await originalSave.apply(this,arguments);
-        enhanceDashboard(lastLive);
-        enhanceLiveStrip(lastLive);
-        return result;
-      };
-    }
-
-    const originalRender=window.renderTechnicalDashboard;
-    if(typeof originalRender==='function'){
-      window.renderTechnicalDashboard=function(){
-        const result=originalRender.apply(this,arguments);
-        enhanceDashboard(lastLive=readLive());
-        return result;
-      };
+      blocked.ms792AutoOnlyWrapped=true;
+      window.openTechnicalSnapshotForm=blocked;
     }
 
     const originalLiveStrip=window.renderLiveTechnicalStrip;
-    if(typeof originalLiveStrip==='function'){
-      window.renderLiveTechnicalStrip=function(){
+    if(typeof originalLiveStrip==='function'&&!originalLiveStrip.ms792AutoOnlyWrapped){
+      const wrapped=function(){
         const result=originalLiveStrip.apply(this,arguments);
-        enhanceLiveStrip(lastLive=readLive());
+        lastLive=readLive();
+        mergeLiveIntoTechnical(lastLive);
+        enhanceLiveStrip(lastLive);
         return result;
       };
+      wrapped.ms792AutoOnlyWrapped=true;
+      window.renderLiveTechnicalStrip=wrapped;
     }
   }
 
   function install(){
     if(installed)return;
     installed=true;
-    ensureFormFields();
     wrapFunctions();
-    sync({render:true});
-    window.addEventListener('mijnserenity-ha-state-updated',()=>sync({render:true}));
-    window.addEventListener('mijnserenity-ha-connected',()=>setTimeout(()=>{
-      if(typeof window.ms730RefreshStateSnapshot==='function'){
-        window.ms730RefreshStateSnapshot().then(()=>sync({forceForm:true,render:true})).catch(()=>{});
-      }
-    },350));
+    installWarningFilter();
+    hideManualOnlyUi();
+    sync({render:true,fullRender:true});
+
+    setTimeout(refreshLiveSource,300);
+    refreshTimer=setInterval(()=>{
+      if(document.visibilityState==='visible')refreshLiveSource();
+    },REFRESH_MS);
+
+    window.addEventListener('mijnserenity-ha-state-updated',()=>sync({render:true,fullRender:true}));
+    window.addEventListener('mijnserenity-ha-connected',()=>setTimeout(refreshLiveSource,250));
+    window.addEventListener('focus',refreshLiveSource);
+    window.addEventListener('pageshow',refreshLiveSource);
     document.addEventListener('visibilitychange',()=>{
-      if(document.visibilityState==='visible')sync({render:true});
+      if(document.visibilityState==='visible')refreshLiveSource();
     });
-    window.ms792SyncTechnicalMomentSnapshot=()=>sync({forceForm:true,render:true});
+
+    window.ms792SyncTechnicalMomentSnapshot=refreshLiveSource;
+    window.ms792RefreshTechnicalLive=refreshLiveSource;
+    window.ms792AutomaticOnly=true;
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
