@@ -46,3 +46,16 @@
 #msnSmartRoute span{min-width:0;padding-right:8px;border-right:1px solid rgba(255,255,255,.1)}#msnSmartRoute span:nth-last-of-type(1){border-right:0}
 #msnSmartRoute small,#msnSmartRoute strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#msnSmartRoute small{color:#9db7c6;font-size:8px;font-weight:850;letter-spacing:.06em}#msnSmartRoute strong{margin-top:3px;font-size:12px}#msnSmartRoute.active span:first-child strong{color:#f3c859}#msnSmartRoute>b{font-size:24px;color:#f3c859;text-align:right}
 @media(max-width:700px){#msnSmartRoute{grid-template-columns:1fr 1fr 18px;bottom:8px}#msnSmartRoute span:first-child{grid-column:1/-2}#msnSmartRoute span:nth-of-type(4){display:none}#msnSmartRoute>b{grid-column:3;grid-row:1/3}}
+
+/* 7.15.56 — livekaart, routeoverzicht en reisinformatie naast elkaar */
+.msn-navigation-row{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1.15fr) minmax(230px,.72fr);gap:10px;align-items:stretch}
+.msn-map-card{min-width:0;padding:9px;border:1px solid rgba(119,171,205,.18);border-radius:13px;background:rgba(2,15,25,.55)}
+.msn-map-card h4,.msn-trip-info h4{margin:0 0 7px;color:#c8dbe5;font-size:10px;letter-spacing:.07em}
+#msCaptainRouteMap,#msSmartRouteOverview{height:330px;min-height:260px;border-radius:11px;overflow:hidden;background:#0a2233}
+#msnSmartRoute.msn-trip-info{position:relative!important;z-index:1!important;inset:auto!important;display:flex!important;flex-direction:column;align-items:stretch;gap:0;min-height:100%;padding:11px!important;border:1px solid rgba(240,184,62,.46);border-radius:13px;background:linear-gradient(155deg,rgba(8,32,48,.98),rgba(3,17,28,.98));color:#eef8fd;text-align:left;box-shadow:none}
+#msnSmartRoute.msn-trip-info span{display:block;padding:10px 2px;border-right:0;border-bottom:1px solid rgba(255,255,255,.09)}
+#msnSmartRoute.msn-trip-info small,#msnSmartRoute.msn-trip-info strong{display:block;white-space:normal}
+#msnSmartRoute.msn-trip-info small{color:#8faab9;font-size:8px;letter-spacing:.07em}#msnSmartRoute.msn-trip-info strong{margin-top:3px;font-size:14px}
+#msnSmartRoute.msn-trip-info>b{display:block;margin-top:auto;padding-top:11px;color:#f3c859;font-size:11px}
+@media(max-width:1050px){.msn-navigation-row{grid-template-columns:1fr 1fr}.msn-trip-info{grid-column:1/-1}.msn-trip-info{display:grid!important;grid-template-columns:repeat(5,1fr)!important}.msn-trip-info h4,.msn-trip-info>b{grid-column:1/-1}}
+@media(max-width:700px){.msn-navigation-row{grid-template-columns:1fr}.msn-trip-info{grid-column:auto;display:flex!important}#msCaptainRouteMap,#msSmartRouteOverview{height:280px}}
