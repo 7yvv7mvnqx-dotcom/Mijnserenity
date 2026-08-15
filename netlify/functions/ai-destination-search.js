@@ -24,5 +24,5 @@ exports.handler=async(event)=>{
   const rows=await geo.json();
   const results=rows.map((r,i)=>({id:'ai-'+Date.now()+'-'+i,name:String(r.name||r.display_name||search).split(',')[0],label:r.display_name,lat:Number(r.lat),lon:Number(r.lon),type:r.type||'',category:/marina|harbour|dock/i.test(r.type||'')?'Haven':'Bestemming'})).filter(r=>Number.isFinite(r.lat)&&Number.isFinite(r.lon));
   return{statusCode:200,headers,body:JSON.stringify({query,interpreted:search,ai,results})};
- }catch(error){return{statusCode:502,headers,body:JSON.stringify({error:error.message||'Zoeken mislukt'})}
+ }catch(error){return{statusCode:502,headers,body:JSON.stringify({error:error.message||'Zoeken mislukt'})}}
 };
