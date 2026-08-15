@@ -18,7 +18,7 @@
     ['/dashboard-wind-direction-fix-71541.js?v=715460','msWindDirectionFix'],
     ['/dashboard-rudder-icons-fix-71545.js?v=715450','msRudderIconsFix'],
     ['/dashboard-navigation-71548.js?v=715490','msNavigation71548'],
-    ['/ai-destination-search.js?v=715530','msAiDestination71551']
+    ['/ai-destination-search.js?v=715540','msAiDestination71551']
   ];
   scripts.forEach(([src,key])=>{
     if(document.querySelector(`script[data-${key}]`))return;
