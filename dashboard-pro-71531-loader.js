@@ -17,7 +17,7 @@
     ['/dashboard-alarm-live-fix-71540.js?v=715400','msAlarmLiveFix'],
     ['/dashboard-wind-direction-fix-71541.js?v=715460','msWindDirectionFix'],
     ['/dashboard-rudder-icons-fix-71545.js?v=715450','msRudderIconsFix'],
-    ['/dashboard-navigation-71548.js?v=715560','msNavigation71548'],
+    ['/dashboard-navigation-71548.js?v=715570','msNavigation71548'],
     ['/ai-destination-search.js?v=715540','msAiDestination71551']
   ];
   scripts.forEach(([src,key])=>{
