@@ -55,7 +55,7 @@ let ms708SwipeStart=null;
 
 function ms708InteractiveTarget(target){
   return Boolean(target instanceof Element&&target.closest(
-    'button,a,input,textarea,select,label,[role="button"],.leaflet-container,.live-radar-camera-viewport,.ms750-more-layer,.ms750-search-layer'
+    'button,a,input,textarea,select,label,[role="button"],.leaflet-container,.live-radar-camera-viewport,.ms750-more-layer,.ms750-search-layer,#msAiDestination,.planner-form-card'
   ));
 }
 
