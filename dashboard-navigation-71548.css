@@ -1,0 +1,23 @@
+/* MijnSerenity 7.15.48 — navigatiekaart en klassieke vaarinstrumenten */
+#msCaptainNavPanel{grid-area:nav;padding:14px;overflow:hidden}
+#msProDashboard .msc-location{display:none!important}
+#msProDashboard .msc-main-grid{grid-template-areas:'nav nav nav nav' 'wind course energy energy' 'status status status status' 'depth water weather quick'}
+.msn-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.msn-head strong{font-size:15px;letter-spacing:.04em}.msn-legend{display:flex;gap:12px;color:#b9cfdb;font-size:11px}
+.msn-legend i{display:inline-block;width:18px;height:4px;border-radius:9px;margin-right:5px;vertical-align:middle}.msn-done{background:#39b9ff}.msn-togo{background:#f0b83e}
+#msCaptainRouteMap{height:min(43vh,430px);min-height:260px;border-radius:13px;overflow:hidden;background:#0a2233;border:1px solid rgba(112,180,219,.26)}
+.msn-map-empty{height:100%;display:grid;place-items:center;color:#a8bdc9;text-align:center;padding:24px}
+.msn-map-empty b{display:block;color:#eef8fd;font-size:18px;margin-bottom:5px}
+.msn-instruments{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:11px}
+.msn-gauge{min-height:174px;border:1px solid rgba(119,171,205,.22);border-radius:13px;background:radial-gradient(circle at 50% 43%,#0d2940 0 33%,#061827 34% 100%);padding:10px;text-align:center;position:relative;overflow:hidden}
+.msn-gauge>small{display:block;color:#b9ceda;font-size:11px;font-weight:850;letter-spacing:.05em}
+.msn-dial{width:116px;height:116px;margin:5px auto 0;border:2px solid #d7c391;border-radius:50%;position:relative;background:repeating-conic-gradient(from -120deg,rgba(255,255,255,.38) 0 1deg,transparent 1deg 12deg)}
+.msn-dial:after{content:'';position:absolute;inset:9px;border-radius:50%;background:#071b2b;z-index:0}
+.msn-needle{position:absolute;z-index:2;left:50%;bottom:50%;width:3px;height:43px;border-radius:4px;background:#67e54c;transform-origin:50% 100%;transform:translateX(-50%) rotate(-120deg);transition:transform .35s ease}
+.msn-center{position:absolute;z-index:3;inset:0;display:grid;place-content:center}.msn-center strong{display:block;font-size:23px;line-height:1;color:#f5fbff}.msn-center span{display:block;margin-top:4px;color:#9eb8c8;font-size:10px}
+.msn-gauge.warn .msn-needle{background:#ffbd40}.msn-gauge.danger .msn-needle{background:#ff564f}
+.msn-navclock .msn-dial{border-color:#68bfff}.msn-navclock .msn-needle{display:none}.msn-navclock .msn-center strong{font-size:19px;color:#73d8ff}.msn-navclock .msn-center span{max-width:92px}
+.msn-route-summary{display:flex;justify-content:space-between;gap:12px;margin-top:9px;color:#a8c0ce;font-size:11px}.msn-route-summary strong{color:#eef7fb}
+.leaflet-control-attribution{font-size:8px!important}
+@media(max-width:1100px){#msProDashboard .msc-main-grid{grid-template-areas:'nav nav' 'wind course' 'energy energy' 'status status' 'depth water' 'weather weather' 'quick quick'}.msn-instruments{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){#msProDashboard .msc-main-grid{grid-template-areas:'nav' 'wind' 'course' 'energy' 'status' 'depth' 'water' 'weather' 'quick'}.msn-head{align-items:flex-start;flex-direction:column}.msn-instruments{grid-template-columns:1fr 1fr}.msn-gauge:last-child{grid-column:1/-1}#msCaptainRouteMap{height:300px}.msn-route-summary{flex-direction:column;gap:3px}}
