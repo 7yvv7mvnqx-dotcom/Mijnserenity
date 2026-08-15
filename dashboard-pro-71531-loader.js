@@ -8,7 +8,7 @@
     const navCss=document.createElement('link');navCss.id='msNav71548Css';navCss.rel='stylesheet';navCss.href='/dashboard-navigation-71548.css?v=715490';document.head.appendChild(navCss);
   }
   if(!document.getElementById('msAiDestinationCss')){
-    const aiCss=document.createElement('link');aiCss.id='msAiDestinationCss';aiCss.rel='stylesheet';aiCss.href='/ai-destination-search.css?v=715520';document.head.appendChild(aiCss);
+    const aiCss=document.createElement('link');aiCss.id='msAiDestinationCss';aiCss.rel='stylesheet';aiCss.href='/ai-destination-search.css?v=715530';document.head.appendChild(aiCss);
   }
   const scripts=[
     ['/dashboard-pro-71531.js?v=715350','msProDashboard'],
@@ -18,7 +18,7 @@
     ['/dashboard-wind-direction-fix-71541.js?v=715460','msWindDirectionFix'],
     ['/dashboard-rudder-icons-fix-71545.js?v=715450','msRudderIconsFix'],
     ['/dashboard-navigation-71548.js?v=715490','msNavigation71548'],
-    ['/ai-destination-search.js?v=715520','msAiDestination71551']
+    ['/ai-destination-search.js?v=715530','msAiDestination71551']
   ];
   scripts.forEach(([src,key])=>{
     if(document.querySelector(`script[data-${key}]`))return;
