@@ -13,9 +13,7 @@
   let enterSince=0;
   let exitSince=0;
   let lastSpeed=0;
-  let awaySince=0;
   let lastDashboardOpen=0;
-  const RETURN_MS=10000;
 
   function finite(value){
     if(value===null||value===''||typeof value==='boolean')return null;
@@ -70,14 +68,6 @@
     return badge;
   }
 
-  function dashboardActive(){
-    const nav=document.querySelector('.bottom-nav');
-    const selected=nav?.querySelector('.bottom-nav-item.active,[aria-current="page"]');
-    if(selected?.dataset?.target)return selected.dataset.target==='dashboard';
-    const portal=document.getElementById('msProDashboard');
-    return Boolean(portal&&!portal.hidden&&getComputedStyle(portal).display!=='none');
-  }
-
   function openDashboard(reason){
     const now=Date.now();
     if(now-lastDashboardOpen<1500)return;
@@ -105,7 +95,7 @@
     try{localStorage.setItem('ms-captain-last-state',active?'sailing':'idle')}catch(e){}
     window.dispatchEvent(new CustomEvent('mscaptainmodechange',{detail:{active,speedKmh:lastSpeed,reason}}));
     if(active)setTimeout(()=>openDashboard('vaart-gestart'),100);
-    else awaySince=0;
+ 
   }
 
   function tick(){
@@ -124,12 +114,6 @@
       }
     }else{
       enterSince=0;
-      if(!dashboardActive()){
-        if(!awaySince)awaySince=now;
-        if(now-awaySince>=RETURN_MS)openDashboard('automatisch-terug');
-      }else{
-        awaySince=0;
-      }
       if(lastSpeed<=EXIT_KMH){
         if(!exitSince)exitSince=now;
         if(now-exitSince>=EXIT_MS)setActive(false,'speed-exit');
@@ -148,7 +132,7 @@
   window.msCaptainMode={
     get active(){return active},
     get speedKmh(){return lastSpeed},
-    thresholds:{enterKmh:ENTER_KMH,exitKmh:EXIT_KMH,enterMs:ENTER_MS,exitMs:EXIT_MS,returnMs:RETURN_MS},
+    thresholds:{enterKmh:ENTER_KMH,exitKmh:EXIT_KMH,enterMs:ENTER_MS,exitMs:EXIT_MS},
     openDashboard(){openDashboard('manual')},
     forceOn(){setActive(true,'manual')},
     forceOff(){setActive(false,'manual')}
