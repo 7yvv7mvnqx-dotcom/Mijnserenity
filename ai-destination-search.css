@@ -10,3 +10,10 @@
 #msAiDestination,.msai-inputrow,#msAiDestinationInput{touch-action:manipulation;overscroll-behavior:contain}
 #msAiDestinationInput{font-size:17px!important;-webkit-user-select:text;user-select:text}
 .planner-stop-builder{display:none!important}
+
+/* 7.15.53 — zoeken stabiel in staand en liggend scherm */
+body.msai-search-open{overflow:hidden!important}
+#msAiDestination.msai-focus{position:fixed!important;z-index:2147483200!important;left:max(18px,env(safe-area-inset-left));right:max(18px,env(safe-area-inset-right));top:calc(18px + env(safe-area-inset-top));max-width:760px;margin:0 auto;padding:14px;border:1px solid rgba(105,190,235,.45);border-radius:16px;background:#061827;box-shadow:0 25px 70px rgba(0,0,0,.75)}
+#msAiDestination.msai-focus #msAiDestinationResults{position:relative;top:auto;left:auto;right:auto;margin-top:5px;max-height:min(50vh,360px)}
+#msAiDestination.msai-focus .msai-inputrow{position:relative}
+@media(orientation:landscape){#msAiDestination.msai-focus{top:calc(8px + env(safe-area-inset-top));max-width:900px}#msAiDestination.msai-focus #msAiDestinationResults{max-height:46vh}.msai-inputrow input{min-width:0!important}}
