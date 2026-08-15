@@ -1,8 +1,8 @@
-/* MijnSerenity 7.15.44 — windpijl blijft geografisch naar de windrichting wijzen */
+/* MijnSerenity 7.15.46 — windpijl toont de richting waar de wind naartoe waait */
 (()=>{
   'use strict';
-  if(window.__msWindDirectionFix71544)return;
-  window.__msWindDirectionFix71544=true;
+  if(window.__msWindDirectionFix71546)return;
+  window.__msWindDirectionFix71546=true;
 
   const $=id=>document.getElementById(id);
   const norm=value=>{
@@ -34,7 +34,12 @@
     return compassMatch ? CARDINAL[compassMatch[1].toUpperCase()] ?? null : null;
   }
 
-  function windFrom(){
+  /*
+   * Belangrijk: liveNavState.weather.windDirection is in de huidige
+   * MijnSerenity-keten al de geografische richting waarin de luchtstroom
+   * beweegt. Hier dus GEEN extra 180 graden meer toevoegen.
+   */
+  function windTo(){
     const candidates=[
       window.liveNavState?.weather?.windDirection,
       window.liveNavState?.weather?.wind_direction,
@@ -158,7 +163,7 @@
         }
       }
       compassEnabled=true;
-      try{localStorage.setItem('ms71544_world_wind_compass','1')}catch{}
+      try{localStorage.setItem('ms71546_world_wind_compass','1')}catch{}
       startListening();
       if(button)button.textContent='🧭 Kompas starten…';
       return true;
@@ -175,15 +180,12 @@
     const topLabel=document.querySelector('.msc-wind-top small');
     if(topLabel)topLabel.textContent=deviceHeading===null?'Wind waait naar · kompas nodig':'Wind waait naar';
 
-    const from=windFrom();
-    if(from===null){
+    const to=windTo();
+    if(to===null){
       const deg=$('mscWindDeg');
       if(deg)deg.textContent='richting –';
       return;
     }
-
-    const to=norm(from+180);
-    if(to===null)return;
 
     const rounded=Math.round(to)%360;
     const degrees=String(rounded).padStart(3,'0')+'°';
@@ -207,7 +209,11 @@
   function install(){
     ensureCompassButton();
     let enabled=false;
-    try{enabled=localStorage.getItem('ms71544_world_wind_compass')==='1'||localStorage.getItem('ms71543_world_wind_compass')==='1'}catch{}
+    try{
+      enabled=localStorage.getItem('ms71546_world_wind_compass')==='1'||
+        localStorage.getItem('ms71544_world_wind_compass')==='1'||
+        localStorage.getItem('ms71543_world_wind_compass')==='1';
+    }catch{}
     if(enabled){
       compassEnabled=true;
       startListening();
@@ -224,13 +230,13 @@
     window.addEventListener('orientationchange',()=>setTimeout(sync,150),{passive:true});
     try{screen.orientation?.addEventListener?.('change',()=>setTimeout(sync,100));}catch{}
 
-    setInterval(()=>{if(!document.hidden)sync()},500);
+    setInterval(()=>{if(!document.hidden)sync()},250);
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='visible')sync();
     });
   }
 
-  window.ms71544EnableWorldWindCompass=enableCompass;
+  window.ms71546EnableWorldWindCompass=enableCompass;
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
