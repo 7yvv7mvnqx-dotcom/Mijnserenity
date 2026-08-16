@@ -1,0 +1,27 @@
+{
+  "name": "mijnserenity-native",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native iPhone/iPad shell voor MijnSerenity",
+  "scripts": {
+    "native:prepare": "node scripts/prepare-native-web.mjs",
+    "native:add:ios": "npm run native:prepare && npx cap add ios",
+    "native:sync": "npm run native:prepare && npx cap sync ios",
+    "native:open": "npx cap open ios",
+    "native:run": "npm run native:sync && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/geolocation": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/share": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "esbuild": "^0.25.0"
+  }
+}
