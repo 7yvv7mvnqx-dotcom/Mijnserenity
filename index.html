@@ -4960,6 +4960,8 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
     b.classList.toggle('online', ok);
   }
   function applyData(data){
+    window.MIJSERENITY_VRM_DATA=data||{};
+    window.dispatchEvent(new CustomEvent('mijnserenity-vrm-updated',{detail:data||{}}));
     const salon = data && data.salon ? data.salon : {};
     const machinekamer = data && data.machinekamer ? data.machinekamer : {};
     const st = num(salon.temperature), mt = num(machinekamer.temperature);
@@ -5041,5 +5043,5 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   <script src="start-dashboard-71510.js?v=715141"></script>
   <script src="poi-regio-filter-71511.js?v=715140"></script>
   <script src="wind-direction-71512.js?v=715140"></script>
-  <script src="victron-energy-71559.js?v=715600"></script>\n</body>
+  <script src="victron-energy-71559.js?v=715610"></script>\n</body>
 </html>
