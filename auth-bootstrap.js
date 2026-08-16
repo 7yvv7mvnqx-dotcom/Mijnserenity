@@ -2,6 +2,9 @@
 (()=>{
   'use strict';
 
+  /* Oude dashboardrenderers staan nog in index.html voor terugval, maar worden in 7.17 niet meer gestart. */
+  window.__msDisableLegacyVisuals=true;
+
   const BUILD='7.17.0';
   const VERSION='717000';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
