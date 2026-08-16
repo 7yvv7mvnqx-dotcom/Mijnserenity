@@ -1,150 +1,39 @@
-/* MijnSerenity 7.17.1 — geoptimaliseerde professionele cockpit
-   Belangrijk: de originele MijnSerenity ondernavigatie blijft volledig intact. */
-(()=>{
-'use strict';
-if(window.__msProCockpit71701)return;window.__msProCockpit71701=true;
-const BUILD='7.17.1';
-const $=id=>document.getElementById(id);
-const txt=id=>($(id)?.textContent||'').trim();
-const num=v=>{const m=String(v??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):null};
-const set=(id,v)=>{const el=$(id);if(el&&v!==undefined&&v!==null&&el.textContent!==String(v))el.textContent=String(v)};
-const read=(ids,f='–')=>{for(const id of ids){const v=txt(id);if(v&&v!=='–'&&v!=='-')return v}return f};
-const norm=d=>{const n=Number(d);return Number.isFinite(n)?((n%360)+360)%360:null};
-let syncTimer=null;
-
-function showDashboard(){
-  const host=$('dashboard');if(!host)return;
-  host.classList.add('mspro-active','active');
-  host.hidden=false;
-  host.style.removeProperty('display');
-  const pro=$('msProDashboard');
-  if(pro){pro.hidden=false;pro.style.display='block'}
-}
-
-function go(route){
-  if(route==='dashboard'){
-    if(typeof window.captainNavigate==='function'){
-      window.captainNavigate('dashboard');
-      return;
-    }
-    showDashboard();
-    return;
-  }
-  if(route==='more'){
-    const more=document.querySelector('.ms750-more-button');
-    if(more){more.click();return}
-    route='settings';
-  }
-  /* Gebruik altijd de bestaande centrale navigatie. Geen eigen click-capture meer. */
-  if(typeof window.captainNavigate==='function'){
-    window.captainNavigate(route);
-    return;
-  }
-  if(typeof window.ms708GoToPage==='function')window.ms708GoToPage(route,true);
-}
-
-function build(){
-  const host=$('dashboard');if(!host)return;
-  host.classList.add('mspro-active');
-  if($('msProDashboard')){return}
-
-  const el=document.createElement('section');
-  el.id='msProDashboard';
-  el.innerHTML=`<header class="msc-head"><button data-go="more" class="msc-menu" aria-label="Menu">☰</button><div class="msc-brand">Mijn<span>Serenity</span><b>${BUILD}</b><small><i></i>Systeem OK &nbsp;&nbsp; Alles normaal</small></div><div class="msc-head-icons">⌁　♧</div></header><div class="msc-main-grid"><article class="msc-card msc-location"><div class="msc-title">LOCATIE & GPS <span class="ok">○ GPS</span></div><div class="msc-loc-body"><div><small>Huidige positie</small><strong id="mscLat">–</strong><strong id="mscLon">–</strong><hr><small>Snelheid over grond</small><b id="mscSog">0.0 kn</b><hr><small>Laatste update</small><b class="ok" id="mscUpdated">–</b></div><div class="msc-mini-map"><div class="msc-boat">◆</div></div></div></article><article class="msc-card msc-wind"><div class="msc-title">WIND <span>ⓘ</span></div><div class="msc-wind-top"><strong id="mscWindDeg">–</strong><small>True</small></div><div class="msc-wind-layout"><div><b id="mscAws">– kn</b><small>AWS</small><b class="ok" id="mscAwa">–</b><small>AWA</small></div><div class="msc-wind-dial"><i id="mscWindArrow"></i><div class="msc-wind-core"><b id="mscTws">–</b><small>TWS</small></div></div><div><b id="mscBft">– Bft</b><small>Windkracht</small><b class="ok">Stabiel</b><small>Trend</small></div></div></article><article class="msc-card msc-course"><div class="msc-title">KOERS & ROER <span class="ok">○ Actief</span></div><div class="msc-course-center"><small>Koers (COG)</small><strong id="mscCog">–°</strong></div><div class="msc-rudder-arc"><i id="mscRudderNeedle"></i></div><div class="msc-rudder-foot"><span>BB <b>35°</b></span><div><small>Roerstand</small><strong id="mscRudder">0°</strong></div><span>SB <b>35°</b></span></div></article><section class="msc-statusbar"><article class="msc-card msc-status-main"><div class="msc-check">✓</div><div><small>SYSTEEMSTATUS</small><strong id="mscSystem">Alles normaal</strong><span>Geen actieve alarmen</span><span id="mscSystemTime">Laatste controle: –</span></div></article><button data-go="technical" class="msc-card msc-status-tile"><b>▱</b><span>Motor</span><strong>OK</strong></button><button data-go="technical" class="msc-card msc-status-tile"><b>▣</b><span>Accu's</span><strong>OK</strong></button><button data-go="technical" class="msc-card msc-status-tile"><b>♒</b><span>Bilgepomp</span><strong>OK</strong></button><button data-go="live" class="msc-card msc-status-tile"><b>◎</b><span>Navigatie</span><strong>OK</strong></button></section><article class="msc-card msc-depth"><div class="msc-title">DIEPTE</div><strong><span id="mscDepth">–</span> <small>m</small></strong><div class="msc-spark">⌁⌁⌁⌁⌁</div><span>Sensor: <b class="ok" id="mscDepthState">–</b></span></article><article class="msc-card msc-water"><div class="msc-title">WATER</div><strong id="mscWater">– °C</strong><b class="blue">Buitenwater</b><span>Sensor: <b class="ok">Actief</b></span></article><article class="msc-card msc-weather"><div class="msc-title">WEERVOORUITZICHT</div><div class="msc-forecast"><div>Nu<b>☁</b><strong id="mscNowTemp">–°</strong><small id="mscNowWind">– kn</small></div><div>+2u<b>⛅</b><strong>–°</strong></div><div>+4u<b>☀</b><strong>–°</strong></div><div>+6u<b>⛅</b><strong>–°</strong></div><div>+8u<b>☾</b><strong>–°</strong></div><div>+10u<b>☾</b><strong>–°</strong></div></div></article><aside class="msc-card msc-quick"><div class="msc-title">SNELLE ACTIES</div><div class="msc-quick-grid"><button data-go="map">🧭<span>Navigatie</span></button><button data-go="entertainment">♫<span>Entertainment</span></button><button data-go="settings">⚙<span>Instellingen</span></button><button data-go="technical">⚡<span>Techniek</span></button></div></aside></div>`;
-  host.insertBefore(el,host.firstChild);
-  el.addEventListener('click',e=>{
-    const b=e.target.closest('[data-go]');
-    if(!b)return;
-    e.preventDefault();
-    go(b.dataset.go);
-  });
-}
-
-function coords(){
-  const pts=window.liveNavState?.points;
-  const p=Array.isArray(pts)&&pts.length?pts[pts.length-1]:null;
-  const lat=Number(p?.lat),lon=Number(p?.lon);
-  return Number.isFinite(lat)&&Number.isFinite(lon)?{lat,lon}:null;
-}
-
-function windFrom(){
-  const d=norm(window.liveNavState?.weather?.windDirection);
-  if(d!==null)return d;
-  const s=txt('ivmsWeatherWind')||txt('ms71512WindDirection');
-  const m=s.match(/(\d{1,3})\s*°/);
-  return m?norm(m[1]):null;
-}
-
-function dashboardVisible(){
-  const host=$('dashboard');
-  if(document.hidden||!host||host.hidden)return false;
-  return host.classList.contains('active')||document.querySelector('.page.active')===host;
-}
-
-function sync(){
-  if(!$('msProDashboard'))build();
-  if(!dashboardVisible())return;
-
-  const now=new Date(),c=coords();
-  set('mscUpdated',now.toLocaleTimeString('nl-NL'));
-  set('mscSystemTime','Laatste controle: '+now.toLocaleTimeString('nl-NL'));
-  if(c){set('mscLat',c.lat.toFixed(5)+'° N');set('mscLon',c.lon.toFixed(5)+'° O')}
-
-  const kn=num(txt('ivmsSpeedKn'))??num(window.liveNavState?.speedKnots)??0;
-  set('mscSog',kn.toFixed(1)+' kn');
-
-  const system=read(['ivmsSystemLabel','dashboardTechnicalStatus'],'Alles normaal');
-  set('mscSystem',/alarm|krit|storing|waarsch/i.test(system)?system:'Alles normaal');
-
-  const from=windFrom();
-  const heading=norm(window.__msWindDeviceHeading);
-  const to=from===null?null:norm(from+180);
-  const rotation=to===null?0:(heading===null?to:norm(to-heading));
-  if(from!==null){
-    set('mscWindDeg',String(Math.round(from)).padStart(3,'0')+'°');
-    set('mscAwa',String(Math.round(from)).padStart(3,'0')+'°');
-    const a=$('mscWindArrow');
-    if(a)a.style.transform='translate(-50%,-100%) rotate('+rotation+'deg)';
-  }
-
-  const ws=num(txt('ivmsWindValue'))??num(window.liveNavState?.weather?.windSpeed);
-  if(ws!==null){
-    set('mscAws',(ws/1.852).toFixed(1)+' kn');
-    set('mscTws',ws.toFixed(1));
-    set('mscNowWind',(ws/1.852).toFixed(0)+' kn');
-  }
-  set('mscBft',txt('ms71510WindBft')||'– Bft');
-
-  const cog=num(window.liveNavState?.course)??num(window.liveNavState?.cog)??num(txt('ivmsCourse'));
-  set('mscCog',cog===null?'–°':String(Math.round(cog)).padStart(3,'0')+'°');
-
-  let rud=num($('liveRudderInput')?.value)??num(window.liveNavState?.rudderAngle)??0;
-  rud=Math.max(-35,Math.min(35,rud));
-  set('mscRudder',Math.round(rud)+'°');
-  const rn=$('mscRudderNeedle');
-  if(rn)rn.style.transform='translateX(-50%) rotate('+rud+'deg)';
-
-  const depth=num(txt('ivmsDepth'))??num(txt('ms71510Depth'));
-  set('mscDepth',depth===null?'–':depth.toFixed(1));
-  set('mscDepthState',depth===null?'Niet gekoppeld':'Actief');
-  set('mscWater',read(['ms71510WaterTemp','ms793WeatherWaterTemp','rwsWaterTemperature'],'– °C'));
-  set('mscNowTemp',read(['weatherCurrentTemp','ms793WeatherTemp','ivmsWeatherTemp'],'–°'));
-}
-
-function eventSync(){
-  if(dashboardVisible())requestAnimationFrame(sync);
-}
-
-function init(){
-  build();
-  if($('dashboard')?.classList.contains('active'))showDashboard();
-  sync();
-  setTimeout(()=>{if(dashboardVisible())sync()},350);
-  ['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated','mijnserenity:routechange'].forEach(name=>window.addEventListener(name,eventSync,{passive:true}));
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&dashboardVisible())sync()},{passive:true});
-  syncTimer=setInterval(()=>{if(dashboardVisible())sync()},2500);
-}
-
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
-else init();
-})();
+/* MijnSerenity 7.18.0 — Marine Glass Cockpit */
+(()=>{'use strict';if(window.__msMarine718)return;window.__msMarine718=1;
+const B='7.18.0',$=id=>document.getElementById(id),txt=id=>($(id)?.textContent||'').trim(),num=v=>{const m=String(v??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?+m[0]:null},set=(id,v)=>{const e=$(id);if(e&&v!=null&&e.textContent!==String(v))e.textContent=String(v)},read=(a,f='–')=>{for(const id of a){const v=txt(id);if(v&&v!=='–'&&v!=='-')return v}return f},cl=(v,a,b)=>Math.max(a,Math.min(b,v)),fmt=(v,d=1)=>v==null?'–':Number(v).toLocaleString('nl-NL',{minimumFractionDigits:d,maximumFractionDigits:d});
+let map,route,track,boat,dest,fitted=false;
+function ll(p){if(Array.isArray(p)){const lo=num(p[0]),la=num(p[1]);return la!=null&&lo!=null?[la,lo]:null}const la=num(p?.lat??p?.latitude??p?.position?.lat),lo=num(p?.lon??p?.lng??p?.longitude??p?.position?.lon);return la!=null&&lo!=null?[la,lo]:null}
+function pos(){const s=window.liveNavState||{},sets=[s.trackPoints,s.track,s.history,s.gpsTrack,s.points,s.live?.points];for(const a of sets)if(Array.isArray(a)&&a.length){const p=ll(a.at(-1));if(p)return p}return ll({lat:s.currentLat??s.lat??s.position?.lat,lon:s.currentLon??s.lon??s.lng??s.position?.lon})}
+function plan(){try{return window.ms660NavigationPlan?.()||plannerCurrentPlan||window.plannerCurrentPlan||{}}catch{return window.plannerCurrentPlan||{}}}
+function planned(){const p=plan(),seg=Array.isArray(p.segments)?p.segments.flatMap(s=>s?.routeCoordinates||[]):[],sets=[p.routeCoordinates,p.route?.coordinates,p.routeGeometry?.coordinates,seg,p.points,p.route?.points,window.liveNavState?.routeCoordinates];for(const a of sets)if(Array.isArray(a)){const x=a.map(ll).filter(Boolean);if(x.length>1)return x}return[]}
+function tracked(){const s=window.liveNavState||{},sets=[s.trackPoints,s.track,s.history,s.gpsTrack,s.points];for(const a of sets)if(Array.isArray(a)){const x=a.map(ll).filter(Boolean);if(x.length)return x}return[]}
+function nav(){try{return window.ms705NavigationSummary?.()||window.ms660NavigationEstimate?.()||{}}catch{return{}}}
+function gauge(k,l,u,c='blue'){return `<button class="mg-gauge ${c}" data-go="${k==='wind'?'weather':'live'}"><small>${l}</small><div class="mg-dial" id="mgd-${k}"><span></span><b id="mg-${k}">–</b><em>${u}</em></div><i id="mgs-${k}">–</i></button>`}
+function build(){const h=$('dashboard');if(!h||$('msMarineGlass'))return;h.classList.add('mg-active');const e=document.createElement('section');e.id='msMarineGlass';e.innerHTML=`<header class="mg-top"><button data-go="dashboard" class="mg-brand">Mijn<span>Serenity</span><sup>${B}</sup></button><div class="mg-status"><b id="mgClock">--:--</b><button data-go="map"><small>GPS</small><strong>● <span id="mgGps">–</span></strong></button><button data-go="settings"><small>Internet</small><strong>● <span id="mgNet">–</span></strong></button><button data-go="weather"><small>Weer</small><strong>⛅ <span id="mgTempTop">–°C</span></strong></button><button data-go="technical" class="alarm"><small>Alarmen</small><strong>🔔 <span id="mgAlarm">0</span></strong></button></div></header><main class="mg-grid">
+<section class="mg-card mg-map"><div id="mgMap"></div><div class="mg-map-tools"><button data-go="map">⌕</button><button data-go="planner">☷</button></div><div class="mg-north">⌁ Noord-Up</div><div class="mg-radar"><i></i><b></b><b></b><b></b><span>1.5 NM</span></div></section>
+<section class="mg-card mg-gauges">${gauge('speed','Snelheid','km/u')}${gauge('depth','Diepte','m')}${gauge('rpm','Toerental','rpm','red')}${gauge('wind','Wind','Bft','green')}${gauge('course','Koers (COG)','°')}${gauge('rudder','Roerstand','°','rudder')}</section>
+<section class="mg-card mg-energy"><h3>Energie &amp; Stroom</h3><div class="mg-energy-grid"><button data-go="technical" class="mg-battery"><small>Huishoudaccu</small><strong id="mgSoc">–%</strong><span id="mgVolt">– V</span><em id="mgAmp">– A</em></button><div class="mg-sources"><button data-go="technical"><small>Zonne-opbrengst</small><strong id="mgSolar">– W</strong>☀</button><button data-go="technical"><small>Walstroom</small><strong id="mgShore">–</strong>♜</button><button data-go="technical"><small>Verbruik</small><strong id="mgLoad">– W</strong>⌂</button></div><div class="mg-flow" id="mgFlow"><i></i><b></b><b></b><b></b></div><button data-go="technical" class="mg-start"><small>Startaccu</small><strong id="mgStart">–</strong><span id="mgStartV">– V</span></button><div class="mg-conv"><button data-go="technical"><small>Omvormer</small><strong id="mgInv">– W</strong></button><button data-go="technical"><small>Lader</small><strong id="mgChg">– W</strong></button><button data-go="technical"><small>Netto stroom</small><strong id="mgNetPower">– W</strong></button></div><div class="mg-strip"><span>PV<b id="mgPv">– W</b></span><span>Accu<b id="mgBatP">– W</b></span><span>Omvormer<b id="mgInv2">– W</b></span><span>Lader<b id="mgChg2">– W</b></span></div></div></section>
+<section class="mg-card mg-systems"><h3>Tanks &amp; Systems</h3>${level('water','💧','Drinkwater','blue')}${level('fuel','⛽','Brandstof','green')}${level('waste','▣','Vuilwater','purple')}<button data-go="technical" class="mg-system"><span>◉</span><small>Bilgepomp</small><strong id="mgBilge">–</strong></button><button data-go="technical" class="mg-system hot"><span>♨</span><small>Motortemperatuur</small><strong id="mgEngTemp">–°C</strong></button></section>
+<section class="mg-card mg-route"><h3>Route Informatie</h3>${row('ETA','mgEta')}${row('Afstand resterend','mgRemain')}${row('Geschatte vaartijd','mgDuration')}<button data-go="planner" class="next"><span>Volgende brug/sluis</span><strong id="mgNext">–</strong><small id="mgNextMeta">–</small></button><div class="mg-progress"><span>Route progressie <b id="mgProgTxt">0%</b></span><i><b id="mgProg"></b></i></div></section>
+<section class="mg-card mg-poi"><div class="mg-head"><h3>POI / Havens</h3><button data-go="pois">Alles ›</button></div><div id="mgPoi"></div></section>
+<section class="mg-card mg-weather"><h3>Weer</h3><div class="mg-weather-main"><button data-go="weather" class="mg-windbig">≋<strong id="mgBft">– Bft</strong><small id="mgDir">–</small></button><div class="mg-compass"><i id="mgWindArrow"></i></div><div class="mg-temps"><span>🌡 <b id="mgOutTemp">–°C</b><small>Buiten</small></span><span>≋ <b id="mgWaterTemp">–°C</b><small>Water</small></span></div></div><div class="mg-weather-foot"><span>Luchtdruk <b id="mgPressure">–</b></span><span>Zicht <b>–</b></span><span>Neerslag <b>–</b></span></div></section>
+<section class="mg-card mg-tide"><h3>Tijden <small>actuele locatie</small></h3><div><p>⌃ <b>Hoogwater</b><span>–</span><em>– m</em></p><p>⌄ <b>Laagwater</b><span>–</span><em>– m</em></p><p>⌃ <b>Hoogwater</b><span>–</span><em>– m</em></p><p>⌄ <b>Laagwater</b><span>–</span><em>– m</em></p><svg viewBox="0 0 260 110"><path d="M0 62C28 10 52 10 78 62s50 52 78 0 50-54 104 0"/><line x1="0" y1="62" x2="260" y2="62"/><circle cx="130" cy="62" r="5"/></svg></div></section></main>`;h.prepend(e);e.addEventListener('click',x=>{const b=x.target.closest('[data-go]');if(b){x.preventDefault();go(b.dataset.go)}});more();navbar();initMap()}
+function level(k,ic,l,c){return `<button data-go="technical" class="mg-level ${c}"><span>${ic}</span><div><small>${l}</small><i><b id="mg-${k}-bar"></b></i></div><strong id="mg-${k}">–%</strong><em id="mg-${k}-l">– L</em></button>`}
+function row(l,id){return `<button data-go="planner"><span>${l}</span><strong id="${id}">–</strong></button>`}
+function go(r){if(r==='more'){openMore();return}if(typeof captainNavigate==='function')captainNavigate(r);else window.ms708GoToPage?.(r,true)}
+function navbar(){const n=document.querySelector('.bottom-nav');if(!n)return;n.classList.add('mg-nav');if(!$('mgMoreNav')){const b=document.createElement('button');b.id='mgMoreNav';b.className='bottom-nav-item';b.innerHTML='<span>•••</span><small>Meer</small>';b.onclick=openMore;n.append(b)}}
+function more(){if($('mgMore'))return;const a=$('appView');if(!a)return;const e=document.createElement('div');e.id='mgMore';e.className='mg-more hidden';e.innerHTML='<i data-close="1"></i><section><header><div><small>MIJNSERENITY</small><h2>Meer</h2></div><button data-close="1">×</button></header><div><button data-go="weather">☀<span>Weer</span></button><button data-go="ais">⌁<span>AIS</span></button><button data-go="entertainment">♫<span>Entertainment</span></button><button data-go="finance">€<span>Financieel</span></button><button data-go="costs">▧<span>Kosten</span></button><button data-go="settings">⚙<span>Instellingen</span></button><button data-go="boat">▱<span>Boot & delen</span></button></div></section>';e.onclick=x=>{if(x.target.closest('[data-close]'))closeMore();const b=x.target.closest('[data-go]');if(b){closeMore();go(b.dataset.go)}};a.append(e)}
+function openMore(){$('mgMore')?.classList.remove('hidden')}function closeMore(){$('mgMore')?.classList.add('hidden')}
+function initMap(){if(!window.L||map)return;const h=$('mgMap');if(!h)return;map=L.map(h,{zoomControl:true,attributionControl:false,preferCanvas:true}).setView([52.4,5.5],8);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png',{maxZoom:19,opacity:.9}).addTo(map);route=L.polyline([],{color:'#39baff',weight:5}).addTo(map);track=L.polyline([],{color:'#89ddff',weight:3,dashArray:'8 8',opacity:.65}).addTo(map)}
+function mapSync(){if(!map)return;const p=pos(),r=planned(),t=tracked();route.setLatLngs(r);track.setLatLngs(t);if(p){if(!boat){const i=L.divIcon({className:'mg-boat',html:'➤',iconSize:[32,32],iconAnchor:[16,16]});boat=L.marker(p,{icon:i}).addTo(map)}else boat.setLatLng(p)}if(r.length){const d=r.at(-1);if(!dest)dest=L.circleMarker(d,{radius:7,color:'#fff',fillColor:'#f3bd49',fillOpacity:1}).addTo(map);else dest.setLatLng(d)}if(!fitted){const a=[...t,...r];if(a.length>1){map.fitBounds(a,{padding:[40,40],maxZoom:14});fitted=1}else if(p){map.setView(p,13);fitted=1}}setTimeout(()=>map.invalidateSize(),10)}
+function sg(k,v,max,disp,sub='–',min=0){const d=$('mgd-'+k);if(d)d.style.setProperty('--p',v==null?0:cl((v-min)/(max-min),0,1));set('mg-'+k,disp);set('mgs-'+k,sub)}
+function gauges(){const s=num(read(['ms71510Speed','ivmsSpeed'],'0'))??0,d=num(read(['ms71510Depth','ivmsDepth'],'–')),r=num(read(['ms71510Rpm','liveEngineRpm'],'0'))??0,b=num(read(['ms71510WindBft'],'–')),c=num(window.liveNavState?.course??window.liveNavState?.cog??read(['ivmsCourse'],'–')),u=num($('liveRudderInput')?.value??window.liveNavState?.rudderAngle)??0;sg('speed',s,20,fmt(s,1),'km/u');sg('depth',d,20,fmt(d,1),d==null?'sensor niet gekoppeld':'m');sg('rpm',r,3000,Math.round(r).toLocaleString('nl-NL'),'rpm');sg('wind',b,12,b==null?'–':Math.round(b),read(['ms71512WindDirection'],'–'));sg('course',c,360,c==null?'–':Math.round(c)+'°',read(['ivmsHeadingDir'],'COG'));sg('rudder',u,35,Math.abs(Math.round(u))+'°',u<-.5?'BB':u>.5?'SB':'Midden',-35)}
+function energy(){const soc=num(read(['ms71510HouseSoc','techHouseSoc'],'–')),v=num(read(['ivmsBatteryVoltage','ms71510HouseVoltage','techHouseVoltage'],'–')),a=num(read(['ivmsBatteryCurrent','techHouseCurrent'],'–')),pv=num(read(['techSolarPower','ivmsSolarPower'],'–')),iv=num(read(['ivmsInverterPower','techInverterPower'],'–')),ch=num(read(['ivmsChargerPower','techChargerPower'],'–')),sv=num(read(['ms71510StartVoltage','techStartVoltage'],'–')),p=v!=null&&a!=null?v*a:null;set('mgSoc',soc==null?'–%':Math.round(soc)+'%');set('mgVolt',v==null?'– V':fmt(v,1)+' V');set('mgAmp',a==null?'– A':fmt(a,1)+' A');set('mgSolar',pv==null?'– W':Math.round(pv)+' W');set('mgShore',read(['techShorePowerStatus','ivmsShorePower'],'–'));set('mgLoad',p!=null&&p<0?Math.round(Math.abs(p))+' W':'– W');set('mgStart','Startaccu');set('mgStartV',sv==null?'– V':fmt(sv,1)+' V');set('mgInv',iv==null?'– W':Math.round(iv)+' W');set('mgChg',ch==null?'– W':Math.round(ch)+' W');set('mgNetPower',p==null?'– W':(p>0?'+':'')+Math.round(p)+' W');set('mgPv',pv==null?'– W':Math.round(pv)+' W');set('mgBatP',p==null?'– W':(p>0?'+':'')+Math.round(p)+' W');set('mgInv2',iv==null?'– W':Math.round(iv)+' W');set('mgChg2',ch==null?'– W':Math.round(ch)+' W');const f=$('mgFlow');if(f)f.dataset.dir=p==null?'idle':p>15?'in':p<-15?'out':'idle'}
+function systems(){for(const [k,ids,lids] of [['water',['techWaterLevel','ivmsWaterValue'],['techWaterLiters','ivmsWaterLiters']],['fuel',['techFuelLevel','ms71510Fuel'],['techFuelLiters','ivmsFuelLiters']],['waste',['techWasteLevel','ivmsWasteLevel'],['techWasteLiters','ivmsWasteLiters']]]){const v=num(read(ids,'–'));set('mg-'+k,v==null?'–%':Math.round(v)+'%');set('mg-'+k+'-l',read(lids,'– L'));const b=$('mg-'+k+'-bar');if(b)b.style.width=(v==null?0:cl(v,0,100))+'%'}set('mgBilge',read(['techBilgeStatus','ivmsBilgeStatus'],'–'));const t=num(read(['techEngineTemp','liveEngineTemp','ivmsEngineTemp'],'–'));set('mgEngTemp',t==null?'–°C':Math.round(t)+'°C')}
+function routeSync(){const n=nav(),rem=num(n.remainingKm??read(['msnSmartRemaining'],'–')),eta=read(['msnSmartEta','mscrEta'],'–'),dur=read(['msnSmartDuration'],'–'),nx=read(['msnSmartNext','mscrNext'],'–'),nm=read(['mscrNextDist'],'–'),r=planned(),p=pos();let pr=0;if(r.length>1&&p){let bi=0,bd=1e9;r.forEach((q,i)=>{const d=(q[0]-p[0])**2+(q[1]-p[1])**2;if(d<bd){bd=d;bi=i}});pr=Math.round(bi/(r.length-1)*100)}set('mgEta',eta);set('mgRemain',rem==null?'–':fmt(rem,1)+' km');set('mgDuration',dur);set('mgNext',nx);set('mgNextMeta',nm);set('mgProgTxt',pr+'%');if($('mgProg'))$('mgProg').style.width=pr+'%'}
+function poi(){const h=$('mgPoi');if(!h)return;let a=[];try{a=(typeof poiCache!=='undefined'?poiCache:window.poiCache)||[]}catch{}a=a.filter(p=>/haven|marina|jachthaven|steiger/i.test(String(p?.category||p?.type||p?.name||''))).slice(0,3);h.innerHTML=a.length?a.map(p=>`<button data-go="pois" class="mg-poi-row"><span>⚓</span><div><strong>${String(p.name||'Haven').replace(/[&<>]/g,'')}</strong><small>Beschikbaar</small></div><em>›</em></button>`).join(''):'<p class="mg-empty">Nog geen haven-POI’s beschikbaar.</p>'}
+function weather(){const b=read(['ms71510WindBft'],'– Bft'),d=read(['ms71512WindDirection'],'–'),o=read(['weatherCurrentTemp','ms793WeatherTemp','ivmsWeatherTemp'],'–°C'),w=read(['ms71510WaterTemp','rwsWaterTemperature'],'–°C');set('mgBft',b);set('mgDir',d);set('mgOutTemp',o);set('mgWaterTemp',w);set('mgPressure',read(['ivmsClimatePressure'],'–'));set('mgTempTop',o.replace(/\s/g,''));const deg=num(window.liveNavState?.weather?.windDirection);if($('mgWindArrow'))$('mgWindArrow').style.transform=`translate(-50%,-85%) rotate(${deg??0}deg)`}
+function top(){const n=new Date();set('mgClock',n.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}));set('mgGps',pos()?'3D':'Wachten');set('mgNet',navigator.onLine?'4G':'Offline');set('mgAlarm',Math.max(0,Math.round(num(read(['ivmsAlarmCount'],'0'))||0)))}
+function sync(){build();top();gauges();energy();systems();routeSync();poi();weather();mapSync()}
+function start(){build();sync();['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated','mijnserenity:routechange'].forEach(n=>window.addEventListener(n,()=>requestAnimationFrame(sync),{passive:true}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()},{passive:true});setInterval(()=>{if(!document.hidden&&!$('dashboard')?.classList.contains('hidden'))sync()},3000)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start()})();
