@@ -1,26 +1,66 @@
-/* MijnSerenity 7.15.59 Pro dashboard loader */
+/* MijnSerenity 7.17.0 — professionele dashboardloader */
 (()=>{
   'use strict';
-  if(document.getElementById('msPro71531Css'))return;
-  const link=document.createElement('link');
-  link.id='msPro71531Css';link.rel='stylesheet';link.href='/dashboard-pro-71531.css?v=715596';document.head.appendChild(link);
-  if(!document.getElementById('msNav71548Css')){
-    const navCss=document.createElement('link');navCss.id='msNav71548Css';navCss.rel='stylesheet';navCss.href='/dashboard-navigation-71548.css?v=715560';document.head.appendChild(navCss);
+  if(window.__msDashboardLoader71700)return;
+  window.__msDashboardLoader71700=true;
+  const VERSION='717000';
+
+  function style(id,href){
+    if(document.getElementById(id))return;
+    const link=document.createElement('link');
+    link.id=id;link.rel='stylesheet';link.href=href;
+    document.head.appendChild(link);
   }
-  if(!document.getElementById('msAiDestinationCss')){
-    const aiCss=document.createElement('link');aiCss.id='msAiDestinationCss';aiCss.rel='stylesheet';aiCss.href='/ai-destination-search.css?v=715530';document.head.appendChild(aiCss);
+
+  function scriptExists(path){
+    return [...document.scripts].some(script=>{
+      try{return new URL(script.src).pathname===path}catch{return false}
+    });
   }
-  const scripts=[
-    ['/dashboard-pro-71531.js?v=715594','msProDashboard'],
-    ['/dashboard-cockpit-portal.js?v=715440','msCockpitPortal'],
-    ['/dashboard-alarm-live-fix-71540.js?v=715400','msAlarmLiveFix'],
-    ['/dashboard-wind-direction-fix-71541.js?v=715460','msWindDirectionFix'],
-    ['/dashboard-rudder-icons-fix-71545.js?v=715450','msRudderIconsFix'],
-    ['/dashboard-navigation-71548.js?v=715590','msNavigation71548'],
-    ['/ai-destination-search.js?v=715540','msAiDestination71551']
-  ];
-  scripts.forEach(([src,key])=>{
-    if(document.querySelector(`script[data-${key}]`))return;
-    const script=document.createElement('script');script.setAttribute(`data-${key}`,'1');script.src=src;script.async=false;document.head.appendChild(script);
-  });
+
+  function load(src,key){
+    const path=new URL(src,location.href).pathname;
+    if(scriptExists(path)||document.querySelector(`script[data-ms-dashboard="${key}"]`))return Promise.resolve();
+    return new Promise(resolve=>{
+      const script=document.createElement('script');
+      script.dataset.msDashboard=key;
+      script.src=src;
+      script.async=false;
+      script.onload=()=>resolve();
+      script.onerror=()=>{console.warn('Dashboardmodule kon niet laden:',src);resolve()};
+      document.head.appendChild(script);
+    });
+  }
+
+  function idle(){
+    return new Promise(resolve=>{
+      if('requestIdleCallback' in window)requestIdleCallback(()=>resolve(),{timeout:450});
+      else setTimeout(resolve,32);
+    });
+  }
+
+  async function start(){
+    style('msPro71531Css',`/dashboard-pro-71531.css?v=${VERSION}`);
+    style('msNav71548Css',`/dashboard-navigation-71548.css?v=${VERSION}`);
+    style('msAiDestinationCss',`/ai-destination-search.css?v=${VERSION}`);
+
+    const core=[
+      [`/dashboard-pro-71700.js?v=${VERSION}`,'pro'],
+      [`/dashboard-cockpit-portal.js?v=${VERSION}`,'portal'],
+      [`/dashboard-alarm-live-fix-71540.js?v=${VERSION}`,'alarm'],
+      [`/dashboard-wind-direction-fix-71541.js?v=${VERSION}`,'wind'],
+      [`/dashboard-rudder-icons-fix-71545.js?v=${VERSION}`,'rudder'],
+      [`/dashboard-navigation-71548.js?v=${VERSION}`,'navigation']
+    ];
+
+    for(const [src,key] of core){
+      await idle();
+      await load(src,key);
+    }
+
+    await idle();
+    await load(`/ai-destination-search.js?v=${VERSION}`,'destination');
+  }
+
+  start().catch(error=>console.warn('Dashboardloader:',error));
 })();
