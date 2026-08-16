@@ -1,10 +1,10 @@
-/* MijnSerenity 7.15.62 — zichtbare Waterkaarten-knop + dynamisch versienummer */
+/* MijnSerenity 7.16.0 — deel SmartRoute met Waterkaarten */
 (()=>{
   'use strict';
   if(window.__msWaterkaartenDashboard71562)return;
   window.__msWaterkaartenDashboard71562=true;
 
-  const BUILD='7.15.62';
+  const BUILD='7.16.0';
   const STYLE_ID='msWaterkaartenDashboard71562Style';
   const BUTTON_ID='msnWaterkaarten';
 
@@ -22,17 +22,12 @@
     document.head.appendChild(style);
   }
 
-  function openWaterkaarten(event){
+  function shareWaterkaarten(event){
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    if(typeof window.ms738LaunchWaterkaarten==='function'){
-      return window.ms738LaunchWaterkaarten();
-    }
-    if(typeof window.openWaterkaarten==='function'){
-      return window.openWaterkaarten();
-    }
-    const win=window.open('https://mijn.waterkaarten.app/','_blank','noopener,noreferrer');
-    if(!win)window.location.assign('https://mijn.waterkaarten.app/');
+    if(typeof window.msShareRouteToWaterkaarten==='function')return window.msShareRouteToWaterkaarten();
+    if(typeof window.ms738LaunchWaterkaarten==='function')return window.ms738LaunchWaterkaarten();
+    alert('De route-deelfunctie wordt nog geladen. Probeer het over een paar seconden opnieuw.');
     return false;
   }
 
@@ -73,11 +68,12 @@
       button=document.createElement('button');
       button.id=BUTTON_ID;
       button.type='button';
-      button.setAttribute('aria-label','Open Waterkaarten in MijnSerenity');
-      button.innerHTML='<span aria-hidden="true">🗺️</span><b>Waterkaarten</b>';
-      button.addEventListener('click',openWaterkaarten);
+      button.addEventListener('click',shareWaterkaarten);
       tools.insertBefore(button,tools.firstChild);
     }
+    button.setAttribute('aria-label','Deel huidige route met Waterkaarten');
+    button.title='Deel de huidige SmartRoute als GPX met Waterkaarten';
+    button.innerHTML='<span aria-hidden="true">🗺️</span><b>Route → Waterkaarten</b>';
   }
 
   function start(){
