@@ -27,7 +27,7 @@ function bool(e){
 }
 function technical(){try{return typeof technicalStateCache!=='undefined'&&technicalStateCache?technicalStateCache:{}}catch{return{}}}
 function read(){
-  const t=technical();
+  const t=technical(),vrm=window.MIJSERENITY_VRM_DATA?.energy||{};
   const soc=pick(['sensor.vrm_state_of_charge'],['state of charge','smartshunt soc','battery soc'],'%');
   const voltage=pick(['sensor.vrm_voltage'],['vrm voltage','smartshunt voltage','house battery voltage','huishoudaccu spanning'],'v',['starter','startaccu','aux']);
   const current=pick(['sensor.vrm_current'],['vrm current','smartshunt current','battery current','accustroom'],'a',['starter','startaccu','aux']);
@@ -60,16 +60,21 @@ function read(){
   const vVoltage=tv(voltage)??num(t.houseVoltage);
   const vCurrent=tv(current)??num(t.houseCurrent);
   const vPower=tv(power)??num(t.housePower)??(vVoltage!==null&&vCurrent!==null?vVoltage*vCurrent:null);
-  const vSolar=tv(solar)??num(t.solarPower);
+  const vSolar=tv(solar)??num(vrm.solarPower)??num(t.solarPower);
   const vStart=tv(start)??num(t.startVoltage);
   const rawShoreV=tv(shoreVoltageEntity)??num(t.shoreVoltage);
   const validShoreV=rawShoreV!==null&&rawShoreV>=80&&rawShoreV<=280?rawShoreV:null;
   let shore=bool(shoreEntity);
   if(shore===null&&validShoreV!==null)shore=validShoreV>=180;
   if(shore===null&&typeof t.shorePower==='boolean')shore=t.shorePower;
+  const directCharger=tv(charger)??num(t.chargerPower);
+  const externalCharge=vPower!==null&&vPower>0&&vSolar!==null?Math.max(0,vPower-Math.max(0,vSolar)):null;
+  let chargerPower=directCharger,shoreInferred=false;
+  if(chargerPower===null&&externalCharge!==null&&externalCharge>20)chargerPower=externalCharge;
+  if(shore!==true&&externalCharge!==null&&externalCharge>20){shore=true;shoreInferred=true}
   return {
     soc:vSoc,voltage:vVoltage,current:vCurrent,power:vPower,time:tv(time)??num(t.houseTimeToGo),
-    solar:vSolar,start:vStart,shore,shoreV:validShoreV,charger:tv(charger)??num(t.chargerPower),
+    solar:vSolar,start:vStart,shore,shoreV:validShoreV,charger:chargerPower,shoreInferred,
     solarLabel:solar?(solar.name||solar.entity_id):'Victron SmartSolar MPPT',
     hasVictron:Boolean(soc||voltage||current||power||solar||start||shoreEntity||shoreVoltageEntity||charger)
   };
@@ -87,7 +92,7 @@ function render(){
   $('msVictronSoc').textContent=fmt(s.soc,0,'%');
   $('msVictronVoltage').textContent=fmt(s.voltage,2,' V');
   $('msVictronCharger').textContent=s.charger!==null?fmt(s.charger,0,' W'):'– W';
-  $('msVictronShore').textContent=s.shore===true?'aangesloten':s.shore===false?'niet aangesloten':'niet gekoppeld';
+  $('msVictronShore').textContent=s.shore===true?(s.shoreInferred?'lader actief · afgeleid':'aangesloten'):s.shore===false?'niet aangesloten':'niet gekoppeld';
   $('msVictronCharge').textContent=s.power===null?'– W':fmt(charge,0,' W');
   $('msVictronDischarge').textContent=s.power===null?'– W':fmt(discharge,0,' W');
   $('msVictronTime').textContent=timeLabel(s.time);
@@ -103,7 +108,7 @@ function render(){
   if(solarMeta)solarMeta.textContent=solarFault?'MEETFOUT · VICTRON SENSOR CONTROLEREN':s.solarLabel;
   $('msVictronShoreNode').classList.toggle('active',s.shore===true||(s.charger||0)>2);
   const source=$('msVictronSource');
-  source.querySelector('b').textContent=solarFault?'MEETFOUT':s.shore===true?'WALSTROOM':(s.solar||0)>2?'ZON + ACCU':'ACCU';
+  source.querySelector('b').textContent=solarFault?'MEETFOUT':s.shoreInferred?'LADER':s.shore===true?'WALSTROOM':(s.solar||0)>2?'ZON + ACCU':'ACCU';
   source.classList.toggle('live',s.hasVictron&&!solarFault);
   source.classList.toggle('fault',solarFault);
   $('msVictronUpdated').textContent=(s.hasVictron?'Victron live · ':'Wacht op Victron · ')+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
@@ -123,6 +128,7 @@ window.msOpenVictronConsole=function(){
   window.open(url,'_blank','noopener');
 };
 window.addEventListener('mijnserenity-ha-state-updated',render);
+window.addEventListener('mijnserenity-vrm-updated',render);
 window.addEventListener('focus',render);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 setInterval(render,5000);
