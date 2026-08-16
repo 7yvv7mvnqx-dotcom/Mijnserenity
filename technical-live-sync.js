@@ -101,6 +101,9 @@
   }
 
   function readLive(){
+    const diagnosis=window.MIJSERENITY_VRM_DIAGNOSTICS||{};
+    const directBattery=diagnosis.battery||{};
+    const directSolar=diagnosis.solar||{};
     const soc=exact(EXACT.soc)||
       findNumeric(['state of charge','battery soc','smartshunt soc','accu percentage','battery percentage','soc'],'%',45);
     const voltage=exact(EXACT.voltage)||
@@ -125,17 +128,17 @@
     );
 
     return {
-      houseSoc:number(soc?.state),
-      houseVoltage:number(voltage?.state),
-      houseCurrent:number(current?.state),
-      housePower:number(power?.state),
+      houseSoc:number(soc?.state)??number(directBattery.soc?.value),
+      houseVoltage:number(voltage?.state)??number(directBattery.voltage?.value),
+      houseCurrent:number(current?.state)??number(directBattery.current?.value),
+      housePower:number(power?.state)??number(directBattery.power?.value),
       houseTimeToGo:number(timeToGo?.state),
-      solarPower:number(solar?.state),
+      solarPower:number(solar?.state)??number(directSolar.power?.value),
       shorePowerDetected:binaryValue(shoreEntity),
       shorePowerEntity:shoreEntity?.entity_id||'',
       shoreVoltage:number(shoreVoltage?.state),
       shoreFrequency:number(shoreFrequency?.state),
-      hasVictron:Boolean(soc||voltage||current||power||timeToGo),
+      hasVictron:Boolean(soc||voltage||current||power||timeToGo||number(directBattery.soc?.value)!==null||number(directBattery.voltage?.value)!==null),
       syncedAt:new Date().toISOString()
     };
   }
@@ -559,6 +562,7 @@
 
     window.addEventListener('mijnserenity-ha-state-updated',()=>sync({render:true,fullRender:true}));
     window.addEventListener('mijnserenity-ha-connected',()=>setTimeout(refreshLiveSource,250));
+    window.addEventListener('mijnserenity-vrm-diagnostics-updated',()=>sync({render:true,fullRender:true}));
     window.addEventListener('focus',refreshLiveSource);
     window.addEventListener('pageshow',refreshLiveSource);
     document.addEventListener('visibilitychange',()=>{

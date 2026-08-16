@@ -1,9 +1,9 @@
-/* MijnSerenity 7.15.31 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.15.60 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='7.15.31';
-  const VERSION='715310';
+  const BUILD='7.15.60';
+  const VERSION='715600';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `receipt-reader-pro.js?v=${VERSION}`,
@@ -24,6 +24,7 @@
     `ruuvi-climate.js?v=${VERSION}`,
     `movement-presence.js?v=${VERSION}`,
     `technical-live-sync.js?v=${VERSION}`,
+    `victron-diagnostics.js?v=${VERSION}`,
     `live-cameras.js?v=${VERSION}`,
     `page-swipe.js?v=${VERSION}`,
     `navigation-compact.js?v=${VERSION}`,

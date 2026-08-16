@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.15.59">
+<meta name="mijnserenity-build" content="7.15.60">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='7.15.59';
+window.MIJSERENITY_BUILD='7.15.60';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -71,7 +71,7 @@ window.repairMijnSerenity=async function(){
 
 <script>
 window.msSyncBuildVersion=function(){
-  const build=window.MIJSERENITY_BUILD||document.querySelector('meta[name="mijnserenity-build"]')?.content||'7.15.59';
+  const build=window.MIJSERENITY_BUILD||document.querySelector('meta[name="mijnserenity-build"]')?.content||'7.15.60';
   const version=document.getElementById('settingsAppVersion');
   if(version)version.textContent=build;
   document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=build);
@@ -81,7 +81,9 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   <link rel="stylesheet" href="start-dashboard-71510.css?v=715141">
   <link rel="stylesheet" href="poi-regio-filter-71511.css?v=715140">
   <link rel="stylesheet" href="wind-direction-71512.css?v=715140">
-  <link rel="stylesheet" href="victron-energy-71559.css?v=715590">\n</head>
+  <link rel="stylesheet" href="victron-energy-71559.css?v=715590">
+  <link rel="stylesheet" href="victron-diagnostics.css?v=715600">
+</head>
 <body>
 <main>
 <section id="authView">
