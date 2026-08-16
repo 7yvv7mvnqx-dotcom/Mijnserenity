@@ -13,7 +13,6 @@
   const scripts=[
     ['/dashboard-pro-71531.js?v=715594','msProDashboard'],
     ['/dashboard-cockpit-portal.js?v=715440','msCockpitPortal'],
-    ['/dashboard-energy-live-fix-71537.js?v=715380','msEnergyLiveFix'],
     ['/dashboard-alarm-live-fix-71540.js?v=715400','msAlarmLiveFix'],
     ['/dashboard-wind-direction-fix-71541.js?v=715460','msWindDirectionFix'],
     ['/dashboard-rudder-icons-fix-71545.js?v=715450','msRudderIconsFix'],
