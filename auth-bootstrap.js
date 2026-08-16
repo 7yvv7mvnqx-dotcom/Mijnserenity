@@ -1,9 +1,9 @@
-/* MijnSerenity 7.15.60 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.15.62 — betrouwbare loginbootstrap */
 (()=>{
   'use strict';
 
-  const BUILD='7.15.60';
-  const VERSION='715600';
+  const BUILD='7.15.62';
+  const VERSION='715620';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `receipt-reader-pro.js?v=${VERSION}`,
@@ -12,6 +12,8 @@
     `auto-track-reliability.js?v=${VERSION}`,
     `gps-continuity-guard.js?v=${VERSION}`,
     `waterkaarten-split-launch.js?v=${VERSION}`,
+    `waterkaarten-iframe-force-71561.js?v=${VERSION}`,
+    `waterkaarten-dashboard-button-71562.js?v=${VERSION}`,
     `live-split.js?v=${VERSION}`,
     `route-control.js?v=${VERSION}`,
     `weather-page.js?v=${VERSION}`,
@@ -47,6 +49,8 @@
     const version=document.getElementById('settingsAppVersion');
     if(version)version.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
+    const cockpitBadge=document.querySelector('#msProDashboard .msc-brand>b');
+    if(cockpitBadge)cockpitBadge.textContent=BUILD;
   }
 
   function setAuthStatus(message,isError=false){
