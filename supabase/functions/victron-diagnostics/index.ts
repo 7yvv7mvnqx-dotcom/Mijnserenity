@@ -8,10 +8,16 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:8888",
   "http://localhost:3000",
 ]);
+const NETLIFY_PREVIEW_ORIGIN =
+  /^https:\/\/deploy-preview-\d+--radiant-pithivier-5c37cf\.netlify\.app$/;
+
+function isAllowedOrigin(origin) {
+  return ALLOWED_ORIGINS.has(origin) || NETLIFY_PREVIEW_ORIGIN.test(origin);
+}
 
 function corsHeaders(req) {
   const origin = String(req.headers.get("origin") || "");
-  const allowedOrigin = ALLOWED_ORIGINS.has(origin)
+  const allowedOrigin = isAllowedOrigin(origin)
     ? origin
     : "https://mijnserenity.nl";
   return {
@@ -691,7 +697,7 @@ async function persistDiagnosis(context, boatId, sampledAt, data) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     const origin = String(req.headers.get("origin") || "");
-    if (origin && !ALLOWED_ORIGINS.has(origin)) {
+    if (origin && !isAllowedOrigin(origin)) {
       return reply(req, 403, { success: false, error: "Origin niet toegestaan." });
     }
     return new Response(null, { status: 204, headers: corsHeaders(req) });
@@ -701,7 +707,7 @@ Deno.serve(async (req) => {
   }
 
   const origin = String(req.headers.get("origin") || "");
-  if (origin && !ALLOWED_ORIGINS.has(origin)) {
+  if (origin && !isAllowedOrigin(origin)) {
     return reply(req, 403, { success: false, error: "Origin niet toegestaan." });
   }
 
@@ -809,4 +815,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
