@@ -1,9 +1,9 @@
-/* MijnSerenity 7.17.0 — professionele dashboardloader */
+/* MijnSerenity 7.17.1 — professionele dashboardloader */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71700)return;
-  window.__msDashboardLoader71700=true;
-  const VERSION='717000';
+  if(window.__msDashboardLoader71701)return;
+  window.__msDashboardLoader71701=true;
+  const VERSION='717010';
 
   function style(id,href){
     if(document.getElementById(id))return;
