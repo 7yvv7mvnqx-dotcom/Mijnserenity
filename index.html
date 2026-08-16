@@ -8,7 +8,7 @@
 <meta name="mijnserenity-build" content="7.15.59">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='7.15.14';
+window.MIJSERENITY_BUILD='7.15.59';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -71,7 +71,7 @@ window.repairMijnSerenity=async function(){
 
 <script>
 window.msSyncBuildVersion=function(){
-  const build=window.MIJSERENITY_BUILD||document.querySelector('meta[name="mijnserenity-build"]')?.content||'7.15.14';
+  const build=window.MIJSERENITY_BUILD||document.querySelector('meta[name="mijnserenity-build"]')?.content||'7.15.59';
   const version=document.getElementById('settingsAppVersion');
   if(version)version.textContent=build;
   document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=build);
