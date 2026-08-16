@@ -1,92 +1,245 @@
-/* MijnSerenity 7.4.6 — Waterkaarten vertrekassistent */
-.ms738-waterkaarten-banner{
+/* MijnSerenity — Waterkaarten fullscreen iframe */
+html.ms-waterkaarten-open,
+body.ms-waterkaarten-open{
+  overflow:hidden!important;
+  overscroll-behavior:none;
+}
+
+.mswk-overlay{
   position:fixed;
+  inset:0;
+  z-index:24000;
+  display:block;
+  background:#061525;
+}
+.mswk-overlay.hidden{display:none!important}
+
+.mswk-shell{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  height:100vh;
+  height:100dvh;
+  min-height:0;
+  overflow:hidden;
+  background:#061525;
+}
+
+.mswk-toolbar{
+  position:relative;
+  z-index:2;
+  flex:0 0 auto;
+  min-height:58px;
+  padding:calc(8px + env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left));
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  background:rgba(4,20,39,.98);
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+}
+
+.mswk-toolbar button{
+  min-height:42px;
+  border:1px solid rgba(122,205,255,.25);
+  border-radius:13px;
+  background:rgba(255,255,255,.07);
+  color:#f4f9fc;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.mswk-toolbar button:active{transform:scale(.98)}
+
+.mswk-back{
+  justify-self:start;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:0 12px 0 9px;
+}
+.mswk-back span{font-size:30px;font-weight:400;line-height:.8}
+
+.mswk-title{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  color:#fff;
+  text-align:left;
+}
+.mswk-title-icon{font-size:25px;line-height:1}
+.mswk-title div{min-width:0}
+.mswk-title strong,
+.mswk-title small{display:block;white-space:nowrap}
+.mswk-title strong{font-size:15px;line-height:1.15}
+.mswk-title small{margin-top:2px;color:#9eb4c6;font-size:10px;font-weight:600}
+
+.mswk-external{
+  justify-self:end;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:0 12px;
+}
+.mswk-external span{font-size:17px}
+
+.mswk-frame-stage{
+  position:relative;
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+  background:#fff;
+}
+
+.mswk-frame{
+  position:absolute;
+  inset:0;
+  display:block;
+  width:100%;
+  height:100%;
+  border:0;
+  background:#fff;
+}
+
+.mswk-loading{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:24px;
+  color:#132638;
+  background:#f5f8fa;
+  text-align:center;
+}
+.mswk-loading.hidden{display:none!important}
+.mswk-loading small{color:#617485}
+
+.mswk-spinner{
+  width:34px;
+  height:34px;
+  margin-bottom:4px;
+  border:3px solid rgba(16,86,126,.18);
+  border-top-color:#0b78b2;
+  border-radius:50%;
+  animation:mswk-spin .8s linear infinite;
+}
+@keyframes mswk-spin{to{transform:rotate(360deg)}}
+
+.mswk-info{
+  position:absolute;
+  z-index:5;
   left:max(12px,env(safe-area-inset-left));
   right:max(12px,env(safe-area-inset-right));
-  bottom:calc(82px + env(safe-area-inset-bottom));
-  z-index:12050;
+  bottom:max(12px,env(safe-area-inset-bottom));
+  max-width:720px;
+  margin:0 auto;
+  padding:12px 42px 12px 14px;
+  border:1px solid rgba(65,178,234,.35);
+  border-radius:16px;
+  background:rgba(4,22,43,.94);
+  color:#eef7fc;
+  box-shadow:0 16px 50px rgba(0,0,0,.35);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+.mswk-info.hidden{display:none!important}
+.mswk-info b,
+.mswk-info span{display:block}
+.mswk-info span{margin-top:4px;color:#bfd0dd;font-size:.84rem;line-height:1.35}
+.mswk-info-close{
+  position:absolute;
+  top:7px;
+  right:8px;
+  width:30px;
+  height:30px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.1);
+  color:#fff;
+  font-size:20px;
+}
+
+.mswk-departure-banner{
+  position:fixed;
+  z-index:23000;
+  left:max(12px,env(safe-area-inset-left));
+  right:max(12px,env(safe-area-inset-right));
+  bottom:calc(78px + env(safe-area-inset-bottom));
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  padding:12px 14px;
-  border:1px solid rgba(87,198,255,.38);
+  padding:11px 12px;
+  border:1px solid rgba(87,198,255,.35);
   border-radius:17px;
   background:rgba(4,22,43,.96);
+  color:#f5fbff;
   box-shadow:0 18px 48px rgba(0,0,0,.38);
   backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
 }
-.ms738-waterkaarten-banner.hidden{display:none!important}
-.ms738-waterkaarten-banner-copy{display:flex;align-items:center;gap:10px;min-width:0}
-.ms738-waterkaarten-banner-copy>span{font-size:26px;flex:0 0 auto}
-.ms738-waterkaarten-banner-copy b,
-.ms738-waterkaarten-banner-copy small{display:block}
-.ms738-waterkaarten-banner-copy small{margin-top:2px;color:var(--muted,#aebdca);line-height:1.25}
-.ms738-waterkaarten-banner button{white-space:nowrap}
-
-.ms738-waterkaarten-modal{
-  position:fixed;
-  inset:0;
-  z-index:13000;
-  display:grid;
-  place-items:center;
-  padding:calc(18px + env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
-  background:rgba(1,10,22,.76);
-  backdrop-filter:blur(14px);
+.mswk-departure-banner.hidden{display:none!important}
+.mswk-departure-copy{display:flex;align-items:center;gap:10px;min-width:0}
+.mswk-departure-copy>span{font-size:25px;flex:0 0 auto}
+.mswk-departure-copy b,
+.mswk-departure-copy small{display:block}
+.mswk-departure-copy small{margin-top:2px;color:#afc2d0;line-height:1.25}
+.mswk-departure-actions{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+.mswk-departure-actions button{
+  min-height:42px;
+  padding:0 13px;
+  border:0;
+  border-radius:12px;
+  font:inherit;
+  font-weight:750;
 }
-.ms738-waterkaarten-modal.hidden{display:none!important}
-.ms738-waterkaarten-card{
-  width:min(560px,100%);
-  max-height:min(760px,calc(100vh - 36px));
-  overflow:auto;
-  padding:20px;
-  border-radius:24px;
-  border:1px solid rgba(87,198,255,.32);
-  background:linear-gradient(160deg,rgba(9,36,65,.99),rgba(4,20,39,.99));
-  box-shadow:0 30px 90px rgba(0,0,0,.55);
-}
-.ms738-waterkaarten-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
-.ms738-waterkaarten-icon{font-size:46px;line-height:1}
-.ms738-waterkaarten-card h2{margin:8px 0 6px}
-.ms738-waterkaarten-card p{line-height:1.45}
-.ms738-waterkaarten-close{
-  width:38px;height:38px;padding:0;border-radius:50%;font-size:22px;flex:0 0 auto
-}
-.ms738-waterkaarten-steps{
-  margin:14px 0 0;
-  padding:13px 14px;
-  border-radius:16px;
-  background:rgba(255,255,255,.055);
-  border:1px solid rgba(255,255,255,.08)
-}
-.ms738-waterkaarten-steps.hidden{display:none!important}
-.ms738-waterkaarten-steps ol{margin:8px 0 0;padding-left:22px}
-.ms738-waterkaarten-steps li{margin:7px 0;line-height:1.35}
-.ms738-waterkaarten-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
-.ms738-waterkaarten-actions button{flex:1 1 190px}
-.ms738-waterkaarten-note{margin-top:12px;color:var(--muted,#aebdca);font-size:.88rem}
+.mswk-departure-actions button:first-child{background:#2f9dd0;color:#fff}
+.mswk-departure-actions .secondary{width:42px;padding:0;background:rgba(255,255,255,.1);color:#fff;font-size:19px}
 
 @media(max-width:700px){
-  .ms738-waterkaarten-banner{align-items:stretch;flex-direction:column;bottom:calc(74px + env(safe-area-inset-bottom))}
-  .ms738-waterkaarten-banner button{width:100%}
+  .mswk-toolbar{
+    grid-template-columns:auto minmax(0,1fr) auto;
+    gap:6px;
+    padding-left:max(6px,env(safe-area-inset-left));
+    padding-right:max(6px,env(safe-area-inset-right));
+  }
+  .mswk-toolbar button{min-height:40px;border-radius:11px}
+  .mswk-back{padding:0 9px 0 7px}
+  .mswk-back b{font-size:12px}
+  .mswk-title{gap:5px}
+  .mswk-title-icon{font-size:21px}
+  .mswk-title strong{font-size:13px}
+  .mswk-title small{display:none}
+  .mswk-external{padding:0 9px}
+  .mswk-external b{display:none}
+  .mswk-external span{font-size:20px}
+
+  .mswk-departure-banner{
+    align-items:stretch;
+    flex-direction:column;
+    bottom:calc(72px + env(safe-area-inset-bottom));
+  }
+  .mswk-departure-actions{width:100%}
+  .mswk-departure-actions button:first-child{flex:1}
 }
 
-/* 7.5.10 — status en bevestiging voor vaste rechter Waterkaarten-indeling */
-.ms759-split-ready{
-  display:flex;
-  flex-direction:column;
-  gap:3px;
-  margin:14px 0;
-  padding:13px 14px;
-  border-radius:16px;
-  border:1px solid rgba(70,220,160,.42);
-  background:rgba(26,118,85,.22);
+@media(orientation:landscape) and (max-height:520px){
+  .mswk-toolbar{
+    min-height:48px;
+    padding-top:max(4px,env(safe-area-inset-top));
+    padding-bottom:4px;
+  }
+  .mswk-toolbar button{min-height:36px}
+  .mswk-info{bottom:8px;padding-top:9px;padding-bottom:9px}
 }
-.ms759-split-ready.hidden{display:none!important}
-.ms759-split-ready span{color:var(--muted,#b8c6d2);font-size:.92rem}
-
-/* 7.5.10 — bevestiging blijft vindbaar na terugkeer uit Waterkaarten */
-.ms759-banner-actions{display:flex;gap:8px;flex-wrap:wrap}
-.ms759-banner-actions button{min-height:44px}
-.ms759-banner-actions .hidden{display:none!important}
-@media(max-width:720px){.ms759-banner-actions{width:100%}.ms759-banner-actions button{flex:1 1 150px}}
