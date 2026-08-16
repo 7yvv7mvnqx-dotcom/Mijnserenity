@@ -74,7 +74,7 @@ function read(){
   if(shore!==true&&externalCharge!==null&&externalCharge>20){shore=true;shoreInferred=true}
   return {
     soc:vSoc,voltage:vVoltage,current:vCurrent,power:vPower,time:tv(time)??num(t.houseTimeToGo),
-    solar:vSolar,start:vStart,shore,shoreV:validShoreV,charger:chargerPower,shoreInferred,
+    solar:vSolar,pvVoltage:num(vrm.pvVoltage),pvCurrent:num(vrm.pvCurrent),start:vStart,shore,shoreV:validShoreV,charger:chargerPower,shoreInferred,
     solarLabel:solar?(solar.name||solar.entity_id):'Victron SmartSolar MPPT',
     hasVictron:Boolean(soc||voltage||current||power||solar||start||shoreEntity||shoreVoltageEntity||charger)
   };
@@ -88,7 +88,7 @@ function timeLabel(hours){
 function render(){
   if(!$('msVictronEnergy'))return;
   const s=read(),charge=s.power!==null&&s.power>0?s.power:0,discharge=s.power!==null&&s.power<0?Math.abs(s.power):0;
-  $('msVictronSolar').textContent=fmt(s.solar,0,' W');
+  $('msVictronSolar').textContent=s.solar!==null?fmt(s.solar,0,' W'):(s.pvVoltage!==null?fmt(s.pvVoltage,1,' V PV'):'– W');
   $('msVictronSoc').textContent=fmt(s.soc,0,'%');
   $('msVictronVoltage').textContent=fmt(s.voltage,2,' V');
   $('msVictronCharger').textContent=s.charger!==null?fmt(s.charger,0,' W'):'– W';
@@ -105,7 +105,7 @@ function render(){
   solarNode.classList.toggle('active',s.solar!==null&&s.solar>2);
   solarNode.classList.toggle('fault',solarFault);
   const solarMeta=solarNode.querySelector('em');
-  if(solarMeta)solarMeta.textContent=solarFault?'MEETFOUT · VICTRON SENSOR CONTROLEREN':s.solarLabel;
+  if(solarMeta)solarMeta.textContent=solarFault?'MEETFOUT · VICTRON SENSOR CONTROLEREN':(s.solar===null&&s.pvVoltage!==null?'MPPT-spanning · vermogen wacht':s.solarLabel);
   $('msVictronShoreNode').classList.toggle('active',s.shore===true||(s.charger||0)>2);
   const source=$('msVictronSource');
   source.querySelector('b').textContent=solarFault?'MEETFOUT':s.shoreInferred?'LADER':s.shore===true?'WALSTROOM':(s.solar||0)>2?'ZON + ACCU':'ACCU';
