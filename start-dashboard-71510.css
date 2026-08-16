@@ -327,3 +327,4 @@
   .ms750-more-route span{flex-basis:30px;font-size:24px}
   .ms750-more-route strong{font-size:clamp(12px,3.55vw,15px)}
 }
+\n/* 7.15.59 — vijf snelle acties inclusief Techniek */\n.ms71510-shortcuts{grid-template-columns:repeat(5,minmax(0,1fr))!important}\n.ms71510-tech-shortcut span{filter:drop-shadow(0 0 9px rgba(63,192,255,.55))}\n@media(max-width:620px){.ms71510-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))!important}.ms71510-shortcuts button{height:92px!important}}\n
