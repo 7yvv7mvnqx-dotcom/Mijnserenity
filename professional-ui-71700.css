@@ -30,6 +30,13 @@ button,input,select,textarea{
 
 button,a,[role="button"]{-webkit-tap-highlight-color:transparent}
 
+/* Oude dashboardlagen kunnen nog in een reeds geopende PWA-DOM staan. */
+#msDashboardPremium7143,
+#msDashboardAnalog7141,
+#msStartCockpit7144,
+#msWelcomeCard7140,
+#msScreenWelcome7140{display:none!important}
+
 #msProDashboard .msc-head{
   min-height:68px;
   padding:10px 14px!important;
