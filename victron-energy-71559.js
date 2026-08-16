@@ -1,12 +1,129 @@
-(function(){'use strict';
-function el(x){return document.getElementById(x)}
-function txt(x,f){var n=el(x),v=n&&n.textContent?n.textContent.trim():'';return v&&v!=='–'?v:f}
-function numberFrom(v){var n=parseFloat(String(v||'').replace(',','.').replace(/[^0-9.+-]/g,''));return Number.isFinite(n)?n:null}
-function technical(){try{return typeof technicalStateCache!=='undefined'&&technicalStateCache?technicalStateCache:{}}catch(e){return{}}}
-function haStates(){try{return typeof window.ms730GetStateSnapshot==='function'?window.ms730GetStateSnapshot():[]}catch(e){return[]}}
-function mpptPower(){var list=haStates(),exact=list.find(function(x){return x&&x.entity_id==='sensor.vrm_solar_charger_power'});var sensor=exact||list.find(function(x){var id=String(x&&x.entity_id||'').toLowerCase(),name=String(x&&x.name||'').toLowerCase();return /(^|_)(mppt|solar_charger)(_|$)/.test(id)&&/(power|vermogen)/.test(id+' '+name)&&!/(battery|accu|grid|shore|load)/.test(id)});var value=sensor?numberFrom(sensor.state):null;return{value:value,label:sensor?(sensor.name||sensor.entity_id):'MPPT niet gekoppeld'}}
-function liveState(){var t=technical(),mppt=mpptPower();return{mpptLabel:mppt.label,voltage:txt('ivmsBatteryVoltage',t.houseVoltage!=null?Number(t.houseVoltage).toFixed(1)+' V':'– V'),current:txt('ivmsBatteryCurrent',t.houseCurrent!=null?Number(t.houseCurrent).toFixed(1)+' A':'– A'),power:txt('ivmsBatteryPower',t.housePower!=null?Math.round(t.housePower)+' W':'– W'),soc:txt('ivmsBatteryRing',t.houseSoc!=null?Math.round(t.houseSoc)+'%':'–%'),time:txt('ivmsBatteryTime','–'),solar:mppt.value!=null?Math.round(mppt.value)+' W':'– W',shore:txt('ivmsPowerSource',t.shorePower?'WALSTROOM':'ACCU'),shoreV:txt('ivmsPowerVoltage','– V'),charger:txt('ivmsChargerPower','– W'),chargerStatus:txt('ivmsChargerStatus','NIET GEKOPPELD'),start:txt('ms71510StartVoltage',t.startVoltage!=null?Number(t.startVoltage).toFixed(1)+' V':'– V'),machine:txt('ivmsForwardTemp','– °C')}}
-function markup(){return '<section id="msVictronEnergy" class="ms-victron" aria-label="Victron energiedashboard"><div class="ms-victron-head"><div class="ms-victron-title"><span class="ms-victron-logo">V</span><h3>Victron energie<small>SERENITY · LIVE ENERGIESTROOM</small></h3></div><span id="msVictronSource" class="ms-victron-source"><i></i><b>ACCU</b></span></div><div class="ms-victron-flow"><div id="msVictronSolarNode" class="ms-victron-node ms-victron-solar"><span class="icon">☀️</span><small>ZONNEPANEEL</small><strong id="msVictronSolar">– W</strong><em>SmartSolar MPPT</em><span class="ms-victron-line"></span></div><div id="msVictronBatteryNode" class="ms-victron-node ms-victron-battery"><div class="ms-victron-soc"><i id="msVictronSocFill"></i></div><small>HUISHOUDACCU\'S</small><strong id="msVictronSoc">–%</strong><em id="msVictronVoltage">– V</em></div><div id="msVictronShoreNode" class="ms-victron-node ms-victron-shore"><span class="icon">🔌</span><small>WALSTROOM / LADER</small><strong id="msVictronCharger">– W</strong><em id="msVictronShore">niet aangesloten</em><span class="ms-victron-line"></span></div></div><div class="ms-victron-stats"><div class="ms-victron-stat ms-victron-charge"><small>LADEN</small><strong id="msVictronCharge">– W</strong></div><div class="ms-victron-stat ms-victron-discharge"><small>ONTLADEN</small><strong id="msVictronDischarge">– W</strong></div><div class="ms-victron-stat"><small>RESTEREND</small><strong id="msVictronTime">–</strong></div><div class="ms-victron-stat"><small>STARTACCU\'S</small><strong id="msVictronStart">– V</strong></div><div class="ms-victron-stat"><small>MACHINEKAMER</small><strong id="msVictronMachine">– °C</strong></div><div class="ms-victron-stat"><small>WALSPANNING</small><strong id="msVictronShoreV">– V</strong></div></div><div class="ms-victron-actions"><button class="ms-victron-console" type="button" onclick="window.msOpenVictronConsole()">Open Cerbo GX</button><button class="ms-victron-refresh" type="button" onclick="window.msRenderVictronEnergy()">↻ Vernieuwen</button></div><div class="ms-victron-foot"><span>SmartShunt · Cerbo GX · MPPT</span><span id="msVictronUpdated">Nog geen live meting</span></div></section>'}
-function render(){if(!el('msVictronEnergy'))return;var s=liveState(),soc=numberFrom(s.soc),solar=numberFrom(s.solar)||0,charger=numberFrom(s.charger)||0,shore=/walstroom|shore|grid/i.test(s.shore);el('msVictronSolar').textContent=s.solar;el('msVictronSoc').textContent=s.soc;el('msVictronVoltage').textContent=s.voltage;el('msVictronCharger').textContent=s.charger;el('msVictronShore').textContent=shore?(s.chargerStatus||'aangesloten'):'niet aangesloten';var batteryPower=numberFrom(s.power),batteryCurrent=numberFrom(s.current);el('msVictronCharge').textContent=batteryPower!==null?(batteryPower>0?Math.round(batteryPower)+' W':'0 W'):(batteryCurrent!==null&&batteryCurrent>0?batteryCurrent.toFixed(1)+' A':'– W');el('msVictronDischarge').textContent=batteryPower!==null?(batteryPower<0?Math.abs(Math.round(batteryPower))+' W':'0 W'):(batteryCurrent!==null&&batteryCurrent<0?Math.abs(batteryCurrent).toFixed(1)+' A':'– W');el('msVictronTime').textContent=s.time;el('msVictronStart').textContent=s.start;el('msVictronMachine').textContent=s.machine;el('msVictronShoreV').textContent=s.shoreV;el('msVictronSocFill').style.setProperty('--soc',Math.max(0,Math.min(100,soc||0))+'%');el('msVictronBatteryNode').classList.toggle('low',soc!==null&&soc<30);var solarFault=solar<0;el('msVictronSolarNode').classList.toggle('active',solar>2);el('msVictronSolarNode').classList.toggle('fault',solarFault);var solarMeta=el('msVictronSolarNode').querySelector('em');if(solarMeta)solarMeta.textContent=solarFault?'MEETFOUT · SENSOR CONTROLEREN':s.mpptLabel;el('msVictronShoreNode').classList.toggle('active',shore||charger>2);var source=el('msVictronSource');source.querySelector('b').textContent=solarFault?'MEETFOUT':shore?'WALSTROOM':solar>2?'ZON + ACCU':'ACCU';source.classList.toggle('live',!solarFault&&(shore||solar>2||numberFrom(s.voltage)!==null));source.classList.toggle('fault',solarFault);el('msVictronUpdated').textContent='Bijgewerkt '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}
-function mount(){var host=el('technical');if(!host||el('msVictronEnergy'))return;var hero=host.querySelector('.technical-hero');if(hero)hero.insertAdjacentHTML('beforebegin',markup());else host.insertAdjacentHTML('afterbegin',markup());render()}
-window.msRenderVictronEnergy=render;window.msOpenVictronConsole=function(){var url=localStorage.getItem('ms-victron-console-url')||'';if(!url){url=prompt('Vul eenmalig het lokale adres van de Cerbo GX in, bijvoorbeeld http://venus.local','http://venus.local')||'';if(!url)return;localStorage.setItem('ms-victron-console-url',url)}window.open(url,'_blank','noopener')};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();setInterval(render,5000)})();
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const num=value=>{const n=Number.parseFloat(String(value??'').replace(',','.').replace(/[^0-9.+-]/g,''));return Number.isFinite(n)?n:null};
+const usable=e=>e&&!['unknown','unavailable','none',''].includes(String(e.state??'').toLowerCase());
+function states(){try{return typeof window.ms730GetStateSnapshot==='function'?window.ms730GetStateSnapshot().filter(usable):[]}catch{return[]}}
+function text(e){return `${e?.entity_id||''} ${e?.name||''}`.toLowerCase()}
+function unit(e){return String(e?.attributes?.unit_of_measurement||'').toLowerCase()}
+function exact(ids){const list=states();for(const id of ids){const found=list.find(e=>e.entity_id===id);if(found)return found}return null}
+function scored({include=[],exclude=[],wantedUnit='',minimum=1}){
+  return states().map(e=>{
+    const hay=text(e);let score=0;
+    include.forEach((term,index)=>{if(hay.includes(term))score+=60-index});
+    if(/vrm|victron|cerbo|smartshunt|mppt/.test(hay))score+=20;
+    if(wantedUnit&&unit(e)===wantedUnit.toLowerCase())score+=15;
+    if(exclude.some(term=>hay.includes(term)))score=-1000;
+    return {e,score};
+  }).filter(x=>x.score>=minimum).sort((a,b)=>b.score-a.score)[0]?.e||null;
+}
+function pick(ids,include,wantedUnit,exclude=[]){return exact(ids)||scored({include,exclude,wantedUnit,minimum:55})}
+function bool(e){
+  if(!e)return null;
+  const v=String(e.state||'').toLowerCase();
+  if(['on','connected','true','1','yes','active','aan','present','detected'].includes(v))return true;
+  if(['off','disconnected','false','0','no','inactive','uit','absent','clear'].includes(v))return false;
+  return null;
+}
+function technical(){try{return typeof technicalStateCache!=='undefined'&&technicalStateCache?technicalStateCache:{}}catch{return{}}}
+function read(){
+  const t=technical();
+  const soc=pick(['sensor.vrm_state_of_charge'],['state of charge','smartshunt soc','battery soc'],'%');
+  const voltage=pick(['sensor.vrm_voltage'],['vrm voltage','smartshunt voltage','house battery voltage','huishoudaccu spanning'],'v',['starter','startaccu','aux']);
+  const current=pick(['sensor.vrm_current'],['vrm current','smartshunt current','battery current','accustroom'],'a',['starter','startaccu','aux']);
+  const power=pick(['sensor.vrm_battery_power'],['vrm battery power','smartshunt power','battery power','accuvermogen'],'w',['solar','pv','mppt','charger']);
+  const time=pick(['sensor.vrm_time_to_go'],['time to go','resterende tijd','battery runtime'],'h');
+  const solar=pick(
+    ['sensor.vrm_solar_charger_power','sensor.vrm_pv_power'],
+    ['solar charger power','mppt power','pv power','zonnepaneel vermogen'],'w',
+    ['battery power','load power']
+  );
+  const start=pick(
+    ['sensor.vrm_starter_battery_voltage','sensor.vrm_start_battery_voltage','sensor.vrm_auxiliary_battery_voltage','sensor.vrm_aux_voltage'],
+    ['starter battery voltage','start battery voltage','startaccu spanning','auxiliary battery voltage','aux voltage'],'v',
+    ['house','huishoud']
+  );
+  const shoreEntity=exact(['binary_sensor.vrm_shore_power','binary_sensor.vrm_ac_input_connected','binary_sensor.vrm_grid_connected'])||
+    scored({include:['shore power','walstroom','ac input connected','mains connected','grid connected'],exclude:['voltage','frequency','power'],minimum:55});
+  const shoreVoltageEntity=pick(
+    ['sensor.vrm_ac_input_voltage','sensor.vrm_shore_voltage','sensor.vrm_grid_voltage'],
+    ['ac input voltage','shore voltage','walstroom spanning','grid voltage'],'v',
+    ['battery','accu','dc','starter','startaccu']
+  );
+  const charger=pick(
+    ['sensor.vrm_charger_power','sensor.vrm_ac_charger_power'],
+    ['ac charger power','charger power','acculader vermogen','lader vermogen'],'w',
+    ['solar','pv','mppt']
+  );
+  const tv=v=>num(v?.state);
+  const vSoc=tv(soc)??num(t.houseSoc);
+  const vVoltage=tv(voltage)??num(t.houseVoltage);
+  const vCurrent=tv(current)??num(t.houseCurrent);
+  const vPower=tv(power)??num(t.housePower)??(vVoltage!==null&&vCurrent!==null?vVoltage*vCurrent:null);
+  const vSolar=tv(solar)??num(t.solarPower);
+  const vStart=tv(start)??num(t.startVoltage);
+  const rawShoreV=tv(shoreVoltageEntity)??num(t.shoreVoltage);
+  const validShoreV=rawShoreV!==null&&rawShoreV>=80&&rawShoreV<=280?rawShoreV:null;
+  let shore=bool(shoreEntity);
+  if(shore===null&&validShoreV!==null)shore=validShoreV>=180;
+  if(shore===null&&typeof t.shorePower==='boolean')shore=t.shorePower;
+  return {
+    soc:vSoc,voltage:vVoltage,current:vCurrent,power:vPower,time:tv(time)??num(t.houseTimeToGo),
+    solar:vSolar,start:vStart,shore,shoreV:validShoreV,charger:tv(charger)??num(t.chargerPower),
+    solarLabel:solar?(solar.name||solar.entity_id):'Victron SmartSolar MPPT',
+    hasVictron:Boolean(soc||voltage||current||power||solar||start||shoreEntity||shoreVoltageEntity||charger)
+  };
+}
+function fmt(v,d=0,suffix=''){return v===null?'–'+suffix:`${Number(v).toLocaleString('nl-NL',{minimumFractionDigits:d,maximumFractionDigits:d})}${suffix}`}
+function timeLabel(hours){
+  if(hours===null)return '–';
+  const total=Math.max(0,Math.round(hours)),days=Math.floor(total/24),rest=total%24;
+  return days?`${days}d ${rest}u`:`${rest}u`;
+}
+function render(){
+  if(!$('msVictronEnergy'))return;
+  const s=read(),charge=s.power!==null&&s.power>0?s.power:0,discharge=s.power!==null&&s.power<0?Math.abs(s.power):0;
+  $('msVictronSolar').textContent=fmt(s.solar,0,' W');
+  $('msVictronSoc').textContent=fmt(s.soc,0,'%');
+  $('msVictronVoltage').textContent=fmt(s.voltage,2,' V');
+  $('msVictronCharger').textContent=s.charger!==null?fmt(s.charger,0,' W'):'– W';
+  $('msVictronShore').textContent=s.shore===true?'aangesloten':s.shore===false?'niet aangesloten':'niet gekoppeld';
+  $('msVictronCharge').textContent=s.power===null?'– W':fmt(charge,0,' W');
+  $('msVictronDischarge').textContent=s.power===null?'– W':fmt(discharge,0,' W');
+  $('msVictronTime').textContent=timeLabel(s.time);
+  $('msVictronStart').textContent=fmt(s.start,2,' V');
+  $('msVictronShoreV').textContent=s.shore===true?fmt(s.shoreV,0,' V AC'):'– V AC';
+  const fill=Math.max(0,Math.min(100,s.soc||0));
+  $('msVictronSocFill').style.setProperty('--soc',fill+'%');
+  $('msVictronBatteryNode').classList.toggle('low',s.soc!==null&&s.soc<30);
+  const solarNode=$('msVictronSolarNode'),solarFault=s.solar!==null&&s.solar<0;
+  solarNode.classList.toggle('active',s.solar!==null&&s.solar>2);
+  solarNode.classList.toggle('fault',solarFault);
+  const solarMeta=solarNode.querySelector('em');
+  if(solarMeta)solarMeta.textContent=solarFault?'MEETFOUT · VICTRON SENSOR CONTROLEREN':s.solarLabel;
+  $('msVictronShoreNode').classList.toggle('active',s.shore===true||(s.charger||0)>2);
+  const source=$('msVictronSource');
+  source.querySelector('b').textContent=solarFault?'MEETFOUT':s.shore===true?'WALSTROOM':(s.solar||0)>2?'ZON + ACCU':'ACCU';
+  source.classList.toggle('live',s.hasVictron&&!solarFault);
+  source.classList.toggle('fault',solarFault);
+  $('msVictronUpdated').textContent=(s.hasVictron?'Victron live · ':'Wacht op Victron · ')+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+}
+function markup(){return '<section id="msVictronEnergy" class="ms-victron" aria-label="Victron energiedashboard"><div class="ms-victron-head"><div class="ms-victron-title"><span class="ms-victron-logo">V</span><h3>Victron energie<small>SERENITY · LIVE ENERGIESTROOM</small></h3></div><span id="msVictronSource" class="ms-victron-source"><i></i><b>ACCU</b></span></div><div class="ms-victron-flow"><div id="msVictronSolarNode" class="ms-victron-node ms-victron-solar"><span class="icon">☀️</span><small>ZONNEPANEEL</small><strong id="msVictronSolar">– W</strong><em>Victron SmartSolar MPPT</em><span class="ms-victron-line"></span></div><div id="msVictronBatteryNode" class="ms-victron-node ms-victron-battery"><div class="ms-victron-soc"><i id="msVictronSocFill"></i></div><small>HUISHOUDACCU\'S</small><strong id="msVictronSoc">–%</strong><em id="msVictronVoltage">– V</em></div><div id="msVictronShoreNode" class="ms-victron-node ms-victron-shore"><span class="icon">🔌</span><small>WALSTROOM / LADER</small><strong id="msVictronCharger">– W</strong><em id="msVictronShore">niet gekoppeld</em><span class="ms-victron-line"></span></div></div><div class="ms-victron-stats"><div class="ms-victron-stat ms-victron-charge"><small>LADEN</small><strong id="msVictronCharge">– W</strong></div><div class="ms-victron-stat ms-victron-discharge"><small>ONTLADEN</small><strong id="msVictronDischarge">– W</strong></div><div class="ms-victron-stat"><small>RESTEREND</small><strong id="msVictronTime">–</strong></div><div class="ms-victron-stat"><small>STARTACCU\'S</small><strong id="msVictronStart">– V</strong></div><div class="ms-victron-stat"><small>MACHINEKAMER</small><strong id="msVictronMachine">– °C</strong></div><div class="ms-victron-stat"><small>WALSPANNING</small><strong id="msVictronShoreV">– V AC</strong></div></div><div class="ms-victron-actions"><button class="ms-victron-console" type="button" onclick="window.msOpenVictronConsole()">Open Cerbo GX</button><button class="ms-victron-refresh" type="button" onclick="window.msRenderVictronEnergy()">↻ Vernieuwen</button></div><div class="ms-victron-foot"><span>SmartShunt · Cerbo GX · SmartSolar MPPT</span><span id="msVictronUpdated">Nog geen live meting</span></div></section>'}
+function mount(){
+  const host=$('technical');
+  if(!host||$('msVictronEnergy'))return;
+  const hero=host.querySelector('.technical-hero');
+  if(hero)hero.insertAdjacentHTML('beforebegin',markup());else host.insertAdjacentHTML('afterbegin',markup());
+  render();
+}
+window.msRenderVictronEnergy=render;
+window.msOpenVictronConsole=function(){
+  let url=localStorage.getItem('ms-victron-console-url')||'';
+  if(!url){url=prompt('Vul eenmalig het lokale adres van de Cerbo GX in, bijvoorbeeld http://venus.local','http://venus.local')||'';if(!url)return;localStorage.setItem('ms-victron-console-url',url)}
+  window.open(url,'_blank','noopener');
+};
+window.addEventListener('mijnserenity-ha-state-updated',render);
+window.addEventListener('focus',render);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+setInterval(render,5000);
+})();
