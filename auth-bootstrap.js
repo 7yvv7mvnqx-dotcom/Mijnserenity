@@ -1,15 +1,14 @@
-/* MijnSerenity 7.17.0 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.17.1 — snelle, gefaseerde bootstrap */
 (()=>{
   'use strict';
 
-  /* Oude dashboardrenderers staan nog in index.html voor terugval, maar worden in 7.17 niet meer gestart. */
+  /* Oude dashboardrenderers staan nog in index.html voor terugval, maar worden niet meer gestart. */
   window.__msDisableLegacyVisuals=true;
 
-  const BUILD='7.17.0';
-  const VERSION='717000';
+  const BUILD='7.17.1';
+  const VERSION='717010';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
-  /* Deze modules zijn nuttig direct na de kern, maar blokkeren de login niet meer. */
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
     `waterkaarten-gpx-share-71700.js?v=${VERSION}`,
@@ -26,7 +25,6 @@
     `serenity-ivms.js?v=${VERSION}`
   ];
 
-  /* Zwaardere/niet-direct-zichtbare functies worden rustig daarna geladen. */
   const LATE_MODULES=[
     `receipt-reader-pro.js?v=${VERSION}`,
     `mission-control.js?v=${VERSION}`,
@@ -158,22 +156,16 @@
 
   function idle(){
     return new Promise(resolve=>{
-      if('requestIdleCallback' in window){
-        requestIdleCallback(()=>resolve(),{timeout:500});
-      }else{
-        setTimeout(resolve,35);
-      }
+      if('requestIdleCallback' in window)requestIdleCallback(()=>resolve(),{timeout:500});
+      else setTimeout(resolve,35);
     });
   }
 
   async function loadModuleQueue(modules,label){
     for(const src of modules){
       await idle();
-      try{
-        await loadScript(src,20000);
-      }catch(error){
-        console.warn(`${label} module overgeslagen:`,src,error);
-      }
+      try{await loadScript(src,20000)}
+      catch(error){console.warn(`${label} module overgeslagen:`,src,error)}
     }
   }
 
@@ -194,34 +186,23 @@
       syncBuildVersion();
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
-      /* Registratie loopt parallel en houdt de gebruiker niet meer op. */
       ensureServiceWorker();
       await ensureSupabase();
-
-      /* Alleen de kern is nodig om in te loggen en de app bruikbaar te maken. */
       await loadScript(CORE_SCRIPT,25000);
       syncBuildVersion();
 
-      if(typeof window.signIn!=='function'){
-        throw new Error('De inlogfunctie is niet beschikbaar.');
-      }
+      if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
 
       const button=document.getElementById('signInButton');
       if(button)button.disabled=false;
       const target=document.getElementById('authMsg');
-      if(target&&/geladen|beveiligde inlog/i.test(target.textContent||'')){
-        target.textContent='Nog niet ingelogd.';
-      }
+      if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
 
-      /* Niet awaiten: de app is nu al bruikbaar. */
       setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),40);
       console.info(`MijnSerenity ${BUILD}: kern gestart.`);
     }catch(error){
       console.error('MijnSerenity kon niet starten:',error);
-      setAuthStatus(
-        'De beveiligde inlog kon niet worden geladen. Tik op “App herstellen en vernieuwen” en probeer opnieuw.',
-        true
-      );
+      setAuthStatus('De beveiligde inlog kon niet worden geladen. Tik op “App herstellen en vernieuwen” en probeer opnieuw.',true);
       const button=document.getElementById('signInButton');
       if(button)button.disabled=true;
     }
