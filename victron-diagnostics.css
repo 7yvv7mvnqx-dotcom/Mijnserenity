@@ -1,0 +1,51 @@
+.ms-vrm-diagnosis{
+  margin:0 0 18px;
+  padding:18px;
+  border:1px solid rgba(73,190,255,.28);
+  border-radius:24px;
+  color:#edf8ff;
+  background:linear-gradient(145deg,#071a29,#091421 68%,#0a2432);
+  box-shadow:0 18px 45px rgba(0,0,0,.22);
+}
+.ms-vrm-diagnosis *{box-sizing:border-box}
+.ms-vrm-diagnosis-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.ms-vrm-diagnosis-head h3{margin:4px 0 5px;font-size:21px}
+.ms-vrm-diagnosis-head p{max-width:620px;margin:0;color:#91aabc;font-size:12px;line-height:1.5}
+.ms-vrm-diagnosis-badge{flex:0 0 auto;padding:8px 11px;border:1px solid rgba(255,255,255,.14);border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.04em}
+.ms-vrm-diagnosis-badge.info{color:#a6c7d8;background:rgba(116,168,195,.1)}
+.ms-vrm-diagnosis-badge.good{color:#86efad;background:rgba(57,193,112,.13)}
+.ms-vrm-diagnosis-badge.warning{color:#ffd27d;background:rgba(238,167,36,.14)}
+.ms-vrm-diagnosis-badge.critical{color:#ff9a93;background:rgba(255,78,68,.15)}
+.ms-vrm-diagnosis-values{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:16px}
+.ms-vrm-diagnosis-values>div{min-width:0;padding:11px 8px;border-radius:14px;text-align:center;background:rgba(255,255,255,.05)}
+.ms-vrm-diagnosis-values small{display:block;color:#86a5b8;font-size:8px;font-weight:900;letter-spacing:.1em}
+.ms-vrm-diagnosis-values strong{display:block;margin-top:5px;overflow:hidden;color:#f5fbff;font-size:15px;text-overflow:ellipsis;white-space:nowrap}
+.ms-vrm-diagnosis-assessment{margin-top:12px;padding:14px 15px;border-left:4px solid #4a9bc8;border-radius:14px;background:rgba(41,122,164,.1)}
+.ms-vrm-diagnosis-assessment.warning{border-left-color:#e9a833;background:rgba(233,168,51,.1)}
+.ms-vrm-diagnosis-assessment.critical{border-left-color:#ff6258;background:rgba(255,70,60,.11)}
+.ms-vrm-diagnosis-assessment.good{border-left-color:#48cd82;background:rgba(72,205,130,.1)}
+.ms-vrm-diagnosis-assessment>strong{font-size:15px}
+.ms-vrm-diagnosis-assessment p{margin:5px 0 0;color:#c6d8e2;font-size:12px;line-height:1.5}
+.ms-vrm-diagnosis-assessment ul{display:grid;gap:5px;margin:10px 0 0;padding:0;list-style:none}
+.ms-vrm-diagnosis-assessment li{position:relative;padding-left:18px;color:#b8ccd8;font-size:11px;line-height:1.45}
+.ms-vrm-diagnosis-assessment li:before{position:absolute;left:0;content:'•';color:#69bde8;font-weight:900}
+.ms-vrm-diagnosis-assessment li.warning:before{color:#ffc760}
+.ms-vrm-diagnosis-assessment li.critical:before{color:#ff756d}
+.ms-vrm-diagnosis-actions{display:flex;gap:9px;margin-top:12px}
+.ms-vrm-diagnosis-actions button{min-height:42px;padding:0 14px;border:0;border-radius:13px;background:#147fbd;color:#fff;font-weight:850}
+.ms-vrm-diagnosis-actions button.secondary{background:rgba(255,255,255,.08);color:#dbeef8}
+.ms-vrm-diagnosis-actions button:disabled{cursor:wait;opacity:.65}
+.ms-vrm-diagnosis-status{margin:10px 0 0;color:#7f9daf;font-size:10px;line-height:1.45}
+.ms-vrm-diagnosis-status.success{color:#7fdca5}
+.ms-vrm-diagnosis-status.warning{color:#f5c66e}
+.ms-vrm-diagnosis-status.error{color:#ff8b83}
+.ms-vrm-diagnosis-status.busy{color:#78c9f2}
+@media(max-width:760px){
+  .ms-vrm-diagnosis{padding:14px;border-radius:20px}
+  .ms-vrm-diagnosis-head{display:grid}
+  .ms-vrm-diagnosis-badge{justify-self:start}
+  .ms-vrm-diagnosis-values{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ms-vrm-diagnosis-actions{display:grid}
+  .ms-vrm-diagnosis-actions button{width:100%}
+}
+

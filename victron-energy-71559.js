@@ -27,7 +27,8 @@ function bool(e){
 }
 function technical(){try{return typeof technicalStateCache!=='undefined'&&technicalStateCache?technicalStateCache:{}}catch{return{}}}
 function read(){
-  const t=technical(),vrm=window.MIJSERENITY_VRM_DATA?.energy||{};
+  const t=technical(),vrm=window.MIJSERENITY_VRM_DATA?.energy||{},diagnosis=window.MIJSERENITY_VRM_DIAGNOSTICS||{};
+  const directBattery=diagnosis.battery||{},directSolar=diagnosis.solar||{};
   let climate={salon:null,forward:null};
   try{if(typeof window.ms7102GetRuuviClimate==='function')climate=window.ms7102GetRuuviClimate()||climate}catch{}
   const soc=pick(['sensor.vrm_state_of_charge'],['state of charge','smartshunt soc','battery soc'],'%');
@@ -58,12 +59,12 @@ function read(){
     ['solar','pv','mppt']
   );
   const tv=v=>num(v?.state);
-  const vSoc=tv(soc)??num(t.houseSoc);
-  const vVoltage=tv(voltage)??num(t.houseVoltage);
-  const vCurrent=tv(current)??num(t.houseCurrent);
-  const vPower=tv(power)??num(t.housePower)??(vVoltage!==null&&vCurrent!==null?vVoltage*vCurrent:null);
-  const vSolar=tv(solar)??num(vrm.solarPower)??num(t.solarPower);
-  const vStart=tv(start)??num(t.startVoltage);
+  const vSoc=tv(soc)??num(directBattery.soc?.value)??num(t.houseSoc);
+  const vVoltage=tv(voltage)??num(directBattery.voltage?.value)??num(t.houseVoltage);
+  const vCurrent=tv(current)??num(directBattery.current?.value)??num(t.houseCurrent);
+  const vPower=tv(power)??num(directBattery.power?.value)??num(t.housePower)??(vVoltage!==null&&vCurrent!==null?vVoltage*vCurrent:null);
+  const vSolar=tv(solar)??num(directSolar.power?.value)??num(vrm.solarPower)??num(t.solarPower);
+  const vStart=tv(start)??num(directBattery.starterVoltage?.value)??num(t.startVoltage);
   const rawShoreV=tv(shoreVoltageEntity)??num(t.shoreVoltage);
   const validShoreV=rawShoreV!==null&&rawShoreV>=80&&rawShoreV<=280?rawShoreV:null;
   let shore=bool(shoreEntity);
@@ -78,7 +79,7 @@ function read(){
     soc:vSoc,voltage:vVoltage,current:vCurrent,power:vPower,time:tv(time)??num(t.houseTimeToGo),
     solar:vSolar,pvVoltage:num(vrm.pvVoltage),pvCurrent:num(vrm.pvCurrent),start:vStart,shore,shoreV:validShoreV,charger:chargerPower,shoreInferred,salonTemp:num(climate.salon?.temperature),machineTemp:num(climate.forward?.temperature),
     solarLabel:solar?(solar.name||solar.entity_id):'Victron SmartSolar MPPT',
-    hasVictron:Boolean(soc||voltage||current||power||solar||start||shoreEntity||shoreVoltageEntity||charger)
+    hasVictron:Boolean(soc||voltage||current||power||solar||start||shoreEntity||shoreVoltageEntity||charger||num(directBattery.soc?.value)!==null||num(directBattery.voltage?.value)!==null)
   };
 }
 function fmt(v,d=0,suffix=''){return v===null?'–'+suffix:`${Number(v).toLocaleString('nl-NL',{minimumFractionDigits:d,maximumFractionDigits:d})}${suffix}`}
@@ -134,6 +135,7 @@ window.msOpenVictronConsole=function(){
 window.addEventListener('mijnserenity-ha-state-updated',render);
 window.addEventListener('mijnserenity-vrm-updated',render);
 window.addEventListener('mijnserenity-ruuvi-vrm-updated',render);
+window.addEventListener('mijnserenity-vrm-diagnostics-updated',render);
 window.addEventListener('focus',render);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 setInterval(render,5000);
