@@ -1,5 +1,6 @@
 (()=>{
   'use strict';
+  if(window.__msDisableLegacyVisuals)return;
   const $=id=>document.getElementById(id);
   let overlayTimer=null;
   let overlayCleanupTimer=null;
@@ -120,7 +121,6 @@
     overlay.classList.add('hide');
     overlay.classList.remove('show');
     overlay.setAttribute('aria-hidden','true');
-    // Start blur -> scherp tegelijk met het rustig verdwijnen van de intro.
     document.body.classList.remove('ms-welcome-active');
     document.body.classList.add('ms-welcome-leaving');
     overlayCleanupTimer=setTimeout(()=>{
@@ -144,7 +144,6 @@
     document.body.classList.remove('ms-welcome-leaving');
     document.body.classList.add('ms-welcome-active');
     requestAnimationFrame(()=>requestAnimationFrame(()=>overlay.classList.add('show')));
-    // Geef de begroeting voldoende tijd om te landen voordat de interface scherp wordt.
     overlayTimer=setTimeout(hideWelcomeOverlay,3200);
   }
   function refreshWelcome(forceNew=false,showOverlayNow=false){
