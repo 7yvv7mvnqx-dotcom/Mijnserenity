@@ -1,12 +1,12 @@
-/* MijnSerenity 7.17.0 — lichte service worker
-   Geen scriptinjecties, geen complete app-shell van zware modules. */
-const CACHE_NAME='mijnserenity-7.17.0-core';
+/* MijnSerenity 7.17.1 — lichte service worker
+   Navigatie en code-updates netwerk-eerst; assets verder cachevriendelijk. */
+const CACHE_NAME='mijnserenity-7.17.1-core';
 const CORE_ASSETS=[
   '/',
   '/index.html',
   '/manifest.json',
-  '/auth-bootstrap.js?v=717000',
-  '/professional-ui-71700.css?v=717000',
+  '/auth-bootstrap.js?v=717010',
+  '/professional-ui-71700.css?v=717010',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -40,21 +40,29 @@ self.addEventListener('activate',event=>{
   })());
 });
 
-async function networkFirstNavigation(request){
+async function networkFirst(request,fallbackPath=null){
   try{
     const response=await fetch(request,{cache:'no-store'});
     if(response.ok){
       const cache=await caches.open(CACHE_NAME);
-      cache.put('/index.html',response.clone()).catch(()=>{});
+      cache.put(request,response.clone()).catch(()=>{});
+      if(fallbackPath)cache.put(fallbackPath,response.clone()).catch(()=>{});
     }
     return response;
   }catch(error){
-    return (await caches.match('/index.html'))||
-      new Response('MijnSerenity is offline. Controleer de verbinding en probeer opnieuw.',{
-        status:503,
-        headers:{'Content-Type':'text/plain; charset=utf-8'}
-      });
+    const cached=(await caches.match(request,{ignoreSearch:false}))||
+      (fallbackPath?await caches.match(fallbackPath):null);
+    return cached||new Response('',{status:503});
   }
+}
+
+async function networkFirstNavigation(request){
+  const response=await networkFirst(request,'/index.html');
+  if(response.status!==503)return response;
+  return new Response('MijnSerenity is offline. Controleer de verbinding en probeer opnieuw.',{
+    status:503,
+    headers:{'Content-Type':'text/plain; charset=utf-8'}
+  });
 }
 
 async function staleWhileRevalidate(request){
@@ -84,6 +92,12 @@ self.addEventListener('fetch',event=>{
 
   if(request.mode==='navigate'){
     event.respondWith(networkFirstNavigation(request));
+    return;
+  }
+
+  /* JS/CSS moeten na een hotfix direct actueel zijn; voorkom één stale laadbeurt. */
+  if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')){
+    event.respondWith(networkFirst(request));
     return;
   }
 
