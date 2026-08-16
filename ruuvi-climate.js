@@ -162,6 +162,9 @@
       const payload=await response.json().catch(()=>({}));
       if(!response.ok||payload?.success===false)throw new Error(payload?.error||payload?.message||`HTTP ${response.status}`);
       vrmClimate={salon:payload.salon||null,forward:payload.machinekamer||null,updatedAt:payload.updatedAt||new Date().toISOString(),error:''};
+      window.MIJSERENITY_VRM_DATA=payload;
+      try{localStorage.setItem('ms7150_vrm_last',JSON.stringify(payload))}catch{}
+      window.dispatchEvent(new CustomEvent('mijnserenity-vrm-updated',{detail:payload}));
       window.dispatchEvent(new CustomEvent('mijnserenity-ruuvi-vrm-updated',{detail:vrmClimate}));
       updateStaticVrmUi();
       queueRender();
@@ -328,6 +331,13 @@
   }
 
   function install(){
+    try{
+      const cached=JSON.parse(localStorage.getItem('ms7150_vrm_last')||'null');
+      if(cached){
+        window.MIJSERENITY_VRM_DATA=cached;
+        vrmClimate={salon:cached.salon||null,forward:cached.machinekamer||null,updatedAt:cached.updatedAt||null,error:''};
+      }
+    }catch{}
     window.ms7102GetRuuviClimate=climate;
     window.ms7102GetRuuviClimateConfig=readConfig;
     window.ms7102SaveRuuviClimate=saveFromUi;
