@@ -8,6 +8,7 @@
 
   /* Deze modules zijn nuttig direct na de kern, maar blokkeren de login niet meer. */
   const EARLY_MODULES=[
+    `runtime-performance-71700.js?v=${VERSION}`,
     `waterkaarten-gpx-share-71700.js?v=${VERSION}`,
     `dashboard-pro-71531-loader.js?v=${VERSION}`,
     `easy-auto.js?v=${VERSION}`,
