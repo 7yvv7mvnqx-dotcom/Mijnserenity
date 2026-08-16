@@ -1,27 +1,18 @@
-/* MijnSerenity 7.5.10 — Waterkaarten rechts en bevestiging na terugkeer */
+/* MijnSerenity — Waterkaarten ingebed in fullscreen iframe */
 (()=>{
   'use strict';
 
-  const SHORTCUT_NAME='Open Waterkaarten';
-  const SHORTCUT_URL='shortcuts://run-shortcut?name='+encodeURIComponent(SHORTCUT_NAME);
-  const OPEN_MARKER_KEY='mijnserenity-waterkaarten-opened-at';
-  const SPLIT_READY_KEY='mijnserenity-waterkaarten-right-window-ready';
-  const RECENT_OPEN_MS=4*60*60*1000;
+  const WATERKAARTEN_URL='https://mijn.waterkaarten.app/';
+  const FRAME_ID='msWaterkaartenFrame';
+  const OVERLAY_ID='ms738WaterkaartenModal';
+  const BANNER_ID='ms738WaterkaartenBanner';
+  const OPEN_CLASS='ms-waterkaarten-open';
+  const FIRST_INFO_KEY='mijnserenity-waterkaarten-iframe-info-seen';
 
-  let pendingReason='';
-  let observedTripStart=0;
-  let monitorTimer=null;
   let originalOpenWaterkaarten=null;
-
-  function isAppleMobile(){
-    return /iPad|iPhone|iPod/.test(navigator.userAgent)||
-      (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  }
-
-  function isIpad(){
-    return /iPad/.test(navigator.userAgent)||
-      (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  }
+  let observedTripStart=0;
+  let patchTimer=null;
+  let departureTimer=null;
 
   function safeRead(key,fallback=''){
     try{return localStorage.getItem(key)||fallback}catch{return fallback}
@@ -31,240 +22,190 @@
     try{localStorage.setItem(key,String(value))}catch{}
   }
 
-  function recentlyOpened(){
-    return Date.now()-Number(safeRead(OPEN_MARKER_KEY,'0'))<RECENT_OPEN_MS;
-  }
-
-  function splitReady(){
-    return safeRead(SPLIT_READY_KEY,'0')==='1';
+  function toast(message){
+    if(typeof window.showAppToast==='function'){
+      window.showAppToast(message);
+    }
   }
 
   function ensureUi(){
-    if(document.getElementById('ms738WaterkaartenModal'))return;
+    if(document.getElementById(OVERLAY_ID))return;
+
+    const overlay=document.createElement('div');
+    overlay.id=OVERLAY_ID;
+    overlay.className='mswk-overlay hidden';
+    overlay.setAttribute('role','dialog');
+    overlay.setAttribute('aria-modal','true');
+    overlay.setAttribute('aria-label','Waterkaarten in MijnSerenity');
+    overlay.innerHTML=`
+      <div class="mswk-shell">
+        <header class="mswk-toolbar">
+          <button type="button" class="mswk-back" onclick="ms738CloseWaterkaartenPrompt()" aria-label="Terug naar MijnSerenity">
+            <span aria-hidden="true">‹</span><b>MijnSerenity</b>
+          </button>
+          <div class="mswk-title">
+            <span class="mswk-title-icon" aria-hidden="true">🗺️</span>
+            <div><strong>Waterkaarten</strong><small>ingebed in MijnSerenity</small></div>
+          </div>
+          <button type="button" class="mswk-external" onclick="msWaterkaartenOpenExternal()" title="Open Waterkaarten apart">
+            <span aria-hidden="true">↗</span><b>Open apart</b>
+          </button>
+        </header>
+
+        <div class="mswk-frame-stage">
+          <div id="msWaterkaartenLoading" class="mswk-loading">
+            <div class="mswk-spinner" aria-hidden="true"></div>
+            <strong>Waterkaarten laden…</strong>
+            <small>Je blijft in MijnSerenity.</small>
+          </div>
+          <iframe id="${FRAME_ID}"
+            class="mswk-frame"
+            title="Waterkaarten"
+            allow="geolocation; fullscreen"
+            referrerpolicy="strict-origin-when-cross-origin"></iframe>
+
+          <div id="msWaterkaartenInfo" class="mswk-info hidden">
+            <button type="button" class="mswk-info-close" onclick="msWaterkaartenDismissInfo()" aria-label="Melding sluiten">×</button>
+            <b>Waterkaarten blijft binnen MijnSerenity</b>
+            <span>Log zo nodig één keer in. Blijft het vlak leeg of meldt Waterkaarten dat insluiten niet is toegestaan, gebruik dan <b>Open apart</b>.</span>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const frame=document.getElementById(FRAME_ID);
+    frame?.addEventListener('load',()=>{
+      document.getElementById('msWaterkaartenLoading')?.classList.add('hidden');
+    });
 
     const banner=document.createElement('div');
-    banner.id='ms738WaterkaartenBanner';
-    banner.className='ms738-waterkaarten-banner hidden';
+    banner.id=BANNER_ID;
+    banner.className='mswk-departure-banner hidden';
     banner.setAttribute('role','status');
     banner.innerHTML=`
-      <div class="ms738-waterkaarten-banner-copy">
-        <span>🗺️</span>
-        <div>
-          <b>Waterkaarten rechts openen</b>
-          <small>MijnSerenity blijft links zichtbaar voor de GPS-opname.</small>
-        </div>
+      <div class="mswk-departure-copy">
+        <span aria-hidden="true">🗺️</span>
+        <div><b>Waterkaarten</b><small>Open de kaart in MijnSerenity tijdens het varen.</small></div>
       </div>
-      <div class="ms759-banner-actions">
-        <button type="button" onclick="ms738LaunchWaterkaarten()">Open rechts</button>
-        <button id="ms7510BannerConfirm" type="button" class="secondary" onclick="ms759ConfirmWaterkaartenRight()">✓ Indeling staat goed</button>
+      <div class="mswk-departure-actions">
+        <button type="button" onclick="ms738LaunchWaterkaarten()">Open kaart</button>
+        <button type="button" class="secondary" onclick="msWaterkaartenHideDepartureBanner()" aria-label="Melding sluiten">×</button>
       </div>`;
     document.body.appendChild(banner);
-
-    const modal=document.createElement('div');
-    modal.id='ms738WaterkaartenModal';
-    modal.className='ms738-waterkaarten-modal hidden';
-    modal.setAttribute('role','dialog');
-    modal.setAttribute('aria-modal','true');
-    modal.setAttribute('aria-labelledby','ms738WaterkaartenTitle');
-    modal.innerHTML=`
-      <div class="ms738-waterkaarten-card" onclick="event.stopPropagation()">
-        <div class="ms738-waterkaarten-head">
-          <div>
-            <div class="ms738-waterkaarten-icon">↔️</div>
-            <span class="eyebrow">IPAD SPLITVIEW</span>
-            <h2 id="ms738WaterkaartenTitle">Waterkaarten altijd rechts</h2>
-          </div>
-          <button type="button" class="secondary ms738-waterkaarten-close" aria-label="Sluiten" onclick="ms738CloseWaterkaartenPrompt()">×</button>
-        </div>
-        <p id="ms738WaterkaartenMessage">Waterkaarten wordt via de iPad-opdracht geopend. De laatst gebruikte vensterpositie wordt daarbij hergebruikt.</p>
-        <div id="ms738WaterkaartenReady" class="ms759-split-ready hidden">
-          <b>✓ Rechter venster onthouden</b>
-          <span>Waterkaarten wordt zonder fullscreen-webfallback geopend.</span>
-        </div>
-        <div id="ms738WaterkaartenSteps" class="ms738-waterkaarten-steps">
-          <b>Eenmalig goed neerzetten</b>
-          <ol>
-            <li>Zet bij <b>Instellingen → Multitasking en gebaren</b> de optie <b>Apps in vensters</b> aan.</li>
-            <li>Tik op <b>Open Waterkaarten rechts</b>.</li>
-            <li>Maak MijnSerenity kleiner en plaats het links.</li>
-            <li>Plaats Waterkaarten rechts en laat beide vensters open.</li>
-            <li>Ga terug naar MijnSerenity en tik op <b>Indeling staat goed</b>.</li>
-          </ol>
-        </div>
-        <div class="ms738-waterkaarten-actions">
-          <button type="button" onclick="ms738LaunchWaterkaarten()">🗺️ Open Waterkaarten rechts</button>
-          <button id="ms759ConfirmSplit" type="button" class="secondary" onclick="ms759ConfirmWaterkaartenRight()">✓ Indeling staat goed</button>
-          <button type="button" class="secondary" onclick="ms759ResetWaterkaartenRight()">↺ Opnieuw indelen</button>
-          <button type="button" class="secondary" onclick="ms738CloseWaterkaartenPrompt()">Sluiten</button>
-        </div>
-        <p class="ms738-waterkaarten-note">iPadOS bepaalt de vensterpositie. MijnSerenity opent daarom uitsluitend de Waterkaarten-app en gebruikt geen fullscreen webpagina als reserve. Na één keer rechts plaatsen onthoudt iPadOS normaal de vensterindeling.</p>
-      </div>`;
-    modal.addEventListener('click',()=>window.ms738CloseWaterkaartenPrompt());
-    document.body.appendChild(modal);
-    renderSplitState();
   }
 
-  function renderSplitState(){
-    const ready=splitReady();
-    document.getElementById('ms738WaterkaartenReady')?.classList.toggle('hidden',!ready);
-    document.getElementById('ms738WaterkaartenSteps')?.classList.toggle('hidden',ready);
-    const confirm=document.getElementById('ms759ConfirmSplit');
-    if(confirm)confirm.classList.toggle('hidden',ready);
-    const bannerConfirm=document.getElementById('ms7510BannerConfirm');
-    if(bannerConfirm)bannerConfirm.classList.toggle('hidden',ready);
+  function setOpenState(open){
+    document.documentElement.classList.toggle(OPEN_CLASS,open);
+    document.body.classList.toggle(OPEN_CLASS,open);
   }
 
-  function setMessage(reason){
-    const message=document.getElementById('ms738WaterkaartenMessage');
-    if(!message)return;
-    if(reason==='return'){
-      message.textContent='Waterkaarten staat nu rechts? Tik op Indeling staat goed. Daarna gebruikt MijnSerenity deze werkwijze voortaan.';
-    }else if(reason==='departure'){
-      message.textContent='Vertrek gedetecteerd. Open Waterkaarten rechts terwijl MijnSerenity links de vaart blijft registreren.';
-    }else if(reason==='armed'){
-      message.textContent='Automatisch varen staat klaar. Open Waterkaarten rechts voordat je vertrekt.';
-    }else if(splitReady()){
-      message.textContent='Tik op Open Waterkaarten rechts. De eerder ingestelde rechter vensterpositie wordt hergebruikt.';
-    }else{
-      message.textContent='Zet de twee apps één keer naast elkaar: MijnSerenity links en Waterkaarten rechts.';
+  function loadFrame(){
+    const frame=document.getElementById(FRAME_ID);
+    if(!frame)return;
+    if(!frame.getAttribute('src')){
+      document.getElementById('msWaterkaartenLoading')?.classList.remove('hidden');
+      frame.setAttribute('src',WATERKAARTEN_URL);
     }
   }
 
-  function showPrompt(reason='manual'){
+  function showInfoOnce(){
+    if(safeRead(FIRST_INFO_KEY,'0')==='1')return;
+    const info=document.getElementById('msWaterkaartenInfo');
+    if(info)info.classList.remove('hidden');
+  }
+
+  function openEmbedded(){
     ensureUi();
-    pendingReason=reason;
-    setMessage(reason);
-    renderSplitState();
-    if(document.hidden)return;
-    document.getElementById('ms738WaterkaartenModal')?.classList.remove('hidden');
-    document.getElementById('ms738WaterkaartenBanner')?.classList.remove('hidden');
+    loadFrame();
+    document.getElementById(BANNER_ID)?.classList.add('hidden');
+    document.getElementById(OVERLAY_ID)?.classList.remove('hidden');
+    setOpenState(true);
+    showInfoOnce();
+    return false;
   }
 
-  function closePrompt(){
-    document.getElementById('ms738WaterkaartenModal')?.classList.add('hidden');
+  function closeEmbedded(){
+    document.getElementById(OVERLAY_ID)?.classList.add('hidden');
+    setOpenState(false);
   }
 
-  function confirmRight(){
-    safeWrite(SPLIT_READY_KEY,'1');
-    renderSplitState();
-    setMessage('manual');
-    if(typeof showAppToast==='function')showAppToast('Waterkaarten rechts is onthouden ✓');
+  function dismissInfo(){
+    safeWrite(FIRST_INFO_KEY,'1');
+    document.getElementById('msWaterkaartenInfo')?.classList.add('hidden');
   }
 
-  function resetRight(){
-    safeWrite(SPLIT_READY_KEY,'0');
-    renderSplitState();
-    setMessage('manual');
-    if(typeof showAppToast==='function')showAppToast('Zet MijnSerenity links en Waterkaarten rechts');
-  }
-
-  function launch(){
-    safeWrite(OPEN_MARKER_KEY,Date.now());
-    pendingReason='return';
-    closePrompt();
-    document.getElementById('ms738WaterkaartenBanner')?.classList.add('hidden');
-
-    if(typeof showAppToast==='function'){
-      showAppToast(
-        isIpad()
-          ?(splitReady()?'Waterkaarten rechts openen…':'Waterkaarten openen · plaats het venster rechts')
-          :'Waterkaarten openen…'
-      );
-    }
-
-    if(isIpad()){
-      // Bewust geen webfallback: die kan Safari of Waterkaarten fullscreen openen.
-      window.location.assign(SHORTCUT_URL);
-      return;
-    }
-
-    if(isAppleMobile()){
-      window.location.assign(SHORTCUT_URL);
-      return;
-    }
-
-    if(typeof originalOpenWaterkaarten==='function'){
-      originalOpenWaterkaarten();
-    }else{
-      window.open('https://mijn.waterkaarten.app/','_blank','noopener,noreferrer');
+  function openExternal(){
+    const win=window.open(WATERKAARTEN_URL,'_blank','noopener,noreferrer');
+    if(!win){
+      window.location.assign(WATERKAARTEN_URL);
     }
   }
 
-  function patchAllWaterkaartenButtons(){
-    if(typeof window.openWaterkaarten!=='function'||window.openWaterkaarten.__ms759RightPatched)return;
-    originalOpenWaterkaarten=window.openWaterkaarten;
+  function hideDepartureBanner(){
+    document.getElementById(BANNER_ID)?.classList.add('hidden');
+  }
+
+  function patchOpenWaterkaarten(){
+    const current=window.openWaterkaarten;
+    if(typeof current!=='function'||current.__msWaterkaartenIframePatched)return;
+
+    if(!originalOpenWaterkaarten)originalOpenWaterkaarten=current;
+
     const wrapped=function(){
-      if(isIpad())return launch();
-      return originalOpenWaterkaarten.apply(this,arguments);
+      return openEmbedded();
     };
-    wrapped.__ms759RightPatched=true;
+    wrapped.__msWaterkaartenIframePatched=true;
+    wrapped.__msWaterkaartenOriginal=current;
     window.openWaterkaarten=wrapped;
   }
 
   function detectAutomaticDeparture(){
-    if(typeof liveNavState==='undefined'||!liveNavState)return;
-    const startedAt=Number(liveNavState.startedAt||0);
-    const active=liveNavState.status==='active';
-    const automatic=Boolean(liveNavState.autoStarted);
+    try{
+      if(typeof liveNavState==='undefined'||!liveNavState)return;
+      const startedAt=Number(liveNavState.startedAt||0);
+      const active=liveNavState.status==='active';
+      const automatic=Boolean(liveNavState.autoStarted);
 
-    if(active&&automatic&&startedAt&&startedAt!==observedTripStart){
-      observedTripStart=startedAt;
-      document.getElementById('ms738WaterkaartenBanner')?.classList.remove('hidden');
-      if(!recentlyOpened())setTimeout(()=>showPrompt('departure'),1250);
-      return;
-    }
-
-    if(!active){
-      document.getElementById('ms738WaterkaartenBanner')?.classList.add('hidden');
-    }
+      if(active&&automatic&&startedAt&&startedAt!==observedTripStart){
+        observedTripStart=startedAt;
+        document.getElementById(BANNER_ID)?.classList.remove('hidden');
+      }else if(!active){
+        document.getElementById(BANNER_ID)?.classList.add('hidden');
+      }
+    }catch{}
   }
 
-  function patchAutomaticMode(){
-    if(typeof ms701EnableAutomaticMode!=='function'||ms701EnableAutomaticMode.__ms759Patched)return;
-    const original=ms701EnableAutomaticMode;
-    const wrapped=async function(userGesture=false){
-      const result=await original.apply(this,arguments);
-      if(userGesture&&isIpad())setTimeout(()=>showPrompt('armed'),150);
-      return result;
-    };
-    wrapped.__ms759Patched=true;
-    ms701EnableAutomaticMode=wrapped;
+  function handleKeydown(event){
+    if(event.key!=='Escape')return;
+    const overlay=document.getElementById(OVERLAY_ID);
+    if(overlay&&!overlay.classList.contains('hidden'))closeEmbedded();
   }
 
   function start(){
     ensureUi();
-    patchAllWaterkaartenButtons();
-    monitorTimer=setInterval(()=>{
-      patchAllWaterkaartenButtons();
-    },700);
+    patchOpenWaterkaarten();
 
-    const showConfirmationAfterReturn=()=>{
-      if(document.hidden||splitReady())return;
-      if(recentlyOpened()){
-        pendingReason='return';
-        setTimeout(()=>showPrompt('return'),180);
-      }
-    };
-
-    document.addEventListener('visibilitychange',()=>{
-      if(!document.hidden){
-        renderSplitState();
-        showConfirmationAfterReturn();
-      }
-    });
-    window.addEventListener('focus',showConfirmationAfterReturn);
-    window.addEventListener('pageshow',showConfirmationAfterReturn);
-
-    // Ook na een terugkeer via Opdrachten, waarbij iPadOS geen visibility-event geeft.
-    setInterval(showConfirmationAfterReturn,1200);
+    patchTimer=setInterval(patchOpenWaterkaarten,700);
+    departureTimer=setInterval(detectAutomaticDeparture,1200);
+    document.addEventListener('keydown',handleKeydown);
   }
 
-  window.ms738ShowWaterkaartenPrompt=showPrompt;
-  window.ms738CloseWaterkaartenPrompt=closePrompt;
-  window.ms738ToggleWaterkaartenHelp=()=>document.getElementById('ms738WaterkaartenSteps')?.classList.toggle('hidden');
-  window.ms738LaunchWaterkaarten=launch;
-  window.ms759ConfirmWaterkaartenRight=confirmRight;
-  window.ms759ResetWaterkaartenRight=resetRight;
+  /* Bestaande MijnSerenity-functienamen blijven bewust beschikbaar. */
+  window.ms738ShowWaterkaartenPrompt=openEmbedded;
+  window.ms738CloseWaterkaartenPrompt=closeEmbedded;
+  window.ms738LaunchWaterkaarten=openEmbedded;
+  window.ms738ToggleWaterkaartenHelp=showInfoOnce;
+  window.ms759ConfirmWaterkaartenRight=()=>{
+    dismissInfo();
+    toast('Waterkaarten opent voortaan in MijnSerenity ✓');
+  };
+  window.ms759ResetWaterkaartenRight=()=>{
+    safeWrite(FIRST_INFO_KEY,'0');
+    showInfoOnce();
+  };
+  window.msWaterkaartenOpenExternal=openExternal;
+  window.msWaterkaartenDismissInfo=dismissInfo;
+  window.msWaterkaartenHideDepartureBanner=hideDepartureBanner;
 
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',start,{once:true});
