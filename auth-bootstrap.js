@@ -1,9 +1,9 @@
-/* MijnSerenity 7.15.62 — betrouwbare loginbootstrap */
+/* MijnSerenity 7.16.0 — native appbasis + GPX Waterkaarten integratie */
 (()=>{
   'use strict';
 
-  const BUILD='7.15.62';
-  const VERSION='715620';
+  const BUILD='7.16.0';
+  const VERSION='716000';
   const APP_SCRIPTS=[
     `app.js?v=${VERSION}`,
     `receipt-reader-pro.js?v=${VERSION}`,
@@ -11,8 +11,7 @@
     `easy-auto.js?v=${VERSION}`,
     `auto-track-reliability.js?v=${VERSION}`,
     `gps-continuity-guard.js?v=${VERSION}`,
-    `waterkaarten-split-launch.js?v=${VERSION}`,
-    `waterkaarten-iframe-force-71561.js?v=${VERSION}`,
+    `waterkaarten-gpx-share-71600.js?v=${VERSION}`,
     `waterkaarten-dashboard-button-71562.js?v=${VERSION}`,
     `live-split.js?v=${VERSION}`,
     `route-control.js?v=${VERSION}`,
