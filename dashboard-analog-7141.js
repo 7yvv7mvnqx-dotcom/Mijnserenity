@@ -1,5 +1,6 @@
 (()=>{
   'use strict';
+  if(window.__msDisableLegacyVisuals)return;
   const $=id=>document.getElementById(id);
   const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
   const num=(id)=>{
