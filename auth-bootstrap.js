@@ -1,12 +1,9 @@
-/* MijnSerenity 7.17.1 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.18.0 — snelle, gefaseerde bootstrap */
 (()=>{
   'use strict';
-
-  /* Oude dashboardrenderers staan nog in index.html voor terugval, maar worden niet meer gestart. */
   window.__msDisableLegacyVisuals=true;
-
-  const BUILD='7.17.1';
-  const VERSION='717010';
+  const BUILD='7.18.0';
+  const VERSION='718000';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
@@ -56,7 +53,7 @@
     const version=document.getElementById('settingsAppVersion');
     if(version)version.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
-    const cockpitBadge=document.querySelector('#msProDashboard .msc-brand>b');
+    const cockpitBadge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(cockpitBadge)cockpitBadge.textContent=BUILD;
   }
 
@@ -68,9 +65,11 @@
   }
 
   function ensureProfessionalUi(){
-    if(!document.getElementById('msProfessionalUi717')){
+    if(!document.getElementById('msProfessionalUi718')){
+      const old=document.getElementById('msProfessionalUi717');
+      if(old)old.remove();
       const link=document.createElement('link');
-      link.id='msProfessionalUi717';
+      link.id='msProfessionalUi718';
       link.rel='stylesheet';
       link.href=`/professional-ui-71700.css?v=${VERSION}`;
       document.head.appendChild(link);
@@ -104,20 +103,17 @@
       const script=document.createElement('script');
       let finished=false;
       const timer=setTimeout(()=>finish(new Error(`Time-out bij laden van ${src}`)),timeoutMs);
-
       function finish(error){
         if(finished)return;
         finished=true;
         clearTimeout(timer);
         script.onload=null;
         script.onerror=null;
-        if(error){script.remove();reject(error)}
-        else resolve();
+        if(error){script.remove();reject(error)}else resolve();
       }
-
       script.src=src;
       script.async=false;
-      script.dataset.ms717='1';
+      script.dataset.ms718='1';
       if(src.startsWith('http'))script.crossOrigin='anonymous';
       script.onload=()=>finish();
       script.onerror=()=>finish(new Error(`Laden mislukt: ${src}`));
@@ -133,10 +129,7 @@
         await loadScript(source,15000);
         if(window.supabase?.createClient)return;
         throw new Error('Supabase-bibliotheek is niet gestart.');
-      }catch(error){
-        lastError=error;
-        console.warn('Supabase-bron niet beschikbaar:',source,error);
-      }
+      }catch(error){lastError=error;console.warn('Supabase-bron niet beschikbaar:',source,error)}
     }
     throw lastError||new Error('Geen beveiligde inlogverbinding beschikbaar.');
   }
@@ -148,10 +141,7 @@
       const registration=await navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'});
       registration.update().catch(()=>{});
       return registration;
-    }catch(error){
-      console.warn('Service worker kon niet worden geregistreerd:',error);
-      return null;
-    }
+    }catch(error){console.warn('Service worker kon niet worden geregistreerd:',error);return null}
   }
 
   function idle(){
@@ -164,8 +154,7 @@
   async function loadModuleQueue(modules,label){
     for(const src of modules){
       await idle();
-      try{await loadScript(src,20000)}
-      catch(error){console.warn(`${label} module overgeslagen:`,src,error)}
+      try{await loadScript(src,20000)}catch(error){console.warn(`${label} module overgeslagen:`,src,error)}
     }
   }
 
@@ -185,19 +174,15 @@
       addPreconnect('https://unpkg.com');
       syncBuildVersion();
       setAuthStatus('Beveiligde inlog wordt geladen…');
-
       ensureServiceWorker();
       await ensureSupabase();
       await loadScript(CORE_SCRIPT,25000);
       syncBuildVersion();
-
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
-
       const button=document.getElementById('signInButton');
       if(button)button.disabled=false;
       const target=document.getElementById('authMsg');
       if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
-
       setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),40);
       console.info(`MijnSerenity ${BUILD}: kern gestart.`);
     }catch(error){
