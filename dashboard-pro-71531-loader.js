@@ -1,10 +1,10 @@
-/* MijnSerenity 7.18.6 — Marine Glass dashboardloader */
+/* MijnSerenity 7.18.8 — Marine Glass dashboardloader */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71806)return;
-  window.__msDashboardLoader71806=true;
-  const V='718060';
-  const BUILD='7.18.6';
+  if(window.__msDashboardLoader71808)return;
+  window.__msDashboardLoader71808=true;
+  const V='718080';
+  const BUILD='7.18.8';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -44,6 +44,7 @@
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
     await load(`/marine-glass-polish-7185.js?v=${V}`,'marine-glass-polish');
+    await load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info');
 
     syncVersion();setTimeout(syncVersion,250);setTimeout(syncVersion,1200);setTimeout(syncVersion,3500);
 
