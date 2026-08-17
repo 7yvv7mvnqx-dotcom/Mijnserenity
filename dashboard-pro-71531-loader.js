@@ -1,9 +1,10 @@
-/* MijnSerenity 7.18.3 — Marine Glass dashboardloader */
+/* MijnSerenity 7.18.4 — Marine Glass dashboardloader */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71803)return;
-  window.__msDashboardLoader71803=true;
-  const V='718030';
+  if(window.__msDashboardLoader71804)return;
+  window.__msDashboardLoader71804=true;
+  const V='718040';
+  const BUILD='7.18.4';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -23,13 +24,44 @@
     });
   }
 
+  function loadCss(href,id){
+    let link=document.getElementById(id);
+    if(link){
+      if(link.getAttribute('href')!==href)link.setAttribute('href',href);
+      return;
+    }
+    link=document.createElement('link');
+    link.id=id;
+    link.rel='stylesheet';
+    link.href=href;
+    document.head.appendChild(link);
+  }
+
+  function syncVersion(){
+    window.MIJSERENITY_BUILD=BUILD;
+    const meta=document.querySelector('meta[name="mijnserenity-build"]');
+    if(meta)meta.content=BUILD;
+    const settings=document.getElementById('settingsAppVersion');
+    if(settings)settings.textContent=BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
+    const badge=document.querySelector('#msMarineGlass .mg-brand sup');
+    if(badge)badge.textContent=BUILD;
+  }
+
   async function start(){
     document.getElementById('mgNav718Style')?.remove();
     document.getElementById('mgMoreNav')?.remove();
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
+    document.getElementById('msMarineGlassMobile7182')?.remove();
 
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     await load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix');
+
+    /* Alleen layout: bestaande dashboard-, route- en navigatielogica blijft ongewijzigd. */
+    loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
+    syncVersion();
+    setTimeout(syncVersion,250);
+    setTimeout(syncVersion,1200);
 
     if(!document.getElementById('msAiDestinationCss')){
       const link=document.createElement('link');
