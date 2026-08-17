@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.10 — connectiviteit, GPS en cockpitpolish */
+/* MijnSerenity 7.18.11 — connectiviteit, GPS en cockpitpolish */
 (()=>{
   'use strict';
-  if(window.__msMarineGlassPolish71810)return;
-  window.__msMarineGlassPolish71810=true;
-  const BUILD='7.18.10';
+  if(window.__msMarineGlassPolish71811)return;
+  window.__msMarineGlassPolish71811=true;
+  const BUILD='7.18.11';
   const $=id=>document.getElementById(id);
   const num=value=>{
     const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
@@ -172,6 +172,7 @@
     window.addEventListener('mijnserenity:modules-ready',polish,{passive:true});
     window.addEventListener('mijnserenity:routechange',()=>setTimeout(polish,50),{passive:true});
     window.addEventListener('mijnserenity:waterkaarten-route-imported',()=>setTimeout(polish,50),{passive:true});
+    window.addEventListener('mijnserenity:waterkaarten-route-enriched',()=>setTimeout(polish,50),{passive:true});
     window.addEventListener('online',polish,{passive:true});window.addEventListener('offline',polish,{passive:true});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden){polish();syncBluetooth()}},{passive:true});
     window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
