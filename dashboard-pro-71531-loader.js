@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.1 — Marine Glass dashboardloader */
+/* MijnSerenity 7.18.3 — Marine Glass dashboardloader */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71801)return;
-  window.__msDashboardLoader71801=true;
-  const V='718010';
+  if(window.__msDashboardLoader71803)return;
+  window.__msDashboardLoader71803=true;
+  const V='718030';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -24,7 +24,6 @@
   }
 
   async function start(){
-    /* Geen eigen ondernavigatie meer: de bestaande MijnSerenity navigatie blijft leidend. */
     document.getElementById('mgNav718Style')?.remove();
     document.getElementById('mgMoreNav')?.remove();
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
