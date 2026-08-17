@@ -1,8 +1,8 @@
-/* MijnSerenity 7.18.7 — Waterkaarten GPX -> Reisplanner */
+/* MijnSerenity 7.18.10 — Waterkaarten GPX -> Reisplanner */
 (()=>{
   'use strict';
-  if(window.__msWaterkaartenRouteReceiver71870)return;
-  window.__msWaterkaartenRouteReceiver71870=true;
+  if(window.__msWaterkaartenRouteReceiver71810)return;
+  window.__msWaterkaartenRouteReceiver71810=true;
 
   const params=new URL(location.href).searchParams;
   if(params.get('waterkaarten')!=='check')return;
@@ -273,16 +273,27 @@
     localStorage.setItem(key,JSON.stringify(drafts.slice(0,40)));
   }
 
+  function activatePlan(plan){
+    window.MIJSERENITY_IMPORTED_ROUTE_PLAN=plan;
+    window.MIJSERENITY_ACTIVE_WATERKAARTEN_PLAN=plan;
+    try{window.plannerCurrentPlan=plan}catch{}
+  }
+
   function openPlanner(plan){
+    activatePlan(plan);
     try{
       if(typeof window.showPage==='function')window.showPage('planner');
       else document.querySelector('[data-page="planner"],#planner')?.scrollIntoView?.({block:'start'});
     }catch(error){console.warn('Reisplanner openen:',error)}
     window.loadPlannerDraft(plan.id);
+    activatePlan(plan);
     const url=new URL(location.href);
     url.searchParams.set('open','planner');
     url.searchParams.delete('waterkaarten');
     history.replaceState(history.state||{},'',`${url.pathname}${url.search}${url.hash}`);
+    requestAnimationFrame(()=>{
+      window.dispatchEvent(new CustomEvent('mijnserenity:routechange',{detail:{source:'waterkaarten',planId:plan.id}}));
+    });
   }
 
   async function run(){
@@ -301,10 +312,11 @@
 
     const plan=createPlan(claimedRoute,coords);
     storePlan(plan);
+    activatePlan(plan);
     openPlanner(plan);
     claimedRoute=null;
     notice(`Waterkaarten-route geladen in Reisplanner · ${plan.distanceKm.toFixed(1)} km`,'success');
-    window.dispatchEvent(new CustomEvent('mijnserenity:waterkaarten-route-imported',{detail:{planId:plan.id}}));
+    window.dispatchEvent(new CustomEvent('mijnserenity:waterkaarten-route-imported',{detail:{planId:plan.id,plan}}));
   }
 
   run().catch(async error=>{
