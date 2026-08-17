@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.10 — veilig herstel van Start/dashboard */
+/* MijnSerenity 7.18.11 — veilig herstel van Start/dashboard */
 (()=>{
   'use strict';
-  if(window.__msMarineGlassStartFix71810)return;
-  window.__msMarineGlassStartFix71810=true;
-  const BUILD='7.18.10';
+  if(window.__msMarineGlassStartFix71811)return;
+  window.__msMarineGlassStartFix71811=true;
+  const BUILD='7.18.11';
 
   function resetBrokenMobileLayer(){document.getElementById('msMarineGlassMobile7182')?.remove();document.body.classList.remove('mg-mode')}
   function syncVersion(){
