@@ -1,6 +1,6 @@
-/* MijnSerenity 7.18.5 — lichte service worker */
-const CACHE_NAME='mijnserenity-7.18.5-core';
-const CORE_ASSETS=['/','/index.html','/manifest.json','/auth-bootstrap.js?v=718000','/professional-ui-71700.css?v=718000','/dashboard-pro-71531-loader.js?v=718050','/dashboard-pro-71700.js?v=718050','/marine-glass-start-fix-71801.js?v=718050','/marine-glass-mobile-7184.css?v=718050','/marine-glass-polish-7185.css?v=718050','/marine-glass-polish-7185.js?v=718050','/icon-192.png','/icon-512.png'];
+/* MijnSerenity 7.18.6 — lichte service worker */
+const CACHE_NAME='mijnserenity-7.18.6-core';
+const CORE_ASSETS=['/','/index.html','/manifest.json','/auth-bootstrap.js?v=718000','/professional-ui-71700.css?v=718000','/dashboard-pro-71531-loader.js?v=718060','/dashboard-pro-71700.js?v=718060','/marine-glass-start-fix-71801.js?v=718060','/marine-glass-mobile-7184.css?v=718060','/marine-glass-polish-7185.css?v=718060','/marine-glass-polish-7185.js?v=718060','/icon-192.png','/icon-512.png'];
 async function cacheCore(cache,path){try{const response=await fetch(path,{cache:'reload'});if(response.ok)await cache.put(path,response)}catch(error){console.warn('Core asset niet vooraf opgeslagen:',path)}}
 self.addEventListener('install',event=>{event.waitUntil((async()=>{const cache=await caches.open(CACHE_NAME);await Promise.all(CORE_ASSETS.map(path=>cacheCore(cache,path)));await self.skipWaiting()})())});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME).map(key=>caches.delete(key)));await self.clients.claim()})())});
