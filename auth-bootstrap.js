@@ -1,14 +1,15 @@
-/* MijnSerenity 7.18.0 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.18.7 — snelle, gefaseerde bootstrap */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.0';
-  const VERSION='718000';
+  const BUILD='7.18.7';
+  const VERSION='718700';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
     `waterkaarten-gpx-share-71700.js?v=${VERSION}`,
+    `waterkaarten-route-receiver-71870.js?v=${VERSION}`,
     `dashboard-pro-71531-loader.js?v=${VERSION}`,
     `easy-auto.js?v=${VERSION}`,
     `auto-track-reliability.js?v=${VERSION}`,
