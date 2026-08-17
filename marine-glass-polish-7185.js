@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.6 — connectiviteit, GPS en cockpitpolish */
+/* MijnSerenity 7.18.8 — connectiviteit, GPS en cockpitpolish */
 (()=>{
   'use strict';
-  if(window.__msMarineGlassPolish7186)return;
-  window.__msMarineGlassPolish7186=true;
-  const BUILD='7.18.6';
+  if(window.__msMarineGlassPolish7188)return;
+  window.__msMarineGlassPolish7188=true;
+  const BUILD='7.18.8';
   const $=id=>document.getElementById(id);
   const num=value=>{
     const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
@@ -101,7 +101,6 @@
     if(type==='wifi')return 'Wifi / hotspot';
     if(type==='cellular')return 'Mobiel';
     if(type==='ethernet')return 'Ethernet';
-    /* effectiveType (4g/3g) zegt iets over snelheid, niet of iPad wifi gebruikt. */
     return 'Online';
   }
 
@@ -180,7 +179,6 @@
   }
 
   function cleanMapControls(){
-    /* Leaflet zoom blijft; de tweede, donkere knoppenstapel was dubbel. */
     const tools=document.querySelector('#msMarineGlass .mg-map-tools');
     if(tools)tools.hidden=true;
   }
