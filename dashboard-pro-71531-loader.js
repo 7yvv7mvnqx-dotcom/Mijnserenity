@@ -1,20 +1,17 @@
-/* MijnSerenity 7.18.9 — Marine Glass dashboardloader */
+/* MijnSerenity 7.18.10 — Marine Glass dashboardloader */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71809)return;
-  window.__msDashboardLoader71809=true;
-  const V='718090';
-  const BUILD='7.18.9';
+  if(window.__msDashboardLoader71810)return;
+  window.__msDashboardLoader71810=true;
+  const V='718100';
+  const BUILD='7.18.10';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
     if([...document.scripts].some(script=>{try{return new URL(script.src,location.href).pathname===wanted}catch{return false}}))return Promise.resolve();
     return new Promise(resolve=>{
-      const script=document.createElement('script');
-      script.dataset.msDashboard=key;
-      script.src=src;
-      script.onload=()=>resolve();
-      script.onerror=()=>{console.warn('Dashboardmodule kon niet laden:',src);resolve()};
+      const script=document.createElement('script');script.dataset.msDashboard=key;script.src=src;
+      script.onload=()=>resolve();script.onerror=()=>{console.warn('Dashboardmodule kon niet laden:',src);resolve()};
       document.head.appendChild(script);
     });
   }
