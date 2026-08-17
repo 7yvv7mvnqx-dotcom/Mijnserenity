@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.8 — connectiviteit, GPS en cockpitpolish */
+/* MijnSerenity 7.18.9 — connectiviteit, GPS en cockpitpolish */
 (()=>{
   'use strict';
-  if(window.__msMarineGlassPolish7188)return;
-  window.__msMarineGlassPolish7188=true;
-  const BUILD='7.18.8';
+  if(window.__msMarineGlassPolish7189)return;
+  window.__msMarineGlassPolish7189=true;
+  const BUILD='7.18.9';
   const $=id=>document.getElementById(id);
   const num=value=>{
     const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
@@ -51,7 +51,7 @@
   }
 
   function routeIsActive(){
-    const plan=window.plannerCurrentPlan||{};
+    const plan=window.MIJSERENITY_IMPORTED_ROUTE_PLAN||window.plannerCurrentPlan||{};
     const state=window.liveNavState||{};
     const arrays=[plan.routeCoordinates,plan.route?.coordinates,plan.routeGeometry?.coordinates,plan.points,state.routeCoordinates,state.route,state.plannedRoute];
     if(arrays.some(value=>Array.isArray(value)&&value.length>1))return true;
