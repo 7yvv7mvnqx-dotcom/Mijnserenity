@@ -1,8 +1,8 @@
-/* MijnSerenity 7.18.8 — Waterkaarten route-informatie in Marine Glass */
+/* MijnSerenity 7.18.9 — Waterkaarten route-informatie in Marine Glass */
 (()=>{
   'use strict';
-  if(window.__msWaterkaartenMarineRoute7188)return;
-  window.__msWaterkaartenMarineRoute7188=true;
+  if(window.__msWaterkaartenMarineRoute7189)return;
+  window.__msWaterkaartenMarineRoute7189=true;
 
   const $=id=>document.getElementById(id);
   const set=(id,value)=>{
@@ -14,7 +14,9 @@
     return true;
   };
   const number=value=>{
-    const parsed=Number(String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/)?.[0]);
+    const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
+    if(!match)return null;
+    const parsed=Number(match[0]);
     return Number.isFinite(parsed)?parsed:null;
   };
   const fmtKm=value=>Number(value).toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})+' km';
@@ -39,8 +41,15 @@
     const candidates=[];
     try{candidates.push(window.ms660NavigationPlan?.())}catch{}
     candidates.push(window.MIJSERENITY_IMPORTED_ROUTE_PLAN,window.plannerCurrentPlan);
-    for(const plan of candidates){if(isWaterkaarten(plan))return plan}
-    return storedWaterkaartenPlan();
+    for(const plan of candidates){
+      if(isWaterkaarten(plan)){
+        window.MIJSERENITY_IMPORTED_ROUTE_PLAN=plan;
+        return plan;
+      }
+    }
+    const stored=storedWaterkaartenPlan();
+    if(stored)window.MIJSERENITY_IMPORTED_ROUTE_PLAN=stored;
+    return stored;
   }
 
   function coord(value){
@@ -48,8 +57,10 @@
       const lon=Number(value[0]),lat=Number(value[1]);
       return Number.isFinite(lat)&&Number.isFinite(lon)?{lat,lon}:null;
     }
-    const lat=Number(value?.lat??value?.latitude??value?.position?.lat);
-    const lon=Number(value?.lon??value?.lng??value?.longitude??value?.position?.lon);
+    if(Array.isArray(value?.geometry?.coordinates))return coord(value.geometry.coordinates);
+    if(Array.isArray(value?.location?.coordinates))return coord(value.location.coordinates);
+    const lat=Number(value?.lat??value?.latitude??value?.position?.lat??value?.location?.lat);
+    const lon=Number(value?.lon??value?.lng??value?.longitude??value?.position?.lon??value?.position?.lng??value?.location?.lon??value?.location?.lng);
     return Number.isFinite(lat)&&Number.isFinite(lon)?{lat,lon}:null;
   }
 
@@ -89,12 +100,11 @@
     return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
   }
 
-  function routeStats(points,position){
+  function routeModel(points,position){
     const cumulative=[0];
     for(let i=1;i<points.length;i++)cumulative[i]=cumulative[i-1]+distanceKm(points[i-1],points[i]);
     const total=cumulative[cumulative.length-1]||0;
-    if(!position)return {total,progressKm:0,progress:0,nearestIndex:0,onRoute:false};
-
+    if(!position)return {total,cumulative,progressKm:0,progress:0,nearestIndex:0,onRoute:false};
     let nearestIndex=0,nearestDistance=Infinity;
     points.forEach((point,index)=>{
       const distance=distanceKm(position,point);
@@ -103,12 +113,9 @@
     const onRoute=nearestDistance<=1.5;
     const progressKm=onRoute?(cumulative[nearestIndex]||0):0;
     return {
-      total,
-      progressKm,
+      total,cumulative,progressKm,
       progress:total>0?Math.max(0,Math.min(100,Math.round(progressKm/total*100))):0,
-      nearestIndex,
-      nearestDistance,
-      onRoute
+      nearestIndex,nearestDistance,onRoute
     };
   }
 
@@ -127,20 +134,56 @@
     return eta.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
   }
 
-  function routePois(plan,points){
+  function allPois(){
+    try{
+      if(typeof poiCache!=='undefined'&&Array.isArray(poiCache))return poiCache;
+    }catch{}
+    return Array.isArray(window.poiCache)?window.poiCache:[];
+  }
+
+  function poiText(item){
+    const props=item?.properties||{};
+    return `${item?.category||''} ${item?.type||''} ${item?.kind||''} ${item?.label||''} ${item?.name||''} ${item?.title||''} ${props.category||''} ${props.type||''} ${props.name||''}`.toLowerCase();
+  }
+
+  function routePois(plan,points,model){
     if(Array.isArray(plan?.routePois)&&plan.routePois.length)return plan.routePois;
     try{
       if(typeof window.ms650CollectRoutePois==='function'){
         const pois=window.ms650CollectRoutePois(points,Array.isArray(plan?.points)?plan.points:[]);
-        if(Array.isArray(pois))return pois;
+        if(Array.isArray(pois)&&pois.length)return pois;
       }
     }catch(error){console.debug('POI aanvullen Waterkaarten-route:',error)}
-    return [];
+
+    const result=[];
+    for(const item of allPois()){
+      if(!/brug|sluis|bridge|lock/.test(poiText(item)))continue;
+      const p=coord(item);
+      if(!p)continue;
+      let bestDistance=Infinity,bestIndex=0;
+      points.forEach((routePoint,index)=>{
+        const distance=distanceKm(p,routePoint);
+        if(distance<bestDistance){bestDistance=distance;bestIndex=index}
+      });
+      if(bestDistance>0.55)continue;
+      result.push({...item,alongRouteKm:model.cumulative[bestIndex]||0,distanceToRouteKm:bestDistance});
+    }
+    return result;
   }
 
-  function nextBridgeOrLock(plan,points,progressKm){
-    const candidates=routePois(plan,points)
-      .filter(item=>/brug|sluis|bridge|lock/i.test(`${item?.category||''} ${item?.type||''} ${item?.label||''} ${item?.name||''}`))
+  function timingText(item){
+    const props=item?.properties||{};
+    const values=[
+      item?.operatingHours,item?.openingHours,item?.opening_hours,item?.bedieningstijden,item?.serviceHours,item?.schedule,
+      props.operatingHours,props.openingHours,props.opening_hours,props.bedieningstijden,props.serviceHours,props.schedule
+    ];
+    const value=values.find(v=>typeof v==='string'&&v.trim());
+    return value?String(value).trim():'';
+  }
+
+  function nextBridgeOrLock(plan,points,model,progressKm){
+    const candidates=routePois(plan,points,model)
+      .filter(item=>/brug|sluis|bridge|lock/.test(poiText(item)))
       .map(item=>{
         let along=number(item?.alongRouteKm);
         if(along==null){
@@ -151,9 +194,7 @@
               const distance=distanceKm(p,routePoint);
               if(distance<best.distance)best={distance,index};
             });
-            let sum=0;
-            for(let i=1;i<=best.index;i++)sum+=distanceKm(points[i-1],points[i]);
-            along=sum;
+            along=model.cumulative[best.index]||0;
           }
         }
         return {...item,along};
@@ -163,8 +204,8 @@
 
     const next=candidates[0];
     if(!next)return null;
-    const label=String(next.label||next.name||next.title||next.category||'Brug/sluis');
-    return {label,distanceKm:Math.max(0,next.along-progressKm)};
+    const label=String(next.label||next.name||next.title||next?.properties?.name||next.category||'Brug/sluis');
+    return {label,distanceKm:Math.max(0,next.along-progressKm),timing:timingText(next)};
   }
 
   function sourceBadge(){
@@ -181,6 +222,29 @@
     badge.textContent='Waterkaarten GPX';
   }
 
+  function legacyField(id,value){
+    let el=$(id);
+    if(!el){
+      el=document.createElement('span');
+      el.id=id;
+      el.hidden=true;
+      el.setAttribute('aria-hidden','true');
+      (document.body||document.documentElement).appendChild(el);
+    }
+    const text=String(value??'–');
+    if(el.textContent!==text)el.textContent=text;
+  }
+
+  function bridgeLegacy({eta,remaining,duration,next,nextMeta}){
+    legacyField('msnSmartEta',eta);
+    legacyField('mscrEta',eta);
+    legacyField('msnSmartRemaining',remaining);
+    legacyField('msnSmartDuration',duration);
+    legacyField('msnSmartNext',next);
+    legacyField('mscrNext',next);
+    legacyField('mscrNextDist',nextMeta);
+  }
+
   let applying=false;
   function apply(){
     if(applying)return;
@@ -191,32 +255,38 @@
 
     applying=true;
     try{
-      const stats=routeStats(points,currentPosition());
+      const model=routeModel(points,currentPosition());
       const planTotal=number(plan.distanceKm);
-      const total=planTotal!=null&&planTotal>0?planTotal:stats.total;
-      const progressKm=stats.onRoute?Math.min(stats.progressKm,total):0;
+      const total=planTotal!=null&&planTotal>0?planTotal:model.total;
+      const progressKm=model.onRoute?Math.min(model.progressKm,total):0;
       const remaining=Math.max(0,total-progressKm);
       const actualSpeed=number($('mg-speed')?.textContent);
       const planSpeed=number(plan.speed);
       const speed=actualSpeed!=null&&actualSpeed>=0.5?actualSpeed:(planSpeed!=null&&planSpeed>0?planSpeed:9);
       const remainingHours=speed>0?remaining/speed:null;
       const progress=total>0?Math.max(0,Math.min(100,Math.round(progressKm/total*100))):0;
+      const eta=formatEta(remainingHours);
+      const duration=formatDuration(remainingHours);
+      const remainingText=fmtKm(remaining);
 
-      set('mgEta',formatEta(remainingHours));
-      set('mgRemain',fmtKm(remaining));
-      set('mgDuration',formatDuration(remainingHours));
+      const next=nextBridgeOrLock(plan,points,model,progressKm);
+      const nextLabel=next?.label||'Geen brug/sluis gevonden';
+      const nextMeta=next
+        ?`${fmtKm(next.distanceKm)} resterend${next.timing?` · ${next.timing}`:''}`
+        :'Controleer route in Reisplanner';
+
+      /* Voed eerst de bronnen die de bestaande cockpit iedere 3 seconden uitleest. */
+      bridgeLegacy({eta,remaining:remainingText,duration,next:nextLabel,nextMeta});
+
+      /* En werk daarna de zichtbare kaart direct bij. */
+      set('mgEta',eta);
+      set('mgRemain',remainingText);
+      set('mgDuration',duration);
+      set('mgNext',nextLabel);
+      set('mgNextMeta',nextMeta);
       set('mgProgTxt',`${progress}%`);
       const bar=$('mgProg');
       if(bar&&bar.style.width!==`${progress}%`)bar.style.width=`${progress}%`;
-
-      const next=nextBridgeOrLock(plan,points,progressKm);
-      if(next){
-        set('mgNext',next.label);
-        set('mgNextMeta',`${fmtKm(next.distanceKm)} resterend`);
-      }else{
-        set('mgNext','Geen brug/sluisgegevens in GPX');
-        set('mgNextMeta','Route zelf is wel volledig geladen');
-      }
       sourceBadge();
     }finally{applying=false}
   }
@@ -226,7 +296,7 @@
     if(!card||card.dataset.waterkaartenObserved==='1')return;
     card.dataset.waterkaartenObserved='1';
     if(window.MutationObserver){
-      const observer=new MutationObserver(()=>requestAnimationFrame(apply));
+      const observer=new MutationObserver(()=>queueMicrotask(apply));
       observer.observe(card,{subtree:true,childList:true,characterData:true});
     }
   }
@@ -234,8 +304,9 @@
   function start(){
     const run=()=>{observe();apply()};
     run();
-    setTimeout(run,250);
-    setTimeout(run,1200);
+    setTimeout(run,200);
+    setTimeout(run,900);
+    setTimeout(run,2500);
     window.addEventListener('mijnserenity:waterkaarten-route-imported',event=>{
       try{
         const key=typeof window.plannerStorageKey==='function'?window.plannerStorageKey():'';
@@ -243,11 +314,11 @@
         const plan=Array.isArray(drafts)?drafts.find(item=>String(item?.id||'')===String(event?.detail?.planId||'')):null;
         if(plan)window.MIJSERENITY_IMPORTED_ROUTE_PLAN=plan;
       }catch{}
-      requestAnimationFrame(run);
+      queueMicrotask(run);
     },{passive:true});
-    window.addEventListener('mijnserenity:routechange',()=>requestAnimationFrame(run),{passive:true});
-    window.addEventListener('pageshow',()=>requestAnimationFrame(run),{passive:true});
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)requestAnimationFrame(run)},{passive:true});
+    window.addEventListener('mijnserenity:routechange',()=>queueMicrotask(run),{passive:true});
+    window.addEventListener('pageshow',()=>queueMicrotask(run),{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)queueMicrotask(run)},{passive:true});
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
