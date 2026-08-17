@@ -1,10 +1,10 @@
-/* MijnSerenity 7.18.4 — Marine Glass dashboardloader */
+/* MijnSerenity 7.18.5 — Marine Glass dashboardloader */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71804)return;
-  window.__msDashboardLoader71804=true;
-  const V='718040';
-  const BUILD='7.18.4';
+  if(window.__msDashboardLoader71805)return;
+  window.__msDashboardLoader71805=true;
+  const V='718050';
+  const BUILD='7.18.5';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -57,11 +57,14 @@
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     await load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix');
 
-    /* Alleen layout: bestaande dashboard-, route- en navigatielogica blijft ongewijzigd. */
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
+    loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
+    await load(`/marine-glass-polish-7185.js?v=${V}`,'marine-glass-polish');
+
     syncVersion();
     setTimeout(syncVersion,250);
     setTimeout(syncVersion,1200);
+    setTimeout(syncVersion,3500);
 
     if(!document.getElementById('msAiDestinationCss')){
       const link=document.createElement('link');
