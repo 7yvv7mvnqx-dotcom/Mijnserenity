@@ -1,6 +1,49 @@
-/* MijnSerenity 7.18.0 — Marine Glass dashboardloader */
-(()=>{'use strict';if(window.__msDashboardLoader718)return;window.__msDashboardLoader718=1;const V='718000';
-function load(src,key){if([...document.scripts].some(s=>{try{return new URL(s.src).pathname===new URL(src,location.href).pathname}catch{return false}}))return Promise.resolve();return new Promise(resolve=>{const s=document.createElement('script');s.dataset.msDashboard=key;s.src=src;s.onload=resolve;s.onerror=()=>{console.warn('Dashboardmodule kon niet laden:',src);resolve()};document.head.appendChild(s)})}
-function navStyle(){if(document.getElementById('mgNav718Style'))return;const s=document.createElement('style');s.id='mgNav718Style';s.textContent=`.bottom-nav.mg-nav .bottom-nav-item{flex-direction:column!important;gap:2px!important}.bottom-nav.mg-nav .bottom-nav-item small{display:none!important}.bottom-nav.mg-nav .bottom-nav-item::after{font-size:10px;line-height:1;color:inherit;white-space:nowrap}.bottom-nav.mg-nav [data-target="dashboard"]{order:1}.bottom-nav.mg-nav [data-target="dashboard"]::after{content:"Dashboard"}.bottom-nav.mg-nav [data-target="live"]{order:2}.bottom-nav.mg-nav [data-target="live"]::after{content:"Live varen"}.bottom-nav.mg-nav [data-target="map"]{order:3}.bottom-nav.mg-nav [data-target="map"]::after{content:"Kaart"}.bottom-nav.mg-nav [data-target="planner"]{order:4}.bottom-nav.mg-nav [data-target="planner"]::after{content:"Reisplanner"}.bottom-nav.mg-nav [data-target="pois"]{order:5}.bottom-nav.mg-nav [data-target="pois"]::after{content:"POI"}.bottom-nav.mg-nav [data-target="technical"]{order:6}.bottom-nav.mg-nav [data-target="technical"]::after{content:"Techniek"}.bottom-nav.mg-nav [data-target="logbook"]{order:7}.bottom-nav.mg-nav [data-target="logbook"]::after{content:"Logboek"}.bottom-nav.mg-nav #mgMoreNav{order:8}.bottom-nav.mg-nav #mgMoreNav small{display:block!important;font-size:10px!important}`;document.head.appendChild(s)}
-async function start(){navStyle();await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');if(!document.getElementById('msAiDestinationCss')){const l=document.createElement('link');l.id='msAiDestinationCss';l.rel='stylesheet';l.href=`/ai-destination-search.css?v=${V}`;document.head.appendChild(l)}if('requestIdleCallback'in window)requestIdleCallback(()=>load(`/ai-destination-search.js?v=${V}`,'destination'),{timeout:800});else setTimeout(()=>load(`/ai-destination-search.js?v=${V}`,'destination'),120)}
-start().catch(e=>console.warn('Marine Glass loader:',e))})();
+/* MijnSerenity 7.18.1 — Marine Glass dashboardloader */
+(()=>{
+  'use strict';
+  if(window.__msDashboardLoader71801)return;
+  window.__msDashboardLoader71801=true;
+  const V='718010';
+
+  function load(src,key){
+    const wanted=new URL(src,location.href).pathname;
+    if([...document.scripts].some(script=>{
+      try{return new URL(script.src,location.href).pathname===wanted}catch{return false}
+    }))return Promise.resolve();
+    return new Promise(resolve=>{
+      const script=document.createElement('script');
+      script.dataset.msDashboard=key;
+      script.src=src;
+      script.onload=()=>resolve();
+      script.onerror=()=>{
+        console.warn('Dashboardmodule kon niet laden:',src);
+        resolve();
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  async function start(){
+    /* Geen eigen ondernavigatie meer: de bestaande MijnSerenity navigatie blijft leidend. */
+    document.getElementById('mgNav718Style')?.remove();
+    document.getElementById('mgMoreNav')?.remove();
+    document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
+
+    await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
+    await load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix');
+
+    if(!document.getElementById('msAiDestinationCss')){
+      const link=document.createElement('link');
+      link.id='msAiDestinationCss';
+      link.rel='stylesheet';
+      link.href=`/ai-destination-search.css?v=${V}`;
+      document.head.appendChild(link);
+    }
+
+    const loadDestination=()=>load(`/ai-destination-search.js?v=${V}`,'destination');
+    if('requestIdleCallback' in window)requestIdleCallback(loadDestination,{timeout:800});
+    else setTimeout(loadDestination,120);
+  }
+
+  start().catch(error=>console.warn('Marine Glass loader:',error));
+})();
