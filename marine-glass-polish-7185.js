@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.5 — veilige statuspolish */
+/* MijnSerenity 7.18.6 — connectiviteit, GPS en cockpitpolish */
 (()=>{
   'use strict';
-  if(window.__msMarineGlassPolish7185)return;
-  window.__msMarineGlassPolish7185=true;
-  const BUILD='7.18.5';
+  if(window.__msMarineGlassPolish7186)return;
+  window.__msMarineGlassPolish7186=true;
+  const BUILD='7.18.6';
   const $=id=>document.getElementById(id);
   const num=value=>{
     const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
@@ -53,15 +53,7 @@
   function routeIsActive(){
     const plan=window.plannerCurrentPlan||{};
     const state=window.liveNavState||{};
-    const arrays=[
-      plan.routeCoordinates,
-      plan.route?.coordinates,
-      plan.routeGeometry?.coordinates,
-      plan.points,
-      state.routeCoordinates,
-      state.route,
-      state.plannedRoute
-    ];
+    const arrays=[plan.routeCoordinates,plan.route?.coordinates,plan.routeGeometry?.coordinates,plan.points,state.routeCoordinates,state.route,state.plannedRoute];
     if(arrays.some(value=>Array.isArray(value)&&value.length>1))return true;
     if(Array.isArray(plan.segments)&&plan.segments.some(segment=>Array.isArray(segment?.routeCoordinates)&&segment.routeCoordinates.length>1))return true;
     return Boolean(plan.destination||plan.destinationName||state.destination||state.destinationName);
@@ -100,11 +92,97 @@
     alarmButton.classList.toggle('has-active-alarm',count>0);
   }
 
-  function syncInternet(){
-    if(!navigator.onLine){set('mgNet','Offline');return}
+  function connectionLabel(){
+    if(!navigator.onLine)return 'Offline';
+    const nativeType=String(window.MIJSERENITY_NETWORK_TYPE||'').trim();
+    if(nativeType)return nativeType;
     const connection=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-    const type=String(connection?.effectiveType||'').toUpperCase();
-    set('mgNet',type||'Online');
+    const type=String(connection?.type||'').toLowerCase();
+    if(type==='wifi')return 'Wifi / hotspot';
+    if(type==='cellular')return 'Mobiel';
+    if(type==='ethernet')return 'Ethernet';
+    /* effectiveType (4g/3g) zegt iets over snelheid, niet of iPad wifi gebruikt. */
+    return 'Online';
+  }
+
+  function syncInternet(){set('mgNet',connectionLabel())}
+
+  async function connectedBluetoothDevices(){
+    const bridged=Array.isArray(window.MIJSERENITY_BLUETOOTH_DEVICES)
+      ?window.MIJSERENITY_BLUETOOTH_DEVICES.filter(device=>device&&device.connected!==false)
+      :[];
+    if(bridged.length)return bridged.map(device=>({name:String(device.name||device.label||'Bluetooth-apparaat')}));
+    const bluetooth=navigator.bluetooth;
+    if(!bluetooth||typeof bluetooth.getDevices!=='function')return [];
+    try{
+      const devices=await bluetooth.getDevices();
+      return devices.filter(device=>device?.gatt?.connected).map(device=>({name:device.name||'Bluetooth-apparaat'}));
+    }catch{return []}
+  }
+
+  async function syncBluetooth(){
+    const status=document.querySelector('#msMarineGlass .mg-status');
+    if(!status)return;
+    const devices=await connectedBluetoothDevices();
+    let button=$('mgBluetoothStatus');
+    if(!devices.length){button?.remove();return}
+    if(!button){
+      button=document.createElement('button');
+      button.id='mgBluetoothStatus';
+      button.type='button';
+      button.className='mg-bluetooth';
+      button.innerHTML='<small>Bluetooth</small><strong></strong>';
+      const alarm=status.querySelector('.alarm');
+      if(alarm)status.insertBefore(button,alarm);else status.appendChild(button);
+    }
+    const names=devices.map(device=>device.name).filter(Boolean);
+    const label=names.length===1?names[0]:`${names.length} verbonden`;
+    button.querySelector('strong').textContent=`◉ ${label}`;
+    button.title=`Verbonden Bluetooth: ${names.join(', ')}`;
+  }
+
+  function aisStatus(){
+    const source=$('ms711AisConnection');
+    const text=String(source?.textContent||'').trim();
+    if(/AIS online/i.test(text))return {online:true,label:'AIS online',sub:'Open AIS-kaart'};
+    if(/offline/i.test(text))return {online:false,label:'AIS offline',sub:'Internet vereist'};
+    return {online:false,label:'AIS omgeving',sub:'Open AIS-kaart'};
+  }
+
+  function openAis(){
+    if(typeof window.captainNavigate==='function')window.captainNavigate('ais');
+    else if(typeof window.ms708GoToPage==='function')window.ms708GoToPage('ais',true);
+  }
+
+  function syncRadar(){
+    const radar=document.querySelector('#msMarineGlass .mg-radar');
+    if(!radar)return;
+    radar.classList.add('mg-ais-shortcut');
+    radar.setAttribute('role','button');
+    radar.setAttribute('tabindex','0');
+    radar.setAttribute('aria-label','Open AIS-kaart');
+    radar.onclick=openAis;
+    radar.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openAis()}};
+    let status=radar.querySelector('.mg-radar-status');
+    if(!status){
+      status=document.createElement('div');
+      status.className='mg-radar-status';
+      radar.appendChild(status);
+    }
+    const info=aisStatus();
+    radar.classList.toggle('ais-online',info.online);
+    status.innerHTML=`<strong>${info.label}</strong><small>${info.sub}</small>`;
+    const range=radar.querySelector(':scope > span');
+    if(range)range.textContent='AIS';
+    const course=num($('mg-course')?.textContent);
+    const sweep=radar.querySelector(':scope > i');
+    if(sweep)sweep.style.transform=`rotate(${(course??0)-90}deg)`;
+  }
+
+  function cleanMapControls(){
+    /* Leaflet zoom blijft; de tweede, donkere knoppenstapel was dubbel. */
+    const tools=document.querySelector('#msMarineGlass .mg-map-tools');
+    if(tools)tools.hidden=true;
   }
 
   function dashboardVisible(){
@@ -122,19 +200,29 @@
     syncRoutePresentation();
     syncEnergyWarning();
     syncAlarmPresentation();
+    syncRadar();
+    cleanMapControls();
+  }
+
+  function guardStatusFields(){
+    const net=$('mgNet'),gps=$('mgGps');
+    if(!window.MutationObserver)return;
+    if(net){new MutationObserver(()=>queueMicrotask(syncInternet)).observe(net,{childList:true,characterData:true,subtree:true})}
+    if(gps){new MutationObserver(()=>queueMicrotask(syncGps)).observe(gps,{childList:true,characterData:true,subtree:true})}
   }
 
   function start(){
     polish();
-    setTimeout(polish,250);
+    syncBluetooth();
+    setTimeout(()=>{polish();guardStatusFields();syncBluetooth()},300);
     setTimeout(polish,1200);
     setTimeout(polish,3200);
-    const timer=setInterval(()=>{if(!document.hidden)polish()},5000);
+    const timer=setInterval(()=>{if(!document.hidden){polish();syncBluetooth()}},5000);
     window.addEventListener('mijnserenity:modules-ready',polish,{passive:true});
     window.addEventListener('mijnserenity:routechange',()=>setTimeout(polish,50),{passive:true});
     window.addEventListener('online',polish,{passive:true});
     window.addEventListener('offline',polish,{passive:true});
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)polish()},{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden){polish();syncBluetooth()}},{passive:true});
     window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
   }
 
