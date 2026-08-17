@@ -1,7 +1,5 @@
-/* MijnSerenity 7.18.5 — professionele Marine Glass polish
-   Layout en statuspresentatie, geen route-/sensorlogica. */
+/* MijnSerenity 7.18.6 — professionele Marine Glass polish */
 
-/* Tekst mag nergens meer buiten een kaart lopen. */
 #msMarineGlass .mg-card,
 #msMarineGlass .mg-card button,
 #msMarineGlass .mg-energy-grid,
@@ -14,60 +12,41 @@
 #msMarineGlass .mg-sources strong,
 #msMarineGlass .mg-conv strong,
 #msMarineGlass .mg-sources small,
-#msMarineGlass .mg-conv small{
-  overflow-wrap:anywhere!important;
-  word-break:normal!important;
-  line-height:1.18!important;
-}
+#msMarineGlass .mg-conv small{overflow-wrap:anywhere!important;word-break:normal!important;line-height:1.18!important}
 #msMarineGlass .mg-sources strong,
 #msMarineGlass .mg-conv strong{font-size:clamp(12px,1.1vw,15px)!important}
 
-/* Alleen rood als er werkelijk een actief alarm wordt weergegeven. */
 #msMarineGlass .mg-status .alarm:not(.has-active-alarm) strong{color:#c9d8e2!important}
 #msMarineGlass .mg-status .alarm.has-active-alarm strong{color:#ff7777!important}
+#msMarineGlass .mg-status .mg-bluetooth strong{color:#79cfff!important}
+#msMarineGlass .mg-status .mg-bluetooth{max-width:150px!important;min-width:110px!important}
+#msMarineGlass .mg-status .mg-bluetooth strong{max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* Lage spanning: visueel waarschuwen, geen batterijdiagnose suggereren. */
-#msMarineGlass .mg-battery.mg-low-voltage{
-  border-color:rgba(243,189,73,.62)!important;
-  box-shadow:inset 0 0 0 1px rgba(243,189,73,.10),0 0 18px rgba(243,189,73,.05)!important;
-}
+#msMarineGlass .mg-battery.mg-low-voltage{border-color:rgba(243,189,73,.62)!important;box-shadow:inset 0 0 0 1px rgba(243,189,73,.10),0 0 18px rgba(243,189,73,.05)!important}
 #msMarineGlass .mg-battery.mg-low-voltage strong{color:#ffd36c!important}
 
-/* iPad / landscape: benut de cockpitbreedte en geef de kaart meer ruimte. */
+/* Eén kaartbediening: alleen de Leaflet zoomknoppen blijven linksboven zichtbaar. */
+#msMarineGlass .mg-map-tools{display:none!important}
+
+/* Het ronde element is nu een functionele AIS-snelkoppeling, geen nep-radar. */
+#msMarineGlass .mg-radar.mg-ais-shortcut{cursor:pointer!important;overflow:visible!important;background:radial-gradient(circle,rgba(21,66,81,.30),rgba(0,8,16,.94) 68%)!important}
+#msMarineGlass .mg-radar.mg-ais-shortcut>b{display:none!important}
+#msMarineGlass .mg-radar.mg-ais-shortcut>i{animation:none!important;opacity:.9!important;height:2px!important;background:linear-gradient(90deg,#61f49c,rgba(97,244,156,.12))!important}
+#msMarineGlass .mg-radar.mg-ais-shortcut.ais-online{border-color:rgba(74,226,145,.70)!important;box-shadow:0 0 0 8px rgba(3,18,31,.45),inset 0 0 24px rgba(50,220,150,.18),0 0 18px rgba(50,220,150,.10)!important}
+#msMarineGlass .mg-radar-status{position:absolute;left:50%;top:50%;z-index:4;width:92%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;text-shadow:0 2px 8px #000}
+#msMarineGlass .mg-radar-status strong{display:block;font-size:11px;line-height:1.1;color:#effaff}
+#msMarineGlass .mg-radar-status small{display:block;margin-top:3px;font-size:8px;line-height:1.15;color:#98b6c6}
+#msMarineGlass .mg-radar.mg-ais-shortcut>span{font-weight:800;color:#a8dff4}
+
 @media (min-width:761px) and (max-width:1500px){
   body.ms750-simple-ui > main,
   body.ms760-captain-experience > main,
-  body > main{
-    width:100%!important;
-    max-width:none!important;
-    margin:0!important;
-    padding:8px 12px calc(82px + env(safe-area-inset-bottom))!important;
-  }
-  body #appView,
-  body #dashboard,
-  body #dashboard.mg-active{
-    width:100%!important;
-    max-width:none!important;
-    margin:0!important;
-  }
-  body #msMarineGlass{
-    width:min(100%,1420px)!important;
-    max-width:none!important;
-    margin:0 auto!important;
-    padding-left:10px!important;
-    padding-right:10px!important;
-    padding-bottom:calc(104px + env(safe-area-inset-bottom))!important;
-  }
+  body > main{width:100%!important;max-width:none!important;margin:0!important;padding:8px 12px calc(82px + env(safe-area-inset-bottom))!important}
+  body #appView,body #dashboard,body #dashboard.mg-active{width:100%!important;max-width:none!important;margin:0!important}
+  body #msMarineGlass{width:min(100%,1420px)!important;max-width:none!important;margin:0 auto!important;padding-left:10px!important;padding-right:10px!important;padding-bottom:calc(104px + env(safe-area-inset-bottom))!important}
   body.ms750-simple-ui #msMarineGlass > main.mg-grid,
   body.ms760-captain-experience #msMarineGlass > main.mg-grid,
-  body #msMarineGlass > main.mg-grid{
-    width:100%!important;
-    max-width:none!important;
-    margin:0!important;
-    padding:10px 0 0!important;
-    grid-template-columns:minmax(0,42fr) minmax(0,34fr) minmax(0,24fr)!important;
-    gap:10px!important;
-  }
+  body #msMarineGlass > main.mg-grid{width:100%!important;max-width:none!important;margin:0!important;padding:10px 0 0!important;grid-template-columns:minmax(0,42fr) minmax(0,34fr) minmax(0,24fr)!important;gap:10px!important}
   body #msMarineGlass .mg-map{min-height:410px!important}
   body #msMarineGlass .mg-gauges{grid-column:2/4!important}
   body #msMarineGlass .mg-energy{grid-column:1!important}
@@ -76,36 +55,19 @@
   body #msMarineGlass .mg-poi{grid-column:1!important}
   body #msMarineGlass .mg-weather{grid-column:2!important}
   body #msMarineGlass .mg-tide{grid-column:3!important}
-
-  /* Energie compacter en beter leesbaar. */
-  body #msMarineGlass .mg-energy-grid{
-    grid-template-columns:minmax(140px,.72fr) minmax(0,1.7fr)!important;
-    gap:8px 10px!important;
-    padding:0 12px 12px!important;
-  }
-  body #msMarineGlass .mg-sources,
-  body #msMarineGlass .mg-conv{gap:6px!important}
-  body #msMarineGlass .mg-sources button,
-  body #msMarineGlass .mg-conv button{padding:9px!important}
-
-  /* Vaste navigatie mag de onderste kaarten nooit afdekken. */
+  body #msMarineGlass .mg-energy-grid{grid-template-columns:minmax(140px,.72fr) minmax(0,1.7fr)!important;gap:8px 10px!important;padding:0 12px 12px!important}
+  body #msMarineGlass .mg-sources,body #msMarineGlass .mg-conv{gap:6px!important}
+  body #msMarineGlass .mg-sources button,body #msMarineGlass .mg-conv button{padding:9px!important}
   body #appView{padding-bottom:calc(94px + env(safe-area-inset-bottom))!important}
-  body .bottom-nav.ms744-compact-nav,
-  body .bottom-nav{
-    min-height:calc(72px + env(safe-area-inset-bottom))!important;
-    max-height:calc(72px + env(safe-area-inset-bottom))!important;
-  }
+  body .bottom-nav.ms744-compact-nav,body .bottom-nav{min-height:calc(72px + env(safe-area-inset-bottom))!important;max-height:calc(72px + env(safe-area-inset-bottom))!important}
 }
 
-/* Extra brede iPad: bijna rand-tot-rand, maar niet plakkerig tegen de behuizing. */
-@media (min-width:1180px) and (max-width:1500px){
-  body > main{padding-left:10px!important;padding-right:10px!important}
-  body #msMarineGlass{width:calc(100% - 8px)!important}
-  body #msMarineGlass .mg-top{border-radius:10px 10px 0 0!important}
-}
+@media (min-width:1180px) and (max-width:1500px){body > main{padding-left:10px!important;padding-right:10px!important}body #msMarineGlass{width:calc(100% - 8px)!important}body #msMarineGlass .mg-top{border-radius:10px 10px 0 0!important}}
 
-/* Op telefoon blijft 7.18.4 leidend; alleen veilige bottom-space wordt vergroot. */
 @media (max-width:760px){
   body #appView{padding-bottom:calc(86px + env(safe-area-inset-bottom))!important}
   body #msMarineGlass{padding-bottom:calc(98px + env(safe-area-inset-bottom))!important}
+  #msMarineGlass .mg-status .mg-bluetooth{display:none!important}
+  #msMarineGlass .mg-radar-status strong{font-size:10px}
+  #msMarineGlass .mg-radar-status small{font-size:7px}
 }
