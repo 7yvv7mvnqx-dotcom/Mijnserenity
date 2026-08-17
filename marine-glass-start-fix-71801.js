@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.8 — veilig herstel van Start/dashboard */
+/* MijnSerenity 7.18.9 — veilig herstel van Start/dashboard */
 (()=>{
   'use strict';
-  if(window.__msMarineGlassStartFix71808)return;
-  window.__msMarineGlassStartFix71808=true;
-  const BUILD='7.18.8';
+  if(window.__msMarineGlassStartFix71809)return;
+  window.__msMarineGlassStartFix71809=true;
+  const BUILD='7.18.9';
 
   function resetBrokenMobileLayer(){
     document.getElementById('msMarineGlassMobile7182')?.remove();
