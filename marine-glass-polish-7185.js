@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.11 — connectiviteit, GPS en cockpitpolish */
+/* MijnSerenity 7.18.12 — connectiviteit, GPS en cockpitpolish */
 (()=>{
   'use strict';
-  if(window.__msMarineGlassPolish71811)return;
-  window.__msMarineGlassPolish71811=true;
-  const BUILD='7.18.11';
+  if(window.__msMarineGlassPolish71812)return;
+  window.__msMarineGlassPolish71812=true;
+  const BUILD='7.18.12';
   const $=id=>document.getElementById(id);
   const num=value=>{
     const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
