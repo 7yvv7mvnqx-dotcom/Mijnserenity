@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.12 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.18.13 — snelle, gefaseerde bootstrap */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.12';
-  const VERSION='718120';
+  const BUILD='7.18.13';
+  const VERSION='718130';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[

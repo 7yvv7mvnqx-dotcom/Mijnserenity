@@ -19372,19 +19372,59 @@ function ms670Number(value){
 }
 
 function ms670BoatProfile(){
+  let saved={};
+
+  try{
+    saved=JSON.parse(
+      localStorage.getItem(ms670ProfileKey())||'null'
+    )||{};
+  }catch{}
+
+  const sharedBoat=
+    normaliseTechnicalState(
+      technicalStateCache||readTechnicalLocalState()
+    ).boat||{};
+
   return {
-    length:ms670Number($('ms670BoatLength')?.value),
-    width:ms670Number($('ms670BoatWidth')?.value),
-    draft:ms670Number($('ms670BoatDraft')?.value),
-    airDraft:ms670Number($('ms670BoatAirDraft')?.value),
+    length:
+      ms670Number($('ms670BoatLength')?.value)||
+      ms670Number(sharedBoat.lengthM)||
+      ms670Number(saved.length)||
+      11.2,
+    width:
+      ms670Number($('ms670BoatWidth')?.value)||
+      ms670Number(sharedBoat.widthM)||
+      ms670Number(saved.width),
+    draft:
+      ms670Number($('ms670BoatDraft')?.value)||
+      ms670Number(sharedBoat.draftM)||
+      ms670Number(saved.draft),
+    airDraft:
+      ms670Number($('ms670BoatAirDraft')?.value)||
+      ms670Number(sharedBoat.airDraftM)||
+      ms670Number(saved.airDraft),
     dailyHours:
-      ms670Number($('ms670DailyHours')?.value)||6,
+      ms670Number($('ms670DailyHours')?.value)||
+      ms670Number(saved.dailyHours)||
+      6,
     startTime:
-      String($('ms670StartTime')?.value||'09:00'),
+      String(
+        $('ms670StartTime')?.value||
+        saved.startTime||
+        '09:00'
+      ),
     bridgeDelayMinutes:
-      Number($('ms670BridgeDelay')?.value||15),
+      Number(
+        $('ms670BridgeDelay')?.value||
+        saved.bridgeDelayMinutes||
+        15
+      ),
     lockDelayMinutes:
-      Number($('ms670LockDelay')?.value||30)
+      Number(
+        $('ms670LockDelay')?.value||
+        saved.lockDelayMinutes||
+        30
+      )
   };
 }
 

@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.15.60">
+<meta name="mijnserenity-build" content="7.18.13">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='7.15.60';
+window.MIJSERENITY_BUILD='7.18.13';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -71,7 +71,7 @@ window.repairMijnSerenity=async function(){
 
 <script>
 window.msSyncBuildVersion=function(){
-  const build=window.MIJSERENITY_BUILD||document.querySelector('meta[name="mijnserenity-build"]')?.content||'7.15.60';
+  const build=window.MIJSERENITY_BUILD||document.querySelector('meta[name="mijnserenity-build"]')?.content||'7.18.13';
   const version=document.getElementById('settingsAppVersion');
   if(version)version.textContent=build;
   document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=build);
@@ -950,7 +950,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
           <div class="value">🔄</div>
         </button>
         <div class="stat sync-status-stat">
-          <div class="label">Sync · v7.15.14</div>
+          <div class="label">Sync · v7.18.13</div>
           <div class="sync-status-row">
             <div class="value" id="dSync">Live</div>
             <button id="connectionStatus"
@@ -1992,7 +1992,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
             plant vaardagen en stelt overnachtingshavens voor.
           </p>
         </div>
-        <span class="planner-version-badge">7.15.14</span>
+        <span class="planner-version-badge">7.18.13</span>
       </div>
       <div class="planner-warning">
         Smart Route gebruikt open kaartgegevens. Niet alle brughoogtes,
@@ -2076,78 +2076,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
               <option value="2">Binnen 2 kilometer</option>
               <option value="3">Binnen 3 kilometer</option>
             </select>
-          </div>
-        </div>
-
-        <div class="ms670-profile-card">
-          <div class="ms670-profile-head">
-            <div>
-              <span class="eyebrow">SCHEEPSPROFIEL UIT BOOTINSTELLINGEN</span>
-              <strong>Controleer bekende beperkingen langs de route</strong>
-            </div>
-            <div class="ms752-profile-actions">
-              <span id="ms670ProfileBadge" class="ms670-profile-badge">
-                Centraal opgeslagen
-              </span>
-              <button type="button" class="secondary ms752-edit-dimensions" onclick="openBoatDimensionsSettings()">Wijzig maten</button>
-            </div>
-          </div>
-
-          <div class="ms670-profile-grid">
-            <label>
-              Lengte
-              <span><input id="ms670BoatLength" type="number" min="0"
-                step="0.1" value="11.2" readonly aria-readonly="true"> meter</span>
-            </label>
-            <label>
-              Breedte
-              <span><input id="ms670BoatWidth" type="number" min="0"
-                step="0.05" placeholder="Vul in" readonly aria-readonly="true"> meter</span>
-            </label>
-            <label>
-              Diepgang
-              <span><input id="ms670BoatDraft" type="number" min="0"
-                step="0.05" placeholder="Vul in" readonly aria-readonly="true"> meter</span>
-            </label>
-            <label>
-              Doorvaarthoogte
-              <span><input id="ms670BoatAirDraft" type="number" min="0"
-                step="0.05" placeholder="Vul in" readonly aria-readonly="true"> meter</span>
-            </label>
-            <label>
-              Maximaal varen per dag
-              <span><input id="ms670DailyHours" type="number" min="1"
-                max="14" step="0.5" value="6"
-                oninput="ms670PlannerProfileChanged()"> uur</span>
-            </label>
-            <label>
-              Dagstart
-              <span><input id="ms670StartTime" type="time" value="09:00"
-                oninput="ms670PlannerProfileChanged()"></span>
-            </label>
-          </div>
-
-          <div class="ms670-delay-grid">
-            <label>
-              Buffer per beweegbare brug
-              <select id="ms670BridgeDelay"
-                onchange="ms670PlannerProfileChanged()">
-                <option value="10">10 minuten</option>
-                <option value="15" selected>15 minuten</option>
-                <option value="20">20 minuten</option>
-                <option value="30">30 minuten</option>
-              </select>
-            </label>
-            <label>
-              Buffer per sluis
-              <select id="ms670LockDelay"
-                onchange="ms670PlannerProfileChanged()">
-                <option value="20">20 minuten</option>
-                <option value="30" selected>30 minuten</option>
-                <option value="45">45 minuten</option>
-                <option value="60">60 minuten</option>
-              </select>
-            </label>
           </div>
         </div>
 
@@ -4246,7 +4174,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
     <div class="card ms752-app-info-card" aria-label="Appinformatie">
       <div class="ms752-app-info-copy">
         <span class="eyebrow">MIJNSERENITY</span>
-        <strong>Versie <span id="settingsAppVersion">7.15.14</span></strong>
+        <strong>Versie <span id="settingsAppVersion">7.18.13</span></strong>
         <small id="settingsAppStatus">Live en gesynchroniseerd</small>
       </div>
       <button id="settingsRefreshButton" type="button" class="secondary ms752-small-refresh"
@@ -4918,7 +4846,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   </div>
 </div>
 
-<script src="auth-bootstrap.js?v=715140"></script>
+<script src="auth-bootstrap.js?v=718130"></script>
 <script src="futuristic-analog-7140.js?v=715140"></script>
 <script src="dashboard-analog-7141.js?v=715140"></script>
 <script src="dashboard-premium-7143.js?v=71430"></script>
