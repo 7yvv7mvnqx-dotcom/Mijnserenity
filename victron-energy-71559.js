@@ -70,14 +70,10 @@ function read(){
   let shore=bool(shoreEntity);
   if(shore===null&&validShoreV!==null)shore=validShoreV>=180;
   if(shore===null&&typeof t.shorePower==='boolean')shore=t.shorePower;
-  const directCharger=tv(charger)??num(t.chargerPower);
-  const externalCharge=vPower!==null&&vPower>0&&vSolar!==null?Math.max(0,vPower-Math.max(0,vSolar)):null;
-  let chargerPower=directCharger,shoreInferred=false;
-  if(chargerPower===null&&externalCharge!==null&&externalCharge>20)chargerPower=externalCharge;
-  if(shore!==true&&externalCharge!==null&&externalCharge>20){shore=true;shoreInferred=true}
+  const chargerPower=tv(charger);
   return {
     soc:vSoc,voltage:vVoltage,current:vCurrent,power:vPower,time:tv(time)??num(t.houseTimeToGo),
-    solar:vSolar,pvVoltage:num(vrm.pvVoltage),pvCurrent:num(vrm.pvCurrent),start:vStart,shore,shoreV:validShoreV,charger:chargerPower,shoreInferred,salonTemp:num(climate.salon?.temperature),machineTemp:num(climate.forward?.temperature),
+    solar:vSolar,pvVoltage:num(vrm.pvVoltage),pvCurrent:num(vrm.pvCurrent),start:vStart,shore,shoreV:validShoreV,charger:chargerPower,shoreInferred:false,salonTemp:num(climate.salon?.temperature),machineTemp:num(climate.forward?.temperature),
     solarLabel:solar?(solar.name||solar.entity_id):'Victron SmartSolar MPPT',
     hasVictron:Boolean(soc||voltage||current||power||solar||start||shoreEntity||shoreVoltageEntity||charger||num(directBattery.soc?.value)!==null||num(directBattery.voltage?.value)!==null)
   };
@@ -88,14 +84,25 @@ function timeLabel(hours){
   const total=Math.max(0,Math.round(hours)),days=Math.floor(total/24),rest=total%24;
   return days?`${days}d ${rest}u`:`${rest}u`;
 }
+function syncSharedStart(startVoltage){
+  if(startVoltage===null)return;
+  try{
+    if(typeof technicalStateCache!=='undefined'&&technicalStateCache&&typeof technicalStateCache==='object')technicalStateCache.startVoltage=startVoltage;
+  }catch{}
+  ['techStartVoltage','liveStartVoltage','ms71510StartVoltage'].forEach(id=>{
+    const el=$(id);
+    if(el)el.textContent=fmt(startVoltage,2,' V');
+  });
+}
 function render(){
   if(!$('msVictronEnergy'))return;
   const s=read(),charge=s.power!==null&&s.power>0?s.power:0,discharge=s.power!==null&&s.power<0?Math.abs(s.power):0;
+  syncSharedStart(s.start);
   $('msVictronSolar').textContent=s.solar!==null?fmt(s.solar,0,' W'):(s.pvVoltage!==null?fmt(s.pvVoltage,1,' V PV'):'– W');
   $('msVictronSoc').textContent=fmt(s.soc,0,'%');
   $('msVictronVoltage').textContent=fmt(s.voltage,2,' V');
   $('msVictronCharger').textContent=s.charger!==null?fmt(s.charger,0,' W'):'– W';
-  $('msVictronShore').textContent=s.shore===true?(s.shoreInferred?'lader actief · afgeleid':'aangesloten'):s.shore===false?'niet aangesloten':'niet gekoppeld';
+  $('msVictronShore').textContent=s.shore===true?'aangesloten':s.shore===false?'niet aangesloten':s.charger!==null?'lader gekoppeld':'niet gekoppeld';
   $('msVictronCharge').textContent=s.power===null?'– W':fmt(charge,0,' W');
   $('msVictronDischarge').textContent=s.power===null?'– W':fmt(discharge,0,' W');
   $('msVictronTime').textContent=timeLabel(s.time);
@@ -113,7 +120,7 @@ function render(){
   if(solarMeta)solarMeta.textContent=solarFault?'MEETFOUT · VICTRON SENSOR CONTROLEREN':(s.solar===null&&s.pvVoltage!==null?'MPPT-spanning · vermogen wacht':s.solarLabel);
   $('msVictronShoreNode').classList.toggle('active',s.shore===true||(s.charger||0)>2);
   const source=$('msVictronSource');
-  source.querySelector('b').textContent=solarFault?'MEETFOUT':s.shoreInferred?'LADER':s.shore===true?'WALSTROOM':(s.solar||0)>2?'ZON + ACCU':'ACCU';
+  source.querySelector('b').textContent=solarFault?'MEETFOUT':s.shore===true?'WALSTROOM':(s.charger||0)>2?'LADER':(s.solar||0)>2?'ZON + ACCU':s.power!==null&&s.power>2?'ACCU LADEN':'ACCU';
   source.classList.toggle('live',s.hasVictron&&!solarFault);
   source.classList.toggle('fault',solarFault);
   $('msVictronUpdated').textContent=(s.hasVictron?'Victron live · ':'Wacht op Victron · ')+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
