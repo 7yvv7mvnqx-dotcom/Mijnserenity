@@ -79,6 +79,13 @@
       link.href=`/professional-ui-71700.css?v=${VERSION}`;
       document.head.appendChild(link);
     }
+    if(!document.getElementById('msAiDestinationStyle71814')){
+      const link=document.createElement('link');
+      link.id='msAiDestinationStyle71814';
+      link.rel='stylesheet';
+      link.href=`/ai-destination-search.css?v=${VERSION}`;
+      document.head.appendChild(link);
+    }
     document.querySelectorAll('link[href*="waterkaarten-split-launch.css"]').forEach(link=>link.remove());
   }
 
