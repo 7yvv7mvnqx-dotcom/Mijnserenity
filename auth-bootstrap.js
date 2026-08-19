@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.13 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.18.14 — snelle, gefaseerde bootstrap */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.13';
-  const VERSION='718130';
+  const BUILD='7.18.14';
+  const VERSION='718140';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
@@ -30,6 +30,7 @@
     `mission-control.js?v=${VERSION}`,
     `live-split.js?v=${VERSION}`,
     `route-control.js?v=${VERSION}`,
+    `ai-destination-search.js?v=${VERSION}`,
     `weather-page.js?v=${VERSION}`,
     `weather-radar.js?v=${VERSION}`,
     `rws-nearby.js?v=${VERSION}`,
@@ -41,6 +42,7 @@
     `simple-accessible.js?v=${VERSION}`,
     `device-sync-guard.js?v=${VERSION}`,
     `captain-experience.js?v=${VERSION}`,
+    `captain-ai-71814.js?v=${VERSION}`,
     `captain-ux-711.js?v=${VERSION}`
   ];
 
