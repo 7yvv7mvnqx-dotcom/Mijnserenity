@@ -136,3 +136,9 @@
   for = "/victron-energy-71559.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
+
+# MijnSerenity 7.18.15 — actuele accustatus en historie direct vernieuwen
+[[headers]]
+  for = "/victron-diagnostics.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
