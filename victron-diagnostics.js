@@ -1,4 +1,4 @@
-/* MijnSerenity 7.15.60 — beveiligde VRM/SmartShunt accudiagnose */
+/* MijnSerenity — beveiligde VRM/SmartShunt accudiagnose */
 (()=>{
   'use strict';
 
@@ -6,6 +6,12 @@
   const RUUVI_CONFIG_KEY='mijnserenity-ruuvi-climate-v7102';
   const AUTO_REFRESH_MS=6*60*60*1000;
   const AUTO_REFRESH_KEY='mijnserenity-vrm-diagnostics-last-run';
+  const LIVE_CHECK_CODES=new Set([
+    'battery_not_found','very_low_voltage','low_voltage','very_low_soc','low_soc','soc_voltage_mismatch'
+  ]);
+  const HISTORY_CHECK_CODES=new Set([
+    'historic_deep_voltage','full_discharges','rapid_soc_drop'
+  ]);
   let currentDiagnosis=null;
   let busy=false;
   let readyTimer=0;
@@ -65,6 +71,94 @@
     const hours=Math.round(minutes/60);
     if(hours<48)return `${hours} uur geleden`;
     return `${Math.round(hours/24)} dagen geleden`;
+  }
+
+  function severityLevel(checks,codes){
+    let level='good';
+    for(const check of checks||[]){
+      if(codes&&!codes.has(String(check?.code||'')))continue;
+      const severity=String(check?.severity||'info');
+      if(severity==='critical')return 'critical';
+      if(severity==='warning')level='warning';
+    }
+    return level;
+  }
+
+  function liveBatteryLevel(battery){
+    const voltage=metricValue(battery?.voltage);
+    const soc=metricValue(battery?.soc);
+    const current=metricValue(battery?.current);
+    if(voltage===null&&soc===null)return 'info';
+
+    const lead=!/lith|lifepo|lithium/i.test(String(batteryType()||'lead'));
+    const charging=current!==null&&current>1;
+    const modestLoad=current===null||Math.abs(current)<5;
+
+    if(lead&&voltage!==null&&!charging){
+      if(voltage<=11.8)return 'critical';
+      if(voltage<=12.1)return 'warning';
+    }
+    if(soc!==null){
+      if(soc<=15)return 'critical';
+      if(soc<=30)return 'warning';
+    }
+    if(lead&&soc!==null&&voltage!==null&&soc>=70&&voltage<12.15&&modestLoad&&!charging){
+      return 'critical';
+    }
+    return 'good';
+  }
+
+  function assessmentView(data,battery,assessment){
+    const checks=Array.isArray(assessment?.checks)?assessment.checks:[];
+    const liveLevel=liveBatteryLevel(battery);
+    const historyLevel=severityLevel(checks,HISTORY_CHECK_CODES);
+    const historicalChecks=checks.filter(check=>HISTORY_CHECK_CODES.has(String(check?.code||''))||String(check?.severity||'')==='info');
+
+    if(liveLevel==='good'&&(historyLevel==='warning'||historyLevel==='critical')){
+      return {
+        badgeLevel:'good',
+        badgeText:'Nu in orde',
+        boxLevel:historyLevel,
+        title:'Historie vraagt aandacht',
+        conclusion:"De actuele accuwaarden zijn in orde. In de SmartShunt-historie staat wel een eerdere afwijking. Controleer die als historisch aandachtspunt; een capaciteitstest blijft nodig voor een definitief oordeel over de accu's.",
+        checks:historicalChecks
+      };
+    }
+
+    if(liveLevel==='good'){
+      return {
+        badgeLevel:'good',
+        badgeText:'In orde',
+        boxLevel:assessment?.level==='good'?'good':'info',
+        title:assessment?.title||'Geen direct alarm',
+        conclusion:assessment?.conclusion||"De actuele accuwaarden geven geen direct alarm.",
+        checks
+      };
+    }
+
+    if(liveLevel==='info'){
+      const hasHistoryWarning=historyLevel==='warning'||historyLevel==='critical';
+      return {
+        badgeLevel:'info',
+        badgeText:'Nog beoordelen',
+        boxLevel:hasHistoryWarning?historyLevel:'info',
+        title:hasHistoryWarning?'Historie vraagt aandacht':(assessment?.title||'Nog geen diagnose'),
+        conclusion:hasHistoryWarning
+          ?'Er is een historisch aandachtspunt, maar er zijn nu onvoldoende actuele accuwaarden om de huidige toestand te beoordelen.'
+          :(assessment?.conclusion||'Tik op “Victron uitlezen & beoordelen”.'),
+        checks:hasHistoryWarning?historicalChecks:checks
+      };
+    }
+
+    const currentChecks=checks.filter(check=>LIVE_CHECK_CODES.has(String(check?.code||''))||String(check?.severity||'')==='info');
+    return {
+      badgeLevel:liveLevel,
+      badgeText:levelLabel(liveLevel),
+      boxLevel:liveLevel,
+      title:assessment?.title||(liveLevel==='critical'?'Accusysteem direct controleren':"Accu's vragen aandacht"),
+      conclusion:assessment?.conclusion||'De actuele accuwaarden vragen aandacht.',
+      checks:currentChecks.length?currentChecks:checks
+    };
   }
 
   function fixedMarkup(){
@@ -130,14 +224,14 @@
     const battery=data?.battery||{};
     const solar=data?.solar||{};
     const assessment=data?.assessment||{};
-    const level=assessment.level||'info';
+    const view=assessmentView(data,battery,assessment);
     const badge=$('msVrmDiagnosisBadge');
     if(badge){
-      badge.textContent=levelLabel(level);
-      badge.className=`ms-vrm-diagnosis-badge ${level}`;
+      badge.textContent=view.badgeText;
+      badge.className=`ms-vrm-diagnosis-badge ${view.badgeLevel}`;
     }
     const box=$('msVrmDiagnosisAssessment');
-    if(box)box.className=`ms-vrm-diagnosis-assessment ${level}`;
+    if(box)box.className=`ms-vrm-diagnosis-assessment ${view.boxLevel}`;
     const values={
       msVrmDiagnosisSoc:format(metricValue(battery.soc),0,'%'),
       msVrmDiagnosisVoltage:format(metricValue(battery.voltage),2,' V'),
@@ -151,13 +245,13 @@
     const voltageCount=Number(data?.history?.voltage?.summary?.count||0);
     if(history)history.textContent=socCount?`${socCount} SOC-punten`:voltageCount?`${voltageCount} V-punten`:'geen reeks';
     const title=$('msVrmDiagnosisTitle');
-    if(title)title.textContent=assessment.title||'Nog geen diagnose';
+    if(title)title.textContent=view.title;
     const conclusion=$('msVrmDiagnosisConclusion');
-    if(conclusion)conclusion.textContent=assessment.conclusion||'Tik op “Victron uitlezen & beoordelen”.';
+    if(conclusion)conclusion.textContent=view.conclusion;
     const checks=$('msVrmDiagnosisChecks');
     if(checks){
       checks.replaceChildren();
-      (assessment.checks||[]).slice(0,6).forEach(check=>{
+      (view.checks||[]).slice(0,6).forEach(check=>{
         const item=document.createElement('li');
         item.className=String(check?.severity||'info');
         item.textContent=String(check?.text||'');
@@ -292,4 +386,3 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
 })();
-
