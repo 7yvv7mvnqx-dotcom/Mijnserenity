@@ -130,3 +130,9 @@
   for = "/start-dashboard-71510.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
+
+# MijnSerenity 7.18.15 — live Victron walstroom/AC direct vernieuwen
+[[headers]]
+  for = "/victron-energy-71559.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
