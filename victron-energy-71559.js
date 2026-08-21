@@ -1,4 +1,4 @@
-/* MijnSerenity 7.18.16 — live Victron laadbronnen + centrale energiestatus */
+/* MijnSerenity 7.18.17 — duidelijke Victron laadbronnen + centrale energiestatus */
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
@@ -52,9 +52,7 @@ async function refreshLiveEnergy(force=false){
   if(!client||!boat?.id||!user||!token)return false;
   liveBusy=true;lastLiveAttempt=Date.now();
   try{
-    const {data,error}=await client.functions.invoke('victron-energy-live',{
-      body:{boatId:boat.id},headers:{'x-vrm-token':token}
-    });
+    const {data,error}=await client.functions.invoke('victron-energy-live',{body:{boatId:boat.id},headers:{'x-vrm-token':token}});
     if(error||!data?.success)throw error||new Error(data?.error||'Geen geldige Victron live-data');
     window.MIJSERENITY_VRM_LIVE_ENERGY=data;
     window.dispatchEvent(new CustomEvent('mijnserenity-vrm-energy-live-updated',{detail:data}));
@@ -75,38 +73,13 @@ function read(){
   const current=pick(['sensor.vrm_current'],['vrm current','smartshunt current','battery current','accustroom'],'a',['starter','startaccu','aux']);
   const power=pick(['sensor.vrm_battery_power'],['vrm battery power','smartshunt power','battery power','accuvermogen'],'w',['solar','pv','mppt','charger']);
   const time=pick(['sensor.vrm_time_to_go'],['time to go','resterende tijd','battery runtime'],'h');
-  const solar=pick(
-    ['sensor.vrm_solar_charger_power','sensor.vrm_pv_power'],
-    ['yield power','solar charger power','mppt power','pv power','zonnepaneel vermogen','mppt 278'],'w',
-    ['battery power','load power','voltage','current']
-  );
-  const start=pick(
-    ['sensor.vrm_starter_battery_voltage','sensor.vrm_start_battery_voltage','sensor.vrm_auxiliary_battery_voltage','sensor.vrm_aux_voltage'],
-    ['starter battery voltage','start battery voltage','startaccu spanning','auxiliary battery voltage','aux voltage'],'v',
-    ['house','huishoud']
-  );
-  const shoreEntity=exact(['binary_sensor.vrm_shore_power','binary_sensor.vrm_ac_input_connected','binary_sensor.vrm_grid_connected'])||
-    scored({include:['shore power','walstroom','ac input connected','mains connected','grid connected'],exclude:['voltage','frequency','power'],minimum:55});
-  const shoreVoltageEntity=pick(
-    ['sensor.vrm_ac_input_voltage','sensor.vrm_shore_voltage','sensor.vrm_grid_voltage'],
-    ['ac input voltage','shore voltage','walstroom spanning','grid voltage'],'v',
-    ['battery','accu','dc','starter','startaccu']
-  );
-  const charger=pick(
-    ['sensor.vrm_charger_power','sensor.vrm_ac_charger_power','sensor.vrm_charger_ac_power'],
-    ['ac charger power','charger power','acculader vermogen','lader vermogen'],'w',
-    ['solar','pv','mppt','inverter','omvormer']
-  );
-  const inverter=pick(
-    ['sensor.vrm_inverter_power','sensor.vrm_inverter_output_power','sensor.vrm_ac_output_power'],
-    ['inverter power','omvormer vermogen','ac output power','ac out power'],'w',
-    ['solar','pv','mppt','charger','lader']
-  );
-  const load=pick(
-    ['sensor.vrm_ac_load_power','sensor.vrm_load_power','sensor.vrm_consumption_power'],
-    ['ac load power','load power','consumption power','verbruik vermogen'],'w',
-    ['solar','pv','mppt','charger','lader','battery','accu']
-  );
+  const solar=pick(['sensor.vrm_solar_charger_power','sensor.vrm_pv_power'],['yield power','solar charger power','mppt power','pv power','zonnepaneel vermogen','mppt 278'],'w',['battery power','load power','voltage','current']);
+  const start=pick(['sensor.vrm_starter_battery_voltage','sensor.vrm_start_battery_voltage','sensor.vrm_auxiliary_battery_voltage','sensor.vrm_aux_voltage'],['starter battery voltage','start battery voltage','startaccu spanning','auxiliary battery voltage','aux voltage'],'v',['house','huishoud']);
+  const shoreEntity=exact(['binary_sensor.vrm_shore_power','binary_sensor.vrm_ac_input_connected','binary_sensor.vrm_grid_connected'])||scored({include:['shore power','walstroom','ac input connected','mains connected','grid connected'],exclude:['voltage','frequency','power'],minimum:55});
+  const shoreVoltageEntity=pick(['sensor.vrm_ac_input_voltage','sensor.vrm_shore_voltage','sensor.vrm_grid_voltage'],['ac input voltage','shore voltage','walstroom spanning','grid voltage'],'v',['battery','accu','dc','starter','startaccu']);
+  const charger=pick(['sensor.vrm_charger_power','sensor.vrm_ac_charger_power','sensor.vrm_charger_ac_power'],['ac charger power','charger power','acculader vermogen','lader vermogen'],'w',['solar','pv','mppt','inverter','omvormer']);
+  const inverter=pick(['sensor.vrm_inverter_power','sensor.vrm_inverter_output_power','sensor.vrm_ac_output_power'],['inverter power','omvormer vermogen','ac output power','ac out power'],'w',['solar','pv','mppt','charger','lader']);
+  const load=pick(['sensor.vrm_ac_load_power','sensor.vrm_load_power','sensor.vrm_consumption_power'],['ac load power','load power','consumption power','verbruik vermogen'],'w',['solar','pv','mppt','charger','lader','battery','accu']);
   const tv=v=>num(v?.state);
   const vSoc=tv(soc)??num(directBattery.soc?.value)??num(t.houseSoc);
   const vVoltage=tv(voltage)??num(directBattery.voltage?.value)??num(t.houseVoltage);
@@ -135,11 +108,12 @@ function read(){
 }
 function fmt(v,d=0,suffix=''){return v===null?'–'+suffix:`${Number(v).toLocaleString('nl-NL',{minimumFractionDigits:d,maximumFractionDigits:d})}${suffix}`}
 function setText(id,value){const el=$(id);if(el&&el.textContent!==String(value))el.textContent=String(value)}
-function timeLabel(hours){
-  if(hours===null)return '–';
-  const total=Math.max(0,Math.round(hours)),days=Math.floor(total/24),rest=total%24;
-  return days?`${days}d ${rest}u`:`${rest}u`;
+function timeLabel(hours){if(hours===null)return '–';const total=Math.max(0,Math.round(hours)),days=Math.floor(total/24),rest=total%24;return days?`${days}d ${rest}u`:`${rest}u`}
+function noSeparateChargerMeasurement(s){
+  if(s.charger===null)return true;
+  return s.shore===true&&Math.abs(s.charger)<=0.5&&s.power!==null&&s.power>2&&(s.solar===null||Math.abs(s.solar)<=2);
 }
+function chargerText(s,long=false){return noSeparateChargerMeasurement(s)?(long?'Geen aparte meting':'Geen meting'):fmt(s.charger,0,' W')}
 function syncSharedStart(startVoltage){
   if(startVoltage===null)return;
   try{if(typeof technicalStateCache!=='undefined'&&technicalStateCache&&typeof technicalStateCache==='object')technicalStateCache.startVoltage=startVoltage}catch{}
@@ -154,8 +128,8 @@ function syncDashboard(s){
   setText('mgPv',fmt(s.solar,0,' W'));
   setText('mgShore',s.shore===true?'Aangesloten':s.shore===false?'Niet aangesloten':'–');
   setText('mgLoad',fmt(load,0,' W'));
-  setText('mgChg',fmt(s.charger,0,' W'));
-  setText('mgChg2',fmt(s.charger,0,' W'));
+  setText('mgChg',chargerText(s,false));
+  setText('mgChg2',chargerText(s,false));
   setText('mgInv',fmt(s.inverter,0,' W'));
   setText('mgInv2',fmt(s.inverter,0,' W'));
   setText('mgBatP',batteryPower===null?'– W':`${batteryPower>0?'+':''}${fmt(batteryPower,0,' W')}`);
@@ -172,10 +146,10 @@ function render(){
   setText('msVictronSolar',s.solar!==null?fmt(s.solar,0,' W'):(s.pvVoltage!==null?fmt(s.pvVoltage,1,' V PV'):'– W'));
   setText('msVictronSoc',fmt(s.soc,0,'%'));
   setText('msVictronVoltage',fmt(s.voltage,2,' V'));
-  setText('msVictronCharger',fmt(s.charger,0,' W'));
+  setText('msVictronCharger',chargerText(s,true));
   setText('msVictronShore',s.shore===true?'aangesloten':s.shore===false?'niet aangesloten':s.charger!==null?'lader gekoppeld':'status onbekend');
   setText('msVictronSolarSource',fmt(s.solar,0,' W'));
-  setText('msVictronShoreSource',fmt(s.charger,0,' W'));
+  setText('msVictronShoreSource',chargerText(s,true));
   const batteryNet=s.power!==null&&Math.abs(s.power)<0.5?0:s.power;
   setText('msVictronBatteryNet',batteryNet===null?'– W':fmt(Math.abs(batteryNet),0,' W'));
   setText('msVictronBatteryNetLabel',batteryNet===null?'HUISHOUDACCU NETTO':batteryNet>0?'NAAR HUISHOUDACCU':batteryNet<0?'VAN HUISHOUDACCU':'HUISHOUDACCU NETTO');
