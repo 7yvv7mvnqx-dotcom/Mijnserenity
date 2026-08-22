@@ -33,6 +33,12 @@
     return output.join('\n').replace(/\n{3,}/g,'\n\n').trim();
   }
 
+  function labelledMoney(text,label){
+    const pattern=new RegExp(`${label}\\s*:?\\s*€?\\s*([\\d.]+,\\d{2})`,'i');
+    const match=String(text||'').match(pattern);
+    return match?parseMoney(match[1]):null;
+  }
+
   function detectAmount(details){
     const text=String(details||'');
     const labelled=[
@@ -43,6 +49,13 @@
       const match=text.match(pattern);
       const value=match?parseMoney(match[1]):null;
       if(value!==null)return value;
+    }
+
+    const exclusive=labelledMoney(text,'exclusief\\s+btw');
+    const vat21=labelledMoney(text,'btw\\s*21\\s*%');
+    const vat9=labelledMoney(text,'btw\\s*9\\s*%');
+    if(exclusive!==null&&(vat21!==null||vat9!==null)){
+      return Number((exclusive+(vat21||0)+(vat9||0)).toFixed(2));
     }
 
     const bulletLines=text.split('\n').filter(line=>/^[\s]*[•·*-]\s+/.test(line));
@@ -71,15 +84,25 @@
     input.dispatchEvent(new Event('change',{bubbles:true}));
   }
 
+  function processDetails(details){
+    const cleaned=cleanDetails(details);
+    fillAmountFromDetails(cleaned);
+    return cleaned;
+  }
+
   function installReceiptFix(){
     const original=window.showCostReceiptDetails;
     if(typeof original!=='function')return;
     window.showCostReceiptDetails=function(details=''){
-      const cleaned=cleanDetails(details);
-      const result=original.call(this,cleaned);
-      fillAmountFromDetails(cleaned);
-      return result;
+      const cleaned=processDetails(details);
+      return original.call(this,cleaned);
     };
+
+    const current=document.getElementById('costReceiptDetails');
+    if(current?.value){
+      const cleaned=processDetails(current.value);
+      if(cleaned!==current.value)current.value=cleaned;
+    }
   }
 
   function updateKeyboardSpace(){
