@@ -1,10 +1,11 @@
-/* MijnSerenity 7.18.15 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.18.16 — stabiele opstart, sessiegate en gefaseerde bootstrap */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.15';
-  const VERSION='718150';
+  const BUILD='7.18.16';
+  const VERSION='718160';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
+  const STARTUP_TIMEOUT_MS=22000;
 
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
@@ -52,6 +53,12 @@
     'https://unpkg.com/@supabase/supabase-js@2'
   ];
 
+  let startupResolved=false;
+  let startupCoreReady=false;
+  let startupViewTouched=false;
+  let startupObserver=null;
+  let startupTimer=null;
+
   function syncBuildVersion(){
     window.MIJSERENITY_BUILD=BUILD;
     const meta=document.querySelector('meta[name="mijnserenity-build"]');
@@ -68,6 +75,113 @@
     if(!target)return;
     target.textContent=message;
     target.classList.toggle('error',Boolean(isError));
+  }
+
+  function ensureStartupGate(){
+    if(startupResolved||document.getElementById('msStartupGate'))return;
+    if(!document.body){
+      document.addEventListener('DOMContentLoaded',ensureStartupGate,{once:true});
+      return;
+    }
+
+    document.documentElement.classList.add('ms-starting');
+
+    if(!document.getElementById('msStartupGateStyle')){
+      const style=document.createElement('style');
+      style.id='msStartupGateStyle';
+      style.textContent=`
+        html.ms-starting body{overflow:hidden!important;background:#061525!important}
+        html.ms-starting body>main{visibility:hidden!important;pointer-events:none!important}
+        #msStartupGate{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:#061525;color:#f5fbff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transition:opacity .16s ease}
+        #msStartupGate .ms-startup-card{width:min(420px,100%);text-align:center}
+        #msStartupGate .ms-startup-brand{font-size:30px;font-weight:800;letter-spacing:-1.3px;margin-bottom:22px}
+        #msStartupGate .ms-startup-brand span{color:#28b9ec}
+        #msStartupGate .ms-startup-spinner{width:38px;height:38px;margin:0 auto 18px;border:3px solid rgba(255,255,255,.16);border-top-color:#28b9ec;border-radius:50%;animation:msStartupSpin .8s linear infinite}
+        #msStartupGate .ms-startup-status{font-size:15px;font-weight:650;line-height:1.45;color:#d8e8f3}
+        #msStartupGate .ms-startup-version{margin-top:10px;font-size:12px;color:#7794a7}
+        #msStartupGate .ms-startup-actions{display:none;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+        #msStartupGate.ms-startup-error .ms-startup-spinner{display:none}
+        #msStartupGate.ms-startup-error .ms-startup-actions{display:flex}
+        #msStartupGate button{appearance:none;border:1px solid #2f6078;border-radius:12px;padding:11px 15px;background:#0d2a3c;color:#f5fbff;font:inherit;font-weight:700}
+        #msStartupGate button:first-child{background:#0c87b8;border-color:#0c87b8}
+        @keyframes msStartupSpin{to{transform:rotate(360deg)}}
+      `;
+      document.head.appendChild(style);
+    }
+
+    const gate=document.createElement('div');
+    gate.id='msStartupGate';
+    gate.setAttribute('role','status');
+    gate.setAttribute('aria-live','polite');
+    gate.innerHTML=`
+      <div class="ms-startup-card">
+        <div class="ms-startup-brand">Mijn<span>Serenity</span></div>
+        <div class="ms-startup-spinner" aria-hidden="true"></div>
+        <div id="msStartupStatus" class="ms-startup-status">MijnSerenity wordt gestart…</div>
+        <div class="ms-startup-version">versie ${BUILD}</div>
+        <div class="ms-startup-actions">
+          <button id="msStartupRetry" type="button">Opnieuw proberen</button>
+          <button id="msStartupRepair" type="button">App herstellen</button>
+        </div>
+      </div>`;
+    document.body.appendChild(gate);
+
+    document.getElementById('msStartupRetry')?.addEventListener('click',()=>location.reload());
+    document.getElementById('msStartupRepair')?.addEventListener('click',()=>{
+      if(typeof window.repairMijnSerenity==='function')window.repairMijnSerenity();
+      else location.reload();
+    });
+
+    const views=['authView','approvalView','appView']
+      .map(id=>document.getElementById(id))
+      .filter(Boolean);
+
+    startupObserver=new MutationObserver(mutations=>{
+      if(mutations.some(item=>item.type==='attributes'&&item.attributeName==='class')){
+        startupViewTouched=true;
+        maybeFinishStartup();
+      }
+    });
+    views.forEach(view=>startupObserver.observe(view,{attributes:true,attributeFilter:['class']}));
+
+    startupTimer=setTimeout(()=>{
+      showStartupError('Het starten duurt langer dan normaal. Probeer opnieuw; je gegevens blijven bewaard.');
+    },STARTUP_TIMEOUT_MS);
+  }
+
+  function setStartupStatus(message){
+    const target=document.getElementById('msStartupStatus');
+    if(target)target.textContent=message;
+  }
+
+  function showStartupError(message){
+    if(startupResolved)return;
+    const gate=document.getElementById('msStartupGate');
+    if(!gate)return;
+    gate.classList.add('ms-startup-error');
+    setStartupStatus(message);
+  }
+
+  function finishStartup(){
+    if(startupResolved)return;
+    startupResolved=true;
+    if(startupTimer){clearTimeout(startupTimer);startupTimer=null}
+    startupObserver?.disconnect();
+    startupObserver=null;
+    document.documentElement.classList.remove('ms-starting');
+    const gate=document.getElementById('msStartupGate');
+    if(gate){
+      gate.style.opacity='0';
+      setTimeout(()=>gate.remove(),180);
+    }
+  }
+
+  function maybeFinishStartup(){
+    if(startupResolved||!startupCoreReady||!startupViewTouched)return;
+    const visible=['authView','approvalView','appView']
+      .map(id=>document.getElementById(id))
+      .filter(view=>view&&!view.classList.contains('hidden'));
+    if(visible.length===1)requestAnimationFrame(finishStartup);
   }
 
   function ensureProfessionalUi(){
@@ -110,7 +224,7 @@
     }catch{return false}
   }
 
-  function loadScript(src,timeoutMs=18000){
+  function loadScript(src,timeoutMs=16000){
     if(scriptExists(src))return Promise.resolve();
     return new Promise((resolve,reject)=>{
       const script=document.createElement('script');
@@ -139,7 +253,8 @@
     let lastError=null;
     for(const source of SUPABASE_SOURCES){
       try{
-        await loadScript(source,15000);
+        setStartupStatus('Beveiligde sessie wordt gecontroleerd…');
+        await loadScript(source,8000);
         if(window.supabase?.createClient)return;
         throw new Error('Supabase-bibliotheek is niet gestart.');
       }catch(error){lastError=error;console.warn('Supabase-bron niet beschikbaar:',source,error)}
@@ -182,20 +297,24 @@
 
   async function start(){
     try{
+      ensureStartupGate();
       ensureProfessionalUi();
       addPreconnect('https://cdn.jsdelivr.net');
       addPreconnect('https://unpkg.com');
       syncBuildVersion();
       setAuthStatus('Beveiligde inlog wordt geladen…');
+      setStartupStatus('Nieuwe versie en sessie worden gecontroleerd…');
       ensureServiceWorker();
       await ensureSupabase();
-      await loadScript(CORE_SCRIPT,25000);
+      setStartupStatus('Dashboard wordt klaargezet…');
+      startupViewTouched=false;
+      await loadScript(CORE_SCRIPT,15000);
+      startupCoreReady=true;
       syncBuildVersion();
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
       const button=document.getElementById('signInButton');
       if(button)button.disabled=false;
-      const target=document.getElementById('authMsg');
-      if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
+      maybeFinishStartup();
       setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),40);
       console.info(`MijnSerenity ${BUILD}: kern gestart.`);
     }catch(error){
@@ -203,9 +322,11 @@
       setAuthStatus('De beveiligde inlog kon niet worden geladen. Tik op “App herstellen en vernieuwen” en probeer opnieuw.',true);
       const button=document.getElementById('signInButton');
       if(button)button.disabled=true;
+      showStartupError('MijnSerenity kon niet volledig starten. Controleer de verbinding en probeer opnieuw.');
     }
   }
 
+  ensureStartupGate();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
