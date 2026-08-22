@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.14 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.18.15 — snelle, gefaseerde bootstrap */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.14';
-  const VERSION='718140';
+  const BUILD='7.18.15';
+  const VERSION='718150';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
@@ -27,6 +27,7 @@
 
   const LATE_MODULES=[
     `receipt-reader-pro.js?v=${VERSION}`,
+    `cost-form-hotfix-71815.js?v=${VERSION}`,
     `mission-control.js?v=${VERSION}`,
     `live-split.js?v=${VERSION}`,
     `route-control.js?v=${VERSION}`,
