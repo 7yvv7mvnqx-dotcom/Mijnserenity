@@ -1,12 +1,16 @@
-/* MijnSerenity 7.18.22 — stabiele opstart, sessiegate en netwerkherstel */
+/* MijnSerenity 7.18.23 — snelle, eenduidige opstart met Marine Glass als kritieke cockpit */
 (()=>{
   'use strict';
+
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.22';
-  const VERSION='718220';
+  document.documentElement.classList.add('ms-modern-dashboard-only');
+
+  const BUILD='7.18.23';
+  const VERSION='718230';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
   const MEMBERSHIP_FIX=`membership-load-fix-71821.js?v=${VERSION}`;
-  const STARTUP_TIMEOUT_MS=8000;
+  const DASHBOARD_SCRIPT=`dashboard-pro-71531-loader.js?v=${VERSION}`;
+  const STARTUP_TIMEOUT_MS=12000;
 
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
@@ -14,7 +18,6 @@
     `waterkaarten-route-receiver-71870.js?v=${VERSION}`,
     `waterkaarten-route-enrichment-71811.js?v=${VERSION}`,
     `marine-map-route-fit-71812.js?v=${VERSION}`,
-    `dashboard-pro-71531-loader.js?v=${VERSION}`,
     `easy-auto.js?v=${VERSION}`,
     `auto-track-reliability.js?v=${VERSION}`,
     `gps-continuity-guard.js?v=${VERSION}`,
@@ -62,6 +65,21 @@
   let startupFallbackTimer=null;
   let membershipAlertGuardActive=false;
   let membershipAlertOriginal=null;
+
+  function installModernDashboardGuard(){
+    if(document.getElementById('msModernDashboardGuard71823'))return;
+    const style=document.createElement('style');
+    style.id='msModernDashboardGuard71823';
+    style.textContent=`
+      html.ms-modern-dashboard-only #dashboard> :not(#msMarineGlass){
+        display:none!important;
+      }
+      html.ms-modern-dashboard-only #dashboard #msMarineGlass{
+        display:block!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   function syncBuildVersion(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -114,6 +132,7 @@
       return;
     }
 
+    installModernDashboardGuard();
     document.documentElement.classList.add('ms-starting');
 
     if(!document.getElementById('msStartupGateStyle')){
@@ -221,6 +240,7 @@
   }
 
   function ensureProfessionalUi(){
+    installModernDashboardGuard();
     if(!document.getElementById('msProfessionalUi718')){
       const old=document.getElementById('msProfessionalUi717');
       if(old)old.remove();
@@ -293,7 +313,10 @@
         await loadScript(source,8000);
         if(window.supabase?.createClient)return;
         throw new Error('Supabase-bibliotheek is niet gestart.');
-      }catch(error){lastError=error;console.warn('Supabase-bron niet beschikbaar:',source,error)}
+      }catch(error){
+        lastError=error;
+        console.warn('Supabase-bron niet beschikbaar:',source,error);
+      }
     }
     throw lastError||new Error('Geen beveiligde inlogverbinding beschikbaar.');
   }
@@ -305,7 +328,10 @@
       const registration=await navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'});
       registration.update().catch(()=>{});
       return registration;
-    }catch(error){console.warn('Service worker kon niet worden geregistreerd:',error);return null}
+    }catch(error){
+      console.warn('Service worker kon niet worden geregistreerd:',error);
+      return null;
+    }
   }
 
   function idle(){
@@ -318,7 +344,11 @@
   async function loadModuleQueue(modules,label){
     for(const src of modules){
       await idle();
-      try{await loadScript(src,20000)}catch(error){console.warn(`${label} module overgeslagen:`,src,error)}
+      try{
+        await loadScript(src,12000);
+      }catch(error){
+        console.warn(`${label} module overgeslagen:`,src,error);
+      }
     }
   }
 
@@ -331,6 +361,15 @@
     console.info(`MijnSerenity ${BUILD}: achtergrondmodules gereed.`);
   }
 
+  async function ensureModernDashboard(){
+    setStartupStatus('Nieuwe cockpit wordt geladen…');
+    await loadScript(DASHBOARD_SCRIPT,10000);
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const dashboard=document.getElementById('msMarineGlass');
+    if(!dashboard)throw new Error('De nieuwe Marine Glass-cockpit is niet opgebouwd.');
+    syncBuildVersion();
+  }
+
   async function start(){
     try{
       ensureStartupGate();
@@ -341,36 +380,45 @@
       setAuthStatus('Beveiligde inlog wordt geladen…');
       setStartupStatus('Nieuwe versie en sessie worden gecontroleerd…');
       ensureServiceWorker();
+
       await ensureSupabase();
       installMembershipAlertGuard();
-      setStartupStatus('Dashboard wordt klaargezet…');
+
+      setStartupStatus('Dashboardgegevens worden gestart…');
       startupViewTouched=false;
       await loadScript(CORE_SCRIPT,15000);
+
       try{
         await loadScript(MEMBERSHIP_FIX,8000);
       }catch(error){
         console.warn('Lidmaatschapsherstel kon niet laden:',error);
         window.__msRestoreMembershipAlertGuard?.();
       }
+
+      await ensureModernDashboard();
+
       startupCoreReady=true;
       syncBuildVersion();
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
+
       const button=document.getElementById('signInButton');
       if(button)button.disabled=false;
+
       maybeFinishStartup();
-      startupFallbackTimer=setTimeout(()=>maybeFinishStartup(true),700);
-      setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),40);
-      console.info(`MijnSerenity ${BUILD}: kern gestart.`);
+      startupFallbackTimer=setTimeout(()=>maybeFinishStartup(true),450);
+      setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),80);
+      console.info(`MijnSerenity ${BUILD}: kern en Marine Glass-cockpit gestart.`);
     }catch(error){
       window.__msRestoreMembershipAlertGuard?.();
       console.error('MijnSerenity kon niet starten:',error);
-      setAuthStatus('De beveiligde inlog kon niet worden geladen. Tik op “App herstellen en vernieuwen” en probeer opnieuw.',true);
+      setAuthStatus('De beveiligde inlog kon niet volledig worden geladen. Tik op “App herstellen en vernieuwen” en probeer opnieuw.',true);
       const button=document.getElementById('signInButton');
       if(button)button.disabled=true;
-      showStartupError('MijnSerenity kon niet volledig starten. Controleer de verbinding en probeer opnieuw.');
+      showStartupError('MijnSerenity kon de nieuwe cockpit niet volledig starten. Probeer opnieuw of kies App herstellen.');
     }
   }
 
+  installModernDashboardGuard();
   ensureStartupGate();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
