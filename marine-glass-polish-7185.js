@@ -76,6 +76,34 @@
     if(bar)bar.style.width='0%';
   }
 
+  function starterSocFromVoltage(voltage){
+    const v=Number(voltage);
+    if(!Number.isFinite(v)||v<=0)return null;
+    const points=[
+      [11.7,0],[11.8,10],[11.9,20],[12.0,30],[12.1,40],[12.2,50],
+      [12.3,60],[12.4,70],[12.5,80],[12.6,90],[12.7,100]
+    ];
+    if(v<=points[0][0])return 0;
+    if(v>=points[points.length-1][0])return 100;
+    for(let i=1;i<points.length;i++){
+      const [v1,s1]=points[i-1];
+      const [v2,s2]=points[i];
+      if(v<=v2)return s1+((v-v1)/(v2-v1))*(s2-s1);
+    }
+    return null;
+  }
+
+  function syncStartBatteryPresentation(){
+    const voltage=num($('mgStartV')?.textContent);
+    const soc=starterSocFromVoltage(voltage);
+    set('mgStart',soc==null?'–%':`${Math.round(soc)}%`);
+    const value=$('mgStart');
+    if(value){
+      value.title='Geschat op basis van de gemeten startaccuspanning';
+      value.setAttribute('aria-label',soc==null?'Startaccu percentage onbekend':`Startaccu ongeveer ${Math.round(soc)} procent`);
+    }
+  }
+
   function syncEnergyWarning(){
     const battery=document.querySelector('#msMarineGlass .mg-battery');
     const startBattery=document.querySelector('#msMarineGlass .mg-start');
@@ -88,7 +116,7 @@
     }
 
     if(startBattery){
-      const startVoltage=num($('mgStart')?.textContent);
+      const startVoltage=num($('mgStartV')?.textContent);
       const critical=startVoltage!=null&&startVoltage>0&&startVoltage<11.8;
       startBattery.classList.toggle('mg-critical-voltage',critical);
       startBattery.title=critical?'Kritische startaccuspanning — controleer de startaccu en laadstatus':'';
@@ -170,7 +198,7 @@
   function dashboardVisible(){const glass=$('msMarineGlass');if(!glass||glass.hidden)return false;const rect=glass.getBoundingClientRect();return rect.width>0&&rect.height>0}
   function polish(){
     syncVersion();syncInternet();if(!dashboardVisible())return;
-    syncGps();syncRoutePresentation();syncEnergyWarning();syncAlarmPresentation();syncRadar();cleanMapControls();
+    syncGps();syncRoutePresentation();syncStartBatteryPresentation();syncEnergyWarning();syncAlarmPresentation();syncRadar();cleanMapControls();
   }
 
   function guardStatusFields(){
@@ -179,9 +207,15 @@
     if(gps)new MutationObserver(()=>queueMicrotask(syncGps)).observe(gps,{childList:true,characterData:true,subtree:true});
   }
 
+  function guardStartBattery(){
+    const value=$('mgStart');
+    if(!value||!window.MutationObserver)return;
+    new MutationObserver(()=>queueMicrotask(syncStartBatteryPresentation)).observe(value,{childList:true,characterData:true,subtree:true});
+  }
+
   function start(){
     polish();syncBluetooth();
-    setTimeout(()=>{polish();guardStatusFields();syncBluetooth()},300);
+    setTimeout(()=>{polish();guardStatusFields();guardStartBattery();syncBluetooth()},300);
     setTimeout(polish,1200);setTimeout(polish,3200);
     const timer=setInterval(()=>{if(!document.hidden){polish();syncBluetooth()}},5000);
     window.addEventListener('mijnserenity:modules-ready',polish,{passive:true});
