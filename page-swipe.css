@@ -105,6 +105,55 @@ body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass > mai
   overflow:visible !important;
 }
 
+/*
+   iPhone/PWA: na inloggen kan visualViewport nog kort de hoogte van het
+   toetsenbord rapporteren. De JavaScript-resize zette de pager dan blijvend
+   op die veel te kleine hoogte, waardoor halverwege Start een groot leeg vlak
+   ontstond. Op mobiel laat CSS daarom de app-shell altijd de echte dynamische
+   viewport vullen. De onderste navigatie krijgt zijn eigen vaste ruimte.
+*/
+@media(max-width:760px){
+  body.ms708-native-pages-active #appView{
+    position:fixed !important;
+    top:env(safe-area-inset-top) !important;
+    right:0 !important;
+    bottom:calc(68px + env(safe-area-inset-bottom)) !important;
+    left:0 !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+  }
+
+  body.ms708-native-pages-active .ms708-native-pager{
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:none !important;
+    overflow:hidden !important;
+  }
+
+  body.ms708-native-pages-active .ms708-native-pager > .ms708-native-page{
+    height:100% !important;
+    min-height:0 !important;
+    max-height:none !important;
+    padding:0 1px 18px !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    overscroll-behavior-y:contain !important;
+    -webkit-overflow-scrolling:touch !important;
+  }
+
+  body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass .mg-top{
+    position:sticky !important;
+    top:0 !important;
+  }
+}
+
 /* Kaarten en camerabeeld houden hun eigen aanrakingen. */
 .ms708-native-page .leaflet-container,
 .ms708-native-page .live-radar-camera-viewport,
