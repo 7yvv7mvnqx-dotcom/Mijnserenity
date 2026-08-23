@@ -1,13 +1,14 @@
-/* MijnSerenity 7.18.25 — Marine Glass is optioneel en mag de basisapp nooit blokkeren */
+/* MijnSerenity 7.18.27 — Marine Glass is optioneel en mobiel scrollt via het document */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71825)return;
+  if(window.__msDashboardLoader71827)return;
+  window.__msDashboardLoader71827=true;
   window.__msDashboardLoader71825=true;
   window.__msDashboardLoader71824=true;
   window.__msDashboardLoader71823=true;
 
-  const V='718250';
-  const BUILD='7.18.25';
+  const V='718270';
+  const BUILD='7.18.27';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -66,6 +67,8 @@
     document.getElementById('mgMore')?.remove();
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
 
+    /* Opnieuw na de oude index-link laden: deze versie wint de cascade en cache. */
+    loadCss(`/page-swipe.css?v=${V}`,'msPageSwipe71827');
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
 
@@ -75,6 +78,7 @@
     }
 
     await Promise.all([
+      load(`/mobile-document-scroll-71827.js?v=${V}`,'mobile-document-scroll'),
       load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix'),
       load(`/marine-glass-polish-7185.js?v=${V}`,'marine-glass-polish'),
       load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info'),
@@ -111,6 +115,7 @@
     console.warn('Marine Glass loader:',error);
     throw error;
   });
+  window.__msDashboardReady71827=ready;
   window.__msDashboardReady71825=ready;
   window.__msDashboardReady71824=ready;
   window.__msDashboardReady71823=ready;
