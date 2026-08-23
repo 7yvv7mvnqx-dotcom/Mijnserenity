@@ -364,7 +364,23 @@
   async function ensureModernDashboard(){
     setStartupStatus('Nieuwe cockpit wordt geladen…');
     await loadScript(DASHBOARD_SCRIPT,10000);
-    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+
+    const ready=window.__msDashboardReady71823;
+    if(ready&&typeof ready.then==='function'){
+      await Promise.race([
+        ready,
+        new Promise((_,reject)=>setTimeout(
+          ()=>reject(new Error('Time-out bij opbouwen van de Marine Glass-cockpit.')),
+          10000
+        ))
+      ]);
+    }else{
+      const started=Date.now();
+      while(!document.getElementById('msMarineGlass')&&Date.now()-started<10000){
+        await new Promise(resolve=>setTimeout(resolve,80));
+      }
+    }
+
     const dashboard=document.getElementById('msMarineGlass');
     if(!dashboard)throw new Error('De nieuwe Marine Glass-cockpit is niet opgebouwd.');
     syncBuildVersion();
