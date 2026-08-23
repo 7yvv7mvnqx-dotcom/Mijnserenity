@@ -1,10 +1,11 @@
-/* MijnSerenity 7.18.16 — stabiele opstart, sessiegate en gefaseerde bootstrap */
+/* MijnSerenity 7.18.21 — stabiele opstart, sessiegate en netwerkherstel */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.16';
-  const VERSION='718160';
+  const BUILD='7.18.21';
+  const VERSION='718210';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
+  const MEMBERSHIP_FIX=`membership-load-fix-71821.js?v=${VERSION}`;
   const STARTUP_TIMEOUT_MS=22000;
 
   const EARLY_MODULES=[
@@ -58,6 +59,8 @@
   let startupViewTouched=false;
   let startupObserver=null;
   let startupTimer=null;
+  let membershipAlertGuardActive=false;
+  let membershipAlertOriginal=null;
 
   function syncBuildVersion(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -68,6 +71,8 @@
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
     const cockpitBadge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(cockpitBadge)cockpitBadge.textContent=BUILD;
+    const startup=document.querySelector('#msStartupGate .ms-startup-version');
+    if(startup)startup.textContent=`versie ${BUILD}`;
   }
 
   function setAuthStatus(message,isError=false){
@@ -75,6 +80,30 @@
     if(!target)return;
     target.textContent=message;
     target.classList.toggle('error',Boolean(isError));
+  }
+
+  function installMembershipAlertGuard(){
+    if(membershipAlertGuardActive)return;
+    membershipAlertGuardActive=true;
+    membershipAlertOriginal=window.alert.bind(window);
+    window.alert=(message,...args)=>{
+      const text=String(message??'');
+      if(
+        text.startsWith('Lidmaatschap laden mislukt:')&&
+        /load failed|failed to fetch|networkerror|network request|timeout|fetch/i.test(text)
+      ){
+        console.warn('MijnSerenity: tijdelijke lidmaatschapsfout wordt automatisch hersteld:',text);
+        setStartupStatus('Verbinding met Serenity wordt opnieuw geprobeerd…');
+        return;
+      }
+      return membershipAlertOriginal(message,...args);
+    };
+    window.__msRestoreMembershipAlertGuard=()=>{
+      if(!membershipAlertGuardActive)return;
+      window.alert=membershipAlertOriginal||window.alert;
+      membershipAlertGuardActive=false;
+      membershipAlertOriginal=null;
+    };
   }
 
   function ensureStartupGate(){
@@ -306,9 +335,16 @@
       setStartupStatus('Nieuwe versie en sessie worden gecontroleerd…');
       ensureServiceWorker();
       await ensureSupabase();
+      installMembershipAlertGuard();
       setStartupStatus('Dashboard wordt klaargezet…');
       startupViewTouched=false;
       await loadScript(CORE_SCRIPT,15000);
+      try{
+        await loadScript(MEMBERSHIP_FIX,8000);
+      }catch(error){
+        console.warn('Lidmaatschapsherstel kon niet laden:',error);
+        window.__msRestoreMembershipAlertGuard?.();
+      }
       startupCoreReady=true;
       syncBuildVersion();
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
@@ -318,6 +354,7 @@
       setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),40);
       console.info(`MijnSerenity ${BUILD}: kern gestart.`);
     }catch(error){
+      window.__msRestoreMembershipAlertGuard?.();
       console.error('MijnSerenity kon niet starten:',error);
       setAuthStatus('De beveiligde inlog kon niet worden geladen. Tik op “App herstellen en vernieuwen” en probeer opnieuw.',true);
       const button=document.getElementById('signInButton');
