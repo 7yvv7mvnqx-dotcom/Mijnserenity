@@ -40,9 +40,14 @@ function number(value: unknown): number | null {
 
 function walkRows(value: any, output: any[] = []) {
   if (!value || typeof value !== "object") return output;
-  if (!Array.isArray(value) && ("dbusPath" in value || "dataAttributeName" in value || "instance" in value)) output.push(value);
-  if (Array.isArray(value)) for (const item of value) walkRows(item, output);
-  else for (const item of Object.values(value)) walkRows(item, output);
+  if (!Array.isArray(value) && ("dbusPath" in value || "dataAttributeName" in value || "instance" in value)) {
+    output.push(value);
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) walkRows(item, output);
+  } else {
+    for (const item of Object.values(value)) walkRows(item, output);
+  }
   return output;
 }
 
@@ -53,10 +58,26 @@ function rowValue(row: any): number | null {
   return null;
 }
 
-function rowPath(row: any) { return String(row?.dbusPath || "").toLowerCase(); }
+function rowPath(row: any) {
+  return String(row?.dbusPath || "").toLowerCase();
+}
+
 function rowText(row: any) {
   return [row?.dataAttributeName, row?.description, row?.dbusPath, row?.dbusServiceType, row?.productName]
     .filter(Boolean).join(" ").toLowerCase();
+}
+
+function rowString(row: any) {
+  for (const candidate of [
+    row?.rawValue,
+    row?.value,
+    row?.valueFormatted,
+    row?.formattedValue,
+    row?.valueFormattedValueOnly,
+  ]) {
+    if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
+  }
+  return "";
 }
 
 function bestAcInstance(rows: any[]): number | null {
@@ -64,7 +85,8 @@ function bestAcInstance(rows: any[]): number | null {
   for (const row of rows) {
     const instance = number(row?.instance);
     if (instance === null) continue;
-    const path = rowPath(row), text = rowText(row);
+    const path = rowPath(row);
+    const text = rowText(row);
     let score = scores.get(instance) || 0;
     if (path === "/ac/activein/l1/v" || path === "/ac/in/1/l1/v") score += 160;
     if (path === "/ac/activein/l1/p" || path === "/ac/in/1/l1/p") score += 130;
@@ -124,16 +146,25 @@ function readAc(rows: any[]) {
     ["/Ac/Out/L1/P", "/Ac/Consumption/L1/Power"],
     [/ac.*out.*power|ac.*output.*power|consumption.*power|load.*power|verbruik.*vermogen/],
     [/solar|pv|mppt|battery|accu/]);
-  const activeInputRow = pick(rows, instance, ["/Ac/ActiveIn/ActiveInput"], [/active input|active.*ac.*input/]);
-  const dcVoltageRow = pick(rows, instance, ["/Dc/0/Voltage"], [/dc.*voltage/], [/solar|mppt|smartshunt/]);
-  const dcCurrentRow = pick(rows, instance, ["/Dc/0/Current"], [/dc.*current/], [/solar|mppt|smartshunt/]);
-  const dcPowerRow = pick(rows, instance, ["/Dc/0/Power"], [/dc.*power/], [/solar|mppt|smartshunt/]);
+  const activeInputRow = pick(rows, instance,
+    ["/Ac/ActiveIn/ActiveInput"],
+    [/active input|active.*ac.*input/]);
+  const dcVoltageRow = pick(rows, instance,
+    ["/Dc/0/Voltage"], [/dc.*voltage/], [/solar|mppt|smartshunt/]);
+  const dcCurrentRow = pick(rows, instance,
+    ["/Dc/0/Current"], [/dc.*current/], [/solar|mppt|smartshunt/]);
+  const dcPowerRow = pick(rows, instance,
+    ["/Dc/0/Power"], [/dc.*power/], [/solar|mppt|smartshunt/]);
 
-  const inputVoltage = rowValue(inputVoltageRow), inputCurrent = rowValue(inputCurrentRow);
+  const inputVoltage = rowValue(inputVoltageRow);
+  const inputCurrent = rowValue(inputCurrentRow);
   let inputPower = rowValue(inputPowerRow);
-  const outputPower = rowValue(outputPowerRow), activeInput = rowValue(activeInputRow);
-  const dcVoltage = rowValue(dcVoltageRow), dcCurrent = rowValue(dcCurrentRow);
+  const outputPower = rowValue(outputPowerRow);
+  const activeInput = rowValue(activeInputRow);
+  const dcVoltage = rowValue(dcVoltageRow);
+  const dcCurrent = rowValue(dcCurrentRow);
   let dcPower = rowValue(dcPowerRow);
+
   if (inputPower === null && inputVoltage !== null && inputCurrent !== null) inputPower = inputVoltage * inputCurrent;
   if (dcPower === null && dcVoltage !== null && dcCurrent !== null) dcPower = dcVoltage * dcCurrent;
 
@@ -174,6 +205,63 @@ function readAc(rows: any[]) {
   };
 }
 
+function readWasteTank(rows: any[]) {
+  const groups = new Map<string, any[]>();
+  for (const row of rows) {
+    const path = rowPath(row);
+    const service = String(row?.dbusServiceType || "").toLowerCase();
+    if (!service.includes("tank") && !["/level", "/fluidtype", "/capacity", "/remaining", "/customname"].includes(path)) continue;
+    const instance = number(row?.instance);
+    const key = `${service || "tank"}:${instance === null ? "unknown" : instance}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(row);
+  }
+
+  let best: { score: number; rows: any[] } | null = null;
+  for (const group of groups.values()) {
+    const fluidRow = group.find((row) => rowPath(row) === "/fluidtype");
+    const levelRow = group.find((row) => rowPath(row) === "/level" && rowValue(row) !== null);
+    const fluidType = rowValue(fluidRow);
+    const identity = group.map((row) => `${rowText(row)} ${rowString(row)}`).join(" ").toLowerCase();
+    let score = 0;
+    if (fluidType === 5) score += 1200;
+    if (/zwart\s*water|black\s*water|sewage|riool/.test(identity)) score += 900;
+    if (fluidType === 2) score += 300;
+    if (/waste\s*water|wastewater|afvalwater|vuilwater/.test(identity)) score += 250;
+    if (identity.includes("tank")) score += 40;
+    if (levelRow) score += 40;
+    if (fluidType !== null && ![2, 5].includes(fluidType) && !/zwart\s*water|black\s*water|sewage|riool|waste\s*water|wastewater|afvalwater|vuilwater/.test(identity)) score -= 1000;
+    if (/fresh\s*water|freshwater|drinkwater|brandstof|fuel|diesel|gasoline|lpg/.test(identity) && fluidType !== 5) score -= 700;
+    if (!best || score > best.score) best = { score, rows: group };
+  }
+
+  if (!best || best.score < 250) return null;
+  const group = best.rows;
+  const levelRow = group.find((row) => rowPath(row) === "/level" && rowValue(row) !== null);
+  const fluidRow = group.find((row) => rowPath(row) === "/fluidtype");
+  const statusRow = group.find((row) => rowPath(row) === "/status");
+  const capacityRow = group.find((row) => rowPath(row) === "/capacity" && rowValue(row) !== null);
+  const remainingRow = group.find((row) => rowPath(row) === "/remaining" && rowValue(row) !== null);
+  const nameRow = group.find((row) => rowPath(row) === "/customname") || group.find((row) => rowPath(row) === "/productname");
+  const rawLevel = rowValue(levelRow);
+  const levelPct = rawLevel !== null && rawLevel >= 0 && rawLevel <= 100 ? Math.round(rawLevel * 10) / 10 : null;
+  const capacityM3 = rowValue(capacityRow);
+  const remainingM3 = rowValue(remainingRow);
+  return {
+    levelPct,
+    fluidType: rowValue(fluidRow),
+    status: rowValue(statusRow),
+    instance: number(levelRow?.instance ?? fluidRow?.instance ?? group[0]?.instance),
+    name: rowString(nameRow) || "Zwart water (riool)",
+    capacityLiters: capacityM3 === null ? null : Math.round(capacityM3 * 1000),
+    remainingLiters: remainingM3 === null ? null : Math.round(remainingM3 * 1000),
+    sourceMetrics: {
+      level: metric(levelRow), fluidType: metric(fluidRow), status: metric(statusRow),
+      capacity: metric(capacityRow), remaining: metric(remainingRow),
+    },
+  };
+}
+
 function environmentApiKey() {
   const direct = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
   if (direct) return direct;
@@ -204,6 +292,24 @@ async function authorize(authHeader: string, boatId: string) {
   if (!boatResponse.ok) throw new Error("membership_check_failed");
   const boats = await boatResponse.json();
   if (!Array.isArray(boats) || boats.length !== 1) throw new Error("not_a_boat_member");
+}
+
+async function mergeTechnicalStatePatch(boatId: string, patch: Record<string, unknown>) {
+  const supabaseUrl = String(Deno.env.get("SUPABASE_URL") || "");
+  const serviceKey = String(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "");
+  if (!supabaseUrl || !serviceKey) throw new Error("technical_state_configuration");
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/merge_technical_state_patch`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({ p_boat_id: boatId, p_patch: patch }),
+  });
+  if (!response.ok) throw new Error(`technical_state_http_${response.status}`);
 }
 
 async function vrmDiagnostics(token: string) {
@@ -249,9 +355,23 @@ Deno.serve(async (req: Request) => {
     const diagnostics = await vrmDiagnostics(token);
     const rows = walkRows(diagnostics);
     const ac = readAc(rows);
+    const waste = readWasteTank(rows);
+    let wastePersisted = false;
+    if (waste?.levelPct !== null && (waste?.status === null || waste?.status === 0)) {
+      try {
+        await mergeTechnicalStatePatch(boatId, { wastePct: waste.levelPct });
+        wastePersisted = true;
+      } catch (persistError) {
+        console.warn("Victron zwartwaterniveau kon niet worden opgeslagen:", persistError);
+      }
+    }
     return reply(req, 200, {
-      success: true, sampledAt: new Date().toISOString(), installationId: INSTALLATION_ID,
-      ac, source: { diagnostics: true, rowCount: rows.length },
+      success: true,
+      sampledAt: new Date().toISOString(),
+      installationId: INSTALLATION_ID,
+      ac,
+      tanks: { waste, wastePersisted },
+      source: { diagnostics: true, rowCount: rows.length },
     });
   } catch (error: any) {
     const code = String(error?.message || error);
