@@ -1,27 +1,27 @@
-/* MijnSerenity 7.18.21 — forceer frisse app-shell en netwerkherstel */
-const CACHE_NAME='mijnserenity-7.18.21-fresh-shell';
+/* MijnSerenity 7.18.22 — forceer frisse app-shell en netwerkherstel */
+const CACHE_NAME='mijnserenity-7.18.22-fresh-shell';
 const CORE_ASSETS=[
   '/manifest.json',
-  '/auth-bootstrap.js?v=718210',
-  '/membership-load-fix-71821.js?v=718210',
-  '/dashboard-pro-71531-loader.js?v=718210',
-  '/dashboard-pro-71700.js?v=718210',
-  '/marine-glass-start-fix-71801.js?v=718210',
-  '/marine-glass-mobile-7184.css?v=718210',
-  '/marine-glass-polish-7185.css?v=718210',
-  '/marine-glass-polish-7185.js?v=718210',
-  '/marine-glass-waterkaarten-route-7188.js?v=718210',
-  '/energy-flow-fix-71819.js?v=718210',
-  '/version-fix-71820.js?v=718210',
-  '/professional-ui-71700.css?v=718210',
-  '/navigation-compact.js?v=718210',
-  '/ai-destination-search.css?v=718210',
-  '/ai-destination-search.js?v=718210',
-  '/cost-form-hotfix-71815.js?v=718210',
-  '/waterkaarten-route-receiver-71870.js?v=718210',
-  '/waterkaarten-route-enrichment-71811.js?v=718210',
-  '/marine-map-route-fit-71812.js?v=718210',
-  '/captain-ai-71814.js?v=718210',
+  '/auth-bootstrap.js?v=718220',
+  '/membership-load-fix-71821.js?v=718220',
+  '/dashboard-pro-71531-loader.js?v=718220',
+  '/dashboard-pro-71700.js?v=718220',
+  '/marine-glass-start-fix-71801.js?v=718220',
+  '/marine-glass-mobile-7184.css?v=718220',
+  '/marine-glass-polish-7185.css?v=718220',
+  '/marine-glass-polish-7185.js?v=718220',
+  '/marine-glass-waterkaarten-route-7188.js?v=718220',
+  '/energy-flow-fix-71819.js?v=718220',
+  '/version-fix-71820.js?v=718220',
+  '/professional-ui-71700.css?v=718220',
+  '/navigation-compact.js?v=718220',
+  '/ai-destination-search.css?v=718220',
+  '/ai-destination-search.js?v=718220',
+  '/cost-form-hotfix-71815.js?v=718220',
+  '/waterkaarten-route-receiver-71870.js?v=718220',
+  '/waterkaarten-route-enrichment-71811.js?v=718220',
+  '/marine-map-route-fit-71812.js?v=718220',
+  '/captain-ai-71814.js?v=718220',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -53,7 +53,6 @@ self.addEventListener('activate',event=>{
     );
     await self.clients.claim();
 
-    // Open MijnSerenity-vensters één keer opnieuw zodat de netwerkfix direct actief is.
     const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     await Promise.all(windows.map(async client=>{
       try{await client.navigate(client.url)}catch{}
@@ -118,7 +117,6 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  // Belangrijke opstartbestanden nooit uit een oude cache laten komen.
   if(
     url.pathname==='/index.html'||
     url.pathname==='/auth-bootstrap.js'||

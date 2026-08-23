@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.21 — dwing overal dezelfde zichtbare appversie af */
+/* MijnSerenity 7.18.22 — dwing overal dezelfde zichtbare appversie af */
 (()=>{
   'use strict';
-  if(window.__msVersionFix71821)return;
-  window.__msVersionFix71821=true;
-  const BUILD='7.18.21';
+  if(window.__msVersionFix71822)return;
+  window.__msVersionFix71822=true;
+  const BUILD='7.18.22';
 
   function sync(){
     window.MIJSERENITY_BUILD=BUILD;

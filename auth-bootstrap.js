@@ -1,12 +1,12 @@
-/* MijnSerenity 7.18.21 — stabiele opstart, sessiegate en netwerkherstel */
+/* MijnSerenity 7.18.22 — stabiele opstart, sessiegate en netwerkherstel */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.21';
-  const VERSION='718210';
+  const BUILD='7.18.22';
+  const VERSION='718220';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
   const MEMBERSHIP_FIX=`membership-load-fix-71821.js?v=${VERSION}`;
-  const STARTUP_TIMEOUT_MS=22000;
+  const STARTUP_TIMEOUT_MS=8000;
 
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
@@ -59,6 +59,7 @@
   let startupViewTouched=false;
   let startupObserver=null;
   let startupTimer=null;
+  let startupFallbackTimer=null;
   let membershipAlertGuardActive=false;
   let membershipAlertOriginal=null;
 
@@ -174,6 +175,10 @@
     views.forEach(view=>startupObserver.observe(view,{attributes:true,attributeFilter:['class']}));
 
     startupTimer=setTimeout(()=>{
+      if(startupCoreReady){
+        maybeFinishStartup(true);
+        if(startupResolved)return;
+      }
       showStartupError('Het starten duurt langer dan normaal. Probeer opnieuw; je gegevens blijven bewaard.');
     },STARTUP_TIMEOUT_MS);
   }
@@ -195,6 +200,7 @@
     if(startupResolved)return;
     startupResolved=true;
     if(startupTimer){clearTimeout(startupTimer);startupTimer=null}
+    if(startupFallbackTimer){clearTimeout(startupFallbackTimer);startupFallbackTimer=null}
     startupObserver?.disconnect();
     startupObserver=null;
     document.documentElement.classList.remove('ms-starting');
@@ -205,8 +211,9 @@
     }
   }
 
-  function maybeFinishStartup(){
-    if(startupResolved||!startupCoreReady||!startupViewTouched)return;
+  function maybeFinishStartup(force=false){
+    if(startupResolved||!startupCoreReady)return;
+    if(!force&&!startupViewTouched)return;
     const visible=['authView','approvalView','appView']
       .map(id=>document.getElementById(id))
       .filter(view=>view&&!view.classList.contains('hidden'));
@@ -351,6 +358,7 @@
       const button=document.getElementById('signInButton');
       if(button)button.disabled=false;
       maybeFinishStartup();
+      startupFallbackTimer=setTimeout(()=>maybeFinishStartup(true),700);
       setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),40);
       console.info(`MijnSerenity ${BUILD}: kern gestart.`);
     }catch(error){

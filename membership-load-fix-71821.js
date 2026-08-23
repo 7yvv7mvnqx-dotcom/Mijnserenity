@@ -1,15 +1,28 @@
-/* MijnSerenity 7.18.21 — robuust lidmaatschap laden zonder blokkerende netwerkpopup */
+/* MijnSerenity 7.18.22 — robuust lidmaatschap laden zonder blokkerende netwerkpopup */
 (()=>{
   'use strict';
   if(window.__msMembershipLoadFix71821)return;
   window.__msMembershipLoadFix71821=true;
 
-  const RETRY_DELAYS=[0,450,1200,2500];
+  const RETRY_DELAYS=[0,600,1600];
+  const QUERY_TIMEOUT_MS=3500;
   const TRANSIENT=/load failed|failed to fetch|networkerror|network request|timeout|timed out|fetch/i;
   const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
   function messageOf(error){
     return String(error?.message||error||'Onbekende verbindingsfout');
+  }
+
+  function withTimeout(task,timeoutMs,label){
+    let timer=null;
+    return Promise.race([
+      Promise.resolve(task),
+      new Promise((_,reject)=>{
+        timer=setTimeout(()=>reject(new Error(`${label} time-out`)),timeoutMs);
+      })
+    ]).finally(()=>{
+      if(timer)clearTimeout(timer);
+    });
   }
 
   function restoreAlertGuard(){
@@ -27,11 +40,12 @@
   }
 
   async function queryMembership(){
-    const {data,error}=await sb
+    const request=sb
       .from('boat_members')
       .select('role,boat_id,boats(id,name,created_by)')
       .eq('user_id',currentUser.id)
       .limit(1);
+    const {data,error}=await withTimeout(request,QUERY_TIMEOUT_MS,'Lidmaatschap laden');
     if(error)throw error;
     if(data?.length){
       currentRole=data[0].role;
@@ -71,7 +85,7 @@
 
     restoreAlertGuard();
     const text=messageOf(lastError);
-    showConnectionStatus('Serenity kon nog niet worden bereikt. Controleer de verbinding en probeer opnieuw.',true);
+    showConnectionStatus('Serenity kon nog niet worden bereikt. Dashboard blijft beschikbaar; probeer zo opnieuw.',true);
     try{
       if(typeof showAppToast==='function')showAppToast('Serenity tijdelijk niet bereikbaar. Probeer zo opnieuw.');
     }catch{}
@@ -79,12 +93,8 @@
     return false;
   }
 
-  // Vervang de oude één-poging-functie. Alle bestaande aanroepen gebruiken
-  // hiermee automatisch dezelfde retry-logica.
   loadMembership=robustLoadMembership;
 
-  // Als de eerste auth-callback de oude functie nét vóór deze hotfix heeft
-  // geraakt, herstellen we de bootkoppeling alsnog zonder opnieuw inloggen.
   setTimeout(async()=>{
     try{
       if(!currentUser||currentBoat)return;
