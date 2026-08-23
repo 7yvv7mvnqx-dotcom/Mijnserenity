@@ -1,9 +1,7 @@
-/* MijnSerenity 7.18.31 — Marine Glass met veilige document-scroll */
+/* MijnSerenity 7.18.29 — Marine Glass met harde document-scroll rescue */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71831)return;
-  window.__msDashboardLoader71831=true;
-  window.__msDashboardLoader71830=true;
+  if(window.__msDashboardLoader71829)return;
   window.__msDashboardLoader71829=true;
   window.__msDashboardLoader71828=true;
   window.__msDashboardLoader71827=true;
@@ -11,8 +9,8 @@
   window.__msDashboardLoader71824=true;
   window.__msDashboardLoader71823=true;
 
-  const V='718310';
-  const BUILD='7.18.31';
+  const V='718290';
+  const BUILD='7.18.29';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -71,8 +69,9 @@
     document.getElementById('mgMore')?.remove();
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
 
-    /* Oude pager alleen éénmalig opruimen; de DOM van Marine Glass blijft intact. */
-    loadCss(`/page-swipe.css?v=${V}`,'msPageSwipe71831');
+    /* Eerst de scrolllaag herstellen. Zo kan Marine Glass nooit meer binnen
+       een oude iOS-pager of een bevroren viewport worden opgebouwd. */
+    loadCss(`/page-swipe.css?v=${V}`,'msPageSwipe71829');
     await load(`/page-swipe.js?v=${V}`,'document-scroll-rescue');
 
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
@@ -82,8 +81,6 @@
     if(!document.getElementById('msMarineGlass')){
       throw new Error('Marine Glass hoofdmodule is geladen, maar de cockpit is niet opgebouwd.');
     }
-
-    window.ms708ResizePager?.();
 
     await Promise.all([
       load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix'),
@@ -98,9 +95,9 @@
     document.documentElement.classList.add('ms-marine-glass-ready');
     syncVersion();
     window.ms708ResizePager?.();
-    setTimeout(()=>{syncVersion();window.ms708ResizePager?.()},120);
-    setTimeout(()=>{syncVersion();window.ms708ResizePager?.()},500);
-    setTimeout(()=>{syncVersion();window.ms708ResizePager?.()},1400);
+    setTimeout(()=>{syncVersion();window.ms708ResizePager?.()},250);
+    setTimeout(()=>{syncVersion();window.ms708ResizePager?.()},1200);
+    setTimeout(()=>{syncVersion();window.ms708ResizePager?.()},3500);
 
     if(!document.getElementById('msAiDestinationCss')){
       const link=document.createElement('link');
@@ -123,8 +120,6 @@
     console.warn('Marine Glass loader:',error);
     throw error;
   });
-  window.__msDashboardReady71831=ready;
-  window.__msDashboardReady71830=ready;
   window.__msDashboardReady71829=ready;
   window.__msDashboardReady71828=ready;
   window.__msDashboardReady71827=ready;
