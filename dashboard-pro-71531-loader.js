@@ -79,7 +79,8 @@
       load(`/marine-glass-polish-7185.js?v=${V}`,'marine-glass-polish'),
       load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info'),
       load(`/energy-flow-fix-71819.js?v=${V}`,'energy-flow-fix'),
-      load(`/version-fix-71820.js?v=${V}`,'version-fix')
+      load(`/version-fix-71820.js?v=${V}`,'version-fix'),
+      load(`/poi-bearing-71826.js?v=${V}`,'poi-bearing')
     ]);
 
     removeLegacyVisuals();
