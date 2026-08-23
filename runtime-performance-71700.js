@@ -1,10 +1,11 @@
-/* MijnSerenity 7.17.0 — runtime performance guard */
+/* MijnSerenity runtime performance guard + startup fail-open */
 (()=>{
   'use strict';
   if(window.__msRuntimePerformance71700)return;
   window.__msRuntimePerformance71700=true;
 
   const STORAGE_SELECTOR='img[data-storage-bucket][data-storage-path]';
+  const STARTUP_FAIL_OPEN_MS=2500;
 
   function prepareImage(image){
     if(!(image instanceof HTMLImageElement))return;
@@ -61,9 +62,41 @@
     }
   }
 
+  function releaseStuckStartupGate(){
+    setTimeout(()=>{
+      const gate=document.getElementById('msStartupGate');
+      if(!gate||!document.documentElement.classList.contains('ms-starting'))return;
+
+      const views=['authView','approvalView','appView']
+        .map(id=>document.getElementById(id))
+        .filter(Boolean);
+      let visible=views.filter(view=>!view.classList.contains('hidden'));
+
+      // De bootstrap mag het dashboard nooit onbeperkt afdekken. Als de
+      // sessiecallback geen class-mutatie geeft, tonen we de reeds geldige
+      // view alsnog. Zijn alle views per ongeluk verborgen, val dan veilig
+      // terug op het inlogscherm; de sessie kan daarna nog gewoon herstellen.
+      if(visible.length===0){
+        const auth=document.getElementById('authView');
+        if(auth){
+          auth.classList.remove('hidden');
+          visible=[auth];
+        }
+      }
+
+      if(visible.length>=1){
+        document.documentElement.classList.remove('ms-starting');
+        gate.style.opacity='0';
+        setTimeout(()=>gate.remove(),180);
+        console.info('MijnSerenity: vastgelopen opstartscherm automatisch vrijgegeven.');
+      }
+    },STARTUP_FAIL_OPEN_MS);
+  }
+
   function start(){
     optimiseExistingImages();
     replaceStorageMutationObserver();
+    releaseStuckStartupGate();
     document.documentElement.dataset.msPerformance='71700';
   }
 
