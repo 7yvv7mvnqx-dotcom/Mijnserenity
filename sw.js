@@ -1,6 +1,29 @@
-/* MijnSerenity 7.18.16 — frisse app-shell en stabiele PWA-opstart */
-const CACHE_NAME='mijnserenity-7.18.16-startup';
-const CORE_ASSETS=['/manifest.json','/auth-bootstrap.js?v=718160','/cost-form-hotfix-71815.js?v=718160','/waterkaarten-route-receiver-71870.js?v=718160','/waterkaarten-route-enrichment-71811.js?v=718160','/marine-map-route-fit-71812.js?v=718160','/professional-ui-71700.css?v=718160','/dashboard-pro-71531-loader.js?v=718160','/dashboard-pro-71700.js?v=718160','/marine-glass-start-fix-71801.js?v=718160','/marine-glass-mobile-7184.css?v=718160','/marine-glass-polish-7185.css?v=718160','/marine-glass-polish-7185.js?v=718160','/marine-glass-waterkaarten-route-7188.js?v=718160','/navigation-compact.js?v=718160','/ai-destination-search.css?v=718160','/ai-destination-search.js?v=718160','/captain-ai-71814.js?v=718160','/icon-192.png','/icon-512.png'];
+/* MijnSerenity 7.18.20 — forceer frisse app-shell en verwijder oude PWA-cache */
+const CACHE_NAME='mijnserenity-7.18.20-fresh-shell';
+const CORE_ASSETS=[
+  '/manifest.json',
+  '/auth-bootstrap.js?v=718200',
+  '/dashboard-pro-71531-loader.js?v=718200',
+  '/dashboard-pro-71700.js?v=718200',
+  '/marine-glass-start-fix-71801.js?v=718200',
+  '/marine-glass-mobile-7184.css?v=718200',
+  '/marine-glass-polish-7185.css?v=718200',
+  '/marine-glass-polish-7185.js?v=718200',
+  '/marine-glass-waterkaarten-route-7188.js?v=718200',
+  '/energy-flow-fix-71819.js?v=718200',
+  '/version-fix-71820.js?v=718200',
+  '/professional-ui-71700.css?v=718200',
+  '/navigation-compact.js?v=718200',
+  '/ai-destination-search.css?v=718200',
+  '/ai-destination-search.js?v=718200',
+  '/cost-form-hotfix-71815.js?v=718200',
+  '/waterkaarten-route-receiver-71870.js?v=718200',
+  '/waterkaarten-route-enrichment-71811.js?v=718200',
+  '/marine-map-route-fit-71812.js?v=718200',
+  '/captain-ai-71814.js?v=718200',
+  '/icon-192.png',
+  '/icon-512.png'
+];
 
 async function cacheCore(cache,path){
   try{
@@ -28,6 +51,13 @@ self.addEventListener('activate',event=>{
         .map(key=>caches.delete(key))
     );
     await self.clients.claim();
+
+    // Een oude geïnstalleerde PWA kan anders het al geladen 7.18.12-scherm blijven tonen.
+    // Bij deze eenmalige service-worker-update laden we geopende MijnSerenity-vensters opnieuw.
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    await Promise.all(windows.map(async client=>{
+      try{await client.navigate(client.url)}catch{}
+    }));
   })());
 });
 
@@ -82,14 +112,24 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
+
   if(request.mode==='navigate'){
     event.respondWith(networkFirstNavigation(request));
     return;
   }
-  if(url.pathname==='/index.html'||url.pathname==='/auth-bootstrap.js'||url.pathname==='/sw.js'){
+
+  // Belangrijke opstartbestanden nooit uit een oude cache laten komen.
+  if(
+    url.pathname==='/index.html'||
+    url.pathname==='/auth-bootstrap.js'||
+    url.pathname==='/dashboard-pro-71531-loader.js'||
+    url.pathname==='/version-fix-71820.js'||
+    url.pathname==='/sw.js'
+  ){
     event.respondWith(networkFirst(request));
     return;
   }
+
   if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')){
     event.respondWith(networkFirst(request));
     return;
