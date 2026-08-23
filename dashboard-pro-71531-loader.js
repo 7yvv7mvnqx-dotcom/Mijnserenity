@@ -46,11 +46,8 @@
     [
       'msStartCockpit7144',
       'msDashboardPremium7143',
-      'msMarineGlassMobile7182',
-      'mgMoreNav',
-      'mgMore'
+      'msMarineGlassMobile7182'
     ].forEach(id=>document.getElementById(id)?.remove());
-    document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
   }
 
   function syncVersion(){
@@ -69,6 +66,9 @@
   async function start(){
     removeLegacyVisuals();
     document.getElementById('mgNav718Style')?.remove();
+    document.getElementById('mgMoreNav')?.remove();
+    document.getElementById('mgMore')?.remove();
+    document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
 
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
