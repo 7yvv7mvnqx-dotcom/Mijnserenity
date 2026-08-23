@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.23 — dwing overal dezelfde zichtbare appversie af */
+/* MijnSerenity 7.18.24 — dwing overal dezelfde zichtbare appversie af */
 (()=>{
   'use strict';
-  if(window.__msVersionFix71823)return;
-  window.__msVersionFix71823=true;
-  const BUILD='7.18.23';
+  if(window.__msVersionFix71824)return;
+  window.__msVersionFix71824=true;
+  const BUILD='7.18.24';
 
   function sync(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -19,7 +19,7 @@
   }
 
   sync();
-  ['mijnserenity:modules-ready','mijnserenity:routechange','focus','pageshow']
+  ['mijnserenity:modules-ready','mijnserenity:dashboard-ready','mijnserenity:routechange','focus','pageshow']
     .forEach(name=>window.addEventListener(name,()=>requestAnimationFrame(sync),{passive:true}));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()},{passive:true});
   [100,500,1200,3000,7000,15000].forEach(delay=>setTimeout(sync,delay));
