@@ -1,26 +1,27 @@
-/* MijnSerenity 7.18.20 — forceer frisse app-shell en verwijder oude PWA-cache */
-const CACHE_NAME='mijnserenity-7.18.20-fresh-shell';
+/* MijnSerenity 7.18.21 — forceer frisse app-shell en netwerkherstel */
+const CACHE_NAME='mijnserenity-7.18.21-fresh-shell';
 const CORE_ASSETS=[
   '/manifest.json',
-  '/auth-bootstrap.js?v=718200',
-  '/dashboard-pro-71531-loader.js?v=718200',
-  '/dashboard-pro-71700.js?v=718200',
-  '/marine-glass-start-fix-71801.js?v=718200',
-  '/marine-glass-mobile-7184.css?v=718200',
-  '/marine-glass-polish-7185.css?v=718200',
-  '/marine-glass-polish-7185.js?v=718200',
-  '/marine-glass-waterkaarten-route-7188.js?v=718200',
-  '/energy-flow-fix-71819.js?v=718200',
-  '/version-fix-71820.js?v=718200',
-  '/professional-ui-71700.css?v=718200',
-  '/navigation-compact.js?v=718200',
-  '/ai-destination-search.css?v=718200',
-  '/ai-destination-search.js?v=718200',
-  '/cost-form-hotfix-71815.js?v=718200',
-  '/waterkaarten-route-receiver-71870.js?v=718200',
-  '/waterkaarten-route-enrichment-71811.js?v=718200',
-  '/marine-map-route-fit-71812.js?v=718200',
-  '/captain-ai-71814.js?v=718200',
+  '/auth-bootstrap.js?v=718210',
+  '/membership-load-fix-71821.js?v=718210',
+  '/dashboard-pro-71531-loader.js?v=718210',
+  '/dashboard-pro-71700.js?v=718210',
+  '/marine-glass-start-fix-71801.js?v=718210',
+  '/marine-glass-mobile-7184.css?v=718210',
+  '/marine-glass-polish-7185.css?v=718210',
+  '/marine-glass-polish-7185.js?v=718210',
+  '/marine-glass-waterkaarten-route-7188.js?v=718210',
+  '/energy-flow-fix-71819.js?v=718210',
+  '/version-fix-71820.js?v=718210',
+  '/professional-ui-71700.css?v=718210',
+  '/navigation-compact.js?v=718210',
+  '/ai-destination-search.css?v=718210',
+  '/ai-destination-search.js?v=718210',
+  '/cost-form-hotfix-71815.js?v=718210',
+  '/waterkaarten-route-receiver-71870.js?v=718210',
+  '/waterkaarten-route-enrichment-71811.js?v=718210',
+  '/marine-map-route-fit-71812.js?v=718210',
+  '/captain-ai-71814.js?v=718210',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -52,8 +53,7 @@ self.addEventListener('activate',event=>{
     );
     await self.clients.claim();
 
-    // Een oude geïnstalleerde PWA kan anders het al geladen 7.18.12-scherm blijven tonen.
-    // Bij deze eenmalige service-worker-update laden we geopende MijnSerenity-vensters opnieuw.
+    // Open MijnSerenity-vensters één keer opnieuw zodat de netwerkfix direct actief is.
     const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     await Promise.all(windows.map(async client=>{
       try{await client.navigate(client.url)}catch{}
@@ -122,6 +122,7 @@ self.addEventListener('fetch',event=>{
   if(
     url.pathname==='/index.html'||
     url.pathname==='/auth-bootstrap.js'||
+    url.pathname==='/membership-load-fix-71821.js'||
     url.pathname==='/dashboard-pro-71531-loader.js'||
     url.pathname==='/version-fix-71820.js'||
     url.pathname==='/sw.js'
