@@ -1,31 +1,32 @@
-/* MijnSerenity 7.18.33 — fail-safe shell met Marine Glass timingfix */
-const CACHE_NAME='mijnserenity-7.18.33-marine-glass-ready';
-const BUILD_TOKEN='718330';
+/* MijnSerenity 7.18.34 — iPhone Marine Glass lineaire document-flow */
+const CACHE_NAME='mijnserenity-7.18.34-linear-mobile-flow';
+const BUILD_TOKEN='718340';
 const CORE_ASSETS=[
   '/manifest.json',
-  '/auth-bootstrap.js?v=718330',
-  '/membership-load-fix-71821.js?v=718330',
-  '/dashboard-pro-71531-loader.js?v=718330',
-  '/dashboard-pro-71700.js?v=718330',
-  '/page-swipe.css?v=718330',
-  '/page-swipe.js?v=718330',
-  '/poi-bearing-71826.js?v=718330',
-  '/marine-glass-start-fix-71801.js?v=718330',
-  '/marine-glass-mobile-7184.css?v=718330',
-  '/marine-glass-polish-7185.css?v=718330',
-  '/marine-glass-polish-7185.js?v=718330',
-  '/marine-glass-waterkaarten-route-7188.js?v=718330',
-  '/energy-flow-fix-71819.js?v=718330',
-  '/version-fix-71820.js?v=718330',
-  '/professional-ui-71700.css?v=718330',
-  '/navigation-compact.js?v=718330',
-  '/ai-destination-search.css?v=718330',
-  '/ai-destination-search.js?v=718330',
-  '/cost-form-hotfix-71815.js?v=718330',
-  '/waterkaarten-route-receiver-71870.js?v=718330',
-  '/waterkaarten-route-enrichment-71811.js?v=718330',
-  '/marine-map-route-fit-71812.js?v=718330',
-  '/captain-ai-71814.js?v=718330',
+  '/auth-bootstrap.js?v=718340',
+  '/membership-load-fix-71821.js?v=718340',
+  '/dashboard-pro-71531-loader.js?v=718340',
+  '/dashboard-pro-71700.js?v=718340',
+  '/page-swipe.css?v=718340',
+  '/page-swipe.js?v=718340',
+  '/poi-bearing-71826.js?v=718340',
+  '/marine-glass-start-fix-71801.js?v=718340',
+  '/marine-glass-mobile-7184.css?v=718340',
+  '/marine-glass-mobile-flow-71834.css?v=718340',
+  '/marine-glass-polish-7185.css?v=718340',
+  '/marine-glass-polish-7185.js?v=718340',
+  '/marine-glass-waterkaarten-route-7188.js?v=718340',
+  '/energy-flow-fix-71819.js?v=718340',
+  '/version-fix-71820.js?v=718340',
+  '/professional-ui-71700.css?v=718340',
+  '/navigation-compact.js?v=718340',
+  '/ai-destination-search.css?v=718340',
+  '/ai-destination-search.js?v=718340',
+  '/cost-form-hotfix-71815.js?v=718340',
+  '/waterkaarten-route-receiver-71870.js?v=718340',
+  '/waterkaarten-route-enrichment-71811.js?v=718340',
+  '/marine-map-route-fit-71812.js?v=718340',
+  '/captain-ai-71814.js?v=718340',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -56,8 +57,8 @@ self.addEventListener('activate',event=>{
     );
     await self.clients.claim();
 
-    /* Eenmalige 7.18.33-herlaadactie zodat een reeds geopend fallback-dashboard
-       de nieuwe Marine Glass timingfix direct binnenhaalt. */
+    /* Eenmalige 7.18.34-herlaadactie: haal de lineaire mobiele cockpit-flow
+       binnen zonder dat de gebruiker zelf PWA-cache hoeft te wissen. */
     const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     await Promise.all(windows.map(async client=>{
       try{
@@ -139,6 +140,8 @@ self.addEventListener('fetch',event=>{
     url.pathname==='/dashboard-pro-71700.js'||
     url.pathname==='/page-swipe.css'||
     url.pathname==='/page-swipe.js'||
+    url.pathname==='/marine-glass-mobile-7184.css'||
+    url.pathname==='/marine-glass-mobile-flow-71834.css'||
     url.pathname==='/version-fix-71820.js'||
     url.pathname==='/sw.js'
   ){
