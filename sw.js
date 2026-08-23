@@ -1,27 +1,27 @@
-/* MijnSerenity 7.18.22 — forceer frisse app-shell en netwerkherstel */
-const CACHE_NAME='mijnserenity-7.18.22-fresh-shell';
+/* MijnSerenity 7.18.23 — frisse shell, kritieke cockpit en netwerkherstel */
+const CACHE_NAME='mijnserenity-7.18.23-fresh-shell';
 const CORE_ASSETS=[
   '/manifest.json',
-  '/auth-bootstrap.js?v=718220',
-  '/membership-load-fix-71821.js?v=718220',
-  '/dashboard-pro-71531-loader.js?v=718220',
-  '/dashboard-pro-71700.js?v=718220',
-  '/marine-glass-start-fix-71801.js?v=718220',
-  '/marine-glass-mobile-7184.css?v=718220',
-  '/marine-glass-polish-7185.css?v=718220',
-  '/marine-glass-polish-7185.js?v=718220',
-  '/marine-glass-waterkaarten-route-7188.js?v=718220',
-  '/energy-flow-fix-71819.js?v=718220',
-  '/version-fix-71820.js?v=718220',
-  '/professional-ui-71700.css?v=718220',
-  '/navigation-compact.js?v=718220',
-  '/ai-destination-search.css?v=718220',
-  '/ai-destination-search.js?v=718220',
-  '/cost-form-hotfix-71815.js?v=718220',
-  '/waterkaarten-route-receiver-71870.js?v=718220',
-  '/waterkaarten-route-enrichment-71811.js?v=718220',
-  '/marine-map-route-fit-71812.js?v=718220',
-  '/captain-ai-71814.js?v=718220',
+  '/auth-bootstrap.js?v=718230',
+  '/membership-load-fix-71821.js?v=718230',
+  '/dashboard-pro-71531-loader.js?v=718230',
+  '/dashboard-pro-71700.js?v=718230',
+  '/marine-glass-start-fix-71801.js?v=718230',
+  '/marine-glass-mobile-7184.css?v=718230',
+  '/marine-glass-polish-7185.css?v=718230',
+  '/marine-glass-polish-7185.js?v=718230',
+  '/marine-glass-waterkaarten-route-7188.js?v=718230',
+  '/energy-flow-fix-71819.js?v=718230',
+  '/version-fix-71820.js?v=718230',
+  '/professional-ui-71700.css?v=718230',
+  '/navigation-compact.js?v=718230',
+  '/ai-destination-search.css?v=718230',
+  '/ai-destination-search.js?v=718230',
+  '/cost-form-hotfix-71815.js?v=718230',
+  '/waterkaarten-route-receiver-71870.js?v=718230',
+  '/waterkaarten-route-enrichment-71811.js?v=718230',
+  '/marine-map-route-fit-71812.js?v=718230',
+  '/captain-ai-71814.js?v=718230',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -98,6 +98,7 @@ async function staleWhileRevalidate(request){
     }
     return response;
   }).catch(()=>null);
+
   if(cached){
     network.catch(()=>{});
     return cached;
@@ -122,6 +123,7 @@ self.addEventListener('fetch',event=>{
     url.pathname==='/auth-bootstrap.js'||
     url.pathname==='/membership-load-fix-71821.js'||
     url.pathname==='/dashboard-pro-71531-loader.js'||
+    url.pathname==='/dashboard-pro-71700.js'||
     url.pathname==='/version-fix-71820.js'||
     url.pathname==='/sw.js'
   ){
@@ -133,5 +135,6 @@ self.addEventListener('fetch',event=>{
     event.respondWith(networkFirst(request));
     return;
   }
+
   event.respondWith(staleWhileRevalidate(request));
 });
