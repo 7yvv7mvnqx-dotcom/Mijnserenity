@@ -1,5 +1,5 @@
 /* =========================================================
-   MijnSerenity Cloud 7.4.8 — native iPhone/iPad paginavegen
+   MijnSerenity 7.18.27 — stabiele document-scroll op iPhone/iPad
    ========================================================= */
 
 html,
@@ -78,7 +78,6 @@ body.ms708-native-pages-active{
   height:8px;
 }
 
-/* Alleen de buitenste app-shell mag worden begrensd. */
 body.ms708-native-pages-active > main{
   overflow:hidden;
 }
@@ -98,37 +97,81 @@ body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass > mai
 }
 
 /*
-   iPhone/PWA: gebruik in single-page-modus één echte scrolllaag. De vorige
-   combinatie van een flex-pagina, translateZ en -webkit-overflow-scrolling
-   veroorzaakte in WebKit een paint-clip: na enkele honderden pixels bleef de
-   scrollbar werken, maar de rest van Marine Glass werd als leeg vlak getekend.
+   7.18.27 iPhone/PWA:
+   Geen fixed app-shell, geen door JavaScript berekende viewporthoogte en geen
+   geneste verticale scroller meer. WebKit kon die combinatie na inloggen of
+   een visualViewport-resize op ongeveer de oude toetsenbordhoogte vastzetten.
+   Het resultaat was exact het grote lege vlak onder Energie & Stroom.
+
+   In single-page-modus scrollt daarom gewoon het document. Alleen de actieve
+   route staat in de documentflow; de onderste navigatie blijft fixed.
 */
 @media(max-width:760px){
+  html{
+    min-height:100%;
+    height:auto !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+  }
+
+  body.ms708-native-pages-active{
+    position:static !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:100dvh !important;
+    max-height:none !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    overscroll-behavior-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+  }
+
+  body.ms708-native-pages-active > main{
+    position:relative !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:100dvh !important;
+    max-height:none !important;
+    overflow:visible !important;
+  }
+
   body.ms708-native-pages-active #appView{
-    position:fixed !important;
-    top:env(safe-area-inset-top) !important;
-    right:0 !important;
-    bottom:calc(68px + env(safe-area-inset-bottom)) !important;
-    left:0 !important;
+    position:relative !important;
+    top:auto !important;
+    right:auto !important;
+    bottom:auto !important;
+    left:auto !important;
+    inset:auto !important;
     width:100% !important;
     height:auto !important;
     min-height:0 !important;
+    max-height:none !important;
     margin:0 !important;
     padding:0 !important;
-    overflow:hidden !important;
+    overflow:visible !important;
+    contain:none !important;
+    transform:none !important;
   }
 
   body.ms708-native-pages-active .ms708-native-pager{
-    position:absolute !important;
-    inset:0 !important;
+    position:relative !important;
+    top:auto !important;
+    right:auto !important;
+    bottom:auto !important;
+    left:auto !important;
+    inset:auto !important;
     display:block !important;
     width:100% !important;
-    height:100% !important;
+    height:auto !important;
     min-height:0 !important;
     max-height:none !important;
-    overflow:hidden !important;
+    overflow:visible !important;
     scroll-snap-type:none !important;
+    scroll-behavior:auto !important;
+    overscroll-behavior:auto !important;
     -webkit-overflow-scrolling:auto !important;
+    transform:none !important;
+    contain:none !important;
   }
 
   body.ms708-native-pages-active.ms755-single-page-nav .ms708-native-pager > .ms708-native-page:not(.ms755-route-active){
@@ -136,21 +179,31 @@ body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass > mai
   }
 
   body.ms708-native-pages-active.ms755-single-page-nav .ms708-native-pager > .ms708-native-page.ms755-route-active{
-    position:absolute !important;
-    inset:0 !important;
+    position:relative !important;
+    top:auto !important;
+    right:auto !important;
+    bottom:auto !important;
+    left:auto !important;
+    inset:auto !important;
     display:block !important;
+    flex:none !important;
     width:100% !important;
     min-width:0 !important;
-    max-width:none !important;
-    height:100% !important;
+    max-width:100% !important;
+    height:auto !important;
     min-height:0 !important;
     max-height:none !important;
     margin:0 !important;
-    padding:0 1px 18px !important;
-    overflow-x:hidden !important;
-    overflow-y:auto !important;
-    overscroll-behavior-y:contain !important;
-    -webkit-overflow-scrolling:touch !important;
+    padding:
+      0 1px
+      calc(
+        var(--nav-height,78px) +
+        env(safe-area-inset-bottom) +
+        24px
+      ) !important;
+    overflow:visible !important;
+    overscroll-behavior:auto !important;
+    -webkit-overflow-scrolling:auto !important;
     transform:none !important;
     backface-visibility:visible !important;
     contain:none !important;
@@ -159,13 +212,20 @@ body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass > mai
   }
 
   body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass{
+    position:relative !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
     overflow:visible !important;
     contain:none !important;
     transform:none !important;
   }
 
   body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass > main.mg-grid{
+    position:relative !important;
     display:grid !important;
+    width:100% !important;
     height:auto !important;
     min-height:0 !important;
     max-height:none !important;
@@ -176,11 +236,10 @@ body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass > mai
 
   body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass .mg-top{
     position:sticky !important;
-    top:0 !important;
+    top:env(safe-area-inset-top) !important;
   }
 }
 
-/* Kaarten en camerabeeld houden hun eigen aanrakingen. */
 .ms708-native-page .leaflet-container,
 .ms708-native-page .live-radar-camera-viewport,
 .ms708-native-page input,
@@ -189,7 +248,6 @@ body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass > mai
   touch-action:manipulation;
 }
 
-/* De navigatie blijft tijdens native vegen vast en helder. */
 body.ms708-native-pages-active .bottom-nav{
   transform:translateZ(0) !important;
   contain:layout paint;
