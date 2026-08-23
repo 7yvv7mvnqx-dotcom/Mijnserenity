@@ -1,4 +1,4 @@
-/* MijnSerenity 7.18.22 — robuust lidmaatschap laden zonder blokkerende netwerkpopup */
+/* MijnSerenity 7.18.28 — robuuste login + lidmaatschap zonder blokkerende netwerkpopup */
 (()=>{
   'use strict';
   if(window.__msMembershipLoadFix71821)return;
@@ -6,7 +6,9 @@
 
   const RETRY_DELAYS=[0,600,1600];
   const QUERY_TIMEOUT_MS=3500;
-  const TRANSIENT=/load failed|failed to fetch|networkerror|network request|timeout|timed out|fetch/i;
+  const LOGIN_RETRY_DELAYS=[0,700,1800];
+  const LOGIN_TIMEOUT_MS=9000;
+  const TRANSIENT=/load failed|failed to fetch|networkerror|network request|timeout|timed out|fetch|connection|network/i;
   const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
   function messageOf(error){
@@ -93,7 +95,112 @@
     return false;
   }
 
+  async function resolveSignedInSession(result){
+    if(result?.data?.session?.user)return result.data.session;
+    const response=await withTimeout(sb.auth.getSession(),4000,'Sessie controleren');
+    return response?.data?.session||null;
+  }
+
+  async function ensureAppOpened(session){
+    if(!session?.user)return false;
+
+    /* Geef onAuthStateChange eerst kort de kans. */
+    await sleep(120);
+    const app=document.getElementById('appView');
+    if(app&&!app.classList.contains('hidden'))return true;
+
+    /* Safari/PWA mist soms of vertraagt het auth-event. Start dan zelf. */
+    try{
+      if(typeof initialise==='function'){
+        await withTimeout(initialise(session),8000,'MijnSerenity openen');
+      }
+    }catch(error){
+      console.warn('Directe sessie-overdracht na login:',error);
+    }
+
+    return Boolean(app&&!app.classList.contains('hidden'));
+  }
+
+  async function robustSignIn(){
+    const email=String(document.getElementById('email')?.value||'').trim();
+    const password=document.getElementById('password')?.value||'';
+    const button=document.getElementById('signInButton');
+
+    if(!email||!password){
+      showConnectionStatus('Vul e-mailadres en wachtwoord in.',true);
+      return;
+    }
+
+    if(button?.disabled)return;
+    if(button)button.disabled=true;
+
+    let lastError=null;
+    try{
+      for(let attempt=0;attempt<LOGIN_RETRY_DELAYS.length;attempt++){
+        const delay=LOGIN_RETRY_DELAYS[attempt];
+        if(delay)await sleep(delay);
+
+        try{
+          showConnectionStatus(
+            attempt===0
+              ?'Veilig inloggen…'
+              :`Inlogverbinding herstellen… poging ${attempt+1}/${LOGIN_RETRY_DELAYS.length}`
+          );
+
+          const result=await withTimeout(
+            sb.auth.signInWithPassword({email,password}),
+            LOGIN_TIMEOUT_MS,
+            'Inloggen'
+          );
+          if(result?.error)throw result.error;
+
+          const session=await resolveSignedInSession(result);
+          if(!session?.user)throw new Error('Inlogsessie is nog niet beschikbaar.');
+
+          const passwordField=document.getElementById('password');
+          if(passwordField)passwordField.value='';
+          showConnectionStatus('Ingelogd. MijnSerenity wordt geopend…');
+
+          const opened=await ensureAppOpened(session);
+          if(!opened){
+            /* Laat de geldige sessie staan; pageshow/onAuthStateChange kan nog afronden. */
+            showConnectionStatus('Ingelogd. App wordt verder geopend…');
+            setTimeout(async()=>{
+              try{
+                const latest=await sb.auth.getSession();
+                if(latest?.data?.session?.user&&typeof initialise==='function'){
+                  await initialise(latest.data.session);
+                }
+              }catch(error){
+                console.warn('Vertraagde login-herstelactie:',error);
+              }
+            },500);
+          }
+          return;
+        }catch(error){
+          lastError=error;
+          const text=messageOf(error);
+          console.warn(`Inloggen poging ${attempt+1} mislukt:`,error);
+
+          /* Verkeerd wachtwoord, onbevestigd account e.d. nooit opnieuw proberen. */
+          if(!TRANSIENT.test(text))throw error;
+        }
+      }
+
+      throw lastError||new Error('Inloggen kon niet worden voltooid.');
+    }catch(error){
+      const friendly=typeof friendlyAuthError==='function'
+        ?friendlyAuthError(error)
+        :messageOf(error);
+      showConnectionStatus(friendly||'Inloggen mislukt. Probeer opnieuw.',true);
+    }finally{
+      if(button)button.disabled=false;
+    }
+  }
+
   loadMembership=robustLoadMembership;
+  signIn=robustSignIn;
+  window.signIn=robustSignIn;
 
   setTimeout(async()=>{
     try{
