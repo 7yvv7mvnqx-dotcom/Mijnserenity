@@ -142,24 +142,3 @@
   for = "/victron-diagnostics.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
-
-# MijnSerenity 7.18.25 — kritieke dashboard/PWA-assets nooit als oude versie vasthouden
-[[headers]]
-  for = "/page-swipe.css"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/page-swipe.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/dashboard-pro-71531-loader.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/version-fix-71820.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"

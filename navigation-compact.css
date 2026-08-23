@@ -1,43 +1,15 @@
 /* =========================================================
-   MijnSerenity 7.18.27 — navigatie alleen in de ingelogde app
+   MijnSerenity 7.4.6 — navigatie altijd zichtbaar
 
-   De navigatie blijft tijdens gebruik van de app in beeld. Op het
-   inlog- en goedkeuringsscherm wordt hij al door CSS verborgen,
-   dus ook vóórdat JavaScript en Supabase volledig zijn geladen.
+   De navigatie blijft op iPad/iPhone altijd in beeld. Bij het
+   openen van het toetsenbord verhuist de balk naar de onderrand
+   van de zichtbare Visual Viewport, dus direct boven het toetsenbord.
    ========================================================= */
 
 :root{
   --nav-height:58px;
   --ms744-nav-button:42px;
   --ms744-nav-top:auto;
-}
-
-/*
-   Belangrijk voor iPhone/PWA: index.html bevat de navigatie al voordat
-   de app-code is gestart. Verberg hem daarom direct zolang authView of
-   approvalView zichtbaar is. Dit voorkomt de flits/vaste balk onder het
-   inlogscherm en voorkomt dat hij boven het toetsenbord komt te staan.
-*/
-body:has(#authView:not(.hidden)) .bottom-nav,
-body:has(#approvalView:not(.hidden)) .bottom-nav{
-  display:none !important;
-  visibility:hidden !important;
-  opacity:0 !important;
-  pointer-events:none !important;
-}
-
-body:has(#authView:not(.hidden)),
-body:has(#approvalView:not(.hidden)){
-  padding-bottom:0 !important;
-}
-
-body:has(#authView:not(.hidden)) main,
-body:has(#approvalView:not(.hidden)) main,
-body:has(#authView:not(.hidden)) #app,
-body:has(#approvalView:not(.hidden)) #app,
-body:has(#authView:not(.hidden)) .app-shell,
-body:has(#approvalView:not(.hidden)) .app-shell{
-  padding-bottom:0 !important;
 }
 
 body{
@@ -111,8 +83,9 @@ body > .bottom-nav.ms744-compact-nav,
 }
 
 /*
-   Op iOS/iPadOS volgt de balk de echte zichtbare viewport wanneer de
-   gebruiker daadwerkelijk in de app zit.
+   Op iOS/iPadOS volgt de balk de echte zichtbare viewport. Wanneer
+   het toetsenbord opent, komt de balk erboven te staan; hij wordt
+   nooit verborgen.
 */
 html.ms744-ios-viewport body > .bottom-nav.ms744-compact-nav,
 html.ms744-ios-viewport .bottom-nav.ms744-compact-nav{
@@ -175,16 +148,7 @@ body.ms744-nav-repositioning > .bottom-nav.ms744-compact-nav{
   pointer-events:auto !important;
 }
 
-/* Auth/approval wint altijd van alle 'always visible'-regels hierboven. */
-body:has(#authView:not(.hidden)) .bottom-nav,
-body:has(#approvalView:not(.hidden)) .bottom-nav{
-  display:none !important;
-  visibility:hidden !important;
-  opacity:0 !important;
-  pointer-events:none !important;
-}
-
-/* Boven het toetsenbord iets steviger contrast, alleen in de ingelogde app. */
+/* Boven het toetsenbord iets steviger contrast. */
 body.ms744-keyboard-open > .bottom-nav.ms744-compact-nav{
   background:rgba(2,11,19,.98) !important;
   box-shadow:0 -5px 18px rgba(0,0,0,.38) !important;
