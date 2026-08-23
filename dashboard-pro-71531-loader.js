@@ -63,6 +63,10 @@
 
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
 
+    if(!document.getElementById('msMarineGlass')){
+      throw new Error('Marine Glass hoofdmodule is geladen, maar de cockpit is niet opgebouwd.');
+    }
+
     await Promise.all([
       load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix'),
       load(`/marine-glass-polish-7185.js?v=${V}`,'marine-glass-polish'),
@@ -87,7 +91,13 @@
     const loadDestination=()=>load(`/ai-destination-search.js?v=${V}`,'destination');
     if('requestIdleCallback' in window)requestIdleCallback(loadDestination,{timeout:800});
     else setTimeout(loadDestination,120);
+
+    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD}}));
+    return true;
   }
 
-  start().catch(error=>console.warn('Marine Glass loader:',error));
+  window.__msDashboardReady71823=start().catch(error=>{
+    console.warn('Marine Glass loader:',error);
+    throw error;
+  });
 })();
