@@ -1,4 +1,4 @@
-/* MijnSerenity 7.18.14 — navigatie echt vast aan de schermonderkant */
+/* MijnSerenity 7.18.26 — navigatie alleen zichtbaar in de ingelogde app */
 (()=>{
   'use strict';
 
@@ -16,13 +16,37 @@
     return document.querySelector(SELECTOR);
   }
 
+  function appIsVisible(){
+    const app=document.getElementById('appView');
+    const auth=document.getElementById('authView');
+    const approval=document.getElementById('approvalView');
+    return Boolean(
+      app&&
+      !app.classList.contains('hidden')&&
+      (!auth||auth.classList.contains('hidden'))&&
+      (!approval||approval.classList.contains('hidden'))
+    );
+  }
+
   function isTextControl(target){
     return target instanceof Element&&Boolean(
       target.closest('input,textarea,select,[contenteditable="true"]')
     );
   }
 
+  function hideNav(element){
+    if(!element)return;
+    root.style.setProperty(BOTTOM_VARIABLE,'0px');
+    document.body?.classList.remove(KEYBOARD_CLASS);
+    element.style.setProperty('display','none','important');
+    element.style.setProperty('visibility','hidden','important');
+    element.style.setProperty('pointer-events','none','important');
+    element.setAttribute('aria-hidden','true');
+  }
+
   function viewportState(){
+    if(!appIsVisible())return {keyboardOpen:false,inset:0};
+
     const vv=window.visualViewport;
     const layoutHeight=Math.max(root.clientHeight||0,window.innerHeight||0);
     const active=document.activeElement;
@@ -55,6 +79,12 @@
 
   function forceNavToViewport(element,inset){
     if(!element)return;
+    if(!appIsVisible()){
+      hideNav(element);
+      return;
+    }
+
+    element.style.removeProperty('display');
     element.style.setProperty('position','fixed','important');
     element.style.setProperty('left','0','important');
     element.style.setProperty('right','0','important');
@@ -68,15 +98,22 @@
     element.style.setProperty('opacity','1','important');
     element.style.setProperty('pointer-events','auto','important');
     element.style.setProperty('z-index','2147483000','important');
+    element.setAttribute('aria-hidden','false');
   }
 
   function updateViewportInset(){
     cancelAnimationFrame(frame);
     frame=requestAnimationFrame(()=>{
+      const element=nav();
+      if(!appIsVisible()){
+        hideNav(element);
+        return;
+      }
+
       const state=viewportState();
       root.style.setProperty(BOTTOM_VARIABLE,`${state.inset}px`);
       document.body?.classList.toggle(KEYBOARD_CLASS,state.keyboardOpen);
-      forceNavToViewport(nav(),state.inset);
+      forceNavToViewport(element,state.inset);
       if(state.keyboardOpen)keepFocusedControlVisible();
       if(typeof window.ms708ResizePager==='function')window.ms708ResizePager();
     });
@@ -94,6 +131,7 @@
   }
 
   function keepFocusedControlVisible(){
+    if(!appIsVisible())return;
     const active=document.activeElement;
     if(!isTextControl(active))return;
 
@@ -114,7 +152,12 @@
     const element=nav();
     if(!element)return;
 
-    /* Buiten scroll-, transform- en contain-containers houden. */
+    if(!appIsVisible()){
+      hideNav(element);
+      return;
+    }
+
+    /* Buiten scroll-, transform- en contain-containers houden, maar pas na login. */
     if(element.parentElement!==document.body)document.body.appendChild(element);
 
     element.classList.remove(
@@ -136,21 +179,31 @@
     updateViewportInset();
   }
 
+  function syncNav(){
+    const element=nav();
+    if(!element)return;
+    if(appIsVisible())mount();
+    else hideNav(element);
+  }
+
   function initialise(){
-    mount();
+    syncNav();
 
     document.addEventListener('focusin',settleViewport,true);
     document.addEventListener('focusout',()=>{
       root.style.setProperty(BOTTOM_VARIABLE,'0px');
       document.body?.classList.remove(KEYBOARD_CLASS);
-      forceNavToViewport(nav(),0);
+      if(appIsVisible())forceNavToViewport(nav(),0);
+      else hideNav(nav());
       settleViewport();
     },true);
     window.addEventListener('resize',settleViewport,{passive:true});
     window.addEventListener('orientationchange',settleViewport,{passive:true});
-    window.addEventListener('pageshow',()=>{mount();settleViewport();},{passive:true});
+    window.addEventListener('pageshow',()=>{syncNav();settleViewport();},{passive:true});
     window.addEventListener('scroll',()=>{
-      if(!document.body?.classList.contains(KEYBOARD_CLASS))forceNavToViewport(nav(),0);
+      if(appIsVisible()&&!document.body?.classList.contains(KEYBOARD_CLASS)){
+        forceNavToViewport(nav(),0);
+      }
     },{passive:true});
 
     if(window.visualViewport){
@@ -158,11 +211,13 @@
       window.visualViewport.addEventListener('scroll',updateViewportInset,{passive:true});
     }
 
-    observer=new MutationObserver(()=>{
-      const element=nav();
-      if(element&&element.parentElement!==document.body)mount();
+    observer=new MutationObserver(()=>syncNav());
+    observer.observe(document.documentElement,{
+      childList:true,
+      subtree:true,
+      attributes:true,
+      attributeFilter:['class']
     });
-    observer.observe(document.documentElement,{childList:true,subtree:true});
 
     if('ResizeObserver' in window){
       resizeObserver=new ResizeObserver(updateViewportInset);
