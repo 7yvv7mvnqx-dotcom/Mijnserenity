@@ -1,10 +1,11 @@
-/* MijnSerenity 7.18.27 — dwing overal dezelfde zichtbare appversie af */
+/* MijnSerenity 7.18.28 — één gezaghebbende zichtbare appversie */
 (()=>{
   'use strict';
-  if(window.__msVersionFix71827)return;
+  if(window.__msVersionFix71828)return;
+  window.__msVersionFix71828=true;
   window.__msVersionFix71827=true;
   window.__msVersionFix71825=true;
-  const BUILD='7.18.27';
+  const BUILD='7.18.28';
 
   function sync(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -23,5 +24,10 @@
   ['mijnserenity:modules-ready','mijnserenity:dashboard-ready','mijnserenity:routechange','focus','pageshow']
     .forEach(name=>window.addEventListener(name,()=>requestAnimationFrame(sync),{passive:true}));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()},{passive:true});
-  [100,500,1200,3000,7000,15000].forEach(delay=>setTimeout(sync,delay));
+
+  /* Een oude cockpit-polish uit 7.18.12 schreef het versienummer iedere vijf
+     seconden terug. Dit interval houdt de werkelijke build daarom leidend. */
+  const timer=setInterval(()=>{if(!document.hidden)sync()},750);
+  window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
+  [50,150,400,900,1800,3500,7000].forEach(delay=>setTimeout(sync,delay));
 })();
