@@ -1,15 +1,16 @@
-/* MijnSerenity 7.18.28 — Marine Glass met stabiele documentnavigatie */
+/* MijnSerenity 7.18.29 — Marine Glass met harde document-scroll rescue */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71828)return;
+  if(window.__msDashboardLoader71829)return;
+  window.__msDashboardLoader71829=true;
   window.__msDashboardLoader71828=true;
   window.__msDashboardLoader71827=true;
   window.__msDashboardLoader71825=true;
   window.__msDashboardLoader71824=true;
   window.__msDashboardLoader71823=true;
 
-  const V='718280';
-  const BUILD='7.18.28';
+  const V='718290';
+  const BUILD='7.18.29';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -68,7 +69,11 @@
     document.getElementById('mgMore')?.remove();
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
 
-    loadCss(`/page-swipe.css?v=${V}`,'msPageSwipe71828');
+    /* Eerst de scrolllaag herstellen. Zo kan Marine Glass nooit meer binnen
+       een oude iOS-pager of een bevroren viewport worden opgebouwd. */
+    loadCss(`/page-swipe.css?v=${V}`,'msPageSwipe71829');
+    await load(`/page-swipe.js?v=${V}`,'document-scroll-rescue');
+
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
 
@@ -89,9 +94,10 @@
     removeLegacyVisuals();
     document.documentElement.classList.add('ms-marine-glass-ready');
     syncVersion();
-    setTimeout(syncVersion,250);
-    setTimeout(syncVersion,1200);
-    setTimeout(syncVersion,3500);
+    window.ms708ResizePager?.();
+    setTimeout(()=>{syncVersion();window.ms708ResizePager?.()},250);
+    setTimeout(()=>{syncVersion();window.ms708ResizePager?.()},1200);
+    setTimeout(()=>{syncVersion();window.ms708ResizePager?.()},3500);
 
     if(!document.getElementById('msAiDestinationCss')){
       const link=document.createElement('link');
@@ -114,6 +120,7 @@
     console.warn('Marine Glass loader:',error);
     throw error;
   });
+  window.__msDashboardReady71829=ready;
   window.__msDashboardReady71828=ready;
   window.__msDashboardReady71827=ready;
   window.__msDashboardReady71825=ready;
