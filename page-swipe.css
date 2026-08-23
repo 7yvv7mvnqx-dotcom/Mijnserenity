@@ -1,77 +1,124 @@
 /* =========================================================
-   MijnSerenity 7.18.31 — minimale document-scroll, legacy pager uit
+   MijnSerenity 7.18.29 — geen geneste pager, altijd document-scroll
    ========================================================= */
 
-html,body{
+html,
+body{
+  width:100%;
   max-width:100%;
-  overflow-x:hidden;
+  min-height:100%;
+  height:auto !important;
+  overflow-x:hidden !important;
 }
 
+/* De oude swipehint en horizontale pager zijn definitief uitgeschakeld. */
 #ms706SwipeHint{
   display:none !important;
 }
 
-/* Een oude pager mag tijdens één herstel-frame nooit een vaste viewport maken. */
-.ms708-native-pager{
+body.ms708-native-pages-active,
+body.ms71829-document-scroll{
+  position:static !important;
   height:auto !important;
+  min-height:100dvh !important;
+  max-height:none !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+body.ms708-native-pages-active > main,
+body.ms71829-document-scroll > main,
+body.ms708-native-pages-active #appView,
+body.ms71829-document-scroll #appView,
+body.ms708-native-pages-active #dashboard,
+body.ms71829-document-scroll #dashboard,
+body.ms708-native-pages-active #msMarineGlass,
+body.ms71829-document-scroll #msMarineGlass,
+body.ms708-native-pages-active #msMarineGlass > main.mg-grid,
+body.ms71829-document-scroll #msMarineGlass > main.mg-grid{
+  position:relative !important;
+  top:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  left:auto !important;
+  inset:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:visible !important;
+  contain:none !important;
+  transform:none !important;
+}
+
+/* Fail-safe voor een PWA-snapshot waarin de oude pager al bestond. */
+.ms708-native-pager{
+  position:relative !important;
+  display:block !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
   max-height:none !important;
   overflow:visible !important;
   scroll-snap-type:none !important;
+  scroll-behavior:auto !important;
+  overscroll-behavior:auto !important;
   transform:none !important;
   contain:none !important;
 }
 
+.ms708-native-pager > .ms708-native-page{
+  position:relative !important;
+  display:block;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+  overflow:visible !important;
+  scroll-snap-align:none !important;
+  transform:none !important;
+  contain:none !important;
+  backface-visibility:visible !important;
+}
+
+/* Zolang een oude pager nog één frame bestaat, toon alleen de actieve route. */
+body.ms755-single-page-nav .ms708-native-pager > .ms708-native-page:not(.ms755-route-active){
+  display:none !important;
+}
+
+body.ms755-single-page-nav .ms708-native-pager > .ms708-native-page.ms755-route-active{
+  display:block !important;
+}
+
 @media(max-width:760px){
-  html.ms71831-document-scroll,
-  html.ms71831-document-scroll body{
+  html.ms71829-document-scroll,
+  html.ms71829-document-scroll body,
+  body.ms708-native-pages-active,
+  body.ms71829-document-scroll{
     height:auto !important;
-    min-height:100% !important;
+    min-height:100dvh !important;
     max-height:none !important;
-    overflow-x:hidden !important;
     overflow-y:auto !important;
   }
 
-  #appView:not(.hidden),
-  #appView:not(.hidden) #dashboard,
-  #appView:not(.hidden) #msMarineGlass,
-  #appView:not(.hidden) #msMarineGlass > .mg-grid{
-    height:auto !important;
-    max-height:none !important;
-    overflow:visible !important;
-    contain:none !important;
-    transform:none !important;
+  body #appView{
+    padding-bottom:calc(82px + env(safe-area-inset-bottom)) !important;
   }
 
-  #appView:not(.hidden) #msMarineGlass{
-    min-height:100dvh !important;
+  body #msMarineGlass{
     padding-bottom:calc(92px + env(safe-area-inset-bottom)) !important;
   }
 
-  #appView:not(.hidden) #msMarineGlass > .mg-grid{
-    position:relative !important;
+  body #msMarineGlass > main.mg-grid{
     display:grid !important;
-    width:100% !important;
     grid-template-columns:minmax(0,1fr) !important;
     grid-auto-rows:auto !important;
     align-items:start !important;
-    gap:8px !important;
-    margin:0 !important;
-    padding:7px 0 0 !important;
-  }
-
-  #appView:not(.hidden) #msMarineGlass .mg-card{
-    width:100% !important;
-    height:auto !important;
-    max-height:none !important;
-    grid-column:1 !important;
-    grid-row:auto !important;
-  }
-
-  #appView:not(.hidden) #msMarineGlass .mg-energy,
-  #appView:not(.hidden) #msMarineGlass .mg-energy-grid{
-    height:auto !important;
-    min-height:0 !important;
-    max-height:none !important;
     overflow:visible !important;
   }
 }
