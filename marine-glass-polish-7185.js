@@ -78,11 +78,26 @@
 
   function syncEnergyWarning(){
     const battery=document.querySelector('#msMarineGlass .mg-battery');
-    if(!battery)return;
-    const voltage=num($('mgVolt')?.textContent);
-    const low=voltage!=null&&voltage>0&&voltage<11.8;
-    battery.classList.toggle('mg-low-voltage',low);
-    battery.title=low?'Lage gemeten accuspanning — controleer accu en SmartShunt-instellingen':'';
+    const startBattery=document.querySelector('#msMarineGlass .mg-start');
+
+    if(battery){
+      const voltage=num($('mgVolt')?.textContent);
+      const low=voltage!=null&&voltage>0&&voltage<11.8;
+      battery.classList.toggle('mg-low-voltage',low);
+      battery.title=low?'Lage gemeten accuspanning — controleer accu en SmartShunt-instellingen':'';
+    }
+
+    if(startBattery){
+      const startVoltage=num($('mgStart')?.textContent);
+      const critical=startVoltage!=null&&startVoltage>0&&startVoltage<11.8;
+      startBattery.classList.toggle('mg-critical-voltage',critical);
+      startBattery.title=critical?'Kritische startaccuspanning — controleer de startaccu en laadstatus':'';
+
+      if(battery){
+        const householdHeight=Math.ceil(battery.getBoundingClientRect().height);
+        if(householdHeight>0)startBattery.style.minHeight=`${householdHeight}px`;
+      }
+    }
   }
 
   function syncAlarmPresentation(){
@@ -174,6 +189,7 @@
     window.addEventListener('mijnserenity:waterkaarten-route-imported',()=>setTimeout(polish,50),{passive:true});
     window.addEventListener('mijnserenity:waterkaarten-route-enriched',()=>setTimeout(polish,50),{passive:true});
     window.addEventListener('online',polish,{passive:true});window.addEventListener('offline',polish,{passive:true});
+    window.addEventListener('resize',()=>setTimeout(polish,50),{passive:true});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden){polish();syncBluetooth()}},{passive:true});
     window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
   }
