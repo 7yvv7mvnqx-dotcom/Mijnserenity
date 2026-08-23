@@ -1,13 +1,12 @@
-/* MijnSerenity 7.18.25 — fail-safe opstart: app eerst, Marine Glass op de achtergrond */
+/* MijnSerenity 7.18.32 — niet-blokkerende opstart: login/app blijft altijd zichtbaar */
 (()=>{
   'use strict';
 
-  const BUILD='7.18.25';
-  const VERSION='718250';
+  const BUILD='7.18.32';
+  const VERSION='718320';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
   const MEMBERSHIP_FIX=`membership-load-fix-71821.js?v=${VERSION}`;
   const DASHBOARD_SCRIPT=`dashboard-pro-71531-loader.js?v=${VERSION}`;
-  const STARTUP_TIMEOUT_MS=12000;
 
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
@@ -54,22 +53,19 @@
     'https://unpkg.com/@supabase/supabase-js@2'
   ];
 
-  let startupResolved=false;
-  let startupCoreReady=false;
-  let startupObserver=null;
-  let startupTimer=null;
-  let startupFallbackTimer=null;
   let membershipAlertGuardActive=false;
   let membershipAlertOriginal=null;
 
   window.__msDisableLegacyVisuals=true;
-  document.documentElement.classList.remove('ms-modern-dashboard-only');
+  document.documentElement.classList.remove('ms-modern-dashboard-only','ms-starting');
+  document.getElementById('msStartupGate')?.remove();
+  document.getElementById('msStartupGateStyle')?.remove();
 
   function installDashboardGuard(){
-    if(document.getElementById('msModernDashboardGuard71825'))return;
-    document.getElementById('msModernDashboardGuard71823')?.remove();
+    document.getElementById('msModernDashboardGuard71825')?.remove();
+    if(document.getElementById('msModernDashboardGuard71832'))return;
     const style=document.createElement('style');
-    style.id='msModernDashboardGuard71825';
+    style.id='msModernDashboardGuard71832';
     style.textContent=`
       html.ms-marine-glass-ready #dashboard> :not(#msMarineGlass){display:none!important}
       html.ms-marine-glass-ready #dashboard #msMarineGlass{display:block!important}
@@ -84,10 +80,8 @@
     const version=document.getElementById('settingsAppVersion');
     if(version)version.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
-    const cockpitBadge=document.querySelector('#msMarineGlass .mg-brand sup');
-    if(cockpitBadge)cockpitBadge.textContent=BUILD;
-    const startup=document.querySelector('#msStartupGate .ms-startup-version');
-    if(startup)startup.textContent=`versie ${BUILD}`;
+    const badge=document.querySelector('#msMarineGlass .mg-brand sup');
+    if(badge)badge.textContent=BUILD;
   }
 
   function setAuthStatus(message,isError=false){
@@ -95,6 +89,21 @@
     if(!target)return;
     target.textContent=message;
     target.classList.toggle('error',Boolean(isError));
+  }
+
+  function setSignInReady(ready){
+    const button=document.getElementById('signInButton');
+    if(button)button.disabled=!ready;
+  }
+
+  function ensureAtLeastOneView(){
+    const ids=['authView','approvalView','appView'];
+    const visible=ids.some(id=>{
+      const view=document.getElementById(id);
+      return Boolean(view&&!view.classList.contains('hidden'));
+    });
+    if(visible)return;
+    document.getElementById('authView')?.classList.remove('hidden');
   }
 
   function installMembershipAlertGuard(){
@@ -108,7 +117,6 @@
         /load failed|failed to fetch|networkerror|network request|timeout|time-out|fetch/i.test(text)
       ){
         console.warn('MijnSerenity: tijdelijke lidmaatschapsfout wordt op de achtergrond hersteld:',text);
-        setStartupStatus('Serenity-gegevens worden opnieuw verbonden…');
         return;
       }
       return membershipAlertOriginal(message,...args);
@@ -119,126 +127,6 @@
       membershipAlertGuardActive=false;
       membershipAlertOriginal=null;
     };
-  }
-
-  function ensureStartupGate(){
-    if(startupResolved||document.getElementById('msStartupGate'))return;
-    if(!document.body){
-      document.addEventListener('DOMContentLoaded',ensureStartupGate,{once:true});
-      return;
-    }
-
-    installDashboardGuard();
-    document.documentElement.classList.add('ms-starting');
-
-    if(!document.getElementById('msStartupGateStyle')){
-      const style=document.createElement('style');
-      style.id='msStartupGateStyle';
-      style.textContent=`
-        html.ms-starting body{overflow:hidden!important;background:#061525!important}
-        html.ms-starting body>main{visibility:hidden!important;pointer-events:none!important}
-        #msStartupGate{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:#061525;color:#f5fbff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transition:opacity .16s ease}
-        #msStartupGate .ms-startup-card{width:min(420px,100%);text-align:center}
-        #msStartupGate .ms-startup-brand{font-size:30px;font-weight:800;letter-spacing:-1.3px;margin-bottom:22px}
-        #msStartupGate .ms-startup-brand span{color:#28b9ec}
-        #msStartupGate .ms-startup-spinner{width:38px;height:38px;margin:0 auto 18px;border:3px solid rgba(255,255,255,.16);border-top-color:#28b9ec;border-radius:50%;animation:msStartupSpin .8s linear infinite}
-        #msStartupGate .ms-startup-status{font-size:15px;font-weight:650;line-height:1.45;color:#d8e8f3}
-        #msStartupGate .ms-startup-version{margin-top:10px;font-size:12px;color:#7794a7}
-        #msStartupGate .ms-startup-actions{display:none;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
-        #msStartupGate.ms-startup-error .ms-startup-spinner{display:none}
-        #msStartupGate.ms-startup-error .ms-startup-actions{display:flex}
-        #msStartupGate button{appearance:none;border:1px solid #2f6078;border-radius:12px;padding:11px 15px;background:#0d2a3c;color:#f5fbff;font:inherit;font-weight:700}
-        #msStartupGate button:first-child{background:#0c87b8;border-color:#0c87b8}
-        @keyframes msStartupSpin{to{transform:rotate(360deg)}}
-      `;
-      document.head.appendChild(style);
-    }
-
-    const gate=document.createElement('div');
-    gate.id='msStartupGate';
-    gate.setAttribute('role','status');
-    gate.setAttribute('aria-live','polite');
-    gate.innerHTML=`
-      <div class="ms-startup-card">
-        <div class="ms-startup-brand">Mijn<span>Serenity</span></div>
-        <div class="ms-startup-spinner" aria-hidden="true"></div>
-        <div id="msStartupStatus" class="ms-startup-status">MijnSerenity wordt gestart…</div>
-        <div class="ms-startup-version">versie ${BUILD}</div>
-        <div class="ms-startup-actions">
-          <button id="msStartupRetry" type="button">Opnieuw proberen</button>
-          <button id="msStartupRepair" type="button">App herstellen</button>
-        </div>
-      </div>`;
-    document.body.appendChild(gate);
-
-    document.getElementById('msStartupRetry')?.addEventListener('click',()=>location.reload());
-    document.getElementById('msStartupRepair')?.addEventListener('click',()=>{
-      if(typeof window.repairMijnSerenity==='function')window.repairMijnSerenity();
-      else location.reload();
-    });
-
-    const views=['authView','approvalView','appView']
-      .map(id=>document.getElementById(id))
-      .filter(Boolean);
-    startupObserver=new MutationObserver(()=>{
-      if(startupCoreReady)releaseStartup(false);
-    });
-    views.forEach(view=>startupObserver.observe(view,{attributes:true,attributeFilter:['class']}));
-
-    startupTimer=setTimeout(()=>{
-      if(startupCoreReady){
-        releaseStartup(true);
-        return;
-      }
-      showStartupError('De basis van MijnSerenity reageert niet. Kies App herstellen om de lokale cache te vernieuwen.');
-    },STARTUP_TIMEOUT_MS);
-  }
-
-  function setStartupStatus(message){
-    const target=document.getElementById('msStartupStatus');
-    if(target)target.textContent=message;
-  }
-
-  function showStartupError(message){
-    if(startupResolved)return;
-    const gate=document.getElementById('msStartupGate');
-    if(!gate)return;
-    gate.classList.add('ms-startup-error');
-    setStartupStatus(message);
-  }
-
-  function visibleViews(){
-    return ['authView','approvalView','appView']
-      .map(id=>document.getElementById(id))
-      .filter(view=>view&&!view.classList.contains('hidden'));
-  }
-
-  function finishStartup(){
-    if(startupResolved)return;
-    startupResolved=true;
-    if(startupTimer){clearTimeout(startupTimer);startupTimer=null}
-    if(startupFallbackTimer){clearTimeout(startupFallbackTimer);startupFallbackTimer=null}
-    startupObserver?.disconnect();
-    startupObserver=null;
-    document.documentElement.classList.remove('ms-starting');
-    const gate=document.getElementById('msStartupGate');
-    if(gate){
-      gate.style.opacity='0';
-      setTimeout(()=>gate.remove(),180);
-    }
-  }
-
-  function releaseStartup(force=false){
-    if(startupResolved||!startupCoreReady)return;
-    let visible=visibleViews();
-    if(!visible.length&&force){
-      const auth=document.getElementById('authView');
-      if(auth){
-        auth.classList.remove('hidden');
-        visible=[auth];
-      }
-    }
-    if(visible.length===1||force)requestAnimationFrame(finishStartup);
   }
 
   function ensureProfessionalUi(){
@@ -310,7 +198,7 @@
     let lastError=null;
     for(const source of SUPABASE_SOURCES){
       try{
-        setStartupStatus('Beveiligde sessie wordt gecontroleerd…');
+        setAuthStatus('Beveiligde sessie wordt gecontroleerd…');
         await loadScript(source,5000);
         if(window.supabase?.createClient)return;
         throw new Error('Supabase-bibliotheek is niet gestart.');
@@ -361,7 +249,15 @@
   async function loadModernDashboardInBackground(){
     try{
       await loadScript(DASHBOARD_SCRIPT,10000);
-      const ready=window.__msDashboardReady71825||window.__msDashboardReady71824||window.__msDashboardReady71823;
+      const ready=
+        window.__msDashboardReady71832||
+        window.__msDashboardReady71831||
+        window.__msDashboardReady71830||
+        window.__msDashboardReady71829||
+        window.__msDashboardReady71828||
+        window.__msDashboardReady71825||
+        window.__msDashboardReady71824||
+        window.__msDashboardReady71823;
       if(ready&&typeof ready.then==='function'){
         await Promise.race([
           ready,
@@ -371,7 +267,6 @@
       if(!document.getElementById('msMarineGlass'))throw new Error('Marine Glass is niet opgebouwd.');
       document.documentElement.classList.add('ms-marine-glass-ready');
       syncBuildVersion();
-      console.info(`MijnSerenity ${BUILD}: Marine Glass gereed.`);
     }catch(error){
       document.documentElement.classList.remove('ms-marine-glass-ready');
       console.warn('Marine Glass overgeslagen; basisdashboard blijft beschikbaar:',error);
@@ -379,48 +274,48 @@
   }
 
   async function start(){
-    try{
-      ensureStartupGate();
-      ensureProfessionalUi();
-      addPreconnect('https://cdn.jsdelivr.net');
-      addPreconnect('https://unpkg.com');
-      syncBuildVersion();
-      setAuthStatus('Beveiligde inlog wordt geladen…');
-      setStartupStatus('Sessie en basisapp worden gestart…');
-      ensureServiceWorker();
+    document.documentElement.classList.remove('ms-starting');
+    document.getElementById('msStartupGate')?.remove();
+    document.getElementById('msStartupGateStyle')?.remove();
+    ensureProfessionalUi();
+    addPreconnect('https://cdn.jsdelivr.net');
+    addPreconnect('https://unpkg.com');
+    syncBuildVersion();
+    setSignInReady(false);
+    setAuthStatus('Beveiligde inlog wordt geladen…');
+    ensureAtLeastOneView();
+    ensureServiceWorker();
 
+    try{
       await ensureSupabase();
       installMembershipAlertGuard();
-
-      setStartupStatus('MijnSerenity wordt geopend…');
+      setAuthStatus('Sessie wordt geopend…');
       await loadScript(CORE_SCRIPT,12000);
-      startupCoreReady=true;
       syncBuildVersion();
-
-      const button=document.getElementById('signInButton');
-      if(button)button.disabled=typeof window.signIn!=='function';
+      setSignInReady(typeof window.signIn==='function');
 
       loadScript(MEMBERSHIP_FIX,6000)
         .catch(error=>console.warn('Lidmaatschapsherstel kon niet laden:',error));
 
-      releaseStartup(false);
-      startupFallbackTimer=setTimeout(()=>releaseStartup(true),700);
-
       setTimeout(()=>loadModernDashboardInBackground(),30);
       setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),250);
-      console.info(`MijnSerenity ${BUILD}: basisapp gestart; cockpit laadt los daarvan.`);
+
+      setTimeout(ensureAtLeastOneView,1200);
+      console.info(`MijnSerenity ${BUILD}: basisapp gestart zonder blokkerende opstartgate.`);
     }catch(error){
       window.__msRestoreMembershipAlertGuard?.();
       console.error('MijnSerenity kon niet starten:',error);
-      setAuthStatus('De beveiligde basisapp kon niet worden geladen. Kies “App herstellen en vernieuwen” en probeer opnieuw.',true);
-      const button=document.getElementById('signInButton');
-      if(button)button.disabled=true;
-      showStartupError('MijnSerenity kon de basisapp niet starten. Kies App herstellen om de cache volledig te vernieuwen.');
+      document.documentElement.classList.remove('ms-starting');
+      document.getElementById('msStartupGate')?.remove();
+      setSignInReady(false);
+      ensureAtLeastOneView();
+      setAuthStatus('MijnSerenity kon de beveiligde basisapp niet laden. Controleer de verbinding en probeer opnieuw.',true);
     }
   }
 
   installDashboardGuard();
-  ensureStartupGate();
+  document.documentElement.classList.remove('ms-starting');
+  document.getElementById('msStartupGate')?.remove();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
