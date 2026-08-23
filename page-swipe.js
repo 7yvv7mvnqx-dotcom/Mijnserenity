@@ -85,17 +85,13 @@
     const page=document.getElementById(route);
     if(!page)return;
 
-    /* Fail-safe voor een PWA-snapshot waarin geen enkele pagina zichtbaar bleef.
-       We forceren hier NIET alle andere pagina's, alleen de gekozen route. */
-    const anyVisible=PAGE_IDS.some(id=>{
-      const candidate=document.getElementById(id);
-      return candidate&&!candidate.classList.contains('hidden');
-    });
-    if(!anyVisible)page.classList.remove('hidden');
+    /* De actieve knop is leidend. We tonen alleen die route opnieuw wanneer een
+       oude PWA-snapshot hem ten onrechte verborgen heeft gelaten. */
+    page.classList.remove('hidden');
 
     if(route==='dashboard'){
       const dashboard=document.getElementById('dashboard');
-      if(dashboard&&!dashboard.classList.contains('hidden')){
+      if(dashboard){
         dashboard.hidden=false;
         ['display','visibility','opacity'].forEach(name=>dashboard.style.removeProperty(name));
         const glass=document.getElementById('msMarineGlass');
