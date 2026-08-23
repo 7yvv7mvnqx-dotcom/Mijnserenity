@@ -1,31 +1,30 @@
-/* MijnSerenity 7.18.27 — fail-safe shell met stabiele iPhone document-scroll */
-const CACHE_NAME='mijnserenity-7.18.27-mobile-scroll';
+/* MijnSerenity 7.18.29 — fail-safe shell zonder geneste iPhone pager */
+const CACHE_NAME='mijnserenity-7.18.29-document-scroll';
 const CORE_ASSETS=[
   '/manifest.json',
-  '/auth-bootstrap.js?v=718270',
-  '/membership-load-fix-71821.js?v=718270',
-  '/dashboard-pro-71531-loader.js?v=718270',
-  '/dashboard-pro-71700.js?v=718270',
-  '/page-swipe.css?v=718270',
-  '/page-swipe.js?v=718270',
-  '/mobile-document-scroll-71827.js?v=718270',
-  '/poi-bearing-71826.js?v=718270',
-  '/marine-glass-start-fix-71801.js?v=718270',
-  '/marine-glass-mobile-7184.css?v=718270',
-  '/marine-glass-polish-7185.css?v=718270',
-  '/marine-glass-polish-7185.js?v=718270',
-  '/marine-glass-waterkaarten-route-7188.js?v=718270',
-  '/energy-flow-fix-71819.js?v=718270',
-  '/version-fix-71820.js?v=718270',
-  '/professional-ui-71700.css?v=718270',
-  '/navigation-compact.js?v=718270',
-  '/ai-destination-search.css?v=718270',
-  '/ai-destination-search.js?v=718270',
-  '/cost-form-hotfix-71815.js?v=718270',
-  '/waterkaarten-route-receiver-71870.js?v=718270',
-  '/waterkaarten-route-enrichment-71811.js?v=718270',
-  '/marine-map-route-fit-71812.js?v=718270',
-  '/captain-ai-71814.js?v=718270',
+  '/auth-bootstrap.js?v=718290',
+  '/membership-load-fix-71821.js?v=718290',
+  '/dashboard-pro-71531-loader.js?v=718290',
+  '/dashboard-pro-71700.js?v=718290',
+  '/page-swipe.css?v=718290',
+  '/page-swipe.js?v=718290',
+  '/poi-bearing-71826.js?v=718290',
+  '/marine-glass-start-fix-71801.js?v=718290',
+  '/marine-glass-mobile-7184.css?v=718290',
+  '/marine-glass-polish-7185.css?v=718290',
+  '/marine-glass-polish-7185.js?v=718290',
+  '/marine-glass-waterkaarten-route-7188.js?v=718290',
+  '/energy-flow-fix-71819.js?v=718290',
+  '/version-fix-71820.js?v=718290',
+  '/professional-ui-71700.css?v=718290',
+  '/navigation-compact.js?v=718290',
+  '/ai-destination-search.css?v=718290',
+  '/ai-destination-search.js?v=718290',
+  '/cost-form-hotfix-71815.js?v=718290',
+  '/waterkaarten-route-receiver-71870.js?v=718290',
+  '/waterkaarten-route-enrichment-71811.js?v=718290',
+  '/marine-map-route-fit-71812.js?v=718290',
+  '/captain-ai-71814.js?v=718290',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -124,7 +123,6 @@ self.addEventListener('fetch',event=>{
     url.pathname==='/dashboard-pro-71700.js'||
     url.pathname==='/page-swipe.css'||
     url.pathname==='/page-swipe.js'||
-    url.pathname==='/mobile-document-scroll-71827.js'||
     url.pathname==='/version-fix-71820.js'||
     url.pathname==='/sw.js'
   ){
