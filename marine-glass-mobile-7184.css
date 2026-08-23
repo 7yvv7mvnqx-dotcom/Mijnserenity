@@ -1,61 +1,82 @@
-/* MijnSerenity 7.18.4 — veilige mobiele cockpit-layout
+/* MijnSerenity 7.18.30 — veilige mobiele cockpit-layout zonder geneste main
    Alleen layout: geen navigatie/data/logica. */
 @media (max-width: 760px){
   html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important}
 
-  /* De oude simple-ui regel richt zich op ALLE main-elementen. Neutraliseer die
-     voor de outer app-shell en de nieuwe Marine Glass grid. */
   body.ms750-simple-ui > main,
   body.ms760-captain-experience > main,
   body > main{
     width:100%!important;
     max-width:none!important;
+    height:auto!important;
+    max-height:none!important;
     margin:0!important;
     padding:0!important;
+    overflow:visible!important;
   }
 
   body #appView{
     width:100%!important;
     max-width:none!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
     margin:0!important;
     padding:0 0 calc(76px + env(safe-area-inset-bottom))!important;
     position:relative!important;
     top:auto!important;
     transform:none!important;
+    overflow:visible!important;
   }
 
   body #dashboard,
   body #dashboard.mg-active{
     width:100%!important;
     max-width:none!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
     margin:0!important;
     padding:0!important;
     position:relative!important;
     top:auto!important;
     transform:none!important;
+    overflow:visible!important;
   }
 
   body #msMarineGlass{
     width:100%!important;
     max-width:none!important;
+    height:auto!important;
     min-height:100dvh!important;
+    max-height:none!important;
     margin:0!important;
     padding:0 7px calc(86px + env(safe-area-inset-bottom))!important;
     position:relative!important;
     top:auto!important;
     transform:none!important;
+    overflow:visible!important;
+    contain:none!important;
   }
 
-  body.ms750-simple-ui #msMarineGlass > main.mg-grid,
-  body.ms760-captain-experience #msMarineGlass > main.mg-grid,
-  body #msMarineGlass > main.mg-grid{
+  body.ms750-simple-ui #msMarineGlass > .mg-grid,
+  body.ms760-captain-experience #msMarineGlass > .mg-grid,
+  body #msMarineGlass > .mg-grid{
     width:100%!important;
     max-width:none!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
     margin:0!important;
     padding:7px 0 0!important;
     display:grid!important;
     grid-template-columns:minmax(0,1fr)!important;
+    grid-auto-rows:auto!important;
+    align-items:start!important;
     gap:8px!important;
+    overflow:visible!important;
+    contain:none!important;
+    transform:none!important;
   }
 
   body #msMarineGlass .mg-top{
@@ -84,11 +105,12 @@
     grid-row:auto!important;
     width:100%!important;
     min-width:0!important;
+    height:auto!important;
+    max-height:none!important;
     margin:0!important;
     border-radius:10px!important;
   }
 
-  /* Op iPhone hoeft de kaart niet bijna het hele eerste scherm te vullen. */
   body #msMarineGlass .mg-map{
     min-height:300px!important;
     height:42dvh!important;
@@ -117,7 +139,20 @@
   body #msMarineGlass .mg-dial>b{font-size:25px!important}
   body #msMarineGlass .mg-dial>em{font-size:9px!important}
 
-  body #msMarineGlass .mg-energy-grid{grid-template-columns:1fr!important;gap:8px!important;padding:0 10px 10px!important}
+  body #msMarineGlass .mg-energy,
+  body #msMarineGlass .mg-energy-grid{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  body #msMarineGlass .mg-energy-grid{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    grid-auto-rows:auto!important;
+    gap:8px!important;
+    padding:0 10px 10px!important;
+  }
   body #msMarineGlass .mg-battery,
   body #msMarineGlass .mg-start,
   body #msMarineGlass .mg-sources,
@@ -133,7 +168,6 @@
   body #msMarineGlass .mg-sources,
   body #msMarineGlass .mg-conv{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 
-  /* Houd de bestaande 5-knops navigatie, maar laat hem nooit over de inhoud heen groeien. */
   body .bottom-nav.ms744-compact-nav,
   body .bottom-nav{
     position:fixed!important;
