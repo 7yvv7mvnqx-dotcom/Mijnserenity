@@ -6,6 +6,7 @@ const CORE_ASSETS=[
   '/membership-load-fix-71821.js?v=718250',
   '/dashboard-pro-71531-loader.js?v=718250',
   '/dashboard-pro-71700.js?v=718250',
+  '/poi-bearing-71826.js?v=718250',
   '/marine-glass-start-fix-71801.js?v=718250',
   '/marine-glass-mobile-7184.css?v=718250',
   '/marine-glass-polish-7185.css?v=718250',
