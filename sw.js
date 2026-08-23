@@ -1,31 +1,31 @@
-/* MijnSerenity 7.18.30 — fail-safe shell met structurele iPhone document-flow */
-const CACHE_NAME='mijnserenity-7.18.30-document-flow';
-const BUILD_TOKEN='718300';
+/* MijnSerenity 7.18.31 — fail-safe shell met veilige iPhone navigatie */
+const CACHE_NAME='mijnserenity-7.18.31-safe-recovery';
+const BUILD_TOKEN='718310';
 const CORE_ASSETS=[
   '/manifest.json',
-  '/auth-bootstrap.js?v=718300',
-  '/membership-load-fix-71821.js?v=718300',
-  '/dashboard-pro-71531-loader.js?v=718300',
-  '/dashboard-pro-71700.js?v=718300',
-  '/page-swipe.css?v=718300',
-  '/page-swipe.js?v=718300',
-  '/poi-bearing-71826.js?v=718300',
-  '/marine-glass-start-fix-71801.js?v=718300',
-  '/marine-glass-mobile-7184.css?v=718300',
-  '/marine-glass-polish-7185.css?v=718300',
-  '/marine-glass-polish-7185.js?v=718300',
-  '/marine-glass-waterkaarten-route-7188.js?v=718300',
-  '/energy-flow-fix-71819.js?v=718300',
-  '/version-fix-71820.js?v=718300',
-  '/professional-ui-71700.css?v=718300',
-  '/navigation-compact.js?v=718300',
-  '/ai-destination-search.css?v=718300',
-  '/ai-destination-search.js?v=718300',
-  '/cost-form-hotfix-71815.js?v=718300',
-  '/waterkaarten-route-receiver-71870.js?v=718300',
-  '/waterkaarten-route-enrichment-71811.js?v=718300',
-  '/marine-map-route-fit-71812.js?v=718300',
-  '/captain-ai-71814.js?v=718300',
+  '/auth-bootstrap.js?v=718310',
+  '/membership-load-fix-71821.js?v=718310',
+  '/dashboard-pro-71531-loader.js?v=718310',
+  '/dashboard-pro-71700.js?v=718310',
+  '/page-swipe.css?v=718310',
+  '/page-swipe.js?v=718310',
+  '/poi-bearing-71826.js?v=718310',
+  '/marine-glass-start-fix-71801.js?v=718310',
+  '/marine-glass-mobile-7184.css?v=718310',
+  '/marine-glass-polish-7185.css?v=718310',
+  '/marine-glass-polish-7185.js?v=718310',
+  '/marine-glass-waterkaarten-route-7188.js?v=718310',
+  '/energy-flow-fix-71819.js?v=718310',
+  '/version-fix-71820.js?v=718310',
+  '/professional-ui-71700.css?v=718310',
+  '/navigation-compact.js?v=718310',
+  '/ai-destination-search.css?v=718310',
+  '/ai-destination-search.js?v=718310',
+  '/cost-form-hotfix-71815.js?v=718310',
+  '/waterkaarten-route-receiver-71870.js?v=718310',
+  '/waterkaarten-route-enrichment-71811.js?v=718310',
+  '/marine-map-route-fit-71812.js?v=718310',
+  '/captain-ai-71814.js?v=718310',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -56,8 +56,8 @@ self.addEventListener('activate',event=>{
     );
     await self.clients.claim();
 
-    /* Eenmalige 7.18.30-migratie: forceer een echte nieuwe documentload zodat
-       een oude iOS/PWA DOM-snapshot met de geneste dashboard-main verdwijnt. */
+    /* Eenmalige 7.18.31-herstart: wis de 7.18.30 DOM-snapshot waarin Start leeg
+       kon blijven. De nieuwe navigatiemodule bouwt de DOM niet meer om. */
     const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     await Promise.all(windows.map(async client=>{
       try{
