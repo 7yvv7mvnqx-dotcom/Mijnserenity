@@ -1,27 +1,27 @@
-/* MijnSerenity 7.18.24 — schone shell met één primaire cockpit */
-const CACHE_NAME='mijnserenity-7.18.24-clean-dashboard';
+/* MijnSerenity 7.18.25 — fail-safe shell: basisapp blijft bruikbaar zonder cockpit */
+const CACHE_NAME='mijnserenity-7.18.25-failsafe-shell';
 const CORE_ASSETS=[
   '/manifest.json',
-  '/auth-bootstrap.js?v=718230',
-  '/membership-load-fix-71821.js?v=718230',
-  '/dashboard-pro-71531-loader.js?v=718240',
-  '/dashboard-pro-71700.js?v=718240',
-  '/marine-glass-start-fix-71801.js?v=718240',
-  '/marine-glass-mobile-7184.css?v=718240',
-  '/marine-glass-polish-7185.css?v=718240',
-  '/marine-glass-polish-7185.js?v=718240',
-  '/marine-glass-waterkaarten-route-7188.js?v=718240',
-  '/energy-flow-fix-71819.js?v=718240',
-  '/version-fix-71820.js?v=718240',
-  '/professional-ui-71700.css?v=718230',
-  '/navigation-compact.js?v=718230',
-  '/ai-destination-search.css?v=718240',
-  '/ai-destination-search.js?v=718240',
-  '/cost-form-hotfix-71815.js?v=718230',
-  '/waterkaarten-route-receiver-71870.js?v=718230',
-  '/waterkaarten-route-enrichment-71811.js?v=718230',
-  '/marine-map-route-fit-71812.js?v=718230',
-  '/captain-ai-71814.js?v=718230',
+  '/auth-bootstrap.js?v=718250',
+  '/membership-load-fix-71821.js?v=718250',
+  '/dashboard-pro-71531-loader.js?v=718250',
+  '/dashboard-pro-71700.js?v=718250',
+  '/marine-glass-start-fix-71801.js?v=718250',
+  '/marine-glass-mobile-7184.css?v=718250',
+  '/marine-glass-polish-7185.css?v=718250',
+  '/marine-glass-polish-7185.js?v=718250',
+  '/marine-glass-waterkaarten-route-7188.js?v=718250',
+  '/energy-flow-fix-71819.js?v=718250',
+  '/version-fix-71820.js?v=718250',
+  '/professional-ui-71700.css?v=718250',
+  '/navigation-compact.js?v=718250',
+  '/ai-destination-search.css?v=718250',
+  '/ai-destination-search.js?v=718250',
+  '/cost-form-hotfix-71815.js?v=718250',
+  '/waterkaarten-route-receiver-71870.js?v=718250',
+  '/waterkaarten-route-enrichment-71811.js?v=718250',
+  '/marine-map-route-fit-71812.js?v=718250',
+  '/captain-ai-71814.js?v=718250',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -47,16 +47,10 @@ self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     const keys=await caches.keys();
     await Promise.all(
-      keys
-        .filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME)
+      keys.filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME)
         .map(key=>caches.delete(key))
     );
     await self.clients.claim();
-
-    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    await Promise.all(windows.map(async client=>{
-      try{await client.navigate(client.url)}catch{}
-    }));
   })());
 });
 

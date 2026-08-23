@@ -1,19 +1,19 @@
-/* MijnSerenity 7.18.24 — één primaire Marine Glass cockpit, legacy dashboards uitgeschakeld */
+/* MijnSerenity 7.18.25 — Marine Glass is optioneel en mag de basisapp nooit blokkeren */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71824)return;
+  if(window.__msDashboardLoader71825)return;
+  window.__msDashboardLoader71825=true;
   window.__msDashboardLoader71824=true;
   window.__msDashboardLoader71823=true;
 
-  const V='718240';
-  const BUILD='7.18.24';
+  const V='718250';
+  const BUILD='7.18.25';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
     if([...document.scripts].some(script=>{
       try{return new URL(script.src,location.href).pathname===wanted}catch{return false}
     }))return Promise.resolve();
-
     return new Promise(resolve=>{
       const script=document.createElement('script');
       script.dataset.msDashboard=key;
@@ -42,12 +42,8 @@
 
   function removeLegacyVisuals(){
     window.__msDisableLegacyVisuals=true;
-    document.documentElement.classList.add('ms-modern-dashboard-only');
-    [
-      'msStartCockpit7144',
-      'msDashboardPremium7143',
-      'msMarineGlassMobile7182'
-    ].forEach(id=>document.getElementById(id)?.remove());
+    ['msStartCockpit7144','msDashboardPremium7143','msMarineGlassMobile7182']
+      .forEach(id=>document.getElementById(id)?.remove());
   }
 
   function syncVersion(){
@@ -74,7 +70,6 @@
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
 
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
-
     if(!document.getElementById('msMarineGlass')){
       throw new Error('Marine Glass hoofdmodule is geladen, maar de cockpit is niet opgebouwd.');
     }
@@ -88,6 +83,7 @@
     ]);
 
     removeLegacyVisuals();
+    document.documentElement.classList.add('ms-marine-glass-ready');
     syncVersion();
     setTimeout(syncVersion,250);
     setTimeout(syncVersion,1200);
@@ -110,9 +106,11 @@
   }
 
   const ready=start().catch(error=>{
+    document.documentElement.classList.remove('ms-marine-glass-ready');
     console.warn('Marine Glass loader:',error);
     throw error;
   });
+  window.__msDashboardReady71825=ready;
   window.__msDashboardReady71824=ready;
   window.__msDashboardReady71823=ready;
 })();
