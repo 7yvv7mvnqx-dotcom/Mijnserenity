@@ -1,26 +1,15 @@
-/* MijnSerenity 7.18.12 — connectiviteit, GPS en cockpitpolish */
+/* MijnSerenity 7.18.30 — connectiviteit, GPS en cockpitpolish */
 (()=>{
   'use strict';
-  if(window.__msMarineGlassPolish71812)return;
+  if(window.__msMarineGlassPolish71830)return;
+  window.__msMarineGlassPolish71830=true;
   window.__msMarineGlassPolish71812=true;
-  const BUILD='7.18.12';
   const $=id=>document.getElementById(id);
   const num=value=>{
     const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
     return match?Number(match[0]):null;
   };
   const set=(id,value)=>{const el=$(id);if(el&&value!=null&&el.textContent!==String(value))el.textContent=String(value)};
-
-  function syncVersion(){
-    window.MIJSERENITY_BUILD=BUILD;
-    const meta=document.querySelector('meta[name="mijnserenity-build"]');
-    if(meta)meta.content=BUILD;
-    const settings=$('settingsAppVersion');
-    if(settings)settings.textContent=BUILD;
-    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
-    const badge=document.querySelector('#msMarineGlass .mg-brand sup');
-    if(badge)badge.textContent=BUILD;
-  }
 
   function latestPosition(){
     const state=window.liveNavState||{};
@@ -197,7 +186,7 @@
   function cleanMapControls(){const tools=document.querySelector('#msMarineGlass .mg-map-tools');if(tools)tools.hidden=true}
   function dashboardVisible(){const glass=$('msMarineGlass');if(!glass||glass.hidden)return false;const rect=glass.getBoundingClientRect();return rect.width>0&&rect.height>0}
   function polish(){
-    syncVersion();syncInternet();if(!dashboardVisible())return;
+    syncInternet();if(!dashboardVisible())return;
     syncGps();syncRoutePresentation();syncStartBatteryPresentation();syncEnergyWarning();syncAlarmPresentation();syncRadar();cleanMapControls();
   }
 
