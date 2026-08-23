@@ -1,10 +1,10 @@
-/* MijnSerenity 7.18.19 — Marine Glass dashboardloader */
+/* MijnSerenity 7.18.20 — Marine Glass dashboardloader */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71819)return;
-  window.__msDashboardLoader71819=true;
-  const V='718190';
-  const BUILD='7.18.19';
+  if(window.__msDashboardLoader71820)return;
+  window.__msDashboardLoader71820=true;
+  const V='718200';
+  const BUILD='7.18.20';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -28,6 +28,7 @@
     const settings=document.getElementById('settingsAppVersion');if(settings)settings.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');if(badge)badge.textContent=BUILD;
+    const startup=document.querySelector('#msStartupGate .ms-startup-version');if(startup)startup.textContent=`versie ${BUILD}`;
   }
 
   async function start(){
@@ -43,6 +44,7 @@
     await load(`/marine-glass-polish-7185.js?v=${V}`,'marine-glass-polish');
     await load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info');
     await load(`/energy-flow-fix-71819.js?v=${V}`,'energy-flow-fix');
+    await load(`/version-fix-71820.js?v=${V}`,'version-fix');
 
     syncVersion();setTimeout(syncVersion,250);setTimeout(syncVersion,1200);setTimeout(syncVersion,3500);
 
