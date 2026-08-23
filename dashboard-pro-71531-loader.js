@@ -1,7 +1,8 @@
-/* MijnSerenity 7.18.30 — Marine Glass met structurele document-flow */
+/* MijnSerenity 7.18.31 — Marine Glass met veilige document-scroll */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71830)return;
+  if(window.__msDashboardLoader71831)return;
+  window.__msDashboardLoader71831=true;
   window.__msDashboardLoader71830=true;
   window.__msDashboardLoader71829=true;
   window.__msDashboardLoader71828=true;
@@ -10,8 +11,8 @@
   window.__msDashboardLoader71824=true;
   window.__msDashboardLoader71823=true;
 
-  const V='718300';
-  const BUILD='7.18.30';
+  const V='718310';
+  const BUILD='7.18.31';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -70,8 +71,8 @@
     document.getElementById('mgMore')?.remove();
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
 
-    /* Herstel eerst de documentstructuur en laad daarna pas de cockpit. */
-    loadCss(`/page-swipe.css?v=${V}`,'msPageSwipe71830');
+    /* Oude pager alleen éénmalig opruimen; de DOM van Marine Glass blijft intact. */
+    loadCss(`/page-swipe.css?v=${V}`,'msPageSwipe71831');
     await load(`/page-swipe.js?v=${V}`,'document-scroll-rescue');
 
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
@@ -82,8 +83,6 @@
       throw new Error('Marine Glass hoofdmodule is geladen, maar de cockpit is niet opgebouwd.');
     }
 
-    /* Zodra de cockpit bestaat, laat de document-flow rescue de interne main
-       direct vervangen door een gewone grid-container. */
     window.ms708ResizePager?.();
 
     await Promise.all([
@@ -124,6 +123,7 @@
     console.warn('Marine Glass loader:',error);
     throw error;
   });
+  window.__msDashboardReady71831=ready;
   window.__msDashboardReady71830=ready;
   window.__msDashboardReady71829=ready;
   window.__msDashboardReady71828=ready;
