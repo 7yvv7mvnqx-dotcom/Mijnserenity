@@ -1,5 +1,6 @@
 /* MijnSerenity 7.18.29 — fail-safe shell zonder geneste iPhone pager */
 const CACHE_NAME='mijnserenity-7.18.29-document-scroll';
+const BUILD_TOKEN='718290';
 const CORE_ASSETS=[
   '/manifest.json',
   '/auth-bootstrap.js?v=718290',
@@ -54,6 +55,22 @@ self.addEventListener('activate',event=>{
         .map(key=>caches.delete(key))
     );
     await self.clients.claim();
+
+    /* Eenmalige 7.18.29-migratie: iOS/PWA kan een oude DOM-snapshot hervatten
+       zonder echte paginalaad. Navigeer bestaande appvensters daarom één keer
+       naar dezelfde pagina met een buildtoken. Daarna gebeurt dit niet meer. */
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    await Promise.all(windows.map(async client=>{
+      try{
+        const url=new URL(client.url);
+        if(url.origin!==self.location.origin)return;
+        if(url.searchParams.get('msfix')===BUILD_TOKEN)return;
+        url.searchParams.set('msfix',BUILD_TOKEN);
+        await client.navigate(url.toString());
+      }catch(error){
+        console.warn('Eenmalige PWA-herlaadactie mislukt:',error);
+      }
+    }));
   })());
 });
 
