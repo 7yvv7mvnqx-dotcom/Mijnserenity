@@ -1,10 +1,10 @@
-/* MijnSerenity 7.18.20 — Marine Glass dashboardloader */
+/* MijnSerenity 7.18.21 — Marine Glass dashboardloader */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71820)return;
-  window.__msDashboardLoader71820=true;
-  const V='718200';
-  const BUILD='7.18.20';
+  if(window.__msDashboardLoader71821)return;
+  window.__msDashboardLoader71821=true;
+  const V='718210';
+  const BUILD='7.18.21';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
