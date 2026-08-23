@@ -79,12 +79,30 @@ body.ms708-native-pages-active{
   height:8px;
 }
 
-body.ms708-native-pages-active main{
+/*
+   Alleen de buitenste app-shell mag worden begrensd door de native pager.
+   De Marine Glass cockpit gebruikt zelf een <main class="mg-grid">. De oude
+   selector hieronder raakte ook die interne main en knipte op iPhone het
+   dashboard na Energie & Stroom af.
+*/
+body.ms708-native-pages-active > main{
   overflow:hidden;
 }
 
 body.ms708-native-pages-active #appView{
   overflow:hidden;
+}
+
+/* Marine Glass moet binnen de actieve dashboardpagina volledig in hoogte
+   kunnen doorlopen; de dashboard-section zelf blijft de verticale scroller. */
+body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass,
+body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass > main.mg-grid{
+  height:auto !important;
+  max-height:none !important;
+}
+
+body.ms708-native-pages-active #dashboard.ms708-native-page #msMarineGlass > main.mg-grid{
+  overflow:visible !important;
 }
 
 /* Kaarten en camerabeeld houden hun eigen aanrakingen. */
