@@ -1,7 +1,8 @@
-/* MijnSerenity 7.18.33 — Marine Glass loader wacht op daadwerkelijke cockpit-DOM */
+/* MijnSerenity 7.18.34 — Marine Glass met lineaire iPhone document-flow */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71833)return;
+  if(window.__msDashboardLoader71834)return;
+  window.__msDashboardLoader71834=true;
   window.__msDashboardLoader71833=true;
   window.__msDashboardLoader71829=true;
   window.__msDashboardLoader71828=true;
@@ -10,8 +11,8 @@
   window.__msDashboardLoader71824=true;
   window.__msDashboardLoader71823=true;
 
-  const V='718330';
-  const BUILD='7.18.33';
+  const V='718340';
+  const BUILD='7.18.34';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -93,15 +94,16 @@
     document.getElementById('mgMore')?.remove();
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
 
-    loadCss(`/page-swipe.css?v=${V}`,'msPageSwipe71833');
+    loadCss(`/page-swipe.css?v=${V}`,'msPageSwipe71834');
     await load(`/page-swipe.js?v=${V}`,'document-scroll-rescue');
 
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
+    /* Laat deze override als laatste stylesheet komen. Op iPhone gebruikt de
+       cockpit daardoor een gewone verticale document-flow in plaats van de
+       buitenste CSS-grid die Energie en de kaarten erna kon afkappen. */
+    loadCss(`/marine-glass-mobile-flow-71834.css?v=${V}`,'msMarineGlassMobileFlow71834');
 
-    /* dashboard-pro-71700 kan tijdens document.readyState='loading' eerst een
-       DOMContentLoaded-listener plaatsen. De oude loader controleerde hier te
-       vroeg en viel dan onterecht terug op het oude Start-dashboard. */
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     await waitForElement('msMarineGlass',5000);
 
@@ -142,6 +144,7 @@
     console.warn('Marine Glass loader:',error);
     throw error;
   });
+  window.__msDashboardReady71834=ready;
   window.__msDashboardReady71833=ready;
   window.__msDashboardReady71829=ready;
   window.__msDashboardReady71828=ready;
