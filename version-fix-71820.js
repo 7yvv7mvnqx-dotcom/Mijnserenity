@@ -1,14 +1,12 @@
-/* MijnSerenity 7.18.31 — één gezaghebbende zichtbare appversie */
+/* MijnSerenity 7.18.29 — één gezaghebbende zichtbare appversie */
 (()=>{
   'use strict';
-  if(window.__msVersionFix71831)return;
-  window.__msVersionFix71831=true;
-  window.__msVersionFix71830=true;
+  if(window.__msVersionFix71829)return;
   window.__msVersionFix71829=true;
   window.__msVersionFix71828=true;
   window.__msVersionFix71827=true;
   window.__msVersionFix71825=true;
-  const BUILD='7.18.31';
+  const BUILD='7.18.29';
 
   function sync(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -28,6 +26,7 @@
     .forEach(name=>window.addEventListener(name,()=>requestAnimationFrame(sync),{passive:true}));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()},{passive:true});
 
+  /* Oude cockpitmodules mogen de build niet meer terugschrijven. */
   const timer=setInterval(()=>{if(!document.hidden)sync()},500);
   window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
   [20,80,180,400,900,1800,3500,7000].forEach(delay=>setTimeout(sync,delay));
