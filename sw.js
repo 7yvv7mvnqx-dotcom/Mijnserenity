@@ -1,6 +1,6 @@
-/* MijnSerenity 7.18.23 — cacheherstel en netwerk-eerst voor kernbestanden */
-const CACHE_NAME='mijnserenity-7.18.23-startup-recovery';
-const BUILD_VERSION='718230';
+/* MijnSerenity 7.18.24 — sessieherstel en inlogweergave cache */
+const CACHE_NAME='mijnserenity-7.18.24-auth-session-fix';
+const BUILD_VERSION='718240';
 const ESSENTIAL=[
   '/index.html',
   `/auth-bootstrap.js?v=${BUILD_VERSION}`,
@@ -91,7 +91,6 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  // Nooit een oude bootstrap-versie forceren: de serverversie is leidend.
   if(url.pathname==='/auth-bootstrap.js'){
     event.respondWith(networkFirst(request,{fallback:`/auth-bootstrap.js?v=${BUILD_VERSION}`,timeout:5000}));
     return;
