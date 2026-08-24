@@ -1,6 +1,6 @@
-/* MijnSerenity 7.18.26 — sessieherstel en Marine Glass live cache */
-const CACHE_NAME='mijnserenity-7.18.26-marine-glass-live';
-const BUILD_VERSION='718260';
+/* MijnSerenity 7.18.28 — herstelcache vanaf stabiele 7.18.26 basis */
+const CACHE_NAME='mijnserenity-7.18.28-stable-restore';
+const BUILD_VERSION='718280';
 const ESSENTIAL=[
   '/index.html',
   `/auth-bootstrap.js?v=${BUILD_VERSION}`,
