@@ -1,4 +1,4 @@
-/* MijnSerenity 7.18.27 — Marine Glass startdashboard + iPhone/PWA scroll fix */
+/* MijnSerenity 7.18.28 — Marine Glass startdashboard + native pager scroll fix */
 :root{
   --mg-bg:#040b14;
   --mg-bg-soft:#071421;
@@ -15,12 +15,9 @@
   --mg-radius:22px;
 }
 
-/* page-swipe houdt body vast; de dashboardpagina zelf moet scrollen */
+/* page-swipe bepaalt zelf de beschikbare hoogte; Marine Glass regelt alleen de verticale scroll */
 #dashboard.mg-71825-active{
   background:var(--mg-bg)!important;
-  height:100%!important;
-  min-height:0!important;
-  max-height:100%!important;
   overflow-y:auto!important;
   overflow-x:hidden!important;
   -webkit-overflow-scrolling:touch!important;
@@ -187,11 +184,8 @@
 
 .mg-foot{padding:8px 2px 2px;text-align:center;color:#526778;font-size:9px;font-weight:650;letter-spacing:.04em}
 
-/* Extra verdediging tegen oude viewport-/pagerregels die op iOS later kunnen winnen. */
+/* De native pager houdt de route op de juiste iPhone-hoogte; hier geen eigen height/max-height meer. */
 #dashboard.mg-71825-active.ms708-native-page{
-  height:100%!important;
-  min-height:0!important;
-  max-height:100%!important;
   overflow-y:auto!important;
   overflow-x:hidden!important;
   -webkit-overflow-scrolling:touch!important;
