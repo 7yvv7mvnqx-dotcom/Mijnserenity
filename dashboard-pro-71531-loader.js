@@ -1,10 +1,10 @@
-/* MijnSerenity 7.18.12 — Marine Glass dashboardloader */
+/* MijnSerenity 7.18.14 — stabiele dashboardloader + Serenity Control */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71812)return;
-  window.__msDashboardLoader71812=true;
-  const V='718120';
-  const BUILD='7.18.12';
+  if(window.__msDashboardLoader71814Control)return;
+  window.__msDashboardLoader71814Control=true;
+  const V='718140';
+  const CONTROL='718140c1';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -22,20 +22,13 @@
     link=document.createElement('link');link.id=id;link.rel='stylesheet';link.href=href;document.head.appendChild(link);
   }
 
-  function syncVersion(){
-    window.MIJSERENITY_BUILD=BUILD;
-    const meta=document.querySelector('meta[name="mijnserenity-build"]');if(meta)meta.content=BUILD;
-    const settings=document.getElementById('settingsAppVersion');if(settings)settings.textContent=BUILD;
-    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
-    const badge=document.querySelector('#msMarineGlass .mg-brand sup');if(badge)badge.textContent=BUILD;
-  }
-
   async function start(){
     document.getElementById('mgNav718Style')?.remove();
     document.getElementById('mgMoreNav')?.remove();
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
     document.getElementById('msMarineGlassMobile7182')?.remove();
 
+    /* Bestaande 21-augustus dashboard blijft als fallback aanwezig. */
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     await load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix');
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
@@ -43,7 +36,9 @@
     await load(`/marine-glass-polish-7185.js?v=${V}`,'marine-glass-polish');
     await load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info');
 
-    syncVersion();setTimeout(syncVersion,250);setTimeout(syncVersion,1200);setTimeout(syncVersion,3500);
+    /* Nieuwe bediening: alleen een extra laag, geen wijziging aan login/navigatiekern. */
+    loadCss(`/serenity-control-dashboard.css?v=${CONTROL}`,'msSerenityControlCss');
+    await load(`/serenity-control-dashboard.js?v=${CONTROL}`,'serenity-control-dashboard');
 
     if(!document.getElementById('msAiDestinationCss')){
       const link=document.createElement('link');link.id='msAiDestinationCss';link.rel='stylesheet';link.href=`/ai-destination-search.css?v=${V}`;document.head.appendChild(link);
@@ -52,5 +47,5 @@
     if('requestIdleCallback' in window)requestIdleCallback(loadDestination,{timeout:800});else setTimeout(loadDestination,120);
   }
 
-  start().catch(error=>console.warn('Marine Glass loader:',error));
+  start().catch(error=>console.warn('Dashboard loader:',error));
 })();
