@@ -1,6 +1,6 @@
-/* MijnSerenity 7.18.28 — herstelcache vanaf stabiele 7.18.26 basis */
-const CACHE_NAME='mijnserenity-7.18.28-stable-restore';
-const BUILD_VERSION='718280';
+/* MijnSerenity 7.18.30 — stabiele navigatie zonder native pager */
+const CACHE_NAME='mijnserenity-7.18.30-stable-navigation';
+const BUILD_VERSION='718300';
 const ESSENTIAL=[
   '/index.html',
   `/auth-bootstrap.js?v=${BUILD_VERSION}`,
