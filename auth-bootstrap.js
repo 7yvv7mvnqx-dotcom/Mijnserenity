@@ -5,6 +5,7 @@
   const BUILD='7.18.16';
   const VERSION='718160';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
+  const DASHBOARD_SCRIPT=`dashboard-pro-71531-loader.js?v=${VERSION}`;
   const STARTUP_TIMEOUT_MS=22000;
 
   const EARLY_MODULES=[
@@ -13,7 +14,6 @@
     `waterkaarten-route-receiver-71870.js?v=${VERSION}`,
     `waterkaarten-route-enrichment-71811.js?v=${VERSION}`,
     `marine-map-route-fit-71812.js?v=${VERSION}`,
-    `dashboard-pro-71531-loader.js?v=${VERSION}`,
     `easy-auto.js?v=${VERSION}`,
     `auto-track-reliability.js?v=${VERSION}`,
     `gps-continuity-guard.js?v=${VERSION}`,
@@ -309,6 +309,8 @@
       setStartupStatus('Dashboard wordt klaargezet…');
       startupViewTouched=false;
       await loadScript(CORE_SCRIPT,15000);
+      setStartupStatus('Actueel dashboard wordt geladen…');
+      await loadScript(DASHBOARD_SCRIPT,15000);
       startupCoreReady=true;
       syncBuildVersion();
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
@@ -316,7 +318,7 @@
       if(button)button.disabled=false;
       maybeFinishStartup();
       setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),40);
-      console.info(`MijnSerenity ${BUILD}: kern gestart.`);
+      console.info(`MijnSerenity ${BUILD}: kern en actueel dashboard gestart.`);
     }catch(error){
       console.error('MijnSerenity kon niet starten:',error);
       setAuthStatus('De beveiligde inlog kon niet worden geladen. Tik op “App herstellen en vernieuwen” en probeer opnieuw.',true);
