@@ -4,7 +4,7 @@
   if(window.__msDashboardLoader71814Control)return;
   window.__msDashboardLoader71814Control=true;
   const V='718140';
-  const CONTROL='718140c1';
+  const CONTROL='718140c2';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -43,6 +43,10 @@
     /* Nieuwe bediening: alleen een extra laag, geen wijziging aan login/navigatiekern. */
     loadCss(`/serenity-control-dashboard.css?v=${CONTROL}`,'msSerenityControlCss');
     await load(`/serenity-control-dashboard.js?v=${CONTROL}`,'serenity-control-dashboard');
+
+    /* Tanknamen worden op de actuele HA/Cerbo friendly name gekoppeld.
+       Een oude entity-id met 'vuilwater' mag dus wél Dieseltank zijn. */
+    await load('/tank-live-remap-718141.js?v=718141','tank-live-remap');
 
     if(!document.getElementById('msAiDestinationCss')){
       const link=document.createElement('link');link.id='msAiDestinationCss';link.rel='stylesheet';link.href=`/ai-destination-search.css?v=${V}`;document.head.appendChild(link);
