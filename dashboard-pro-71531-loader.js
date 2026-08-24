@@ -1,11 +1,11 @@
-/* MijnSerenity 7.18.27 — Marine Glass zichtlaag met geïntegreerde live fallback */
+/* MijnSerenity 7.18.28 — Marine Glass zichtlaag met geïntegreerde live fallback */
 (()=>{
   'use strict';
   if(window.__msDashboardLoaderCurrent)return;
   window.__msDashboardLoaderCurrent=true;
 
-  const BUILD='7.18.27';
-  const VERSION='718270';
+  const BUILD='7.18.28';
+  const VERSION='718280';
   const LEGACY_IDS=['ms71510Dashboard','serenityIvms','msMarineGlass','msMarineGlassMobile7182'];
   let guardInstalled=false;
   let marineAttempted=false;
@@ -86,6 +86,10 @@
     marine.style.setProperty('position','relative','important');
     LEGACY_IDS.forEach(id=>document.getElementById(id)?.style.setProperty('display','none','important'));
     window.__msDisableLegacyVisuals=true;
+    if(!marine.dataset.mgViewportReady){
+      marine.dataset.mgViewportReady='1';
+      requestAnimationFrame(()=>{dashboard.scrollTop=0;});
+    }
     return true;
   }
 
