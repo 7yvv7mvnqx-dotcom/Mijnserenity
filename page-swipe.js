@@ -1,11 +1,11 @@
 /* ============================================================
-   MijnSerenity 7.18.30 — stabiele navigatie zonder native pager
+   MijnSerenity 7.18.31 — vaste documentflow voor iPhone
    ============================================================ */
 (()=>{
   'use strict';
 
-  if(window.__msStableNavigation71830)return;
-  window.__msStableNavigation71830=true;
+  if(window.__msStableNavigation71831)return;
+  window.__msStableNavigation71831=true;
 
   const ms708PageOrder=[
     'dashboard',
@@ -45,6 +45,45 @@
     if(tab&&ms708PageOrder.includes(tab.dataset.target))return tab.dataset.target;
 
     return 'dashboard';
+  }
+
+  function forceNaturalFlow(element,{resetInnerMain=false}={}){
+    if(!element)return;
+    element.style.setProperty('height','auto','important');
+    element.style.setProperty('max-height','none','important');
+    element.style.setProperty('overflow','visible','important');
+    element.style.setProperty('overflow-y','visible','important');
+    if(resetInnerMain){
+      element.style.setProperty('min-height','0','important');
+      element.style.setProperty('width','100%','important');
+      element.style.setProperty('max-width','none','important');
+      element.style.setProperty('margin','0','important');
+      element.style.setProperty('padding','0','important');
+      element.style.setProperty('position','relative','important');
+    }
+  }
+
+  function enforceNaturalDocumentFlow(){
+    document.documentElement.style.setProperty('height','auto','important');
+    document.documentElement.style.setProperty('max-height','none','important');
+    document.documentElement.style.setProperty('overflow-y','auto','important');
+
+    if(document.body){
+      document.body.style.setProperty('height','auto','important');
+      document.body.style.setProperty('max-height','none','important');
+      document.body.style.setProperty('overflow-y','auto','important');
+    }
+
+    forceNaturalFlow(document.querySelector('body > main'));
+    forceNaturalFlow(document.getElementById('appView'));
+    forceNaturalFlow(document.getElementById('dashboard'));
+    forceNaturalFlow(document.getElementById('msMarineDashboard'));
+
+    const marineInnerMain=document.querySelector('#msMarineDashboard > main');
+    forceNaturalFlow(marineInnerMain,{resetInnerMain:true});
+
+    const legacyPager=document.getElementById('ms708NativePager');
+    forceNaturalFlow(legacyPager);
   }
 
   function clearPagerClasses(page){
@@ -91,6 +130,7 @@
       app.style.removeProperty('overflow-y');
     }
 
+    enforceNaturalDocumentFlow();
     return keepRoute;
   }
 
@@ -120,6 +160,7 @@
     });
 
     setNavigationState(route);
+    enforceNaturalDocumentFlow();
     return Boolean(document.getElementById(route));
   }
 
@@ -153,6 +194,7 @@
     if(!handled)handled=fallbackShow(route);
 
     setNavigationState(route);
+    enforceNaturalDocumentFlow();
 
     const page=document.getElementById(route);
     if(page){
@@ -173,6 +215,7 @@
     const route=cleanupLegacyPager();
     document.documentElement.classList.add('ms-stable-navigation');
     document.body?.classList.add('ms-stable-navigation');
+    enforceNaturalDocumentFlow();
 
     /*
        Laat de bestaande MijnSerenity-navigatie leidend. Alleen wanneer
@@ -183,6 +226,10 @@
       return page&&!page.classList.contains('hidden');
     });
     if(!visible&&document.getElementById(route))fallbackShow(route);
+
+    requestAnimationFrame(enforceNaturalDocumentFlow);
+    setTimeout(enforceNaturalDocumentFlow,250);
+    setTimeout(enforceNaturalDocumentFlow,1200);
   }
 
   /* Compatibiliteit voor oudere modules die nog ms708-functies aanroepen. */
@@ -190,8 +237,9 @@
   window.ms708GoToPage=(id,runPageActions=true)=>navigate(id,runPageActions);
   window.ms708ScrollToPage=(id)=>navigate(id,true);
   window.ms708SetSingleActive=(id)=>navigate(id,false);
-  window.ms708ResizePager=cleanupLegacyPager;
+  window.ms708ResizePager=()=>{cleanupLegacyPager();enforceNaturalDocumentFlow();};
   window.ms708CleanupLegacyPager=cleanupLegacyPager;
+  window.ms71831EnforceNaturalDocumentFlow=enforceNaturalDocumentFlow;
 
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',initialise,{once:true});
@@ -200,4 +248,9 @@
   }
 
   window.addEventListener('pageshow',initialise,{passive:true});
+  window.addEventListener('resize',enforceNaturalDocumentFlow,{passive:true});
+  window.visualViewport?.addEventListener('resize',enforceNaturalDocumentFlow,{passive:true});
+  window.addEventListener('mijnserenity:marine-glass-ready',enforceNaturalDocumentFlow,{passive:true});
+  window.addEventListener('mijnserenity:modules-ready',enforceNaturalDocumentFlow,{passive:true});
+  window.addEventListener('mijnserenity:routechange',enforceNaturalDocumentFlow,{passive:true});
 })();
