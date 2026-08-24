@@ -1,6 +1,5 @@
-
 /* =========================================================
-   MijnSerenity Cloud 7.4.8 — native iPhone/iPad paginavegen
+   MijnSerenity Cloud 7.18.29 — stabiele native iPhone/iPad pager
    ========================================================= */
 
 html,
@@ -85,6 +84,43 @@ body.ms708-native-pages-active main{
 
 body.ms708-native-pages-active #appView{
   overflow:hidden;
+}
+
+/*
+   7.18.29 — Single-page mode is geen horizontale scrollstrip meer.
+   Slechts één route staat actief. Die actieve route is altijd de verticale
+   scroller, ook wanneer een later geladen dashboardstylesheet overflow
+   probeert te overschrijven. Dit voorkomt het afkappen na Startaccu's.
+*/
+body.ms708-native-pages-active.ms755-single-page-nav #ms708NativePager{
+  overflow-x:hidden !important;
+  overflow-y:hidden !important;
+  scroll-snap-type:none !important;
+}
+
+body.ms708-native-pages-active.ms755-single-page-nav #ms708NativePager > .ms708-native-page{
+  display:none !important;
+}
+
+body.ms708-native-pages-active.ms755-single-page-nav #ms708NativePager > .ms708-native-page.ms755-route-active{
+  display:block !important;
+  width:100% !important;
+  min-width:100% !important;
+  max-width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:100% !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+  touch-action:pan-y pinch-zoom !important;
+}
+
+/* Marine Glass mag de scroller niet terugzetten naar overflow:visible. */
+body.ms708-native-pages-active.ms755-single-page-nav #ms708NativePager > #dashboard.ms708-native-page.ms755-route-active.mg-71825-active{
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
 }
 
 /* Kaarten en camerabeeld houden hun eigen aanrakingen. */
