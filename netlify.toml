@@ -142,3 +142,14 @@
   for = "/victron-diagnostics.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
+
+# MijnSerenity 7.18.14.2 — live remap en loader direct vernieuwen
+[[headers]]
+  for = "/update-prompt.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/tank-live-remap-718141.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
