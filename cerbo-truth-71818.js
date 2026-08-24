@@ -1,8 +1,8 @@
-/* MijnSerenity 7.18.20 — snelle, event-driven Cerbo-synchronisatie. */
+/* MijnSerenity 7.18.21 — snelle, event-driven Cerbo-synchronisatie. */
 (()=>{
   'use strict';
-  if(window.__msCerboTruth71820)return;
-  window.__msCerboTruth71820=true;
+  if(window.__msCerboTruth71821)return;
+  window.__msCerboTruth71821=true;
 
   const $=id=>document.getElementById(id);
   const num=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v):null;
@@ -12,7 +12,6 @@
   const fmt=(v,d=0,s='')=>v===null?`–${s}`:`${Number(v).toLocaleString('nl-NL',{minimumFractionDigits:d,maximumFractionDigits:d})}${s}`;
 
   let canonicalFuelPct=null;
-  let canonicalFuelUpdatedAt=0;
   let stateBusy=false;
 
   function technical(){
@@ -22,9 +21,9 @@
   function boat(){try{return typeof currentBoat!=='undefined'?currentBoat:null}catch{return null}}
 
   function style(){
-    if($('msCerboTruthStyle71820'))return;
+    if($('msCerboTruthStyle71821'))return;
     const el=document.createElement('style');
-    el.id='msCerboTruthStyle71820';
+    el.id='msCerboTruthStyle71821';
     el.textContent='#msMarineGlass .ms-cerbo-discharge{color:#ff6464!important}#msMarineGlass .ms-cerbo-charge{color:#43df8b!important}';
     document.head.appendChild(el);
   }
@@ -59,6 +58,8 @@
   }
 
   function fuelCapacity(){
+    const liveCapacity=num(window.MIJSERENITY_VRM_LIVE_ENERGY?.tanks?.fuel?.capacityLiters);
+    if(liveCapacity&&liveCapacity>0)return liveCapacity;
     const t=technical();
     for(const key of ['fuelCapacityLiters','fuelCapacityL','fuelTankCapacity','fuelCapacity']){
       const v=num(t?.[key]);if(v&&v>0)return v;
@@ -67,11 +68,11 @@
   }
 
   function currentFuelPct(){
-    if(canonicalFuelPct!==null)return canonicalFuelPct;
-    const cached=num(technical()?.fuelPct);
-    if(cached!==null)return cached;
+    /* Live Cerbo/VRM is altijd leidend. De oude technicalStateCache kan minuten achterlopen. */
     const live=num(window.MIJSERENITY_VRM_LIVE_ENERGY?.tanks?.fuel?.levelPct);
-    return live;
+    if(live!==null&&live>=0&&live<=100)return live;
+    if(canonicalFuelPct!==null)return canonicalFuelPct;
+    return num(technical()?.fuelPct);
   }
 
   function applyFuel(){
@@ -79,11 +80,13 @@
     if(raw===null||raw<0||raw>100)return;
     const pct=Math.max(0,Math.min(100,raw));
     const shown=`${Math.round(pct)}%`;
-    const liters=Math.round(fuelCapacity()*pct/100);
+    const cap=fuelCapacity();
+    const liveRemaining=num(window.MIJSERENITY_VRM_LIVE_ENERGY?.tanks?.fuel?.remainingLiters);
+    const liters=liveRemaining!==null?Math.round(liveRemaining):Math.round(cap*pct/100);
 
     setMany(['techFuelLevel','ms71510Fuel','mg-fuel','scdTank-fuel'],shown);
     setMany(['techFuelLiters','ivmsFuelLiters','scdTankLiters-fuel'],`${liters} L`);
-    set('mg-fuel-l',`circa ${liters} van ${Math.round(fuelCapacity())} liter`);
+    set('mg-fuel-l',`circa ${liters} van ${Math.round(cap)} liter`);
     const bar=$('mg-fuel-bar');if(bar)bar.style.width=`${pct}%`;
     const gauge=$('scdTankGauge-fuel');if(gauge)gauge.style.setProperty('--p',pct);
     const title=$('mg-fuel')?.closest('.mg-level')?.querySelector('small');if(title)title.textContent='Dieseltank';
@@ -104,7 +107,7 @@
       const {data,error}=await c.from('technical_state').select('data,updated_at').eq('boat_id',b.id).maybeSingle();
       if(!error&&data?.data){
         const pct=num(data.data.fuelPct);
-        if(pct!==null&&pct>=0&&pct<=100){canonicalFuelPct=pct;canonicalFuelUpdatedAt=Date.parse(String(data.updated_at||''))||Date.now()}
+        if(pct!==null&&pct>=0&&pct<=100)canonicalFuelPct=pct;
         try{
           const t=technical();
           if(t&&typeof t==='object')Object.assign(t,data.data);
@@ -120,11 +123,10 @@
     render();
     setTimeout(refreshCanonicalFuel,500);
     window.addEventListener('mijnserenity-vrm-diagnostics-updated',applyEnergy,{passive:true});
-    window.addEventListener('mijnserenity-vrm-energy-live-updated',()=>{applyEnergy();setTimeout(refreshCanonicalFuel,150)},{passive:true});
+    window.addEventListener('mijnserenity-vrm-energy-live-updated',()=>{applyEnergy();applyFuel()},{passive:true});
     window.addEventListener('mijnserenity:routechange',render,{passive:true});
     window.addEventListener('focus',()=>{render();refreshCanonicalFuel()},{passive:true});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();refreshCanonicalFuel()}},{passive:true});
-    setInterval(()=>{if(!document.hidden&&Date.now()-canonicalFuelUpdatedAt>55000)refreshCanonicalFuel()},60000);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
