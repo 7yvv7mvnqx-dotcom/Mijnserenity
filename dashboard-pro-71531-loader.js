@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.14 — stabiele dashboardloader + Serenity Control */
+/* MijnSerenity 7.18.21 — stabiele dashboardloader + live Cerbo als enige tankbron */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71814Control)return;
-  window.__msDashboardLoader71814Control=true;
-  const V='718140';
+  if(window.__msDashboardLoader71821)return;
+  window.__msDashboardLoader71821=true;
+  const V='718210';
   const CONTROL='718140c2';
 
   function load(src,key){
@@ -28,13 +28,16 @@
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
     document.getElementById('msMarineGlassMobile7182')?.remove();
 
-    /* Bestaande 21-augustus dashboard blijft als fallback aanwezig. */
+    /* Marine Glass direct laden; het oude startdashboard blijft alleen als verborgen databron bestaan. */
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     await load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix');
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
     await load(`/marine-glass-polish-7185.js?v=${V}`,'marine-glass-polish');
     await load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info');
+
+    /* Eén bron voor accu, PV en tanks: live Cerbo/VRM. Geen oude HA-tank-remap meer. */
+    await load(`/cerbo-truth-71818.js?v=${V}`,'cerbo-truth');
 
     /* HA wordt later in de vroege module-queue geladen. Tot die tijd veilige lege functies. */
     window.ms730HomeAssistantConnected=window.ms730HomeAssistantConnected||(()=>false);
@@ -43,10 +46,6 @@
     /* Nieuwe bediening: alleen een extra laag, geen wijziging aan login/navigatiekern. */
     loadCss(`/serenity-control-dashboard.css?v=${CONTROL}`,'msSerenityControlCss');
     await load(`/serenity-control-dashboard.js?v=${CONTROL}`,'serenity-control-dashboard');
-
-    /* Tanknamen worden op de actuele HA/Cerbo friendly name gekoppeld.
-       Een oude entity-id met 'vuilwater' mag dus wél Dieseltank zijn. */
-    await load('/tank-live-remap-718141.js?v=718141','tank-live-remap');
 
     if(!document.getElementById('msAiDestinationCss')){
       const link=document.createElement('link');link.id='msAiDestinationCss';link.rel='stylesheet';link.href=`/ai-destination-search.css?v=${V}`;document.head.appendChild(link);
