@@ -36,24 +36,13 @@
   document.head.appendChild(script);
 })();
 
-/* 7.18.18 — Cerbo/VRM is de enige leidende bron voor dashboardwaarden. */
+/* 7.18.20 — event-driven Cerbo-synchronisatie, zonder zware dubbele polling. */
 (function(){
   'use strict';
-  if(window.__msCerboTruthLoader71818)return;
-  window.__msCerboTruthLoader71818=true;
+  if(window.__msCerboTruthLoader71820)return;
+  window.__msCerboTruthLoader71820=true;
   const script=document.createElement('script');
-  script.src='/cerbo-truth-71818.js?v=718181';
-  script.async=false;
-  document.head.appendChild(script);
-})();
-
-/* 7.18.19 — dieselstand iedere 15 seconden rechtstreeks uit Cerbo/VRM verversen. */
-(function(){
-  'use strict';
-  if(window.__msCerboTankSyncLoader71819)return;
-  window.__msCerboTankSyncLoader71819=true;
-  const script=document.createElement('script');
-  script.src='/cerbo-tank-sync-71819.js?v=718190';
+  script.src='/cerbo-truth-71818.js?v=718200';
   script.async=false;
   document.head.appendChild(script);
 })();
