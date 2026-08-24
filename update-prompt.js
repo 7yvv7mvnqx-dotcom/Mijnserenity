@@ -47,6 +47,17 @@
   document.head.appendChild(script);
 })();
 
+/* 7.18.18 — Cerbo/VRM is de enige leidende bron voor dashboardwaarden. */
+(function(){
+  'use strict';
+  if(window.__msCerboTruthLoader71818)return;
+  window.__msCerboTruthLoader71818=true;
+  const script=document.createElement('script');
+  script.src='/cerbo-truth-71818.js?v=718180';
+  script.async=false;
+  document.head.appendChild(script);
+})();
+
 (function(){
   'use strict';
   if(window.__msSilentUpdaterInstalled)return;
