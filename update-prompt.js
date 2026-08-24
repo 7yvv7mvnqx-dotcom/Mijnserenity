@@ -47,6 +47,17 @@
   document.head.appendChild(script);
 })();
 
+/* 7.18.19 — dieselstand iedere 15 seconden rechtstreeks uit Cerbo/VRM verversen. */
+(function(){
+  'use strict';
+  if(window.__msCerboTankSyncLoader71819)return;
+  window.__msCerboTankSyncLoader71819=true;
+  const script=document.createElement('script');
+  script.src='/cerbo-tank-sync-71819.js?v=718190';
+  script.async=false;
+  document.head.appendChild(script);
+})();
+
 (function(){
   'use strict';
   if(window.__msSilentUpdaterInstalled)return;
