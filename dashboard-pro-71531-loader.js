@@ -36,6 +36,10 @@
     await load(`/marine-glass-polish-7185.js?v=${V}`,'marine-glass-polish');
     await load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info');
 
+    /* HA wordt later in de vroege module-queue geladen. Tot die tijd veilige lege functies. */
+    window.ms730HomeAssistantConnected=window.ms730HomeAssistantConnected||(()=>false);
+    window.ms730GetStateSnapshot=window.ms730GetStateSnapshot||(()=>[]);
+
     /* Nieuwe bediening: alleen een extra laag, geen wijziging aan login/navigatiekern. */
     loadCss(`/serenity-control-dashboard.css?v=${CONTROL}`,'msSerenityControlCss');
     await load(`/serenity-control-dashboard.js?v=${CONTROL}`,'serenity-control-dashboard');
