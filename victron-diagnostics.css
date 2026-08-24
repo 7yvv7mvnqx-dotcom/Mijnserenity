@@ -49,3 +49,8 @@
   .ms-vrm-diagnosis-actions button{width:100%}
 }
 
+/* 7.18.21 — voorkom dat het oude startdashboard op iPhone eerst zichtbaar wordt. */
+@media(max-width:1024px){
+  #appView:not(.hidden) #ms71510Dashboard{display:none!important}
+  #appView:not(.hidden) #dashboard > #msMarineGlass{display:block!important}
+}
