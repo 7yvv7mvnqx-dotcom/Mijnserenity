@@ -36,24 +36,13 @@
   document.head.appendChild(script);
 })();
 
-/* 7.18.14.2 — laad de live Victron/Cerbo remap voor startaccu en tanks. */
-(function(){
-  'use strict';
-  if(window.__msTankLiveRemapLoader718142)return;
-  window.__msTankLiveRemapLoader718142=true;
-  const script=document.createElement('script');
-  script.src='/tank-live-remap-718141.js?v=718142';
-  script.async=false;
-  document.head.appendChild(script);
-})();
-
 /* 7.18.18 — Cerbo/VRM is de enige leidende bron voor dashboardwaarden. */
 (function(){
   'use strict';
   if(window.__msCerboTruthLoader71818)return;
   window.__msCerboTruthLoader71818=true;
   const script=document.createElement('script');
-  script.src='/cerbo-truth-71818.js?v=718180';
+  script.src='/cerbo-truth-71818.js?v=718181';
   script.async=false;
   document.head.appendChild(script);
 })();
