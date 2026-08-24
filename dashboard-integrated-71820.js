@@ -1,10 +1,10 @@
-/* MijnSerenity 7.18.20 — geïntegreerd live cockpit/startdashboard */
+/* MijnSerenity 7.18.21 — geïntegreerd live cockpit/startdashboard */
 (()=>{
   'use strict';
   if(window.__msIntegratedDashboard71820)return;
   window.__msIntegratedDashboard71820=true;
 
-  const BUILD='7.18.20';
+  const BUILD='7.18.21';
   const $=id=>document.getElementById(id);
   const text=id=>($(id)?.textContent||'').trim();
   const number=value=>{
@@ -219,210 +219,163 @@
   }
 
   function climateData(){
-    try{
-      const climate=window.ms7102GetRuuviClimate?.()||{};
-      return {machine:climate.forward||{},salon:climate.salon||{}};
-    }catch{return {machine:{},salon:{}}}
+    let ruuvi=null;
+    try{ruuvi=window.ms7102GetRuuviClimate?.()||null}catch{}
+    const machine=ruuvi?.forward||ruuvi?.machine||null;
+    const salon=ruuvi?.salon||null;
+    return {
+      machineTemp:finite(machine?.temperature)?Number(machine.temperature):entityNumber(/machinekamer.*temperatuur|machine.*temp|engine.*room.*temp/i,['sensor']),
+      machineHum:finite(machine?.humidity)?Number(machine.humidity):entityNumber(/machinekamer.*vocht|machine.*humidity|engine.*room.*humidity/i,['sensor']),
+      salonTemp:finite(salon?.temperature)?Number(salon.temperature):entityNumber(/salon.*temperatuur|salon.*temp/i,['sensor']),
+      salonHum:finite(salon?.humidity)?Number(salon.humidity):entityNumber(/salon.*vocht|salon.*humidity/i,['sensor'])
+    };
   }
 
-  function shoreEntity(){return findEntity(/walstroom|landstroom|shore\s*power|shorepower|ac[_\s-]*(input|in).*connected|grid\s+connected|mains\s+connected/i)}
-  function inverterEntity(){return findEntity(/omvormer|inverter/i,['switch','binary_sensor','sensor'])}
-  function chargerEntity(){return findEntity(/(^|\s)lader|charger|ac\s*charger/i,['switch','binary_sensor','sensor'])}
-  function lightEntity(){return stateSnapshot().find(entity=>(entity.domain||String(entity.entity_id||'').split('.')[0])==='light')||null}
-  function pumpEntity(){return findEntity(/bilge|pomp|pump/i,['switch','binary_sensor','sensor'])}
-
-  function statusText(entity,fallback='–'){
-    const on=stateOn(entity);
-    if(on===true)return 'Aan';
-    if(on===false)return 'Uit';
-    const value=String(entity?.state||'').trim();
-    return value&&!['unknown','unavailable'].includes(value.toLowerCase())?value:fallback;
+  function cockpitData(){
+    const speedKn=readNumber(['liveSpeedKn','ivmsSpeedKn','ms71510SpeedKn'])??entityNumber(/speed.*knot|snelheid.*kn|gps.*speed/i,['sensor']);
+    const speedKmh=readNumber(['liveSpeed','ivmsSpeed','ms71510Speed'])??entityNumber(/speed.*km|snelheid.*km/i,['sensor']);
+    const speed=speedKn??(speedKmh!==null?speedKmh/1.852:null);
+    const depth=readNumber(['liveDepth','ivmsDepth','ms71510Depth'])??entityNumber(/diepte|depth/i,['sensor']);
+    const heading=readNumber(['liveHeading','ivmsHeading'])??entityNumber(/heading|course|koers/i,['sensor']);
+    const rpm=readNumber(['liveRpm','ivmsRpm','ms71510Rpm'])??entityNumber(/rpm|toerental/i,['sensor']);
+    return {speed,depth,heading,rpm};
   }
 
-  function syncBattery(){
-    const data=houseData();
-    set('msiSoc',data.soc===null?'–%':`${fmt(data.soc,0)}%`);
-    set('msiTopSoc',data.soc===null?'–%':`${fmt(data.soc,0)}%`);
-    set('msiHouseV',data.voltage===null?'– V':`${fmt(data.voltage,2)} V`);
-    set('msiHouseA',data.current===null?'– A':`${fmt(data.current,2)} A`);
-    set('msiHouseW',data.power===null?'– W':`${fmt(data.power,0)} W`);
-    set('msiHouseT',data.time||'–');
-    if($('msiSocRing'))$('msiSocRing').style.setProperty('--p',clamp(data.soc??0,0,100));
-    set('msiTopBatteryMeta',data.time&&data.time!=='–'?`${data.time} resterend`:(data.voltage!==null?`${fmt(data.voltage,2)} V`:'Wacht op Victron'));
+  function cardinal(degrees){
+    if(!finite(degrees))return '–';
+    const dirs=['N','NO','O','ZO','Z','ZW','W','NW'];
+    return dirs[Math.round((Number(degrees)%360)/45)%8];
+  }
 
+  function solarPower(){
+    return exactNumber('sensor.vrm_solar_power')??entityNumber(/solar.*power|pv.*power|zonne.*vermogen/i,['sensor'])??readNumber(['ivmsSolarPower','techSolarPower','ms71510SolarPower']);
+  }
+
+  function shoreEntity(){return findEntity(/walstroom|shore.*power|shore.*connected|ac.*input/i,['binary_sensor','sensor','switch'])}
+  function inverterEntity(){return findEntity(/omvormer|inverter/i,['switch','sensor'])}
+  function chargerEntity(){return findEntity(/acculader|charger|lader/i,['switch','sensor'])}
+  function lightEntity(){return findEntity(/salon.*light|salon.*lamp|verlichting|lighting/i,['light','switch'])}
+  function pumpEntity(){return findEntity(/water.*pump|drukpomp|pomp/i,['switch','binary_sensor','sensor'])}
+
+  function sync(){
+    frame=0;
+    if(!build())return;
+    const house=houseData();
     const starts=individualStartVoltages();
+    const live=sourceIsLive();
+    const solar=solarPower();
+    const shore=shoreEntity();
+    const inverter=inverterEntity();
+    const charger=chargerEntity();
+    const light=lightEntity();
+    const pump=pumpEntity();
+    const climate=climateData();
+    const cockpit=cockpitData();
+    const water=tankValue('water'),waste=tankValue('waste'),fuel=tankValue('fuel');
+    const shoreOn=stateOn(shore),invOn=stateOn(inverter),chargerOn=stateOn(charger),lightOn=stateOn(light),pumpOn=stateOn(pump);
+
+    set('msiClock',new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}));
+    set('msiLiveText',live?'Live data':'Wacht op live data');
+    setClass('msiLivePill','live',live);
+
+    set('msiTopSoc',house.soc!==null?`${fmt(house.soc,0)}%`:'–%');
+    set('msiTopBatteryMeta',house.current!==null?`${house.current>=0?'Laden':'Verbruik'} ${fmt(Math.abs(house.current),1)} A`:'Wacht op Victron');
+    set('msiTopSolar',solar!==null?`${fmt(solar,0)} W`:'– W');
+    set('msiTopSolarMeta',solar!==null?(solar>5?'Opbrengst actief':'Geen opbrengst'):'Niet gemeten');
+    set('msiTopShore',shoreOn===null?'–':shoreOn?'AAN':'UIT');
+    set('msiTopShoreMeta',shoreOn===null?'Status onbekend':shoreOn?'Aangesloten':'Niet actief');
+    set('msiTopInv',invOn===null?'–':invOn?'AAN':'UIT');
+    set('msiTopInvMeta',inverter?label(inverter).replace(/^\S+\s*/,'').slice(0,28):'Open bediening');
+
+    set('msiSoc',house.soc!==null?`${fmt(house.soc,0)}%`:'–%');
+    $('msiSocRing')?.style.setProperty('--p',house.soc!==null?String(clamp(house.soc,0,100)):'0');
+    set('msiHouseV',house.voltage!==null?`${fmt(house.voltage,2)} V`:'– V');
+    set('msiHouseA',house.current!==null?`${fmt(house.current,1)} A`:'– A');
+    set('msiHouseW',house.power!==null?`${fmt(house.power,0)} W`:'– W');
+    set('msiHouseT',house.time||'–');
+
     [0,1].forEach(index=>{
       const value=starts[index]?.value??null;
       const status=startStatus(value);
-      set(`msiStart${index+1}`,value===null?'– V':`${fmt(value,2)} V`);
+      set(`msiStart${index+1}`,value!==null?`${fmt(value,2)} V`:'– V');
       set(`msiStart${index+1}Status`,status.text);
       const card=$(`msiStart${index+1}Card`);
-      if(card){card.classList.toggle('unknown',status.kind==='unknown');card.classList.toggle('critical',status.kind==='critical')}
+      if(card){card.classList.remove('unknown','critical');if(status.kind!=='ok')card.classList.add(status.kind)}
     });
-  }
 
-  function syncEnergy(){
-    const solar=exactNumber('sensor.vrm_solar_charger_power','sensor.vrm_pv_power')??readNumber(['ivmsSolarPower','techSolarPower']);
-    set('msiTopSolar',solar===null?'– W':`${fmt(solar,0)} W`);
-    set('msiTopSolarMeta',solar===null?'Niet gemeten':solar>2?'Actief':'Geen opbrengst');
-
-    const shore=shoreEntity();
-    let shoreOn=stateOn(shore);
-    if(shoreOn===null){
-      const source=readText(['ivmsPowerSource'],'').toLowerCase();
-      if(source.includes('wal'))shoreOn=true;
-      else if(source==='accu')shoreOn=false;
-    }
-    const shoreVoltage=entityNumber(/walstroom.*(spanning|voltage)|shore.*voltage|ac.*input.*voltage/i,['sensor'])??readNumber(['ivmsPowerVoltage','techShoreVoltage']);
-    set('msiTopShore',shoreVoltage!==null?`${fmt(shoreVoltage,0)} V`:(shoreOn===true?'Aan':shoreOn===false?'Uit':'–'));
-    set('msiTopShoreMeta',shoreOn===true?'Verbonden':shoreOn===false?'Niet verbonden':'Status onbekend');
-    setClass('msiTopShoreCard','warn',shoreOn===false);
-
-    const inv=inverterEntity();
-    const invText=statusText(inv,readText(['ivmsInverterStatus','techInverterStatus'],'–'));
-    set('msiTopInv',invText);
-    set('msiTopInvMeta',inv?'Live · tik voor bediening':'Open bediening');
-  }
-
-  function syncTanks(){
-    const values={water:tankValue('water'),waste:tankValue('waste'),fuel:tankValue('fuel')};
-    [['water','msiWater','msiWaterGauge'],['waste','msiWaste','msiWasteGauge'],['fuel','msiFuel','msiFuelGauge']].forEach(([key,valueId,gaugeId])=>{
-      const value=values[key];
-      set(valueId,value===null?'–%':`${fmt(value,0)}%`);
-      $(gaugeId)?.style.setProperty('--p',value??0);
+    [[water,'msiWater','msiWaterGauge'],[waste,'msiWaste','msiWasteGauge'],[fuel,'msiFuel','msiFuelGauge']].forEach(([value,id,gauge])=>{
+      set(id,value!==null?`${fmt(value,0)}%`:'–%');
+      $(gauge)?.style.setProperty('--p',value!==null?String(value):'0');
     });
-    set('msiWaterMeta',values.water===null?'Niet gekoppeld':'Live niveau');
-    set('msiWasteMeta',values.waste===null?'Niet gekoppeld':values.waste>=80?'Bijna vol':'Live niveau');
-    set('msiFuelMeta',values.fuel===null?'Niet gekoppeld':values.fuel<=20?'Laag niveau':'Live niveau');
-  }
 
-  function setClimate(metric,value,min,max){
-    set(metric,value===null?'–':value);
-    const bar=$(`${metric}Bar`);
-    if(bar){
-      const n=number(value);
-      bar.style.setProperty('--p',n===null?0:clamp(((n-min)/(max-min))*100,0,100));
-    }
-  }
-  function syncClimate(){
-    const data=climateData();
-    const mt=finite(data.machine.temperature)?Number(data.machine.temperature):null;
-    const mh=finite(data.machine.humidity)?Number(data.machine.humidity):null;
-    const st=finite(data.salon.temperature)?Number(data.salon.temperature):null;
-    const sh=finite(data.salon.humidity)?Number(data.salon.humidity):null;
-    setClimate('msiMachineTemp',mt===null?'– °C':`${fmt(mt,1)} °C`,-20,60);
-    setClimate('msiMachineHum',mh===null?'–% RH':`${fmt(mh,0)}% RH`,0,100);
-    setClimate('msiSalonTemp',st===null?'– °C':`${fmt(st,1)} °C`,-10,40);
-    setClimate('msiSalonHum',sh===null?'–% RH':`${fmt(sh,0)}% RH`,0,100);
-  }
+    const climateItems=[
+      ['msiMachineTemp',climate.machineTemp,' °C','msiMachineTempBar',-20,60],
+      ['msiMachineHum',climate.machineHum,'% RH','msiMachineHumBar',0,100],
+      ['msiSalonTemp',climate.salonTemp,' °C','msiSalonTempBar',-10,40],
+      ['msiSalonHum',climate.salonHum,'% RH','msiSalonHumBar',0,100]
+    ];
+    climateItems.forEach(([id,value,unit,bar,min,max])=>{
+      set(id,value!==null?`${fmt(value,1)}${unit}`:`–${unit}`);
+      $(bar)?.style.setProperty('--p',value!==null?String(clamp((value-min)/(max-min)*100,0,100)):'0');
+    });
 
-  function routeActive(){
-    try{
-      const plan=window.ms660NavigationPlan?.()||window.plannerCurrentPlan||{};
-      const coordinates=plan.routeCoordinates||plan.route?.coordinates||plan.routeGeometry?.coordinates||[];
-      if(Array.isArray(coordinates)&&coordinates.length>1)return true;
-      if(plan.destination||plan.arrival||plan.to)return true;
-    }catch{}
-    return false;
-  }
+    set('msiSpeed',cockpit.speed!==null?fmt(cockpit.speed,1):'–');
+    $('msiSpeedRing')?.style.setProperty('--p',cockpit.speed!==null?String(clamp(cockpit.speed/15*100,0,100)):'0');
+    set('msiDepth',cockpit.depth!==null?`${fmt(cockpit.depth,1)} m`:'– m');
+    set('msiHeading',cockpit.heading!==null?`${fmt(cockpit.heading,0)}°`:'–°');
+    set('msiHeadingDir',cardinal(cockpit.heading));
+    set('msiRpm',cockpit.rpm!==null?fmt(cockpit.rpm,0):'–');
 
-  function syncCockpit(){
-    const speedKn=number(readText(['ivmsSpeedKn','ms71510SpeedKn'],''));
-    const speedKmh=readNumber(['ivmsSpeed','ms71510Speed']);
-    const speed=speedKn??(speedKmh!==null?speedKmh/1.852:null);
-    set('msiSpeed',speed===null?'–':fmt(speed,1));
-    set('msiSpeedUnit','kn');
-    $('msiSpeedRing')?.style.setProperty('--p',speed===null?0:clamp((speed/12)*100,0,100));
+    const activeTrip=window.plannerCurrentPlan||window.msCurrentRoute||null;
+    set('msiRouteStatus',activeTrip?'Route actief':'Geen actieve route');
 
-    const depth=readNumber(['ivmsDepth','ms71510Depth']);
-    set('msiDepth',depth===null?'– m':`${fmt(depth,1)} m`);
-    set('msiDepthMeta',depth===null?'Niet gekoppeld':'Live');
+    const controlData=[
+      ['Inverter',inverter,invOn,'msiControlInverter','msiInvState','msiInvMode'],
+      ['Charger',charger,chargerOn,'msiControlCharger','msiChargerState','msiChargerMode'],
+      ['Light',light,lightOn,'msiControlLight','msiLightState','msiLightMode'],
+      ['Shore',shore,shoreOn,'msiControlShore','msiShoreState',null],
+      ['Pump',pump,pumpOn,'msiControlPump','msiPumpState',null]
+    ];
+    controlData.forEach(([name,entity,on,cardId,stateId,modeId])=>{
+      const card=$(cardId);if(!card)return;
+      card.classList.toggle('unavailable',!entity);
+      card.classList.toggle('on',on===true);
+      set(stateId,on===null?'–':on?'AAN':'UIT');
+      if(modeId)set(modeId,entity?(entity.domain==='switch'||entity.domain==='light'?'Bedienbaar':'Status'):'Niet gekoppeld');
+    });
 
-    const heading=number(window.liveNavState?.course??window.liveNavState?.cog)??readNumber(['ivmsHeading','ivmsCourse']);
-    set('msiHeading',heading===null?'–°':`${Math.round(heading)}°`);
-    set('msiHeadingDir',readText(['ivmsHeadingDir'],'–'));
-
-    const rpm=readNumber(['liveEngineRpm','ms71510Rpm'])??number($('liveEngineRpmInput')?.value);
-    set('msiRpm',rpm===null?'–':Math.round(rpm).toLocaleString('nl-NL'));
-    set('msiRouteStatus',routeActive()?'Route actief':'Geen actieve route');
-  }
-
-  function setControl(id,stateId,modeId,entity,options={}){
-    const control=$(id);
-    if(!control)return;
-    const on=stateOn(entity);
-    const available=Boolean(entity);
-    const domain=entity?.domain||String(entity?.entity_id||'').split('.')[0];
-    const controllable=available&&options.allowControl&&['switch','light'].includes(domain);
-    set(stateId,statusText(entity,'–'));
-    if(modeId)set(modeId,controllable?'Tik om te schakelen':available?'Live status':'Niet gekoppeld');
-    control.classList.toggle('on',on===true);
-    control.classList.toggle('unavailable',!available);
-    control.classList.toggle('readonly',!controllable);
-    control.dataset.entityId=entity?.entity_id||'';
-    control.dataset.domain=domain||'';
-    control.dataset.controllable=controllable?'1':'0';
-  }
-
-  function syncControls(){
-    setControl('msiControlInverter','msiInvState','msiInvMode',inverterEntity(),{allowControl:true});
-    setControl('msiControlCharger','msiChargerState','msiChargerMode',chargerEntity(),{allowControl:true});
-    setControl('msiControlShore','msiShoreState',null,shoreEntity(),{allowControl:false});
-    setControl('msiControlLight','msiLightState','msiLightMode',lightEntity(),{allowControl:true});
-    setControl('msiControlPump','msiPumpState',null,pumpEntity(),{allowControl:false});
-  }
-
-  function alarmCount(){
-    const direct=readNumber(['ivmsAlarmCount','technicalAlarmCount','alarmCount']);
-    if(direct!==null)return Math.max(0,Math.round(direct));
-    const label=readText(['ivmsSystemLabel'],'NORMAAL');
-    return /alarm|krit|storing|waarsch/i.test(label)?1:0;
-  }
-  function syncMessages(){
-    const count=alarmCount();
-    const system=readText(['ivmsSystemLabel','ms71510SystemLabel'],'NORMAAL');
-    const alarm=count>0||/alarm|krit|storing|waarsch/i.test(system);
-    set('msiAlarmTop',count);
+    const alarmPatterns=/alarm|warning|fout|error|critical|low battery|undervoltage|overtemp|leak/i;
+    const activeAlerts=stateSnapshot().filter(entity=>alarmPatterns.test(label(entity))&&stateOn(entity)===true);
+    const criticalStart=starts.find(item=>item.value<11.8);
+    const lowSoc=house.soc!==null&&house.soc<50;
+    const messages=[];
+    if(activeAlerts.length)messages.push(`${activeAlerts.length} Home Assistant waarschuwing${activeAlerts.length===1?'':'en'}`);
+    if(criticalStart)messages.push('Startaccu kritisch laag');
+    if(lowSoc)messages.push('Huishoudaccu onder 50%');
+    const count=messages.length;
     set('msiTopAlarm',`${count} actief`);
-    set('msiMessageBadge',count);
-    setClass('msiAlarmHead','active',alarm);
-    setClass('msiTopAlarmCard','danger',alarm);
-    setClass('msiMessage','alert',alarm);
-    set('msiMessageIcon',alarm?'⚠':'✓');
-    set('msiMessageTitle',alarm?`Systeemwaarschuwing · ${system}`:'Geen actieve waarschuwingen');
-    set('msiMessageText',alarm?'Open Techniek om de actuele melding en meetwaarden te controleren.':'Serenity meldt op dit moment geen kritieke systeemstatus.');
-    set('msiTopAlarmMeta',alarm?'Bekijk berichten':'Geen waarschuwingen');
-    set('msiMessageTime',new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}));
+    set('msiAlarmTop',String(count));
+    set('msiMessageBadge',String(count));
+    setClass('msiAlarmHead','active',count>0);
+    setClass('msiTopAlarmCard','danger',count>0);
+    setClass('msiMessage','alert',count>0);
+    set('msiMessageIcon',count>0?'!':'✓');
+    set('msiMessageTitle',count>0?messages[0]:'Geen actieve waarschuwingen');
+    set('msiMessageText',count>0?messages.join(' · '):'Serenity meldt op dit moment geen kritieke systeemstatus.');
+    set('msiTopAlarmMeta',count>0?messages[0]:'Geen waarschuwingen');
+    set('msiMessageTime','Live controle');
+    set('msiUpdated',`Bijgewerkt ${new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`);
   }
 
-  function syncHeader(){
-    set('msiClock',new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}));
-    const live=sourceIsLive();
-    setClass('msiLivePill','live',live);
-    set('msiLiveText',live?'Live verbonden':'Wacht op live data');
-    set('msiUpdated',live?`Live bijgewerkt om ${new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`:'Live waarden verschijnen zodra Victron/Home Assistant beschikbaar is.');
-  }
-
-  function sync(){
-    if(!build())return;
-    syncHeader();
-    syncBattery();
-    syncEnergy();
-    syncTanks();
-    syncClimate();
-    syncCockpit();
-    syncControls();
-    syncMessages();
-  }
-  function queueSync(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;sync()})}
+  function queueSync(){if(frame)return;frame=requestAnimationFrame(sync)}
 
   async function refreshLive(){
+    if(Date.now()-lastHaRefresh<5000)return;
+    lastHaRefresh=Date.now();
     try{
-      if(typeof window.ms730HomeAssistantConnected==='function'&&window.ms730HomeAssistantConnected()&&typeof window.ms730RefreshStateSnapshot==='function'){
-        if(Date.now()-lastHaRefresh>15000){lastHaRefresh=Date.now();await window.ms730RefreshStateSnapshot()}
-      }
-    }catch(error){console.warn('Dashboard: Home Assistant verversen mislukt',error)}
-    try{if(typeof window.ms7102RefreshRuuviVrm==='function')await window.ms7102RefreshRuuviVrm()}catch{}
+      if(typeof window.ms730RefreshStateSnapshot==='function')await window.ms730RefreshStateSnapshot();
+      stateSnapshot();
+    }catch{}
     queueSync();
   }
 
