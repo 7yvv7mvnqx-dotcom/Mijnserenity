@@ -1,5 +1,5 @@
 /* =========================================================
-   MijnSerenity 7.18.30 — stabiele navigatie zonder native pager
+   MijnSerenity 7.18.31 — vaste documentflow voor iPhone
    ========================================================= */
 
 html,
@@ -8,15 +8,52 @@ body{
 }
 
 /*
-   Normale MijnSerenity-pagina's gebruiken de document-scroll.
-   Geen berekende viewporthoogtes en geen geneste iOS-scrollcontainer meer.
+   De app gebruikt één gewone document-scroll. Deze regels gelden bewust
+   onafhankelijk van oude pager-classes, zodat geen oudere stylesheet de
+   Home-pagina opnieuw op viewporthoogte kan vastzetten.
 */
+html,
+body{
+  height:auto !important;
+  max-height:none !important;
+}
+
 body{
   overflow-y:auto !important;
 }
 
-#appView{
-  min-height:0;
+body > main,
+#appView,
+#dashboard,
+#msMarineDashboard{
+  height:auto !important;
+  max-height:none !important;
+  overflow:visible !important;
+  overflow-y:visible !important;
+}
+
+#appView,
+#dashboard,
+#msMarineDashboard{
+  min-height:0 !important;
+}
+
+/*
+   Marine Glass bevat uit oudere builds nog een binnenste <main>. Neutraliseer
+   daar alle globale main-regels totdat dit element definitief uit de markup is.
+*/
+#msMarineDashboard > main{
+  display:block !important;
+  position:relative !important;
+  width:100% !important;
+  max-width:none !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:visible !important;
+  overflow-y:visible !important;
 }
 
 /*
