@@ -1,20 +1,21 @@
 /* MijnSerenity 7.18.21 — veilige PWA-cache voor geïntegreerd startdashboard */
 const CACHE_NAME='mijnserenity-7.18.21-dashboard-hotfix';
+const BUILD_VERSION='718210';
 const CORE_ASSETS=[
   '/manifest.json',
-  '/auth-bootstrap.js?v=718210',
-  '/cost-form-hotfix-71815.js?v=718210',
-  '/waterkaarten-route-receiver-71870.js?v=718210',
-  '/waterkaarten-route-enrichment-71811.js?v=718210',
-  '/marine-map-route-fit-71812.js?v=718210',
-  '/professional-ui-71700.css?v=718210',
-  '/dashboard-pro-71531-loader.js?v=718210',
-  '/dashboard-integrated-71820.css?v=718210',
-  '/dashboard-integrated-71820.js?v=718210',
-  '/navigation-compact.js?v=718210',
-  '/ai-destination-search.css?v=718210',
-  '/ai-destination-search.js?v=718210',
-  '/captain-ai-71814.js?v=718210',
+  `/auth-bootstrap.js?v=${BUILD_VERSION}`,
+  `/cost-form-hotfix-71815.js?v=${BUILD_VERSION}`,
+  `/waterkaarten-route-receiver-71870.js?v=${BUILD_VERSION}`,
+  `/waterkaarten-route-enrichment-71811.js?v=${BUILD_VERSION}`,
+  `/marine-map-route-fit-71812.js?v=${BUILD_VERSION}`,
+  `/professional-ui-71700.css?v=${BUILD_VERSION}`,
+  `/dashboard-pro-71531-loader.js?v=${BUILD_VERSION}`,
+  `/dashboard-integrated-71820.css?v=${BUILD_VERSION}`,
+  `/dashboard-integrated-71820.js?v=${BUILD_VERSION}`,
+  `/navigation-compact.js?v=${BUILD_VERSION}`,
+  `/ai-destination-search.css?v=${BUILD_VERSION}`,
+  `/ai-destination-search.js?v=${BUILD_VERSION}`,
+  `/captain-ai-71814.js?v=${BUILD_VERSION}`,
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -99,11 +100,19 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
+
   if(request.mode==='navigate'){
     event.respondWith(networkFirstNavigation(request));
     return;
   }
-  if(url.pathname==='/index.html'||url.pathname==='/auth-bootstrap.js'||url.pathname==='/sw.js'){
+
+  // index.html bevat nog een oudere querystring; forceer voor de bootstrap altijd de actuele build.
+  if(url.pathname==='/auth-bootstrap.js'){
+    event.respondWith(networkFirst(`/auth-bootstrap.js?v=${BUILD_VERSION}`,`/auth-bootstrap.js?v=${BUILD_VERSION}`));
+    return;
+  }
+
+  if(url.pathname==='/index.html'||url.pathname==='/sw.js'){
     event.respondWith(networkFirst(request));
     return;
   }
