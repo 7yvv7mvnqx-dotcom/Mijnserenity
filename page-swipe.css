@@ -1,5 +1,6 @@
+
 /* =========================================================
-   MijnSerenity 7.18.31 — vaste documentflow voor iPhone
+   MijnSerenity Cloud 7.4.8 — native iPhone/iPad paginavegen
    ========================================================= */
 
 html,
@@ -7,123 +8,112 @@ body{
   overflow-x:hidden;
 }
 
-/*
-   De app gebruikt één gewone document-scroll. Deze regels gelden bewust
-   onafhankelijk van oude pager-classes, zodat geen oudere stylesheet de
-   Home-pagina opnieuw op viewporthoogte kan vastzetten.
-*/
-html,
-body{
-  height:auto !important;
-  max-height:none !important;
-}
-
-body{
-  overflow-y:auto !important;
-}
-
-body > main,
-#appView,
-#dashboard,
-#msMarineDashboard{
-  height:auto !important;
-  max-height:none !important;
-  overflow:visible !important;
-  overflow-y:visible !important;
-}
-
-#appView,
-#dashboard,
-#msMarineDashboard{
-  min-height:0 !important;
-}
-
-/*
-   Marine Glass bevat uit oudere builds nog een binnenste <main>. Neutraliseer
-   daar alle globale main-regels totdat dit element definitief uit de markup is.
-*/
-#msMarineDashboard > main{
-  display:block !important;
-  position:relative !important;
-  width:100% !important;
-  max-width:none !important;
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  margin:0 !important;
-  padding:0 !important;
-  overflow:visible !important;
-  overflow-y:visible !important;
-}
-
-/*
-   Fail-open herstel voor het geval een oudere page-swipe.js nog één keer
-   uit een browsercache draait. De oude pager wordt dan een gewone bloklaag
-   met natuurlijke hoogte, zodat inhoud nooit meer wordt afgeknipt.
-*/
 body.ms708-native-pages-active{
-  overflow-x:hidden !important;
-  overflow-y:auto !important;
+  overflow:hidden !important;
 }
 
-body.ms708-native-pages-active main,
-body.ms708-native-pages-active #appView{
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  overflow:visible !important;
+#appView{
+  min-height:0;
 }
 
-#ms708NativePager{
-  display:block !important;
-  position:relative !important;
-  width:100% !important;
-  min-width:0 !important;
-  max-width:100% !important;
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  overflow:visible !important;
-  scroll-snap-type:none !important;
-  transform:none !important;
+.ms708-native-pager{
+  position:relative;
+  display:flex;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  min-height:260px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  overscroll-behavior-x:contain;
+  overscroll-behavior-y:none;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x pan-y pinch-zoom;
+  scrollbar-width:none;
+  background:transparent;
 }
 
-#ms708NativePager > .ms708-native-page{
-  display:none !important;
-  position:relative !important;
-  width:100% !important;
-  min-width:0 !important;
-  max-width:100% !important;
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  margin:0 !important;
-  overflow:visible !important;
-  scroll-snap-align:none !important;
-  transform:none !important;
-  backface-visibility:visible !important;
+.ms708-native-pager::-webkit-scrollbar{
+  display:none;
+  width:0;
+  height:0;
 }
 
-#ms708NativePager > .ms708-native-page.ms755-route-active{
-  display:block !important;
-}
-
-#ms708NativePager > .ms708-native-page.hidden:not(.ms755-route-active){
-  display:none !important;
-}
-
-/* Na cleanup gelden weer de normale hidden-regels van de app. */
-.ms-stable-navigation #appView > section.hidden{
-  display:none !important;
-}
-
-/* Vaste onderste navigatie blijft buiten de document-scroll. */
-.ms-stable-navigation .bottom-nav{
+.ms708-native-pager > .ms708-native-page{
+  position:relative;
+  flex:0 0 100%;
+  width:100%;
+  min-width:100%;
+  max-width:100%;
+  height:100%;
+  min-height:0;
+  max-height:100%;
+  margin:0;
+  padding:
+    0 1px
+    calc(
+      var(--nav-height,92px) +
+      env(safe-area-inset-bottom) +
+      18px
+    );
+  overflow-x:hidden;
+  overflow-y:auto;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x pan-y pinch-zoom;
   transform:translateZ(0);
+  backface-visibility:hidden;
+}
+
+.ms708-native-pager > .ms708-native-page.hidden{
+  display:block !important;
+}
+
+.ms708-native-pager > .ms708-native-page::after{
+  content:'';
+  display:block;
+  height:8px;
+}
+
+body.ms708-native-pages-active main{
+  overflow:hidden;
+}
+
+body.ms708-native-pages-active #appView{
+  overflow:hidden;
+}
+
+/* Kaarten en camerabeeld houden hun eigen aanrakingen. */
+.ms708-native-page .leaflet-container,
+.ms708-native-page .live-radar-camera-viewport,
+.ms708-native-page input,
+.ms708-native-page textarea,
+.ms708-native-page select{
+  touch-action:manipulation;
+}
+
+/* De navigatie blijft tijdens native vegen vast en helder. */
+body.ms708-native-pages-active .bottom-nav{
+  transform:translateZ(0) !important;
+  contain:layout paint;
+}
+
+.ms706-swipe-hint strong{
+  max-width:min(72vw,330px);
+}
+
+@media(min-width:761px){
+  .ms708-native-pager{
+    scroll-padding-inline:0;
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
-  html{
+  .ms708-native-pager{
     scroll-behavior:auto;
   }
 }

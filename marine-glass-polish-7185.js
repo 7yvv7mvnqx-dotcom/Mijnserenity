@@ -1,8 +1,9 @@
-/* MijnSerenity — connectiviteit, GPS en cockpitpolish; volgt actuele app-build */
+/* MijnSerenity 7.18.12 — connectiviteit, GPS en cockpitpolish */
 (()=>{
   'use strict';
-  if(window.__msMarineGlassPolishCurrent)return;
-  window.__msMarineGlassPolishCurrent=true;
+  if(window.__msMarineGlassPolish71812)return;
+  window.__msMarineGlassPolish71812=true;
+  const BUILD='7.18.12';
   const $=id=>document.getElementById(id);
   const num=value=>{
     const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
@@ -10,19 +11,15 @@
   };
   const set=(id,value)=>{const el=$(id);if(el&&value!=null&&el.textContent!==String(value))el.textContent=String(value)};
 
-  function currentBuild(){
-    return window.MIJSERENITY_BUILD||document.querySelector('meta[name="mijnserenity-build"]')?.content||'7.18.16';
-  }
-
   function syncVersion(){
-    const build=currentBuild();
+    window.MIJSERENITY_BUILD=BUILD;
     const meta=document.querySelector('meta[name="mijnserenity-build"]');
-    if(meta)meta.content=build;
+    if(meta)meta.content=BUILD;
     const settings=$('settingsAppVersion');
-    if(settings)settings.textContent=build;
-    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=build);
+    if(settings)settings.textContent=BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
-    if(badge)badge.textContent=build;
+    if(badge)badge.textContent=BUILD;
   }
 
   function latestPosition(){
