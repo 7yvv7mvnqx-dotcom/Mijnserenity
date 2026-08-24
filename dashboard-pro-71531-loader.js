@@ -1,13 +1,14 @@
-/* MijnSerenity 7.18.24 — geïntegreerd dashboard met veilige fallback */
+/* MijnSerenity 7.18.25 — Marine Glass zichtlaag met geïntegreerde live fallback */
 (()=>{
   'use strict';
   if(window.__msDashboardLoaderCurrent)return;
   window.__msDashboardLoaderCurrent=true;
 
-  const BUILD='7.18.24';
-  const VERSION='718240';
+  const BUILD='7.18.25';
+  const VERSION='718250';
   const LEGACY_IDS=['ms71510Dashboard','serenityIvms','msMarineGlass','msMarineGlassMobile7182'];
   let guardInstalled=false;
+  let marineAttempted=false;
 
   function load(src,key,timeoutMs=10000){
     const wanted=new URL(src,location.href).pathname;
@@ -56,12 +57,47 @@
     return Boolean(root&&root.isConnected&&root.childElementCount>0);
   }
 
-  function forceIntegratedVisible(){
+  function marineReady(){
+    const root=document.getElementById('msMarineDashboard');
+    return Boolean(root&&root.isConnected&&root.childElementCount>0);
+  }
+
+  function hideIntegrated(){
+    const root=document.getElementById('msIntegratedDashboard');
+    if(!root)return false;
+    root.setAttribute('aria-hidden','true');
+    root.style.setProperty('display','none','important');
+    root.style.setProperty('visibility','hidden','important');
+    root.style.setProperty('opacity','0','important');
+    return true;
+  }
+
+  function forceMarineVisible(){
+    const dashboard=document.getElementById('dashboard');
+    const marine=document.getElementById('msMarineDashboard');
+    if(!dashboard||!marine)return false;
+    neutralizeLegacyMode();
+    dashboard.classList.add('msi-active','mg-71825-active');
+    hideIntegrated();
+    marine.removeAttribute('aria-hidden');
+    marine.style.setProperty('display','block','important');
+    marine.style.setProperty('visibility','visible','important');
+    marine.style.setProperty('opacity','1','important');
+    marine.style.setProperty('position','relative','important');
+    LEGACY_IDS.forEach(id=>document.getElementById(id)?.style.setProperty('display','none','important'));
+    window.__msDisableLegacyVisuals=true;
+    return true;
+  }
+
+  function showIntegratedFallback(reason){
     const dashboard=document.getElementById('dashboard');
     const root=document.getElementById('msIntegratedDashboard');
-    if(!dashboard||!root)return false;
+    if(!dashboard||!root)return showLegacyFallback(reason);
     neutralizeLegacyMode();
     dashboard.classList.add('msi-active');
+    dashboard.classList.remove('mg-71825-active');
+    document.getElementById('msMarineDashboard')?.style.setProperty('display','none','important');
+    root.removeAttribute('aria-hidden');
     root.classList.remove('hidden');
     root.style.setProperty('display','block','important');
     root.style.setProperty('visibility','visible','important');
@@ -69,13 +105,16 @@
     root.style.setProperty('position','relative','important');
     LEGACY_IDS.forEach(id=>document.getElementById(id)?.style.setProperty('display','none','important'));
     window.__msDisableLegacyVisuals=true;
+    console.warn('Marine Glass niet actief; geïntegreerd dashboard als veilige fallback gebruikt.',reason||'onbekende oorzaak');
     return true;
   }
 
   function showLegacyFallback(reason){
     window.__msDisableLegacyVisuals=false;
     neutralizeLegacyMode();
-    document.getElementById('dashboard')?.classList.remove('msi-active');
+    const dashboard=document.getElementById('dashboard');
+    dashboard?.classList.remove('msi-active','mg-71825-active');
+    document.getElementById('msMarineDashboard')?.remove();
     document.getElementById('msIntegratedDashboard')?.remove();
     const fallback=LEGACY_IDS.map(id=>document.getElementById(id)).find(Boolean);
     if(fallback){
@@ -84,7 +123,8 @@
       fallback.style.setProperty('visibility','visible','important');
       fallback.style.setProperty('opacity','1','important');
     }
-    console.warn('Geïntegreerd dashboard niet actief; veilige fallback gebruikt.',reason||'onbekende oorzaak');
+    console.warn('Dashboard niet actief; veilige legacy fallback gebruikt.',reason||'onbekende oorzaak');
+    return Boolean(fallback);
   }
 
   function cleanStrayText(){
@@ -108,7 +148,9 @@
 
   function ensureDashboardVisible(){
     cleanStrayText();syncVersion();
-    return integratedReady()?forceIntegratedVisible():false;
+    if(marineReady())return forceMarineVisible();
+    if(marineAttempted&&integratedReady())return showIntegratedFallback('Marine Glass zichtlaag ontbreekt');
+    return false;
   }
 
   function installVisibilityGuard(){
@@ -116,26 +158,42 @@
     guardInstalled=true;
     const dashboard=document.getElementById('dashboard');
     if(dashboard){
-      new MutationObserver(()=>{if(integratedReady())forceIntegratedVisible();}).observe(dashboard,{attributes:true,attributeFilter:['class'],childList:true});
+      new MutationObserver(()=>{
+        if(marineReady())forceMarineVisible();
+        else if(marineAttempted&&integratedReady())showIntegratedFallback('zichtbaarheidscontrole');
+      }).observe(dashboard,{attributes:true,attributeFilter:['class'],childList:true});
     }
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(ensureDashboardVisible,0);},{passive:true});
     window.addEventListener('mijnserenity:modules-ready',()=>setTimeout(ensureDashboardVisible,0),{passive:true});
+    window.addEventListener('mijnserenity:marine-glass-ready',()=>setTimeout(forceMarineVisible,0),{passive:true});
   }
 
   async function start(){
     syncVersion();cleanStrayText();neutralizeLegacyMode();
     loadCss(`/dashboard-integrated-71820.css?v=${VERSION}`,'msIntegratedDashboardCss71820');
-    const loaded=await load(`/dashboard-integrated-71820.js?v=${VERSION}`,'integrated-dashboard-71820',10000);
+    loadCss(`/dashboard-marine-glass-71825.css?v=${VERSION}`,'msMarineGlassCss71825');
+
+    const integratedLoaded=await load(`/dashboard-integrated-71820.js?v=${VERSION}`,'integrated-dashboard-71820',10000);
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    if(loaded&&integratedReady())forceIntegratedVisible();
-    else showLegacyFallback(loaded?'dashboard is niet opgebouwd':'script kon niet laden');
+    if(integratedLoaded&&integratedReady())hideIntegrated();
+
+    marineAttempted=true;
+    const marineLoaded=await load(`/dashboard-marine-glass-71825.js?v=${VERSION}`,'marine-glass-71825',10000);
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+
+    if(marineLoaded&&marineReady())forceMarineVisible();
+    else if(integratedLoaded&&integratedReady())showIntegratedFallback(marineLoaded?'Marine Glass is niet opgebouwd':'Marine Glass script kon niet laden');
+    else showLegacyFallback('dashboardmodules konden niet worden opgebouwd');
+
     installVisibilityGuard();
-    setTimeout(()=>{if(!ensureDashboardVisible()&&!integratedReady())showLegacyFallback('controle na 1200 ms');},1200);
-    console.info(`MijnSerenity ${BUILD}: dashboardloader gereed.`);
+    setTimeout(ensureDashboardVisible,1200);
+    console.info(`MijnSerenity ${BUILD}: Marine Glass dashboardloader gereed.`);
   }
 
   start().catch(error=>{
-    console.warn('Geïntegreerde dashboardloader:',error);
-    showLegacyFallback(error?.message||String(error));
+    console.warn('Marine Glass dashboardloader:',error);
+    marineAttempted=true;
+    if(integratedReady())showIntegratedFallback(error?.message||String(error));
+    else showLegacyFallback(error?.message||String(error));
   });
 })();
