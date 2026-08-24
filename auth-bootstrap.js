@@ -1,14 +1,15 @@
-/* MijnSerenity 7.18.23 — fail-safe opstart: dashboard blokkeert app nooit meer */
+/* MijnSerenity 7.18.24 — sessieherstel en nette inlogweergave */
 (()=>{
   'use strict';
 
   window.__msDisableLegacyVisuals=false;
 
-  const BUILD='7.18.23';
-  const VERSION='718230';
+  const BUILD='7.18.24';
+  const VERSION='718240';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
   const DASHBOARD_SCRIPT=`dashboard-pro-71531-loader.js?v=${VERSION}`;
   const HARD_REVEAL_MS=6500;
+  const AUTH_RESUME_GRACE_MS=3200;
 
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
@@ -57,6 +58,7 @@
 
   let startupResolved=false;
   let hardRevealTimer=null;
+  let authChromeObserver=null;
 
   function syncBuildVersion(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -90,6 +92,84 @@
     }
   }
 
+  function appViewIsVisible(){
+    const app=document.getElementById('appView');
+    return Boolean(app&&!app.classList.contains('hidden'));
+  }
+
+  function approvalViewIsVisible(){
+    const approval=document.getElementById('approvalView');
+    return Boolean(approval&&!approval.classList.contains('hidden'));
+  }
+
+  function hasStoredAuthHint(){
+    try{
+      return Object.keys(localStorage).some(key=>
+        /^sb-.*-auth-token$/i.test(key)&&Boolean(localStorage.getItem(key))
+      );
+    }catch{return false;}
+  }
+
+  function syncAuthChrome(){
+    if(!document.body)return;
+    const signedIn=appViewIsVisible();
+    document.body.classList.toggle('ms-auth-shell',!signedIn);
+    document.querySelectorAll('.bottom-nav').forEach(nav=>{
+      nav.setAttribute('aria-hidden',signedIn?'false':'true');
+      if(!signedIn)nav.setAttribute('inert','');
+      else nav.removeAttribute('inert');
+    });
+  }
+
+  function installAuthChromeGuard(){
+    if(!document.body){
+      document.addEventListener('DOMContentLoaded',installAuthChromeGuard,{once:true});
+      return;
+    }
+    if(!document.getElementById('msAuthChromeGuardStyle')){
+      const style=document.createElement('style');
+      style.id='msAuthChromeGuardStyle';
+      style.textContent=`
+        body.ms-auth-shell .bottom-nav{display:none!important;visibility:hidden!important;pointer-events:none!important}
+        body.ms-auth-shell{padding-bottom:env(safe-area-inset-bottom)!important}
+      `;
+      document.head.appendChild(style);
+    }
+    syncAuthChrome();
+    authChromeObserver?.disconnect();
+    authChromeObserver=new MutationObserver(syncAuthChrome);
+    ['authView','approvalView','appView']
+      .map(id=>document.getElementById(id))
+      .filter(Boolean)
+      .forEach(view=>authChromeObserver.observe(view,{attributes:true,attributeFilter:['class']}));
+  }
+
+  function waitForStoredSessionResolution(timeoutMs=AUTH_RESUME_GRACE_MS){
+    if(!hasStoredAuthHint()||appViewIsVisible()||approvalViewIsVisible())return Promise.resolve();
+    return new Promise(resolve=>{
+      const views=['authView','approvalView','appView']
+        .map(id=>document.getElementById(id))
+        .filter(Boolean);
+      let done=false;
+      let observer=null;
+      let timer=null;
+      const finish=()=>{
+        if(done)return;
+        done=true;
+        observer?.disconnect();
+        if(timer)clearTimeout(timer);
+        syncAuthChrome();
+        resolve();
+      };
+      observer=new MutationObserver(()=>{
+        syncAuthChrome();
+        if(appViewIsVisible()||approvalViewIsVisible())finish();
+      });
+      views.forEach(view=>observer.observe(view,{attributes:true,attributeFilter:['class']}));
+      timer=setTimeout(finish,timeoutMs);
+    });
+  }
+
   function finishStartup(){
     if(startupResolved)return;
     startupResolved=true;
@@ -97,6 +177,7 @@
     document.documentElement.classList.remove('ms-starting');
     document.body?.classList.remove('ms-starting');
     ensureOneViewVisible();
+    syncAuthChrome();
     const gate=document.getElementById('msStartupGate');
     if(gate){
       gate.style.opacity='0';
@@ -106,6 +187,7 @@
   }
 
   function ensureStartupGate(){
+    installAuthChromeGuard();
     if(startupResolved||document.getElementById('msStartupGate'))return;
     if(!document.body){
       document.addEventListener('DOMContentLoaded',ensureStartupGate,{once:true});
@@ -145,7 +227,6 @@
       </div>`;
     document.body.appendChild(gate);
 
-    // Absolute fail-safe: externe koppelingen of een dashboardmodule mogen de shell nooit vasthouden.
     hardRevealTimer=setTimeout(()=>{
       if(startupResolved)return;
       console.warn('MijnSerenity: fail-safe onthult de app-shell na opstart-time-out.');
@@ -209,7 +290,7 @@
       }
       script.src=src;
       script.async=false;
-      script.dataset.ms71823='1';
+      script.dataset.ms71824='1';
       if(src.startsWith('http'))script.crossOrigin='anonymous';
       script.onload=()=>finish();
       script.onerror=()=>finish(new Error(`Laden mislukt: ${src}`));
@@ -287,7 +368,7 @@
     addPreconnect('https://cdn.jsdelivr.net');
     addPreconnect('https://unpkg.com');
     syncBuildVersion();
-    ensureServiceWorker(); // bewust niet awaiten
+    ensureServiceWorker();
 
     try{
       setAuthStatus('Beveiligde inlog wordt geladen…');
@@ -301,8 +382,13 @@
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
       document.getElementById('signInButton')?.removeAttribute('disabled');
 
-      // De app-shell is de kritieke kern. Vanaf hier mag dashboard/HA/VRM niet meer blokkeren.
+      if(hasStoredAuthHint()&&!appViewIsVisible()&&!approvalViewIsVisible()){
+        setStartupStatus('Bestaande sessie wordt hervat…');
+        await waitForStoredSessionResolution();
+      }
+
       ensureOneViewVisible();
+      syncAuthChrome();
       finishStartup();
 
       setTimeout(()=>loadDashboardInBackground(),40);
