@@ -36,13 +36,13 @@
   document.head.appendChild(script);
 })();
 
-/* 7.18.20 — event-driven Cerbo-synchronisatie, zonder zware dubbele polling. */
+/* 7.18.21 — live Cerbo-diesel is leidend, zonder zware dubbele polling. */
 (function(){
   'use strict';
-  if(window.__msCerboTruthLoader71820)return;
-  window.__msCerboTruthLoader71820=true;
+  if(window.__msCerboTruthLoader71821)return;
+  window.__msCerboTruthLoader71821=true;
   const script=document.createElement('script');
-  script.src='/cerbo-truth-71818.js?v=718200';
+  script.src='/cerbo-truth-71818.js?v=718210';
   script.async=false;
   document.head.appendChild(script);
 })();
