@@ -1,11 +1,11 @@
-/* MijnSerenity 7.18.23 — geïntegreerd dashboard met veilige fallback */
+/* MijnSerenity 7.18.24 — geïntegreerd dashboard met veilige fallback */
 (()=>{
   'use strict';
   if(window.__msDashboardLoaderCurrent)return;
   window.__msDashboardLoaderCurrent=true;
 
-  const BUILD='7.18.23';
-  const VERSION='718230';
+  const BUILD='7.18.24';
+  const VERSION='718240';
   const LEGACY_IDS=['ms71510Dashboard','serenityIvms','msMarineGlass','msMarineGlassMobile7182'];
   let guardInstalled=false;
 
