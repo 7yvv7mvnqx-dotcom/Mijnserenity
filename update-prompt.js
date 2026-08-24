@@ -36,17 +36,7 @@
   document.head.appendChild(script);
 })();
 
-/* 7.18.21 — live Cerbo-diesel is leidend, zonder zware dubbele polling. */
-(function(){
-  'use strict';
-  if(window.__msCerboTruthLoader71821)return;
-  window.__msCerboTruthLoader71821=true;
-  const script=document.createElement('script');
-  script.src='/cerbo-truth-71818.js?v=718210';
-  script.async=false;
-  document.head.appendChild(script);
-})();
-
+/* Cerbo/VRM wordt centraal door dashboard-pro-71531-loader.js geladen. */
 (function(){
   'use strict';
   if(window.__msSilentUpdaterInstalled)return;
