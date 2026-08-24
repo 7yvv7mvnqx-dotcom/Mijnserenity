@@ -1,6 +1,6 @@
-/* MijnSerenity 7.18.30 — stabiele navigatie zonder native pager */
-const CACHE_NAME='mijnserenity-7.18.30-stable-navigation';
-const BUILD_VERSION='718300';
+/* MijnSerenity 7.18.31 — vaste documentflow voor iPhone */
+const CACHE_NAME='mijnserenity-7.18.31-natural-document-flow';
+const BUILD_VERSION='718310';
 const ESSENTIAL=[
   '/index.html',
   `/auth-bootstrap.js?v=${BUILD_VERSION}`,
