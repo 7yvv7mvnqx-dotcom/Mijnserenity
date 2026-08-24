@@ -1,4 +1,4 @@
-/* MijnSerenity 7.18.14.1 — tankmapping op actuele HA/Cerbo-naam */
+/* MijnSerenity 7.18.14.2 — Victron/Cerbo leidend voor tanks en startaccu */
 (()=>{
   'use strict';
   if(window.__msTankLiveRemap718141)return;
@@ -50,6 +50,7 @@
     if(friendly&&friendly!==type)return -9999;
     const cfg=TYPES[type];
     const name=lower(e.name),id=lower(e.entity_id),unit=lower(e.attributes?.unit_of_measurement);
+    const source=`${name} ${id} ${lower(e.attributes?.integration)} ${lower(e.attributes?.source)} ${lower(e.attributes?.device_name)}`;
     let s=0;
     if(friendly===type)s+=300;
     cfg.friendly.forEach((rx,i)=>{if(rx.test(name))s+=120-i*5});
@@ -57,7 +58,13 @@
     if(unit==='%'||unit.includes('percent'))s+=40;
     if(/tank|level|niveau/.test(name))s+=18;
     if(/tank|level|niveau/.test(id))s+=8;
-    if(/vrm|victron|cerbo|serenity/.test(`${name} ${id}`))s+=10;
+
+    // De echte Victron/Cerbo/VRM-bron moet altijd vóór een oude helper/template komen.
+    if(/^sensor\.vrm_/.test(id))s+=360;
+    if(/\bvrm\b/.test(source))s+=280;
+    if(/victron|cerbo|venus/.test(source))s+=220;
+    if(/serenity/.test(source))s+=20;
+    if(/input_number|helper|template|manual|handmatig/.test(source))s-=160;
     return s;
   }
 
@@ -94,12 +101,26 @@
     return {};
   }
 
+  function fuelCapacity(){
+    const current=technical()||{};
+    for(const key of ['fuelCapacityLiters','fuelCapacityL','fuelTankCapacity','fuelCapacity']){
+      if(finite(current[key])&&Number(current[key])>0)return Number(current[key]);
+    }
+    return 360;
+  }
+
   function mergeTechnical(resolved){
     try{
       const current=technical()||{};
       const next={...current};
       if(resolved.water)next.waterPct=pct(resolved.water.state);
-      if(resolved.fuel)next.fuelPct=pct(resolved.fuel.state);
+      if(resolved.fuel){
+        const value=pct(resolved.fuel.state);
+        const capacity=fuelCapacity();
+        next.fuelPct=value;
+        next.fuelLiters=value===null?null:Math.round(capacity*value/100);
+        if(!finite(next.fuelCapacityLiters))next.fuelCapacityLiters=capacity;
+      }
       if(resolved.waste)next.wastePct=pct(resolved.waste.state);
       else if(resolved.repurposedWasteAsFuel)next.wastePct=null;
       next.liveTankSources={
@@ -125,6 +146,44 @@
     if(modern&&modern.textContent.trim()!=='⛽ Dieseltank')modern.textContent='⛽ Dieseltank';
   }
 
+  function syncFuelLiters(value){
+    const capacity=fuelCapacity();
+    const liters=value==null?null:Math.round(capacity*value/100);
+    const plain=liters==null?'– L':`${liters} L`;
+    ['techFuelLiters','ivmsFuelLiters','scdTankLiters-fuel'].forEach(id=>text(id,plain));
+    text('mg-fuel-l',liters==null?'– L':`circa ${liters} van ${Math.round(capacity)} liter`);
+
+    // Ondersteun ook de compacte mobiele dieselregel zonder afhankelijk te zijn van één oud element-id.
+    const fuelValue=$('mg-fuel');
+    const row=fuelValue?.closest('.mg-level');
+    if(row&&liters!==null){
+      row.querySelectorAll('span,small,em,strong,div').forEach(el=>{
+        if(el===fuelValue||el.children.length)return;
+        const valueText=String(el.textContent||'').trim();
+        if(/^circa\s+\d+\s+van\s+\d+\s+liter$/i.test(valueText))el.textContent=`circa ${liters} van ${Math.round(capacity)} liter`;
+      });
+    }
+  }
+
+  function directStartVoltage(){
+    const metric=window.MIJSERENITY_VRM_DIAGNOSTICS?.battery?.starterVoltage;
+    return finite(metric?.value)?Number(metric.value):null;
+  }
+
+  function syncDirectStart(){
+    const value=directStartVoltage();
+    if(value===null)return;
+    try{
+      if(typeof technicalStateCache!=='undefined'&&technicalStateCache&&typeof technicalStateCache==='object')technicalStateCache.startVoltage=value;
+    }catch{}
+    const shown=`${value.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})} V`;
+    ['techStartVoltage','liveStartVoltage','ms71510StartVoltage','scdStart1'].forEach(id=>text(id,shown));
+    if($('scdStart1State')){
+      text('scdStart1State',value>=11.8?'✓ OK':'⚠ Laag');
+      $('scdStart1State').classList.toggle('bad',value<11.8);
+    }
+  }
+
   function setTank(type,e,{clear=false}={}){
     const value=e?pct(e.state):null;
     const shown=value==null?'–%':`${Math.round(value)}%`;
@@ -141,6 +200,7 @@
     text(`scdTank-${type}`,shown);
     text(`scdTankMeta-${type}`,meta);
     ring(`scdTankGauge-${type}`,value);
+    if(type==='fuel')syncFuelLiters(value);
 
     if(clear&&type==='waste'){
       text('techWasteLiters','– L');
@@ -160,6 +220,7 @@
       setTank('water',resolved.water);
       setTank('fuel',resolved.fuel);
       setTank('waste',resolved.waste,{clear:resolved.repurposedWasteAsFuel&&!resolved.waste});
+      syncDirectStart();
       window.MIJSERENITY_TANK_LIVE={
         water:resolved.water?{entityId:resolved.water.entity_id,name:resolved.water.name,value:pct(resolved.water.state)}:null,
         fuel:resolved.fuel?{entityId:resolved.fuel.entity_id,name:resolved.fuel.name,value:pct(resolved.fuel.state)}:null,
@@ -190,12 +251,14 @@
   function boot(){
     observe();
     refreshStates();
+    syncDirectStart();
     window.addEventListener('mijnserenity-ha-state-updated',apply,{passive:true});
     window.addEventListener('mijnserenity-ha-connected',refreshStates,{passive:true});
+    window.addEventListener('mijnserenity-vrm-diagnostics-updated',syncDirectStart,{passive:true});
     refreshTimer=setInterval(refreshStates,15000);
     setTimeout(refreshStates,1200);
     setTimeout(refreshStates,4500);
-    console.info('MijnSerenity: tankmapping gebruikt actuele HA/Cerbo-naam; oude entity-id is niet meer leidend.');
+    console.info('MijnSerenity: Victron/Cerbo is leidend voor tankmapping en startaccuspanning.');
   }
 
   window.ms718141ResolveTanks=()=>window.MIJSERENITY_TANK_LIVE||last;
