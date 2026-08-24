@@ -21,6 +21,14 @@
   overflow:visible!important;
 }
 
+/* Binnen de native iPhone-pager moet de route zelf verticaal blijven scrollen.
+   Hoogte en max-height blijven volledig onder beheer van page-swipe.css. */
+#dashboard.mg-71825-active.ms708-native-page{
+  min-height:0!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+}
+
 #msMarineDashboard{
   width:100%;
   max-width:980px;
