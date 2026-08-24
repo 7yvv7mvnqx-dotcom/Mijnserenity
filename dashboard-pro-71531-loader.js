@@ -64,12 +64,13 @@
   }
 
   function cleanStrayText(){
-    const dashboard=document.getElementById('dashboard');
-    if(!dashboard)return;
-    [...dashboard.childNodes].forEach(node=>{
-      if(node.nodeType!==Node.TEXT_NODE)return;
-      const value=(node.textContent||'').trim();
-      if(value==='\\n'||value==='\\n\\n'||value==='n')node.remove();
+    const roots=[document.getElementById('dashboard'),document.body].filter(Boolean);
+    roots.forEach(root=>{
+      [...root.childNodes].forEach(node=>{
+        if(node.nodeType!==Node.TEXT_NODE)return;
+        const value=(node.textContent||'').trim();
+        if(value==='\\n'||value==='\\n\\n'||value==='n')node.remove();
+      });
     });
   }
 
