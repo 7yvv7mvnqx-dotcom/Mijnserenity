@@ -1,9 +1,10 @@
-/* MijnSerenity 7.18.16 — stabiele opstart, sessiegate en gefaseerde bootstrap */
+/* MijnSerenity 7.18.21 — stabiele opstart, sessiegate en veilige dashboard-fallback */
 (()=>{
   'use strict';
-  window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.16';
-  const VERSION='718160';
+  // Laat de bestaande startweergave beschikbaar totdat het nieuwe dashboard aantoonbaar klaar is.
+  window.__msDisableLegacyVisuals=false;
+  const BUILD='7.18.21';
+  const VERSION='718210';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
   const DASHBOARD_SCRIPT=`dashboard-pro-71531-loader.js?v=${VERSION}`;
   const STARTUP_TIMEOUT_MS=22000;
@@ -321,6 +322,8 @@
       console.info(`MijnSerenity ${BUILD}: kern en actueel dashboard gestart.`);
     }catch(error){
       console.error('MijnSerenity kon niet starten:',error);
+      // Een dashboardfout mag de hele app niet meer als leeg scherm achterlaten.
+      window.__msDisableLegacyVisuals=false;
       setAuthStatus('De beveiligde inlog kon niet worden geladen. Tik op “App herstellen en vernieuwen” en probeer opnieuw.',true);
       const button=document.getElementById('signInButton');
       if(button)button.disabled=true;
