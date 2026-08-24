@@ -1,11 +1,11 @@
-/* MijnSerenity 7.18.26 — Marine Glass zichtlaag met geïntegreerde live fallback */
+/* MijnSerenity 7.18.27 — Marine Glass zichtlaag met geïntegreerde live fallback */
 (()=>{
   'use strict';
   if(window.__msDashboardLoaderCurrent)return;
   window.__msDashboardLoaderCurrent=true;
 
-  const BUILD='7.18.26';
-  const VERSION='718260';
+  const BUILD='7.18.27';
+  const VERSION='718270';
   const LEGACY_IDS=['ms71510Dashboard','serenityIvms','msMarineGlass','msMarineGlassMobile7182'];
   let guardInstalled=false;
   let marineAttempted=false;
