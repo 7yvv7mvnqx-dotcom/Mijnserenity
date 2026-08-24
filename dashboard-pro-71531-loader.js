@@ -1,12 +1,13 @@
-/* MijnSerenity 7.18.21 — veilige geïntegreerde startdashboard-loader met fallback */
+/* MijnSerenity 7.18.22 — geïntegreerd startdashboard zonder legacy Marine Glass conflict */
 (()=>{
   'use strict';
   if(window.__msDashboardLoaderCurrent)return;
   window.__msDashboardLoaderCurrent=true;
 
-  const BUILD='7.18.21';
-  const VERSION='718210';
+  const BUILD='7.18.22';
+  const VERSION='718220';
   const LEGACY_IDS=['ms71510Dashboard','serenityIvms','msMarineGlass','msMarineGlassMobile7182'];
+  let guardInstalled=false;
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -35,26 +36,55 @@
     link.href=href;
   }
 
-  function hideLegacyVisuals(){
-    window.__msDisableLegacyVisuals=true;
+  function neutralizeLegacyMode(){
+    const dashboard=document.getElementById('dashboard');
+    dashboard?.classList.remove('mg-active');
+    document.body?.classList.remove('mg-mode');
+    document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
+    document.getElementById('mgMore')?.remove();
+    document.getElementById('mgMoreNav')?.remove();
+    document.getElementById('mgNav718Style')?.remove();
+  }
+
+  function forceIntegratedVisible(){
+    const dashboard=document.getElementById('dashboard');
+    const root=document.getElementById('msIntegratedDashboard');
+    if(!dashboard||!root)return false;
+
+    neutralizeLegacyMode();
+    dashboard.classList.add('msi-active');
+    root.classList.remove('hidden');
+    root.style.setProperty('display','block','important');
+    root.style.setProperty('visibility','visible','important');
+    root.style.setProperty('opacity','1','important');
+    root.style.setProperty('position','relative','important');
+
     LEGACY_IDS.forEach(id=>{
       const el=document.getElementById(id);
       if(el)el.style.setProperty('display','none','important');
     });
-    document.getElementById('mgMore')?.remove();
-    document.getElementById('mgMoreNav')?.remove();
-    document.getElementById('mgNav718Style')?.remove();
-    document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
-    document.body?.classList.remove('mg-mode');
+    window.__msDisableLegacyVisuals=true;
+    return true;
+  }
+
+  function hideLegacyVisuals(){
+    neutralizeLegacyMode();
+    forceIntegratedVisible();
   }
 
   function showLegacyFallback(reason){
     window.__msDisableLegacyVisuals=false;
+    neutralizeLegacyMode();
     const dashboard=document.getElementById('dashboard');
     dashboard?.classList.remove('msi-active');
     document.getElementById('msIntegratedDashboard')?.remove();
     const fallback=LEGACY_IDS.map(id=>document.getElementById(id)).find(Boolean);
-    if(fallback)fallback.style.removeProperty('display');
+    if(fallback){
+      fallback.classList.remove('hidden');
+      fallback.style.setProperty('display','block','important');
+      fallback.style.setProperty('visibility','visible','important');
+      fallback.style.setProperty('opacity','1','important');
+    }
     console.warn('Geïntegreerd dashboard niet actief; veilige fallback gebruikt.',reason||'onbekende oorzaak');
   }
 
@@ -83,13 +113,56 @@
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
   }
 
+  function ensureDashboardVisible(){
+    cleanStrayText();
+    syncVersion();
+    if(integratedReady()){
+      forceIntegratedVisible();
+      return true;
+    }
+    return false;
+  }
+
+  function installVisibilityGuard(){
+    if(guardInstalled)return;
+    guardInstalled=true;
+
+    const dashboard=document.getElementById('dashboard');
+    if(dashboard){
+      new MutationObserver(()=>{
+        if(integratedReady())forceIntegratedVisible();
+      }).observe(dashboard,{attributes:true,attributeFilter:['class'],childList:true});
+    }
+
+    document.addEventListener('click',event=>{
+      const target=event.target.closest?.('[data-target="dashboard"],[onclick*="dashboard"]');
+      if(!target)return;
+      setTimeout(()=>{
+        document.getElementById('dashboard')?.classList.remove('mg-active');
+        ensureDashboardVisible();
+      },0);
+      setTimeout(ensureDashboardVisible,120);
+    },true);
+
+    ['mijnserenity:modules-ready','mijnserenity-ha-state-updated','mijnserenity-ha-connected']
+      .forEach(name=>window.addEventListener(name,()=>setTimeout(ensureDashboardVisible,0),{passive:true}));
+
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden)setTimeout(ensureDashboardVisible,0);
+    },{passive:true});
+
+    setInterval(()=>{
+      if(!document.hidden&&integratedReady())forceIntegratedVisible();
+    },1500);
+  }
+
   async function start(){
     syncVersion();
     cleanStrayText();
+    neutralizeLegacyMode();
     loadCss(`/dashboard-integrated-71820.css?v=${VERSION}`,'msIntegratedDashboardCss71820');
     const loaded=await load(`/dashboard-integrated-71820.js?v=${VERSION}`,'integrated-dashboard-71820');
 
-    // Verberg het bestaande dashboard pas nadat het nieuwe dashboard aantoonbaar is opgebouwd.
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     if(loaded&&integratedReady()){
       hideLegacyVisuals();
@@ -98,27 +171,24 @@
       showLegacyFallback(loaded?'dashboard is niet opgebouwd':'script kon niet laden');
     }
 
+    installVisibilityGuard();
+
     setTimeout(()=>{
-      syncVersion();
-      cleanStrayText();
-      if(integratedReady())hideLegacyVisuals();
-      else showLegacyFallback('controle na 250 ms');
+      if(!ensureDashboardVisible()&&!integratedReady())showLegacyFallback('controle na 250 ms');
     },250);
     setTimeout(()=>{
-      syncVersion();
-      cleanStrayText();
-      if(integratedReady())hideLegacyVisuals();
-      else showLegacyFallback('controle na 1500 ms');
+      if(!ensureDashboardVisible()&&!integratedReady())showLegacyFallback('controle na 1500 ms');
     },1500);
 
     const background=()=>{
       load(`/marine-glass-waterkaarten-route-7188.js?v=${VERSION}`,'waterkaarten-route-info');
       if(!document.getElementById('msAiDestinationCss'))loadCss(`/ai-destination-search.css?v=${VERSION}`,'msAiDestinationCss');
       load(`/ai-destination-search.js?v=${VERSION}`,'destination');
+      setTimeout(ensureDashboardVisible,250);
     };
     if('requestIdleCallback' in window)requestIdleCallback(background,{timeout:900});
     else setTimeout(background,160);
-    console.info(`MijnSerenity ${BUILD}: veilige geïntegreerde startdashboard-loader geladen.`);
+    console.info(`MijnSerenity ${BUILD}: startdashboard zichtbaar en legacy conflict uitgeschakeld.`);
   }
 
   start().catch(error=>{
