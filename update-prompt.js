@@ -36,6 +36,17 @@
   document.head.appendChild(script);
 })();
 
+/* 7.18.14.2 — laad de live Victron/Cerbo remap voor startaccu en tanks. */
+(function(){
+  'use strict';
+  if(window.__msTankLiveRemapLoader718142)return;
+  window.__msTankLiveRemapLoader718142=true;
+  const script=document.createElement('script');
+  script.src='/tank-live-remap-718141.js?v=718142';
+  script.async=false;
+  document.head.appendChild(script);
+})();
+
 (function(){
   'use strict';
   if(window.__msSilentUpdaterInstalled)return;
