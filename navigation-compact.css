@@ -170,3 +170,9 @@ body.ms744-keyboard-open > .bottom-nav.ms744-compact-nav{
     font-size:20px !important;
   }
 }
+
+/* 7.18.21 — oude startdashboard nooit tonen terwijl Marine Glass opstart. */
+@media(max-width:1024px){
+  body #appView:not(.hidden) #dashboard #ms71510Dashboard#ms71510Dashboard{display:none!important}
+  body #appView:not(.hidden) #dashboard > #msMarineGlass#msMarineGlass{display:block!important}
+}
