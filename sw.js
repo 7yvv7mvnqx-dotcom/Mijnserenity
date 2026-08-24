@@ -1,5 +1,5 @@
 /* MijnSerenity 7.18.16 — frisse app-shell en stabiele PWA-opstart */
-const CACHE_NAME='mijnserenity-7.18.16-startup';
+const CACHE_NAME='mijnserenity-7.18.16-dashboard-cleanup';
 const CORE_ASSETS=['/manifest.json','/auth-bootstrap.js?v=718160','/cost-form-hotfix-71815.js?v=718160','/waterkaarten-route-receiver-71870.js?v=718160','/waterkaarten-route-enrichment-71811.js?v=718160','/marine-map-route-fit-71812.js?v=718160','/professional-ui-71700.css?v=718160','/dashboard-pro-71531-loader.js?v=718160','/dashboard-pro-71700.js?v=718160','/marine-glass-start-fix-71801.js?v=718160','/marine-glass-mobile-7184.css?v=718160','/marine-glass-polish-7185.css?v=718160','/marine-glass-polish-7185.js?v=718160','/marine-glass-waterkaarten-route-7188.js?v=718160','/navigation-compact.js?v=718160','/ai-destination-search.css?v=718160','/ai-destination-search.js?v=718160','/captain-ai-71814.js?v=718160','/icon-192.png','/icon-512.png'];
 
 async function cacheCore(cache,path){
