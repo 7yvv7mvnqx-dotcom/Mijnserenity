@@ -1,13 +1,14 @@
-/* MijnSerenity 7.18.21 — stabiele opstart, sessiegate en veilige dashboard-fallback */
+/* MijnSerenity 7.18.23 — fail-safe opstart: dashboard blokkeert app nooit meer */
 (()=>{
   'use strict';
-  // Laat de bestaande startweergave beschikbaar totdat het nieuwe dashboard aantoonbaar klaar is.
+
   window.__msDisableLegacyVisuals=false;
-  const BUILD='7.18.21';
-  const VERSION='718210';
+
+  const BUILD='7.18.23';
+  const VERSION='718230';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
   const DASHBOARD_SCRIPT=`dashboard-pro-71531-loader.js?v=${VERSION}`;
-  const STARTUP_TIMEOUT_MS=22000;
+  const HARD_REVEAL_MS=6500;
 
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
@@ -55,10 +56,7 @@
   ];
 
   let startupResolved=false;
-  let startupCoreReady=false;
-  let startupViewTouched=false;
-  let startupObserver=null;
-  let startupTimer=null;
+  let hardRevealTimer=null;
 
   function syncBuildVersion(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -76,6 +74,35 @@
     if(!target)return;
     target.textContent=message;
     target.classList.toggle('error',Boolean(isError));
+  }
+
+  function setStartupStatus(message){
+    const target=document.getElementById('msStartupStatus');
+    if(target)target.textContent=message;
+  }
+
+  function ensureOneViewVisible(){
+    const ids=['authView','approvalView','appView'];
+    const views=ids.map(id=>document.getElementById(id)).filter(Boolean);
+    const visible=views.filter(view=>!view.classList.contains('hidden'));
+    if(visible.length===0){
+      document.getElementById('authView')?.classList.remove('hidden');
+    }
+  }
+
+  function finishStartup(){
+    if(startupResolved)return;
+    startupResolved=true;
+    if(hardRevealTimer){clearTimeout(hardRevealTimer);hardRevealTimer=null;}
+    document.documentElement.classList.remove('ms-starting');
+    document.body?.classList.remove('ms-starting');
+    ensureOneViewVisible();
+    const gate=document.getElementById('msStartupGate');
+    if(gate){
+      gate.style.opacity='0';
+      gate.style.pointerEvents='none';
+      setTimeout(()=>gate.remove(),180);
+    }
   }
 
   function ensureStartupGate(){
@@ -100,11 +127,6 @@
         #msStartupGate .ms-startup-spinner{width:38px;height:38px;margin:0 auto 18px;border:3px solid rgba(255,255,255,.16);border-top-color:#28b9ec;border-radius:50%;animation:msStartupSpin .8s linear infinite}
         #msStartupGate .ms-startup-status{font-size:15px;font-weight:650;line-height:1.45;color:#d8e8f3}
         #msStartupGate .ms-startup-version{margin-top:10px;font-size:12px;color:#7794a7}
-        #msStartupGate .ms-startup-actions{display:none;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
-        #msStartupGate.ms-startup-error .ms-startup-spinner{display:none}
-        #msStartupGate.ms-startup-error .ms-startup-actions{display:flex}
-        #msStartupGate button{appearance:none;border:1px solid #2f6078;border-radius:12px;padding:11px 15px;background:#0d2a3c;color:#f5fbff;font:inherit;font-weight:700}
-        #msStartupGate button:first-child{background:#0c87b8;border-color:#0c87b8}
         @keyframes msStartupSpin{to{transform:rotate(360deg)}}
       `;
       document.head.appendChild(style);
@@ -120,75 +142,21 @@
         <div class="ms-startup-spinner" aria-hidden="true"></div>
         <div id="msStartupStatus" class="ms-startup-status">MijnSerenity wordt gestart…</div>
         <div class="ms-startup-version">versie ${BUILD}</div>
-        <div class="ms-startup-actions">
-          <button id="msStartupRetry" type="button">Opnieuw proberen</button>
-          <button id="msStartupRepair" type="button">App herstellen</button>
-        </div>
       </div>`;
     document.body.appendChild(gate);
 
-    document.getElementById('msStartupRetry')?.addEventListener('click',()=>location.reload());
-    document.getElementById('msStartupRepair')?.addEventListener('click',()=>{
-      if(typeof window.repairMijnSerenity==='function')window.repairMijnSerenity();
-      else location.reload();
-    });
-
-    const views=['authView','approvalView','appView']
-      .map(id=>document.getElementById(id))
-      .filter(Boolean);
-
-    startupObserver=new MutationObserver(mutations=>{
-      if(mutations.some(item=>item.type==='attributes'&&item.attributeName==='class')){
-        startupViewTouched=true;
-        maybeFinishStartup();
-      }
-    });
-    views.forEach(view=>startupObserver.observe(view,{attributes:true,attributeFilter:['class']}));
-
-    startupTimer=setTimeout(()=>{
-      showStartupError('Het starten duurt langer dan normaal. Probeer opnieuw; je gegevens blijven bewaard.');
-    },STARTUP_TIMEOUT_MS);
-  }
-
-  function setStartupStatus(message){
-    const target=document.getElementById('msStartupStatus');
-    if(target)target.textContent=message;
-  }
-
-  function showStartupError(message){
-    if(startupResolved)return;
-    const gate=document.getElementById('msStartupGate');
-    if(!gate)return;
-    gate.classList.add('ms-startup-error');
-    setStartupStatus(message);
-  }
-
-  function finishStartup(){
-    if(startupResolved)return;
-    startupResolved=true;
-    if(startupTimer){clearTimeout(startupTimer);startupTimer=null}
-    startupObserver?.disconnect();
-    startupObserver=null;
-    document.documentElement.classList.remove('ms-starting');
-    const gate=document.getElementById('msStartupGate');
-    if(gate){
-      gate.style.opacity='0';
-      setTimeout(()=>gate.remove(),180);
-    }
-  }
-
-  function maybeFinishStartup(){
-    if(startupResolved||!startupCoreReady||!startupViewTouched)return;
-    const visible=['authView','approvalView','appView']
-      .map(id=>document.getElementById(id))
-      .filter(view=>view&&!view.classList.contains('hidden'));
-    if(visible.length===1)requestAnimationFrame(finishStartup);
+    // Absolute fail-safe: externe koppelingen of een dashboardmodule mogen de shell nooit vasthouden.
+    hardRevealTimer=setTimeout(()=>{
+      if(startupResolved)return;
+      console.warn('MijnSerenity: fail-safe onthult de app-shell na opstart-time-out.');
+      setAuthStatus('De app is geopend. Live koppelingen worden op de achtergrond verder geladen.');
+      finishStartup();
+    },HARD_REVEAL_MS);
   }
 
   function ensureProfessionalUi(){
     if(!document.getElementById('msProfessionalUi718')){
-      const old=document.getElementById('msProfessionalUi717');
-      if(old)old.remove();
+      document.getElementById('msProfessionalUi717')?.remove();
       const link=document.createElement('link');
       link.id='msProfessionalUi718';
       link.rel='stylesheet';
@@ -222,10 +190,10 @@
         const current=new URL(script.src,location.href);
         return current.origin===wanted.origin&&current.pathname===wanted.pathname;
       });
-    }catch{return false}
+    }catch{return false;}
   }
 
-  function loadScript(src,timeoutMs=16000){
+  function loadScript(src,timeoutMs=12000){
     if(scriptExists(src))return Promise.resolve();
     return new Promise((resolve,reject)=>{
       const script=document.createElement('script');
@@ -237,11 +205,11 @@
         clearTimeout(timer);
         script.onload=null;
         script.onerror=null;
-        if(error){script.remove();reject(error)}else resolve();
+        if(error){script.remove();reject(error);}else resolve();
       }
       script.src=src;
       script.async=false;
-      script.dataset.ms718='1';
+      script.dataset.ms71823='1';
       if(src.startsWith('http'))script.crossOrigin='anonymous';
       script.onload=()=>finish();
       script.onerror=()=>finish(new Error(`Laden mislukt: ${src}`));
@@ -250,15 +218,18 @@
   }
 
   async function ensureSupabase(){
-    if(window.supabase?.createClient)return;
+    if(window.supabase?.createClient)return true;
     let lastError=null;
     for(const source of SUPABASE_SOURCES){
       try{
         setStartupStatus('Beveiligde sessie wordt gecontroleerd…');
-        await loadScript(source,8000);
-        if(window.supabase?.createClient)return;
+        await loadScript(source,5000);
+        if(window.supabase?.createClient)return true;
         throw new Error('Supabase-bibliotheek is niet gestart.');
-      }catch(error){lastError=error;console.warn('Supabase-bron niet beschikbaar:',source,error)}
+      }catch(error){
+        lastError=error;
+        console.warn('Supabase-bron niet beschikbaar:',source,error);
+      }
     }
     throw lastError||new Error('Geen beveiligde inlogverbinding beschikbaar.');
   }
@@ -270,7 +241,10 @@
       const registration=await navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'});
       registration.update().catch(()=>{});
       return registration;
-    }catch(error){console.warn('Service worker kon niet worden geregistreerd:',error);return null}
+    }catch(error){
+      console.warn('Service worker kon niet worden geregistreerd:',error);
+      return null;
+    }
   }
 
   function idle(){
@@ -283,7 +257,7 @@
   async function loadModuleQueue(modules,label){
     for(const src of modules){
       await idle();
-      try{await loadScript(src,20000)}catch(error){console.warn(`${label} module overgeslagen:`,src,error)}
+      try{await loadScript(src,12000);}catch(error){console.warn(`${label} module overgeslagen:`,src,error);}
     }
   }
 
@@ -293,41 +267,57 @@
     await loadModuleQueue(LATE_MODULES,'Achtergrond');
     syncBuildVersion();
     window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}));
-    console.info(`MijnSerenity ${BUILD}: achtergrondmodules gereed.`);
+  }
+
+  async function loadDashboardInBackground(){
+    try{
+      await idle();
+      await loadScript(DASHBOARD_SCRIPT,12000);
+      syncBuildVersion();
+      console.info(`MijnSerenity ${BUILD}: actueel dashboard geladen.`);
+    }catch(error){
+      window.__msDisableLegacyVisuals=false;
+      console.warn('Actueel dashboard overgeslagen; legacy dashboard blijft beschikbaar:',error);
+    }
   }
 
   async function start(){
+    ensureStartupGate();
+    ensureProfessionalUi();
+    addPreconnect('https://cdn.jsdelivr.net');
+    addPreconnect('https://unpkg.com');
+    syncBuildVersion();
+    ensureServiceWorker(); // bewust niet awaiten
+
     try{
-      ensureStartupGate();
-      ensureProfessionalUi();
-      addPreconnect('https://cdn.jsdelivr.net');
-      addPreconnect('https://unpkg.com');
-      syncBuildVersion();
       setAuthStatus('Beveiligde inlog wordt geladen…');
       setStartupStatus('Nieuwe versie en sessie worden gecontroleerd…');
-      ensureServiceWorker();
       await ensureSupabase();
-      setStartupStatus('Dashboard wordt klaargezet…');
-      startupViewTouched=false;
-      await loadScript(CORE_SCRIPT,15000);
-      setStartupStatus('Actueel dashboard wordt geladen…');
-      await loadScript(DASHBOARD_SCRIPT,15000);
-      startupCoreReady=true;
+
+      setStartupStatus('App wordt geopend…');
+      await loadScript(CORE_SCRIPT,12000);
       syncBuildVersion();
+
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
-      const button=document.getElementById('signInButton');
-      if(button)button.disabled=false;
-      maybeFinishStartup();
-      setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),40);
-      console.info(`MijnSerenity ${BUILD}: kern en actueel dashboard gestart.`);
+      document.getElementById('signInButton')?.removeAttribute('disabled');
+
+      // De app-shell is de kritieke kern. Vanaf hier mag dashboard/HA/VRM niet meer blokkeren.
+      ensureOneViewVisible();
+      finishStartup();
+
+      setTimeout(()=>loadDashboardInBackground(),40);
+      setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),120);
+      console.info(`MijnSerenity ${BUILD}: kern gestart; live modules laden op de achtergrond.`);
     }catch(error){
-      console.error('MijnSerenity kon niet starten:',error);
-      // Een dashboardfout mag de hele app niet meer als leeg scherm achterlaten.
+      console.error('MijnSerenity kernstart gedeeltelijk mislukt:',error);
       window.__msDisableLegacyVisuals=false;
-      setAuthStatus('De beveiligde inlog kon niet worden geladen. Tik op “App herstellen en vernieuwen” en probeer opnieuw.',true);
-      const button=document.getElementById('signInButton');
-      if(button)button.disabled=true;
-      showStartupError('MijnSerenity kon niet volledig starten. Controleer de verbinding en probeer opnieuw.');
+      ensureOneViewVisible();
+      setAuthStatus('MijnSerenity is geopend, maar de beveiligde verbinding kon nog niet volledig laden. Probeer opnieuw of gebruik “App herstellen en vernieuwen”.',true);
+      if(typeof window.signIn!=='function'){
+        const button=document.getElementById('signInButton');
+        if(button)button.disabled=true;
+      }
+      finishStartup();
     }
   }
 
