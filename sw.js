@@ -1,6 +1,6 @@
-/* MijnSerenity 7.18.24 — sessieherstel en inlogweergave cache */
-const CACHE_NAME='mijnserenity-7.18.24-auth-session-fix';
-const BUILD_VERSION='718240';
+/* MijnSerenity 7.18.25 — sessieherstel en Marine Glass cache */
+const CACHE_NAME='mijnserenity-7.18.25-marine-glass';
+const BUILD_VERSION='718250';
 const ESSENTIAL=[
   '/index.html',
   `/auth-bootstrap.js?v=${BUILD_VERSION}`,
