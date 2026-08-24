@@ -1,4 +1,4 @@
-/* MijnSerenity 7.18.25 — Marine Glass startdashboard */
+/* MijnSerenity 7.18.27 — Marine Glass startdashboard + iPhone/PWA scroll fix */
 :root{
   --mg-bg:#040b14;
   --mg-bg-soft:#071421;
@@ -15,15 +15,25 @@
   --mg-radius:22px;
 }
 
+/* page-swipe houdt body vast; de dashboardpagina zelf moet scrollen */
 #dashboard.mg-71825-active{
   background:var(--mg-bg)!important;
-  min-height:100vh!important;
-  overflow:visible!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:100%!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior-y:contain;
 }
 
 #msMarineDashboard{
   width:100%;
   max-width:980px;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
   margin:0 auto;
   padding:12px 14px calc(118px + env(safe-area-inset-bottom));
   box-sizing:border-box;
@@ -176,6 +186,26 @@
 .mg-control:active,.mg-action:active,.mg-tab:active,.mg-icon-btn:active{transform:scale(.98)}
 
 .mg-foot{padding:8px 2px 2px;text-align:center;color:#526778;font-size:9px;font-weight:650;letter-spacing:.04em}
+
+/* Extra verdediging tegen oude viewport-/pagerregels die op iOS later kunnen winnen. */
+#dashboard.mg-71825-active.ms708-native-page{
+  height:100%!important;
+  min-height:0!important;
+  max-height:100%!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+#dashboard.mg-71825-active #msMarineDashboard,
+#dashboard.mg-71825-active #msMarineDashboard > main,
+#dashboard.mg-71825-active #msMarineDashboard .mg-section{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+/* Panelen mogen hun eigen afgeronde inhoud clippen, maar nooit de hele pagina. */
+#dashboard.mg-71825-active #msMarineDashboard .mg-panel{height:auto!important;max-height:none!important;}
 
 @media (min-width:700px){
   #msMarineDashboard{padding-left:22px;padding-right:22px}
