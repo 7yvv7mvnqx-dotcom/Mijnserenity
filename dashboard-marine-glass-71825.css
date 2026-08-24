@@ -1,4 +1,4 @@
-/* MijnSerenity 7.18.25 — Marine Glass startdashboard */
+/* MijnSerenity 7.18.31 — Marine Glass startdashboard */
 :root{
   --mg-bg:#040b14;
   --mg-bg-soft:#071421;
@@ -18,14 +18,22 @@
 #dashboard.mg-71825-active{
   background:var(--mg-bg)!important;
   min-height:100vh!important;
+  height:auto!important;
+  max-height:none!important;
   overflow:visible!important;
+  overflow-y:visible!important;
 }
 
 #msMarineDashboard{
   width:100%;
   max-width:980px;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
   margin:0 auto;
   padding:12px 14px calc(118px + env(safe-area-inset-bottom));
+  overflow:visible!important;
+  overflow-y:visible!important;
   box-sizing:border-box;
   color:var(--mg-text);
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,system-ui,sans-serif;
@@ -33,6 +41,22 @@
     radial-gradient(circle at 82% 2%,rgba(33,116,196,.16),transparent 28rem),
     radial-gradient(circle at 8% 24%,rgba(41,144,224,.08),transparent 24rem),
     var(--mg-bg);
+}
+
+/* Oude Marine Glass builds gebruikten hier een geneste <main>. Maak die
+   container volledig onafhankelijk van globale app-mainregels. */
+#msMarineDashboard > main{
+  display:block!important;
+  position:relative!important;
+  width:100%!important;
+  max-width:none!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  overflow-y:visible!important;
 }
 
 #msMarineDashboard *{box-sizing:border-box}
