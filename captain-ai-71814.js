@@ -331,3 +331,87 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
   else boot();
 })();
+
+/* MijnSerenity 7.18.32 — Captain AI zoekveld op dashboard */
+(()=>{
+  'use strict';
+  if(window.__msDashboardCaptainSearch71832)return;
+  window.__msDashboardCaptainSearch71832=true;
+
+  let observer=null;
+
+  function injectDashboardStyle(){
+    if(document.getElementById('msDashboardCaptainSearchStyle71832'))return;
+    const style=document.createElement('style');
+    style.id='msDashboardCaptainSearchStyle71832';
+    style.textContent=`
+      #msDashboardCaptainSearch{display:grid;gap:10px;margin:12px 0 16px;padding:14px;border:1px solid rgba(79,205,255,.28);border-radius:18px;background:linear-gradient(145deg,rgba(5,30,48,.92),rgba(8,43,65,.82));box-shadow:0 10px 30px rgba(0,0,0,.16)}
+      #msDashboardCaptainSearch .msai-dashboard-head{display:flex;align-items:center;gap:9px;color:#effbff;font-weight:900;font-size:15px}
+      #msDashboardCaptainSearch .msai-dashboard-head span{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:10px;background:rgba(59,195,255,.13);border:1px solid rgba(86,210,255,.24)}
+      #msDashboardCaptainSearch .msai-dashboard-head small{margin-left:auto;color:#77dcff;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+      #msDashboardCaptainSearch form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+      #msDashboardCaptainInput{min-width:0;width:100%;height:48px;box-sizing:border-box;border:1px solid rgba(119,180,206,.36);border-radius:14px;background:rgba(0,15,27,.76);color:#f5fbff;padding:0 14px;font:inherit;font-size:15px;outline:none;-webkit-appearance:none}
+      #msDashboardCaptainInput::placeholder{color:#8daab9}
+      #msDashboardCaptainInput:focus{border-color:rgba(86,210,255,.72);box-shadow:0 0 0 3px rgba(66,196,255,.10)}
+      #msDashboardCaptainSearch button[type="submit"]{min-width:54px;height:48px;padding:0 14px!important;border:1px solid rgba(83,211,255,.38)!important;border-radius:14px!important;background:rgba(34,155,201,.24)!important;color:#effcff!important;font-size:17px!important;font-weight:900!important}
+      #msDashboardCaptainAnswer{display:none;padding:12px 13px;border-radius:14px;border:1px solid rgba(78,209,255,.22);background:rgba(1,18,30,.67);color:#eaf8ff;font-size:13px;line-height:1.5;white-space:pre-wrap}
+      #msDashboardCaptainAnswer.thinking,#msDashboardCaptainAnswer.ready,#msDashboardCaptainAnswer.error{display:block}
+      #msDashboardCaptainAnswer.thinking{color:#a7c2cf}
+      #msDashboardCaptainAnswer.error{border-color:rgba(255,105,105,.35);color:#ffc0c0}
+      #msDashboardCaptainSearch .msai-dashboard-hint{color:#8fa9b7;font-size:11px;line-height:1.35}
+      @media(max-width:560px){#msDashboardCaptainSearch{margin:10px 0 14px;padding:12px;border-radius:16px}#msDashboardCaptainSearch form{grid-template-columns:minmax(0,1fr) 52px}#msDashboardCaptainSearch button[type="submit"]{min-width:52px;padding:0!important}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function addDashboardSearch(){
+    const dashboard=document.getElementById('ms71510Dashboard');
+    if(!dashboard||document.getElementById('msDashboardCaptainSearch'))return false;
+
+    injectDashboardStyle();
+    const card=document.createElement('section');
+    card.id='msDashboardCaptainSearch';
+    card.setAttribute('aria-label','Vraag Captain AI');
+    card.innerHTML=`
+      <div class="msai-dashboard-head"><span>✨</span>Captain AI <small>AI actief</small></div>
+      <form id="msDashboardCaptainForm" autocomplete="off">
+        <input id="msDashboardCaptainInput" type="search" inputmode="search" enterkeyhint="search" maxlength="600" aria-label="Vraag Captain AI" placeholder="Vraag over accu, route, tanks, logboek…">
+        <button type="submit" aria-label="Vraag aan Captain AI">➤</button>
+      </form>
+      <div class="msai-dashboard-hint">Captain AI gebruikt de actuele gegevens van Serenity en je recente logboek.</div>
+      <div id="msDashboardCaptainAnswer" aria-live="polite"></div>
+    `;
+
+    const hero=dashboard.querySelector('.ms71514-hero');
+    if(hero)hero.insertAdjacentElement('afterend',card);
+    else dashboard.prepend(card);
+
+    const form=card.querySelector('#msDashboardCaptainForm');
+    const input=card.querySelector('#msDashboardCaptainInput');
+    const answer=card.querySelector('#msDashboardCaptainAnswer');
+    form?.addEventListener('submit',async event=>{
+      event.preventDefault();
+      const question=String(input?.value||'').trim();
+      if(question.length<2){input?.focus();return;}
+      answer.classList.remove('ready','error','thinking');
+      answer.textContent='';
+      input?.blur();
+      if(typeof window.ms71814AskCaptainAI!=='function'){
+        answer.classList.add('error');
+        answer.textContent='Captain AI wordt nog geladen. Probeer het over een paar seconden opnieuw.';
+        return;
+      }
+      await window.ms71814AskCaptainAI(question,{target:answer,fallbackLocal:false});
+    });
+    return true;
+  }
+
+  function bootDashboardSearch(){
+    addDashboardSearch();
+    observer=new MutationObserver(()=>addDashboardSearch());
+    observer.observe(document.body,{childList:true,subtree:true});
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootDashboardSearch,{once:true});
+  else bootDashboardSearch();
+})();
