@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.21 — stabiele dashboardloader + live Cerbo als enige tankbron */
+/* MijnSerenity 7.18.22 — stabiele dashboardloader + live Cerbo als enige tankbron */
 (()=>{
   'use strict';
   if(window.__msDashboardLoader71821)return;
   window.__msDashboardLoader71821=true;
-  const V='718210';
+  const V='718220';
   const CONTROL='718140c2';
 
   function load(src,key){
@@ -30,6 +30,7 @@
 
     /* Marine Glass direct laden; het oude startdashboard blijft alleen als verborgen databron bestaan. */
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
+    await load(`/start-battery-soc-71822.js?v=${V}`,'start-battery-soc');
     await load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix');
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
