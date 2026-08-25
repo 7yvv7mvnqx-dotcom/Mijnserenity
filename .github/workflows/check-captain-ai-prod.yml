@@ -1,0 +1,44 @@
+name: Check Captain AI production
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Checking production Captain AI health endpoint"
+          body=$(curl --fail --silent --show-error --location --max-time 20 https://mijnserenity.nl/.netlify/functions/captain-ai)
+          echo "$body"
+          python - <<'PY' "$body"
+          import json, sys
+          data=json.loads(sys.argv[1])
+          assert data.get('ok') is True, data
+          assert data.get('service') == 'captain-ai', data
+          assert data.get('configured') is True, data
+          print('CAPTAIN_AI_CONFIGURED_TRUE')
+          PY
+
+      - name: Test real Captain AI POST
+        shell: bash
+        run: |
+          set -euo pipefail
+          body=$(curl --fail --silent --show-error --location --max-time 45 \
+            -H 'Content-Type: application/json' \
+            -d '{"question":"Antwoord alleen met: Captain AI werkt","context":{"app_build":"healthcheck","boat":{"name":"Serenity"}}}' \
+            https://mijnserenity.nl/.netlify/functions/captain-ai)
+          echo "$body"
+          python - <<'PY' "$body"
+          import json, sys
+          data=json.loads(sys.argv[1])
+          assert data.get('ai') is True, data
+          answer=str(data.get('answer','')).strip()
+          assert answer, data
+          print('CAPTAIN_AI_POST_OK')
+          print(answer)
+          PY
