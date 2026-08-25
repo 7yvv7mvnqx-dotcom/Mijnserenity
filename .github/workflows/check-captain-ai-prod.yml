@@ -12,7 +12,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "Checking production Captain AI health endpoint"
           body=$(curl --fail --silent --show-error --location --max-time 20 https://mijnserenity.nl/.netlify/functions/captain-ai)
           echo "$body"
           python - <<'PY' "$body"
@@ -24,13 +23,14 @@ jobs:
           print('CAPTAIN_AI_CONFIGURED_TRUE')
           PY
 
-      - name: Test real Captain AI POST
+      - name: Test realistic Captain AI trip analysis
         shell: bash
         run: |
           set -euo pipefail
-          body=$(curl --fail --silent --show-error --location --max-time 45 \
+          payload='{"question":"Analyseer deze vaartocht. Benoem wat goed ging, welke waarden onwaarschijnlijk of verdacht zijn, en geef maximaal drie concrete aandachtspunten voor een volgende vaart.","context":{"app_build":"7.18.28","boat":{"name":"Serenity","type":"Vri-Jon Contessa 37","length_m":11.2},"current":{"speed_kmh":0,"gps_healthy":true},"technical":{"house_voltage":13.2,"house_soc":83,"start_voltage":12.7,"fuel_pct":60},"recent_trips":[{"date":"2026-08-24","departure":"Hengelo","arrival":"Sluis Delden","distance_km":4,"duration_hours":0.45,"average_speed_kmh":8.9,"fuel_liters":1.8,"fuel_per_km":0.45,"cost_eur":3.78,"gps_points":180,"gps_gaps":0,"route_has_gps_gaps":false,"notes":"Rustige vaartocht met 10 routefotos."}],"recent_costs":[],"selected_logbook_text":"2026-08-24 Hengelo naar Sluis Delden. Afstand 4 km. Vaartijd 0.45 uur. Bemanning Michel, Desi. Brandstof 1.8 liter. Kosten 3.78 euro. Captain vaaranalyse score 83/100, gemiddeld 8.9 km/u, 0.45 l/km, 10 routefotos, rustige gemiddelde vaarsnelheid, zuiniger dan eigen gemiddelde, geen routekaart beschikbaar."}}'
+          body=$(curl --fail --silent --show-error --location --max-time 75 \
             -H 'Content-Type: application/json' \
-            -d '{"question":"Antwoord alleen met: Captain AI werkt","context":{"app_build":"healthcheck","boat":{"name":"Serenity"}}}' \
+            -d "$payload" \
             https://mijnserenity.nl/.netlify/functions/captain-ai)
           echo "$body"
           python - <<'PY' "$body"
@@ -38,7 +38,7 @@ jobs:
           data=json.loads(sys.argv[1])
           assert data.get('ai') is True, data
           answer=str(data.get('answer','')).strip()
-          assert answer, data
-          print('CAPTAIN_AI_POST_OK')
+          assert len(answer) >= 20, data
+          print('CAPTAIN_AI_REALISTIC_POST_OK')
           print(answer)
           PY
