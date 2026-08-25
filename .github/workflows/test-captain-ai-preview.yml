@@ -1,0 +1,52 @@
+name: Test Captain AI preview
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Netlify preview
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          set -euo pipefail
+          url="https://deploy-preview-${PR_NUMBER}--radiant-pithivier-5c37cf.netlify.app/.netlify/functions/captain-ai"
+          echo "Waiting for $url"
+          for i in $(seq 1 30); do
+            if body=$(curl --fail --silent --show-error --location --max-time 15 "$url" 2>/dev/null); then
+              echo "$body"
+              if python - <<'PY' "$body"
+import json, sys
+x=json.loads(sys.argv[1])
+raise SystemExit(0 if x.get('configured') is True else 1)
+PY
+              then exit 0; fi
+            fi
+            sleep 4
+          done
+          exit 1
+
+      - name: Test realistic trip analysis
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          set -euo pipefail
+          url="https://deploy-preview-${PR_NUMBER}--radiant-pithivier-5c37cf.netlify.app/.netlify/functions/captain-ai"
+          payload='{"question":"Analyseer deze vaartocht. Benoem wat goed ging, welke waarden onwaarschijnlijk of verdacht zijn, en geef maximaal drie concrete aandachtspunten voor een volgende vaart.","context":{"app_build":"7.18.28","boat":{"name":"Serenity","type":"Vri-Jon Contessa 37","length_m":11.2},"current":{"speed_kmh":0,"gps_healthy":true},"technical":{"house_voltage":13.2,"house_soc":83,"start_voltage":12.7,"fuel_pct":60},"recent_trips":[{"date":"2026-08-24","departure":"Hengelo","arrival":"Sluis Delden","distance_km":4,"duration_hours":0.45,"average_speed_kmh":8.9,"fuel_liters":1.8,"fuel_per_km":0.45,"cost_eur":3.78,"gps_points":180,"gps_gaps":0,"route_has_gps_gaps":false,"notes":"Rustige vaartocht met 10 routefotos."}],"recent_costs":[],"selected_logbook_text":"2026-08-24 Hengelo naar Sluis Delden. Afstand 4 km. Vaartijd 0.45 uur. Bemanning Michel, Desi. Brandstof 1.8 liter. Kosten 3.78 euro. Captain vaaranalyse score 83/100, gemiddeld 8.9 km/u, 0.45 l/km, 10 routefotos, rustige gemiddelde vaarsnelheid, zuiniger dan eigen gemiddelde, geen routekaart beschikbaar."}}'
+          body=$(curl --fail --silent --show-error --location --max-time 60 -H 'Content-Type: application/json' -d "$payload" "$url")
+          echo "$body"
+          python - <<'PY' "$body"
+import json, sys
+data=json.loads(sys.argv[1])
+assert data.get('ai') is True, data
+answer=str(data.get('answer','')).strip()
+assert len(answer) >= 20, data
+print('CAPTAIN_AI_REALISTIC_POST_OK')
+print(answer)
+PY
