@@ -1,4 +1,5 @@
 const recent=new Map();
+const MODEL='gpt-5-mini';
 
 function json(statusCode,body){
   return {
@@ -23,7 +24,16 @@ function outputText(data){
 }
 
 exports.handler=async(event)=>{
-  if(event.httpMethod!=='POST')return json(405,{error:'Alleen POST toegestaan'});
+  if(event.httpMethod==='GET'){
+    return json(200,{
+      ok:true,
+      service:'captain-ai',
+      configured:Boolean(process.env.OPENAI_API_KEY),
+      model:MODEL
+    });
+  }
+
+  if(event.httpMethod!=='POST')return json(405,{error:'Alleen GET en POST toegestaan'});
 
   const ip=event.headers['x-nf-client-connection-ip']||event.headers['client-ip']||'unknown';
   const now=Date.now();
@@ -65,7 +75,7 @@ exports.handler=async(event)=>{
         'Content-Type':'application/json'
       },
       body:JSON.stringify({
-        model:'gpt-5-mini',
+        model:MODEL,
         input:[
           {role:'developer',content:developer},
           {role:'user',content:`Vraag: ${question}\n\nBoordgegevens (JSON):\n${JSON.stringify(context)}`}
