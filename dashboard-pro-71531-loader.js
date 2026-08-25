@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.23 — stabiele dashboardloader + live Cerbo als enige tankbron */
+/* MijnSerenity 7.18.24 — stabiele dashboardloader + live Cerbo als enige tankbron */
 (()=>{
   'use strict';
   if(window.__msDashboardLoader71821)return;
   window.__msDashboardLoader71821=true;
-  const V='718230';
+  const V='718240';
   const CONTROL='718140c2';
 
   function load(src,key){
@@ -32,6 +32,7 @@
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     await load(`/start-battery-soc-71822.js?v=${V}`,'start-battery-soc');
     await load(`/tank-systems-climate-71823.js?v=${V}`,'tank-systems-climate');
+    await load(`/dashboard-ais-map-71824.js?v=${V}`,'dashboard-ais-map');
     await load(`/marine-glass-start-fix-71801.js?v=${V}`,'marine-glass-start-fix');
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
