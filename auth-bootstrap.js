@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.27 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.18.28 — snelle, gefaseerde bootstrap */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.27';
-  const VERSION='718270';
+  const BUILD='7.18.28';
+  const VERSION='718280';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
@@ -32,6 +32,7 @@
     `mission-control.js?v=${VERSION}`,
     `live-split.js?v=${VERSION}`,
     `route-control.js?v=${VERSION}`,
+    `logbook-route-assist-71828.js?v=${VERSION}`,
     `ai-destination-search.js?v=${VERSION}`,
     `weather-page.js?v=${VERSION}`,
     `weather-radar.js?v=${VERSION}`,
