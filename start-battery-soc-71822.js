@@ -9,6 +9,10 @@
     const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
     return match?Number(match[0]):null;
   };
+  const setText=(id,value)=>{
+    const el=$(id);
+    if(el&&el.textContent!==String(value))el.textContent=String(value);
+  };
   const readNumber=ids=>{
     for(const id of ids){
       const value=num($(id)?.textContent);
@@ -82,14 +86,14 @@
     if(!upgradeCard())return;
 
     const card=document.querySelector('#msMarineGlass .mg-start-battery');
-    const voltage=readNumber(['mgStartV','ms71510StartVoltage','techStartVoltage','liveStartVoltage']);
+    const voltage=readNumber(['ms71510StartVoltage','techStartVoltage','liveStartVoltage','mgStartV']);
     const measuredSoc=readNumber(['ms71510StartSoc','techStartSoc','ivmsStartSoc']);
     const current=readNumber(['ms71510StartCurrent','techStartCurrent','ivmsStartCurrent']);
     const soc=measuredSoc!==null?Math.max(0,Math.min(100,Math.round(measuredSoc))):estimatedSocFromVoltage(voltage);
 
-    if($('mgStartSoc'))$('mgStartSoc').textContent=soc===null?'–%':`${soc}%`;
-    if($('mgStartV'))$('mgStartV').textContent=voltage===null?'– V':`${fmt(voltage,1)} V`;
-    if($('mgStartAmp'))$('mgStartAmp').textContent=current===null?(measuredSoc!==null?'SOC gemeten':'SOC geschat'):`${fmt(current,1)} A`;
+    setText('mgStartSoc',soc===null?'–%':`${soc}%`);
+    setText('mgStartV',voltage===null?'– V':`${fmt(voltage,1)} V`);
+    setText('mgStartAmp',current===null?(measuredSoc!==null?'SOC gemeten':'SOC geschat'):`${fmt(current,1)} A`);
     if(card)card.dataset.socSource=measuredSoc!==null?'measured':'estimate';
   }
 
