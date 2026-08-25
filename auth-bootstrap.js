@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.24 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.18.26 — snelle, gefaseerde bootstrap */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.24';
-  const VERSION='718240';
+  const BUILD='7.18.26';
+  const VERSION='718260';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
@@ -20,6 +20,7 @@
     `ruuvi-climate.js?v=${VERSION}`,
     `movement-presence.js?v=${VERSION}`,
     `technical-live-sync.js?v=${VERSION}`,
+    `serenity-alarm-notifications-71826.js?v=${VERSION}`,
     `victron-diagnostics.js?v=${VERSION}`,
     `navigation-compact.js?v=${VERSION}`,
     `serenity-ivms.js?v=${VERSION}`
