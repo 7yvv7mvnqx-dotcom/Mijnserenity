@@ -1,4 +1,4 @@
-/* MijnSerenity 7.18.17 — duidelijke Victron laadbronnen + centrale energiestatus */
+/* MijnSerenity 7.18.29 — MultiPlus-II live toegevoegd aan Victron energiedashboard */
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
@@ -97,10 +97,16 @@ function read(){
   const chargerPower=tv(charger)??num(live.chargerPower)??num(directAc.chargerPower)??num(t.chargerPower);
   const inverterPower=tv(inverter)??num(live.inverterPower)??num(directAc.inverterPower)??num(t.inverterPower);
   const measuredLoad=tv(load)??num(live.loadPower)??num(directAc.loadPower)??num(t.loadPower);
+  const multiInputA=num(live.inputCurrent)??num(directAc.inputCurrent);
+  const multiInputW=num(live.inputPower)??num(directAc.inputPower);
+  const multiOutputW=num(live.outputPower)??num(directAc.outputPower)??measuredLoad;
+  const multiDcV=num(live.dcVoltage)??num(directAc.dcVoltage)??vVoltage;
+  const multiDcA=num(live.dcCurrent)??num(directAc.dcCurrent)??vCurrent;
   return {
     soc:vSoc,voltage:vVoltage,current:vCurrent,power:vPower,time:tv(time)??num(t.houseTimeToGo),
     solar:vSolar,pvVoltage:num(vrm.pvVoltage),pvCurrent:num(vrm.pvCurrent),start:vStart,shore,shoreV:validShoreV,
     charger:chargerPower,inverter:inverterPower,load:measuredLoad,shoreInferred:false,
+    multiModel:'MultiPlus-II 12/3000/120-32',multiInputA,multiInputW,multiOutputW,multiDcV,multiDcA,
     salonTemp:num(climate.salon?.temperature),machineTemp:num(climate.forward?.temperature),
     solarLabel:solar?(solar.name||solar.entity_id):'Victron SmartSolar MPPT',
     hasVictron:Boolean(soc||voltage||current||power||solar||start||shoreEntity||shoreVoltageEntity||charger||inverter||load||freshLive()||num(directBattery.soc?.value)!==null||num(directBattery.voltage?.value)!==null)
@@ -114,6 +120,27 @@ function noSeparateChargerMeasurement(s){
   return s.shore===true&&Math.abs(s.charger)<=0.5&&s.power!==null&&s.power>2&&(s.solar===null||Math.abs(s.solar)<=2);
 }
 function chargerText(s,long=false){return noSeparateChargerMeasurement(s)?(long?'Geen aparte meting':'Geen meting'):fmt(s.charger,0,' W')}
+function multiStatus(s){
+  if(s.shore===true&&(s.charger||0)>5)return 'Laden via walstroom';
+  if(s.shore===true)return 'Walstroom actief';
+  if(s.shore===false&&(s.inverter||0)>1)return 'Omvormen';
+  if(s.shore===false)return 'Omvormer stand-by';
+  return 'Status wordt ingelezen';
+}
+function multiAcInText(s){
+  if(s.shore!==true)return 'Geen walstroom';
+  const parts=[];
+  if(s.shoreV!==null)parts.push(fmt(s.shoreV,0,' V'));
+  if(s.multiInputA!==null)parts.push(fmt(s.multiInputA,2,' A'));
+  if(s.multiInputW!==null)parts.push(fmt(s.multiInputW,0,' W'));
+  return parts.length?parts.join(' · '):'Walstroom actief';
+}
+function multiDcText(s){
+  const parts=[];
+  if(s.multiDcV!==null)parts.push(fmt(s.multiDcV,2,' V'));
+  if(s.multiDcA!==null)parts.push(fmt(s.multiDcA,1,' A'));
+  return parts.length?parts.join(' · '):'–';
+}
 function syncSharedStart(startVoltage){
   if(startVoltage===null)return;
   try{if(typeof technicalStateCache!=='undefined'&&technicalStateCache&&typeof technicalStateCache==='object')technicalStateCache.startVoltage=startVoltage}catch{}
@@ -158,6 +185,10 @@ function render(){
   setText('msVictronSalon',fmt(s.salonTemp,1,' °C'));
   setText('msVictronMachine',fmt(s.machineTemp,1,' °C'));
   setText('msVictronShoreV',s.shore===true?fmt(s.shoreV,0,' V AC'):'– V AC');
+  setText('msVictronMultiStatus',multiStatus(s));
+  setText('msVictronMultiACIn',multiAcInText(s));
+  setText('msVictronMultiACOut',s.multiOutputW===null?'– W':fmt(Math.max(0,s.multiOutputW),0,' W'));
+  setText('msVictronMultiDC',multiDcText(s));
   const fill=Math.max(0,Math.min(100,s.soc||0));
   $('msVictronSocFill')?.style.setProperty('--soc',fill+'%');
   $('msVictronBatteryNode')?.classList.toggle('low',s.soc!==null&&s.soc<30);
@@ -171,7 +202,7 @@ function render(){
   if(source){source.querySelector('b').textContent=solarFault?'MEETFOUT':s.shore===true?'WALSTROOM':(s.charger||0)>2?'LADER':(s.solar||0)>2?'ZON + ACCU':s.power!==null&&s.power>2?'ACCU LADEN':'ACCU';source.classList.toggle('live',s.hasVictron&&!solarFault);source.classList.toggle('fault',solarFault)}
   setText('msVictronUpdated',(s.hasVictron?'Victron live · ':'Wacht op Victron · ')+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}));
 }
-function markup(){return '<section id="msVictronEnergy" class="ms-victron" aria-label="Victron energiedashboard"><div class="ms-victron-head"><div class="ms-victron-title"><span class="ms-victron-logo">V</span><h3>Victron energie<small>SERENITY · LIVE ENERGIESTROOM</small></h3></div><span id="msVictronSource" class="ms-victron-source"><i></i><b>ACCU</b></span></div><div class="ms-victron-flow"><div id="msVictronSolarNode" class="ms-victron-node ms-victron-solar"><span class="icon">☀️</span><small>ZONNEPANEEL</small><strong id="msVictronSolar">– W</strong><em>Victron SmartSolar MPPT</em><span class="ms-victron-line"></span></div><div id="msVictronBatteryNode" class="ms-victron-node ms-victron-battery"><div class="ms-victron-soc"><i id="msVictronSocFill"></i></div><small>HUISHOUDACCU\'S</small><strong id="msVictronSoc">–%</strong><em id="msVictronVoltage">– V</em></div><div id="msVictronShoreNode" class="ms-victron-node ms-victron-shore"><span class="icon">🔌</span><small>WALSTROOM / LADER</small><strong id="msVictronCharger">– W</strong><em id="msVictronShore">status onbekend</em><span class="ms-victron-line"></span></div></div><div class="ms-victron-stats"><div class="ms-victron-stat ms-victron-charge"><small>VANAF ZON</small><strong id="msVictronSolarSource">– W</strong></div><div class="ms-victron-stat ms-victron-charge"><small>VANAF WALSTROOM</small><strong id="msVictronShoreSource">– W</strong></div><div class="ms-victron-stat ms-victron-discharge"><small id="msVictronBatteryNetLabel">HUISHOUDACCU NETTO</small><strong id="msVictronBatteryNet">– W</strong></div><div class="ms-victron-stat"><small>RESTEREND</small><strong id="msVictronTime">–</strong></div><div class="ms-victron-stat"><small>STARTACCU\'S</small><strong id="msVictronStart">– V</strong></div><div class="ms-victron-stat"><small>SALON</small><strong id="msVictronSalon">– °C</strong></div><div class="ms-victron-stat"><small>MACHINEKAMER</small><strong id="msVictronMachine">– °C</strong></div><div class="ms-victron-stat"><small>WALSPANNING</small><strong id="msVictronShoreV">– V AC</strong></div></div><div class="ms-victron-actions"><button class="ms-victron-console" type="button" onclick="window.msOpenVictronConsole()">Open Cerbo GX</button><button class="ms-victron-refresh" type="button" onclick="window.msRefreshVictronEnergy(true)">↻ Vernieuwen</button></div><div class="ms-victron-foot"><span>SmartShunt · Cerbo GX · SmartSolar MPPT</span><span id="msVictronUpdated">Nog geen live meting</span></div></section>'}
+function markup(){return '<section id="msVictronEnergy" class="ms-victron" aria-label="Victron energiedashboard"><div class="ms-victron-head"><div class="ms-victron-title"><span class="ms-victron-logo">V</span><h3>Victron energie<small>SERENITY · LIVE ENERGIESTROOM</small></h3></div><span id="msVictronSource" class="ms-victron-source"><i></i><b>ACCU</b></span></div><div class="ms-victron-flow"><div id="msVictronSolarNode" class="ms-victron-node ms-victron-solar"><span class="icon">☀️</span><small>ZONNEPANEEL</small><strong id="msVictronSolar">– W</strong><em>Victron SmartSolar MPPT</em><span class="ms-victron-line"></span></div><div id="msVictronBatteryNode" class="ms-victron-node ms-victron-battery"><div class="ms-victron-soc"><i id="msVictronSocFill"></i></div><small>HUISHOUDACCU\'S</small><strong id="msVictronSoc">–%</strong><em id="msVictronVoltage">– V</em></div><div id="msVictronShoreNode" class="ms-victron-node ms-victron-shore"><span class="icon">🔌</span><small>WALSTROOM / MULTIPLUS</small><strong id="msVictronCharger">– W</strong><em id="msVictronShore">status onbekend</em><span class="ms-victron-line"></span></div></div><div class="ms-victron-stats"><div class="ms-victron-stat ms-victron-charge"><small>VANAF ZON</small><strong id="msVictronSolarSource">– W</strong></div><div class="ms-victron-stat ms-victron-charge"><small>VANAF WALSTROOM</small><strong id="msVictronShoreSource">– W</strong></div><div class="ms-victron-stat ms-victron-discharge"><small id="msVictronBatteryNetLabel">HUISHOUDACCU NETTO</small><strong id="msVictronBatteryNet">– W</strong></div><div class="ms-victron-stat"><small>RESTEREND</small><strong id="msVictronTime">–</strong></div><div class="ms-victron-stat"><small>STARTACCU\'S</small><strong id="msVictronStart">– V</strong></div><div class="ms-victron-stat"><small>SALON</small><strong id="msVictronSalon">– °C</strong></div><div class="ms-victron-stat"><small>MACHINEKAMER</small><strong id="msVictronMachine">– °C</strong></div><div class="ms-victron-stat"><small>WALSPANNING</small><strong id="msVictronShoreV">– V AC</strong></div><div class="ms-victron-stat ms-victron-charge"><small>MULTIPLUS-II</small><strong id="msVictronMultiStatus">Status wordt ingelezen</strong></div><div class="ms-victron-stat"><small>AC IN · MULTIPLUS</small><strong id="msVictronMultiACIn">–</strong></div><div class="ms-victron-stat"><small>AC UIT · MULTIPLUS</small><strong id="msVictronMultiACOut">– W</strong></div><div class="ms-victron-stat"><small>DC · MULTIPLUS</small><strong id="msVictronMultiDC">–</strong></div></div><div class="ms-victron-actions"><button class="ms-victron-console" type="button" onclick="window.msOpenVictronConsole()">Open Cerbo GX</button><button class="ms-victron-refresh" type="button" onclick="window.msRefreshVictronEnergy(true)">↻ Vernieuwen</button></div><div class="ms-victron-foot"><span>SmartShunt · Cerbo GX · SmartSolar MPPT · MultiPlus-II 12/3000/120-32</span><span id="msVictronUpdated">Nog geen live meting</span></div></section>'}
 function mount(){
   const host=$('technical');
   if(!host||$('msVictronEnergy'))return;
