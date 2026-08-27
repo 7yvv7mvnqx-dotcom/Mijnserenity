@@ -3,8 +3,8 @@
   'use strict';
   if(window.__msDashboardLoader71821)return;
   window.__msDashboardLoader71821=true;
-  const V='718330';
-  const CONTROL='718330';
+  const V='718331';
+  const CONTROL='718331';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
