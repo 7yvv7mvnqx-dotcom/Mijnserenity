@@ -71,7 +71,7 @@
   to = "/index.html"
   status = 200
 
-# MijnSerenity 7.4.6 — voorkom gemengde PWA-versies
+# MijnSerenity — voorkom gemengde PWA-versies
 [[headers]]
   for = "/index.html"
   [headers.values]
@@ -84,6 +84,19 @@
 
 [[headers]]
   for = "/auth-bootstrap.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# 7.18.33 — alle root-JS/CSS komt eerst vers van Netlify; offline caching
+# blijft via de service worker beschikbaar. Dit voorkomt een mix van oude
+# 7.18.12/7.18.32 assets met de actuele build.
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/*.css"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
