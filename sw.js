@@ -1,17 +1,22 @@
-/* MijnSerenity 7.18.33 — één PWA-build, oude iOS snapshots opruimen */
-const CACHE_NAME='mijnserenity-7.18.33-single-build-fix3';
-const BUILD_TOKEN='718331';
-const MIGRATION_TOKEN='718331c';
+/* MijnSerenity 7.18.34 — voorspelbare PWA-update zonder herlaadlus */
+const CACHE_NAME='mijnserenity-7.18.34-single-build';
+const BUILD_TOKEN='718340';
 const CORE_ASSETS=[
   '/',
   '/index.html',
   '/manifest.json',
+  /* index.html gebruikt voorlopig nog deze vaste bootstrap-URL. Beide worden
+     gecachet zodat een bestaande iPhone-installatie ook offline kan starten. */
+  '/auth-bootstrap.js?v=718130',
   `/auth-bootstrap.js?v=${BUILD_TOKEN}`,
   `/app.js?v=${BUILD_TOKEN}`,
   `/waterkaarten-route-receiver-71870.js?v=${BUILD_TOKEN}`,
   `/waterkaarten-route-enrichment-71811.js?v=${BUILD_TOKEN}`,
   `/marine-map-route-fit-71812.js?v=${BUILD_TOKEN}`,
   `/professional-ui-71700.css?v=${BUILD_TOKEN}`,
+  `/page-swipe.css?v=${BUILD_TOKEN}`,
+  `/simple-accessible.css?v=${BUILD_TOKEN}`,
+  `/captain-experience.css?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71531-loader.js?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
   `/start-battery-soc-71822.js?v=${BUILD_TOKEN}`,
@@ -51,7 +56,8 @@ self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     const cache=await caches.open(CACHE_NAME);
     await Promise.all(CORE_ASSETS.map(path=>cacheCore(cache,path)));
-    await self.skipWaiting();
+    /* Niet automatisch skipWaiting. app.js toont één Bijwerken-knop en
+       activeert deze worker pas na de tik van de gebruiker. */
   })());
 });
 
@@ -64,22 +70,8 @@ self.addEventListener('activate',event=>{
         .map(key=>caches.delete(key))
     );
     await self.clients.claim();
-
-    /* Eenmalige hernavigatie voor de iPhone-fix waarbij alle dashboard-
-       ancestors weer intrinsieke hoogte en normale documentscroll krijgen. */
-    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    await Promise.all(windows.map(async client=>{
-      try{
-        const url=new URL(client.url);
-        if(url.searchParams.get('msfix')===MIGRATION_TOKEN)return;
-        url.searchParams.set('msbuild',BUILD_TOKEN);
-        url.searchParams.set('msfix',MIGRATION_TOKEN);
-        url.searchParams.delete('herstel');
-        await client.navigate(url.toString());
-      }catch(error){
-        console.warn('Oud appvenster kon niet worden vernieuwd:',error);
-      }
-    }));
+    /* Geen client.navigate() meer. Dat was de oorzaak van de iOS
+       update/herlaad/inlog-lus. */
   })());
 });
 
