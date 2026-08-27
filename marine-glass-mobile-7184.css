@@ -1,6 +1,7 @@
-/* MijnSerenity 7.18.33 — veilige mobiele cockpit-layout
-   iPhone: normale documentscroll, geen vaste dashboardhoogte en geen clipping. */
-@media (max-width: 760px){
+/* MijnSerenity 7.18.34 — veilige mobiele cockpit-layout
+   iPhone: normale documentscroll, geen vaste dashboardhoogte en geen clipping.
+   Dezelfde mobiele regels blijven actief in landscape op touch-telefoons. */
+@media (max-width: 760px), (orientation: landscape) and (max-height: 700px) and (pointer: coarse){
   html{
     width:100%!important;
     max-width:100%!important;
@@ -264,4 +265,59 @@
   body #msMarineGlass > main.mg-grid > .mg-map{height:39dvh!important;min-height:285px!important;max-height:365px!important}
   body #msMarineGlass .mg-gauge{min-height:146px!important}
   body #msMarineGlass .mg-dial{width:min(108px,78%)!important}
+}
+
+/* Liggende telefoon: gebruik de extra breedte echt. De algemene mobiele
+   regels hierboven blijven actief, maar meters mogen naast elkaar en de
+   kaart wordt lager zodat draaien direct zichtbaar en bruikbaar is. */
+@media (orientation: landscape) and (max-height: 700px) and (pointer: coarse){
+  body #msMarineGlass{
+    padding-left:max(8px,env(safe-area-inset-left))!important;
+    padding-right:max(8px,env(safe-area-inset-right))!important;
+    padding-bottom:calc(70px + env(safe-area-inset-bottom))!important;
+  }
+  body #msMarineGlass .mg-top{
+    position:relative!important;
+    height:50px!important;
+    min-height:50px!important;
+    max-height:50px!important;
+  }
+  body #msMarineGlass > main.mg-grid > .mg-map{
+    height:58dvh!important;
+    min-height:220px!important;
+    max-height:350px!important;
+  }
+  body #msMarineGlass > main.mg-grid > .mg-gauges{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+  body #msMarineGlass .mg-gauge{
+    min-height:138px!important;
+  }
+  body #msMarineGlass .mg-dial{
+    width:min(112px,76%)!important;
+  }
+  body #msMarineGlass .mg-energy-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  body #msMarineGlass .mg-battery,
+  body #msMarineGlass .mg-start,
+  body #msMarineGlass .mg-sources,
+  body #msMarineGlass .mg-flow,
+  body #msMarineGlass .mg-conv,
+  body #msMarineGlass .mg-strip{
+    grid-column:auto!important;
+  }
+  body #msMarineGlass .mg-battery{grid-column:1!important}
+  body #msMarineGlass .mg-start{grid-column:2!important}
+  body #msMarineGlass .mg-flow,
+  body #msMarineGlass .mg-strip{grid-column:1 / -1!important}
+  body .bottom-nav.ms744-compact-nav,
+  body .bottom-nav{
+    height:calc(58px + env(safe-area-inset-bottom))!important;
+    min-height:calc(58px + env(safe-area-inset-bottom))!important;
+  }
+  body .bottom-nav .bottom-nav-item{
+    min-height:48px!important;
+    max-height:48px!important;
+  }
 }
