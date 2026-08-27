@@ -1,5 +1,5 @@
 /* MijnSerenity 7.19.0 — stabiliteitsbootstrap
-   Eén dashboard, één navigatielaag, geen layout-/observerhotfixes. */
+   Eén dashboard, één navigatielaag en pagina-uitbreidingen alleen op aanvraag. */
 (()=>{
   'use strict';
   if(window.__msBootstrap71900)return;
@@ -10,12 +10,14 @@
   const VERSION='719000';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
+  const routeLoads=new Map();
 
   const SUPABASE_SOURCES=[
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
     'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'
   ];
 
+  /* Alleen modules die Start en de live boordwaarden nodig hebben. */
   const ESSENTIAL=[
     `/runtime-performance-71700.js?v=${VERSION}`,
     `/orientation-layout-71835.js?v=${VERSION}`,
@@ -23,26 +25,50 @@
     `/victron-diagnostics.js?v=${VERSION}`,
     `/ha-live-bridge.js?v=${VERSION}`,
     `/movement-presence.js?v=${VERSION}`,
-    `/technical-live-sync.js?v=${VERSION}`
+    `/technical-live-sync.js?v=${VERSION}`,
+    `/waterkaarten-route-receiver-71870.js?v=${VERSION}`
   ];
 
-  const BACKGROUND=[
-    `/waterkaarten-gpx-share-71700.js?v=${VERSION}`,
-    `/waterkaarten-route-receiver-71870.js?v=${VERSION}`,
-    `/waterkaarten-route-enrichment-71811.js?v=${VERSION}`,
-    `/marine-map-route-fit-71812.js?v=${VERSION}`,
-    `/live-split.js?v=${VERSION}`,
-    `/route-control.js?v=${VERSION}`,
-    `/logbook-route-assist-71828.js?v=${VERSION}`,
-    `/weather-page.js?v=${VERSION}`,
-    `/weather-radar.js?v=${VERSION}`,
-    `/rws-nearby.js?v=${VERSION}`,
-    `/ais-page.js?v=${VERSION}`,
-    `/entertainment-page.js?v=${VERSION}`,
-    `/live-cameras.js?v=${VERSION}`,
+  /* Alarmen mogen op de achtergrond actief zijn; overige paginafuncties niet. */
+  const SAFE_BACKGROUND=[
     `/serenity-alarm-notifications-71826.js?v=${VERSION}`,
     `/serenity-background-push-71827.js?v=${VERSION}`
   ];
+
+  const ROUTE_MODULES={
+    live:[
+      `/live-split.js?v=${VERSION}`,
+      `/live-cameras.js?v=${VERSION}`
+    ],
+    map:[
+      `/waterkaarten-gpx-share-71700.js?v=${VERSION}`,
+      `/marine-map-route-fit-71812.js?v=${VERSION}`
+    ],
+    planner:[
+      `/route-control.js?v=${VERSION}`,
+      `/waterkaarten-gpx-share-71700.js?v=${VERSION}`,
+      `/waterkaarten-route-enrichment-71811.js?v=${VERSION}`,
+      `/marine-map-route-fit-71812.js?v=${VERSION}`
+    ],
+    logbook:[
+      `/logbook-route-assist-71828.js?v=${VERSION}`
+    ],
+    weather:[
+      `/weather-page.js?v=${VERSION}`,
+      `/weather-radar.js?v=${VERSION}`,
+      `/rws-nearby.js?v=${VERSION}`
+    ],
+    rws:[
+      `/weather-page.js?v=${VERSION}`,
+      `/rws-nearby.js?v=${VERSION}`
+    ],
+    ais:[
+      `/ais-page.js?v=${VERSION}`
+    ],
+    entertainment:[
+      `/entertainment-page.js?v=${VERSION}`
+    ]
+  };
 
   function pathOf(value){
     try{return new URL(value,location.href).pathname}catch{return String(value||'')}
@@ -78,7 +104,7 @@
 
     [
       'msMobileFlowGuard71836','msOrientationLayout71835Style','msOrientationLayout71836Style',
-      'msSerenityControlCss','msMarineGlassPolish7185','mgNav718Style'
+      'msSerenityControlCss','msMarineGlassPolish7185','mgNav718Style','msMarineGlassStable71900'
     ].forEach(id=>document.getElementById(id)?.remove());
 
     document.getElementById('msSerenityControl')?.remove();
@@ -151,12 +177,51 @@
     }
   }
 
+  function normaliseRoute(route){
+    const value=String(route||'').trim().toLowerCase();
+    return value==='technical'?'technical':value;
+  }
+
+  function loadRouteModules(route){
+    const key=normaliseRoute(route);
+    const modules=ROUTE_MODULES[key];
+    if(!modules?.length)return Promise.resolve();
+    if(routeLoads.has(key))return routeLoads.get(key);
+    const task=loadQueue(modules,`Pagina ${key}`).finally(()=>routeLoads.delete(key));
+    routeLoads.set(key,task);
+    return task;
+  }
+  window.ms719LoadRouteModules=loadRouteModules;
+
+  function wrapNavigation(){
+    if(window.__ms719NavigationWrapped||typeof window.captainNavigate!=='function')return;
+    window.__ms719NavigationWrapped=true;
+    const original=window.captainNavigate;
+    window.captainNavigate=function(route,...args){
+      loadRouteModules(route).catch(error=>console.warn('Lazy paginalaad:',route,error));
+      return original.call(this,route,...args);
+    };
+  }
+
+  function installLazyRouteHooks(){
+    wrapNavigation();
+    document.addEventListener('click',event=>{
+      const node=event.target instanceof Element?event.target.closest('[data-target],[data-go]'):null;
+      const route=node?.dataset?.target||node?.dataset?.go;
+      if(route)loadRouteModules(route).catch(()=>{});
+    },{capture:true,passive:true});
+    window.addEventListener('mijnserenity:routechange',event=>{
+      const detail=event?.detail;
+      const route=typeof detail==='string'?detail:(detail?.route||detail?.id||detail?.target);
+      if(route)loadRouteModules(route).catch(()=>{});
+    },{passive:true});
+  }
+
   async function start(){
     try{
       syncBuildVersion();
       removeLegacyLayoutLayers();
       ensureCss('professional-ui-71700.css','msProfessionalUi71900');
-      /* Deze stylesheet is vanaf 7.19.0 de enige responsive shell. */
       ensureCss('marine-glass-mobile-7184.css','msStableShell71900');
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
@@ -166,16 +231,21 @@
       const button=document.getElementById('signInButton');
       if(button)button.disabled=false;
 
+      installLazyRouteHooks();
       await loadQueue(ESSENTIAL,'Kern');
+      wrapNavigation();
       removeLegacyLayoutLayers();
       syncBuildVersion();
 
       setTimeout(()=>{
-        loadQueue(BACKGROUND,'Achtergrond').then(()=>{
+        loadQueue(SAFE_BACKGROUND,'Achtergrond').then(()=>{
           syncBuildVersion();
           window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}));
         }).catch(error=>console.warn('Achtergrondmodules:',error));
-      },600);
+      },1800);
+
+      const openRoute=new URLSearchParams(location.search).get('open');
+      if(openRoute)loadRouteModules(openRoute).catch(()=>{});
 
       const target=document.getElementById('authMsg');
       if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
@@ -188,8 +258,8 @@
     }
   }
 
-  window.addEventListener('mijnserenity:dashboard-ready',()=>{removeLegacyLayoutLayers();syncBuildVersion()},{passive:true});
-  window.addEventListener('pageshow',()=>{removeLegacyLayoutLayers();syncBuildVersion()},{passive:true});
+  window.addEventListener('mijnserenity:dashboard-ready',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation()},{passive:true});
+  window.addEventListener('pageshow',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation()},{passive:true});
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
