@@ -42,7 +42,6 @@
     `entertainment-page.js?v=${VERSION}`,
     `entertainment-pro-802.js?v=715310`,
     `live-cameras.js?v=${VERSION}`,
-    `page-swipe.js?v=${VERSION}`,
     `simple-accessible.js?v=${VERSION}`,
     `device-sync-guard.js?v=${VERSION}`,
     `captain-experience.js?v=${VERSION}`,
@@ -51,6 +50,8 @@
   ];
 
   const SUPABASE_SOURCES=[
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
+    'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
     'https://unpkg.com/@supabase/supabase-js@2'
   ];
@@ -155,7 +156,7 @@
     let lastError=null;
     for(const source of SUPABASE_SOURCES){
       try{
-        await loadScript(source,15000);
+        await loadScript(source,12000);
         if(window.supabase?.createClient)return;
         throw new Error('Supabase-bibliotheek is niet gestart.');
       }catch(error){
@@ -163,6 +164,20 @@
         console.warn('Supabase-bron niet beschikbaar:',source,error);
       }
     }
+
+    /* Laatste fallback: ESM-import. Hierdoor hoeft een tijdelijke storing
+       van één UMD-CDN niet meer direct het hele inlogscherm te blokkeren. */
+    try{
+      const module=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+      if(typeof module?.createClient==='function'){
+        window.supabase={...(window.supabase||{}),createClient:module.createClient};
+        return;
+      }
+    }catch(error){
+      lastError=error;
+      console.warn('Supabase ESM-fallback niet beschikbaar:',error);
+    }
+
     throw lastError||new Error('Geen beveiligde inlogverbinding beschikbaar.');
   }
 
