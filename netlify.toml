@@ -87,6 +87,12 @@
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
+# MijnSerenity 7.18.30 — MultiPlus-II bediening altijd vers laden
+[[headers]]
+  for = "/multiplus-control-71830.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
 
 # MijnSerenity 7.4.6 — Home Assistant en livecamera-assets
 [[headers]]
