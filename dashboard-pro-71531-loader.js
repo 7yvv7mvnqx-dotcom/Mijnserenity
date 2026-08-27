@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.34 — stabiele dashboardloader + één iOS assetset */
+/* MijnSerenity 7.18.34 — stabiele dashboardloader + portrait/landscape refresh */
 (()=>{
   'use strict';
   if(window.__msDashboardLoader71821)return;
   window.__msDashboardLoader71821=true;
-  const V='718340';
+  const V='718341';
   const CONTROL='718340';
 
   function load(src,key){
@@ -44,14 +44,46 @@
     if(badge&&badge.textContent!==build)badge.textContent=build;
   }
 
+  function syncOrientation(){
+    const vv=window.visualViewport;
+    const width=Math.round(vv?.width||window.innerWidth||document.documentElement.clientWidth||0);
+    const height=Math.round(vv?.height||window.innerHeight||document.documentElement.clientHeight||0);
+    const orientation=width>height?'landscape':'portrait';
+    document.documentElement.dataset.msOrientation=orientation;
+    document.body?.setAttribute('data-ms-orientation',orientation);
+    document.documentElement.style.setProperty('--ms-viewport-width',`${width}px`);
+    document.documentElement.style.setProperty('--ms-viewport-height',`${height}px`);
+    window.dispatchEvent(new CustomEvent('mijnserenity:orientationchange',{
+      detail:{orientation,width,height}
+    }));
+  }
+
+  function installOrientationRefresh(){
+    let timer=0;
+    const refresh=()=>{
+      clearTimeout(timer);
+      syncOrientation();
+      timer=setTimeout(()=>{
+        syncOrientation();
+        /* Leaflet en andere responsive onderdelen luisteren naar resize. Na
+           iOS-rotatie is de visualViewport pas iets later definitief. */
+        window.dispatchEvent(new Event('mijnserenity:viewportsettled'));
+      },260);
+    };
+    syncOrientation();
+    window.addEventListener('orientationchange',refresh,{passive:true});
+    window.visualViewport?.addEventListener('resize',refresh,{passive:true});
+    window.addEventListener('pageshow',refresh,{passive:true});
+  }
+
   async function start(){
     document.getElementById('mgNav718Style')?.remove();
     document.getElementById('mgMoreNav')?.remove();
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
     document.getElementById('msMarineGlassMobile7182')?.remove();
 
-    /* Alle mobiele CSS krijgt exact hetzelfde buildtoken. Daardoor kan iOS
-       geen oude en nieuwe layout meer combineren. */
+    /* Mobiele CSS krijgt een apart token zodat iOS de landscape-fix meteen
+       ophaalt en geen oudere 760px-only stylesheet kan blijven gebruiken. */
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
     loadCss(`/serenity-control-dashboard.css?v=${CONTROL}`,'msSerenityControlCss');
@@ -64,6 +96,8 @@
     }else{
       document.getElementById('msAiDestinationCss').href=`/ai-destination-search.css?v=${V}`;
     }
+
+    installOrientationRefresh();
 
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     syncVersion();
@@ -84,6 +118,7 @@
     if('requestIdleCallback' in window)requestIdleCallback(loadDestination,{timeout:800});
     else setTimeout(loadDestination,120);
 
+    syncOrientation();
     syncVersion();
     setTimeout(syncVersion,250);
     setTimeout(syncVersion,1000);
