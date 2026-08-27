@@ -1,10 +1,10 @@
-/* MijnSerenity 7.18.33 — stabiele dashboardloader + één iOS assetset */
+/* MijnSerenity 7.18.34 — stabiele dashboardloader + één iOS assetset */
 (()=>{
   'use strict';
   if(window.__msDashboardLoader71821)return;
   window.__msDashboardLoader71821=true;
-  const V='718331';
-  const CONTROL='718331';
+  const V='718340';
+  const CONTROL='718340';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -39,7 +39,7 @@
 
   function syncVersion(){
     try{window.msSyncBuildVersion?.()}catch{}
-    const build=window.MIJSERENITY_BUILD||'7.18.33';
+    const build=window.MIJSERENITY_BUILD||'7.18.34';
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(badge&&badge.textContent!==build)badge.textContent=build;
   }
@@ -88,7 +88,7 @@
     setTimeout(syncVersion,250);
     setTimeout(syncVersion,1000);
     window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{
-      detail:{build:window.MIJSERENITY_BUILD||'7.18.33'}
+      detail:{build:window.MIJSERENITY_BUILD||'7.18.34'}
     }));
   }
 
