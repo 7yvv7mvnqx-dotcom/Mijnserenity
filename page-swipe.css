@@ -1,119 +1,87 @@
-
-/* =========================================================
-   MijnSerenity Cloud 7.4.8 — native iPhone/iPad paginavegen
-   ========================================================= */
+/* MijnSerenity 7.18.33 — veilige iPhone/iPad pagina-layout
+   De oude native pager zette body/main op overflow:hidden en gaf pagina's
+   height:100%. Daardoor kon het dashboard halverwege afbreken en bleef er
+   onder Energie & Stroom een groot leeg vlak staan. Deze compatibiliteits-
+   stylesheet houdt bestaande classnamen bruikbaar, maar gebruikt weer
+   normale documentscroll. */
 
 html,
 body{
   overflow-x:hidden;
+  overflow-y:auto;
+  min-height:100%;
 }
 
 body.ms708-native-pages-active{
-  overflow:hidden !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  height:auto !important;
+  min-height:100% !important;
 }
 
+body.ms708-native-pages-active main,
+body.ms708-native-pages-active #appView,
 #appView{
+  overflow:visible !important;
+  height:auto !important;
   min-height:0;
+  max-height:none !important;
 }
 
 .ms708-native-pager{
   position:relative;
-  display:flex;
+  display:block !important;
   width:100%;
   min-width:0;
   max-width:100%;
-  min-height:260px;
-  overflow-x:auto;
-  overflow-y:hidden;
-  scroll-snap-type:x mandatory;
-  scroll-behavior:smooth;
-  overscroll-behavior-x:contain;
-  overscroll-behavior-y:none;
-  -webkit-overflow-scrolling:touch;
-  touch-action:pan-x pan-y pinch-zoom;
-  scrollbar-width:none;
+  height:auto !important;
+  min-height:0;
+  max-height:none !important;
+  overflow:visible !important;
+  scroll-snap-type:none !important;
+  scroll-behavior:auto !important;
+  overscroll-behavior:auto;
+  -webkit-overflow-scrolling:auto;
+  touch-action:auto;
   background:transparent;
-}
-
-.ms708-native-pager::-webkit-scrollbar{
-  display:none;
-  width:0;
-  height:0;
 }
 
 .ms708-native-pager > .ms708-native-page{
   position:relative;
-  flex:0 0 100%;
-  width:100%;
-  min-width:100%;
-  max-width:100%;
-  height:100%;
-  min-height:0;
-  max-height:100%;
+  display:none !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
   margin:0;
-  padding:
-    0 1px
-    calc(
-      var(--nav-height,92px) +
-      env(safe-area-inset-bottom) +
-      18px
-    );
-  overflow-x:hidden;
-  overflow-y:auto;
-  scroll-snap-align:start;
-  scroll-snap-stop:always;
-  overscroll-behavior-y:contain;
-  -webkit-overflow-scrolling:touch;
-  touch-action:pan-x pan-y pinch-zoom;
-  transform:translateZ(0);
-  backface-visibility:hidden;
+  padding:0 1px calc(var(--nav-height,92px) + env(safe-area-inset-bottom) + 18px);
+  overflow:visible !important;
+  scroll-snap-align:none !important;
+  transform:none !important;
+  backface-visibility:visible;
+  touch-action:auto;
 }
 
-.ms708-native-pager > .ms708-native-page.hidden{
+.ms708-native-pager > .ms708-native-page.ms755-route-active{
   display:block !important;
 }
 
-.ms708-native-pager > .ms708-native-page::after{
-  content:'';
-  display:block;
-  height:8px;
+/* Als een oude snapshot nog geen actieve routeclass heeft, toon dashboard
+   in plaats van een leeg vlak. */
+.ms708-native-pager > #dashboard:not(.ms755-route-active){
+  display:block !important;
 }
 
-body.ms708-native-pages-active main{
-  overflow:hidden;
+body.ms708-native-pages-active .bottom-nav{
+  transform:translateZ(0) !important;
 }
 
-body.ms708-native-pages-active #appView{
-  overflow:hidden;
-}
-
-/* Kaarten en camerabeeld houden hun eigen aanrakingen. */
 .ms708-native-page .leaflet-container,
 .ms708-native-page .live-radar-camera-viewport,
 .ms708-native-page input,
 .ms708-native-page textarea,
 .ms708-native-page select{
   touch-action:manipulation;
-}
-
-/* De navigatie blijft tijdens native vegen vast en helder. */
-body.ms708-native-pages-active .bottom-nav{
-  transform:translateZ(0) !important;
-  contain:layout paint;
-}
-
-.ms706-swipe-hint strong{
-  max-width:min(72vw,330px);
-}
-
-@media(min-width:761px){
-  .ms708-native-pager{
-    scroll-padding-inline:0;
-  }
-}
-
-@media(prefers-reduced-motion:reduce){
-  .ms708-native-pager{
-    scroll-behavior:auto;
-  }
 }
