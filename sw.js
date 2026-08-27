@@ -1,6 +1,7 @@
 /* MijnSerenity 7.18.33 — één PWA-build, oude iOS snapshots opruimen */
-const CACHE_NAME='mijnserenity-7.18.33-single-build';
+const CACHE_NAME='mijnserenity-7.18.33-single-build-fix2';
 const BUILD_TOKEN='718330';
+const MIGRATION_TOKEN='718330b';
 const CORE_ASSETS=[
   '/',
   '/index.html',
@@ -64,16 +65,15 @@ self.addEventListener('activate',event=>{
     );
     await self.clients.claim();
 
-    /* Oude MijnSerenity-versies (o.a. 7.18.12 en de oude 7.18.32)
-       konden door iOS als een hervat PWA-snapshot blijven bestaan.
-       Navigeer elk bestaand appvenster één keer naar dezelfde pagina met
-       dit buildtoken. Daardoor wordt die DOM/snapshot echt vervangen. */
+    /* Eenmalig opnieuw navigeren na de fix van twee modules die 7.18.12
+       terugschreven en van de oude pager die het dashboard afkapte. */
     const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     await Promise.all(windows.map(async client=>{
       try{
         const url=new URL(client.url);
-        if(url.searchParams.get('msbuild')===BUILD_TOKEN)return;
+        if(url.searchParams.get('msfix')===MIGRATION_TOKEN)return;
         url.searchParams.set('msbuild',BUILD_TOKEN);
+        url.searchParams.set('msfix',MIGRATION_TOKEN);
         url.searchParams.delete('herstel');
         await client.navigate(url.toString());
       }catch(error){
