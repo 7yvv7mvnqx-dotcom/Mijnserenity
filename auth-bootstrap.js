@@ -3,7 +3,7 @@
   'use strict';
   window.__msDisableLegacyVisuals=true;
   const BUILD='7.18.33';
-  const VERSION='718330';
+  const VERSION='718331';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
@@ -185,7 +185,7 @@
     if(!('serviceWorker' in navigator))return null;
     if(location.protocol!=='https:'&&location.hostname!=='localhost')return null;
     try{
-      const registration=await navigator.serviceWorker.register('/sw.js?v=71100',{scope:'/',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register(`/sw.js?v=${VERSION}`,{scope:'/',updateViaCache:'none'});
       registration.update().catch(()=>{});
       return registration;
     }catch(error){
