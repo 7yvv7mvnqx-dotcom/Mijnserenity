@@ -1,29 +1,29 @@
-/* MijnSerenity 7.18.30 — snelle, gefaseerde bootstrap */
+/* MijnSerenity 7.18.31 — stabiele, gefaseerde bootstrap */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.30';
-  const VERSION='718300';
+  const BUILD='7.18.31';
+  const VERSION='718310';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
-    `waterkaarten-gpx-share-71700.js?v=${VERSION}`,
-    `waterkaarten-route-receiver-71870.js?v=${VERSION}`,
-    `waterkaarten-route-enrichment-71811.js?v=${VERSION}`,
-    `marine-map-route-fit-71812.js?v=${VERSION}`,
     `dashboard-pro-71531-loader.js?v=${VERSION}`,
-    `easy-auto.js?v=${VERSION}`,
-    `auto-track-reliability.js?v=${VERSION}`,
-    `gps-continuity-guard.js?v=${VERSION}`,
+    `multiplus-control-71830.js?v=${VERSION}`,
+    `victron-diagnostics.js?v=${VERSION}`,
     `ha-live-bridge.js?v=${VERSION}`,
     `ruuvi-climate.js?v=${VERSION}`,
     `movement-presence.js?v=${VERSION}`,
     `technical-live-sync.js?v=${VERSION}`,
+    `waterkaarten-gpx-share-71700.js?v=${VERSION}`,
+    `waterkaarten-route-receiver-71870.js?v=${VERSION}`,
+    `waterkaarten-route-enrichment-71811.js?v=${VERSION}`,
+    `marine-map-route-fit-71812.js?v=${VERSION}`,
+    `easy-auto.js?v=${VERSION}`,
+    `auto-track-reliability.js?v=${VERSION}`,
+    `gps-continuity-guard.js?v=${VERSION}`,
     `serenity-alarm-notifications-71826.js?v=${VERSION}`,
     `serenity-background-push-71827.js?v=${VERSION}`,
-    `victron-diagnostics.js?v=${VERSION}`,
-    `multiplus-control-71830.js?v=${VERSION}`,
     `navigation-compact.js?v=${VERSION}`,
     `serenity-ivms.js?v=${VERSION}`
   ];
@@ -63,7 +63,19 @@
     if(version)version.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
     const cockpitBadge=document.querySelector('#msMarineGlass .mg-brand sup');
-    if(cockpitBadge)cockpitBadge.textContent=BUILD;
+    if(cockpitBadge&&cockpitBadge.textContent!==BUILD)cockpitBadge.textContent=BUILD;
+  }
+
+  function guardBuildVersion(){
+    let ticks=0;
+    syncBuildVersion();
+    const timer=setInterval(()=>{
+      syncBuildVersion();
+      ticks++;
+      if(ticks>=80)clearInterval(timer);
+    },250);
+    window.addEventListener('mijnserenity:dashboard-ready',syncBuildVersion,{passive:true});
+    window.addEventListener('mijnserenity:modules-ready',syncBuildVersion,{passive:true});
   }
 
   function setAuthStatus(message,isError=false){
@@ -154,7 +166,10 @@
     if(!('serviceWorker' in navigator))return null;
     if(location.protocol!=='https:'&&location.hostname!=='localhost')return null;
     try{
-      const registration=await navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'});
+      /* Gebruik exact dezelfde script-URL als app.js. Twee verschillende
+         service-worker-URL's op dezelfde scope veroorzaakten op iOS extra
+         activaties/herladingen en konden kort het inlogscherm terugbrengen. */
+      const registration=await navigator.serviceWorker.register('/sw.js?v=71100',{scope:'/',updateViaCache:'none'});
       registration.update().catch(()=>{});
       return registration;
     }catch(error){console.warn('Service worker kon niet worden geregistreerd:',error);return null}
@@ -162,8 +177,8 @@
 
   function idle(){
     return new Promise(resolve=>{
-      if('requestIdleCallback' in window)requestIdleCallback(()=>resolve(),{timeout:500});
-      else setTimeout(resolve,35);
+      if('requestIdleCallback' in window)requestIdleCallback(()=>resolve(),{timeout:350});
+      else setTimeout(resolve,20);
     });
   }
 
@@ -171,6 +186,7 @@
     for(const src of modules){
       await idle();
       try{await loadScript(src,20000)}catch(error){console.warn(`${label} module overgeslagen:`,src,error)}
+      syncBuildVersion();
     }
   }
 
@@ -186,6 +202,7 @@
   async function start(){
     try{
       ensureProfessionalUi();
+      guardBuildVersion();
       addPreconnect('https://cdn.jsdelivr.net');
       addPreconnect('https://unpkg.com');
       syncBuildVersion();
@@ -199,7 +216,7 @@
       if(button)button.disabled=false;
       const target=document.getElementById('authMsg');
       if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
-      setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),40);
+      setTimeout(()=>loadBackgroundModules().catch(error=>console.warn('Achtergrondladen:',error)),20);
       console.info(`MijnSerenity ${BUILD}: kern gestart.`);
     }catch(error){
       console.error('MijnSerenity kon niet starten:',error);
