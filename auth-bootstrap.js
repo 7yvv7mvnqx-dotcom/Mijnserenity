@@ -1,13 +1,14 @@
-/* MijnSerenity 7.18.34 — één bootstrap, één service-worker eigenaar */
+/* MijnSerenity 7.18.36 — één bootstrap, één service-worker eigenaar */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.34';
-  const VERSION='718340';
+  const BUILD='7.18.36';
+  const VERSION='718360';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
     `runtime-performance-71700.js?v=${VERSION}`,
+    `orientation-layout-71835.js?v=${VERSION}`,
     `dashboard-pro-71531-loader.js?v=${VERSION}`,
     `multiplus-control-71830.js?v=${VERSION}`,
     `victron-diagnostics.js?v=${VERSION}`,
@@ -106,19 +107,19 @@
   function ensureProfessionalUi(){
     document.getElementById('msProfessionalUi717')?.remove();
     ensureCss('professional-ui-71700.css','msProfessionalUi718');
-    ensureCss('page-swipe.css','msPageSwipe71834');
-    ensureCss('simple-accessible.css','msSimpleAccessible71834');
-    ensureCss('captain-experience.css','msCaptainExperience71834');
+    ensureCss('page-swipe.css','msPageSwipe71836');
+    ensureCss('simple-accessible.css','msSimpleAccessible71836');
+    ensureCss('captain-experience.css','msCaptainExperience71836');
     ensureCss('ai-destination-search.css','msAiDestinationStyle71814');
     document.querySelectorAll('link[href*="waterkaarten-split-launch.css"]').forEach(link=>link.remove());
   }
 
   function ensureMobileFlowGuard(){
-    document.getElementById('msMobileFlowGuard71834')?.remove();
+    document.getElementById('msMobileFlowGuard71836')?.remove();
     const style=document.createElement('style');
-    style.id='msMobileFlowGuard71834';
+    style.id='msMobileFlowGuard71836';
     style.textContent=`
-@media (max-width:760px){
+@media (max-width:760px), (orientation:landscape) and (max-height:700px) and (pointer:coarse){
   html,body{
     min-height:100%!important;
     height:auto!important;
@@ -280,9 +281,7 @@
       syncBuildVersion();
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
-      /* De service worker wordt bewust alleen door app.js geregistreerd.
-         Twee registraties met verschillende script-URL's veroorzaakten op
-         iOS de Bijwerken -> herladen -> opnieuw Bijwerken-lus. */
+      /* De service worker wordt bewust alleen door app.js geregistreerd. */
       await ensureSupabase();
       await loadScript(CORE_SCRIPT,25000);
       syncBuildVersion();
