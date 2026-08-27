@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.34 — stabiele dashboardloader + portrait/landscape refresh */
+/* MijnSerenity 7.18.35 — stabiele dashboardloader + echte iOS landscape-breedte */
 (()=>{
   'use strict';
   if(window.__msDashboardLoader71821)return;
   window.__msDashboardLoader71821=true;
-  const V='718341';
+  const V='718342';
   const CONTROL='718340';
 
   function load(src,key){
@@ -39,7 +39,7 @@
 
   function syncVersion(){
     try{window.msSyncBuildVersion?.()}catch{}
-    const build=window.MIJSERENITY_BUILD||'7.18.34';
+    const build=window.MIJSERENITY_BUILD||'7.18.35';
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(badge&&badge.textContent!==build)badge.textContent=build;
   }
@@ -65,8 +65,6 @@
       syncOrientation();
       timer=setTimeout(()=>{
         syncOrientation();
-        /* Leaflet en andere responsive onderdelen luisteren naar resize. Na
-           iOS-rotatie is de visualViewport pas iets later definitief. */
         window.dispatchEvent(new Event('mijnserenity:viewportsettled'));
       },260);
     };
@@ -82,8 +80,6 @@
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav');
     document.getElementById('msMarineGlassMobile7182')?.remove();
 
-    /* Mobiele CSS krijgt een apart token zodat iOS de landscape-fix meteen
-       ophaalt en geen oudere 760px-only stylesheet kan blijven gebruiken. */
     loadCss(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassMobile7184');
     loadCss(`/marine-glass-polish-7185.css?v=${V}`,'msMarineGlassPolish7185');
     loadCss(`/serenity-control-dashboard.css?v=${CONTROL}`,'msSerenityControlCss');
@@ -98,6 +94,10 @@
     }
 
     installOrientationRefresh();
+    /* Deze module gebruikt in standalone iOS zo nodig de lange/korte zijde
+       van screen als fallback. Daardoor kan een oude portrait CSS-viewport
+       de breedte na rotatie niet meer vasthouden. */
+    await load(`/orientation-layout-71835.js?v=${V}`,'orientation-layout');
 
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     syncVersion();
@@ -123,7 +123,7 @@
     setTimeout(syncVersion,250);
     setTimeout(syncVersion,1000);
     window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{
-      detail:{build:window.MIJSERENITY_BUILD||'7.18.34'}
+      detail:{build:window.MIJSERENITY_BUILD||'7.18.35'}
     }));
   }
 
