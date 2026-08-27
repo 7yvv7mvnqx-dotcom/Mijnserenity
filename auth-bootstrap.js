@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.33 — stabiele, gefaseerde bootstrap */
+/* MijnSerenity 7.18.34 — één bootstrap, één service-worker eigenaar */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.33';
-  const VERSION='718331';
+  const BUILD='7.18.34';
+  const VERSION='718340';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
@@ -87,24 +87,89 @@
     target.classList.toggle('error',Boolean(isError));
   }
 
+  function ensureCss(path,id){
+    const href=`/${path}?v=${VERSION}`;
+    const wanted=new URL(href,location.href).pathname;
+    let link=document.getElementById(id)||[...document.querySelectorAll('link[rel="stylesheet"]')].find(item=>{
+      try{return new URL(item.href,location.href).pathname===wanted}catch{return false}
+    });
+    if(!link){
+      link=document.createElement('link');
+      link.rel='stylesheet';
+      document.head.appendChild(link);
+    }
+    link.id=id;
+    if(link.getAttribute('href')!==href)link.setAttribute('href',href);
+    return link;
+  }
+
   function ensureProfessionalUi(){
-    if(!document.getElementById('msProfessionalUi718')){
-      const old=document.getElementById('msProfessionalUi717');
-      if(old)old.remove();
-      const link=document.createElement('link');
-      link.id='msProfessionalUi718';
-      link.rel='stylesheet';
-      link.href=`/professional-ui-71700.css?v=${VERSION}`;
-      document.head.appendChild(link);
-    }
-    if(!document.getElementById('msAiDestinationStyle71814')){
-      const link=document.createElement('link');
-      link.id='msAiDestinationStyle71814';
-      link.rel='stylesheet';
-      link.href=`/ai-destination-search.css?v=${VERSION}`;
-      document.head.appendChild(link);
-    }
+    document.getElementById('msProfessionalUi717')?.remove();
+    ensureCss('professional-ui-71700.css','msProfessionalUi718');
+    ensureCss('page-swipe.css','msPageSwipe71834');
+    ensureCss('simple-accessible.css','msSimpleAccessible71834');
+    ensureCss('captain-experience.css','msCaptainExperience71834');
+    ensureCss('ai-destination-search.css','msAiDestinationStyle71814');
     document.querySelectorAll('link[href*="waterkaarten-split-launch.css"]').forEach(link=>link.remove());
+  }
+
+  function ensureMobileFlowGuard(){
+    document.getElementById('msMobileFlowGuard71834')?.remove();
+    const style=document.createElement('style');
+    style.id='msMobileFlowGuard71834';
+    style.textContent=`
+@media (max-width:760px){
+  html,body{
+    min-height:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+  }
+  body>main,
+  body #appView,
+  body .ms708-native-pager,
+  body .ms708-native-pager>.ms708-native-page,
+  body #dashboard,
+  body #dashboard.mg-active,
+  body #msMarineGlass,
+  body #msMarineGlass>main.mg-grid{
+    height:auto!important;
+    max-height:none!important;
+    overflow-y:visible!important;
+  }
+  body>main,
+  body #appView,
+  body #dashboard,
+  body #dashboard.mg-active,
+  body #msMarineGlass{
+    position:relative!important;
+    top:auto!important;
+    bottom:auto!important;
+    transform:none!important;
+  }
+  body #msMarineGlass>main.mg-grid{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    width:100%!important;
+    min-height:0!important;
+    grid-template-columns:none!important;
+    grid-template-rows:none!important;
+    grid-auto-rows:auto!important;
+    overflow:visible!important;
+  }
+  body #msMarineGlass>main.mg-grid>.mg-card{
+    flex:0 0 auto!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    max-height:none!important;
+  }
+}`;
+    document.head.appendChild(style);
   }
 
   function addPreconnect(href){
@@ -165,8 +230,6 @@
       }
     }
 
-    /* Laatste fallback: ESM-import. Hierdoor hoeft een tijdelijke storing
-       van één UMD-CDN niet meer direct het hele inlogscherm te blokkeren. */
     try{
       const module=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
       if(typeof module?.createClient==='function'){
@@ -179,19 +242,6 @@
     }
 
     throw lastError||new Error('Geen beveiligde inlogverbinding beschikbaar.');
-  }
-
-  async function ensureServiceWorker(){
-    if(!('serviceWorker' in navigator))return null;
-    if(location.protocol!=='https:'&&location.hostname!=='localhost')return null;
-    try{
-      const registration=await navigator.serviceWorker.register(`/sw.js?v=${VERSION}`,{scope:'/',updateViaCache:'none'});
-      registration.update().catch(()=>{});
-      return registration;
-    }catch(error){
-      console.warn('Service worker kon niet worden geregistreerd:',error);
-      return null;
-    }
   }
 
   function idle(){
@@ -211,8 +261,10 @@
 
   async function loadBackgroundModules(){
     await loadModuleQueue(EARLY_MODULES,'Vroege');
+    ensureMobileFlowGuard();
     await idle();
     await loadModuleQueue(LATE_MODULES,'Achtergrond');
+    ensureMobileFlowGuard();
     syncBuildVersion();
     window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}));
     console.info(`MijnSerenity ${BUILD}: achtergrondmodules gereed.`);
@@ -221,12 +273,16 @@
   async function start(){
     try{
       ensureProfessionalUi();
+      ensureMobileFlowGuard();
       guardBuildVersion();
       addPreconnect('https://cdn.jsdelivr.net');
       addPreconnect('https://unpkg.com');
       syncBuildVersion();
       setAuthStatus('Beveiligde inlog wordt geladen…');
-      ensureServiceWorker();
+
+      /* De service worker wordt bewust alleen door app.js geregistreerd.
+         Twee registraties met verschillende script-URL's veroorzaakten op
+         iOS de Bijwerken -> herladen -> opnieuw Bijwerken-lus. */
       await ensureSupabase();
       await loadScript(CORE_SCRIPT,25000);
       syncBuildVersion();
