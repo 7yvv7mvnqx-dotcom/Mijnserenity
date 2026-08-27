@@ -1,9 +1,9 @@
-/* MijnSerenity 7.18.31 — stabiele, gefaseerde bootstrap */
+/* MijnSerenity 7.18.33 — stabiele, gefaseerde bootstrap */
 (()=>{
   'use strict';
   window.__msDisableLegacyVisuals=true;
-  const BUILD='7.18.31';
-  const VERSION='718310';
+  const BUILD='7.18.33';
+  const VERSION='718330';
   const CORE_SCRIPT=`app.js?v=${VERSION}`;
 
   const EARLY_MODULES=[
@@ -72,10 +72,11 @@
     const timer=setInterval(()=>{
       syncBuildVersion();
       ticks++;
-      if(ticks>=80)clearInterval(timer);
+      if(ticks>=120)clearInterval(timer);
     },250);
     window.addEventListener('mijnserenity:dashboard-ready',syncBuildVersion,{passive:true});
     window.addEventListener('mijnserenity:modules-ready',syncBuildVersion,{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncBuildVersion()},{passive:true});
   }
 
   function setAuthStatus(message,isError=false){
@@ -157,7 +158,10 @@
         await loadScript(source,15000);
         if(window.supabase?.createClient)return;
         throw new Error('Supabase-bibliotheek is niet gestart.');
-      }catch(error){lastError=error;console.warn('Supabase-bron niet beschikbaar:',source,error)}
+      }catch(error){
+        lastError=error;
+        console.warn('Supabase-bron niet beschikbaar:',source,error);
+      }
     }
     throw lastError||new Error('Geen beveiligde inlogverbinding beschikbaar.');
   }
@@ -166,13 +170,13 @@
     if(!('serviceWorker' in navigator))return null;
     if(location.protocol!=='https:'&&location.hostname!=='localhost')return null;
     try{
-      /* Gebruik exact dezelfde script-URL als app.js. Twee verschillende
-         service-worker-URL's op dezelfde scope veroorzaakten op iOS extra
-         activaties/herladingen en konden kort het inlogscherm terugbrengen. */
       const registration=await navigator.serviceWorker.register('/sw.js?v=71100',{scope:'/',updateViaCache:'none'});
       registration.update().catch(()=>{});
       return registration;
-    }catch(error){console.warn('Service worker kon niet worden geregistreerd:',error);return null}
+    }catch(error){
+      console.warn('Service worker kon niet worden geregistreerd:',error);
+      return null;
+    }
   }
 
   function idle(){
