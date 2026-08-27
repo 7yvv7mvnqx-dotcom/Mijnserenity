@@ -1,7 +1,7 @@
 /* MijnSerenity 7.18.33 — één PWA-build, oude iOS snapshots opruimen */
-const CACHE_NAME='mijnserenity-7.18.33-single-build-fix2';
-const BUILD_TOKEN='718330';
-const MIGRATION_TOKEN='718330b';
+const CACHE_NAME='mijnserenity-7.18.33-single-build-fix3';
+const BUILD_TOKEN='718331';
+const MIGRATION_TOKEN='718331c';
 const CORE_ASSETS=[
   '/',
   '/index.html',
@@ -65,8 +65,8 @@ self.addEventListener('activate',event=>{
     );
     await self.clients.claim();
 
-    /* Eenmalig opnieuw navigeren na de fix van twee modules die 7.18.12
-       terugschreven en van de oude pager die het dashboard afkapte. */
+    /* Eenmalige hernavigatie voor de iPhone-fix waarbij alle dashboard-
+       ancestors weer intrinsieke hoogte en normale documentscroll krijgen. */
     const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     await Promise.all(windows.map(async client=>{
       try{
