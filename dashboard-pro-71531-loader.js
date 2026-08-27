@@ -1,10 +1,10 @@
-/* MijnSerenity 7.18.35 — stabiele dashboardloader + echte iOS landscape-breedte */
+/* MijnSerenity 7.18.36 — stabiele dashboardloader + echte iOS landscape-breedte */
 (()=>{
   'use strict';
   if(window.__msDashboardLoader71821)return;
   window.__msDashboardLoader71821=true;
-  const V='718342';
-  const CONTROL='718340';
+  const V='718360';
+  const CONTROL='718360';
 
   function load(src,key){
     const wanted=new URL(src,location.href).pathname;
@@ -39,16 +39,18 @@
 
   function syncVersion(){
     try{window.msSyncBuildVersion?.()}catch{}
-    const build=window.MIJSERENITY_BUILD||'7.18.35';
+    const build=window.MIJSERENITY_BUILD||'7.18.36';
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(badge&&badge.textContent!==build)badge.textContent=build;
   }
 
   function syncOrientation(){
+    const legacy=typeof window.orientation==='number'?((window.orientation%360)+360)%360:null;
+    const physicalLandscape=legacy===90||legacy===270;
     const vv=window.visualViewport;
     const width=Math.round(vv?.width||window.innerWidth||document.documentElement.clientWidth||0);
     const height=Math.round(vv?.height||window.innerHeight||document.documentElement.clientHeight||0);
-    const orientation=width>height?'landscape':'portrait';
+    const orientation=physicalLandscape||width>height?'landscape':'portrait';
     document.documentElement.dataset.msOrientation=orientation;
     document.body?.setAttribute('data-ms-orientation',orientation);
     document.documentElement.style.setProperty('--ms-viewport-width',`${width}px`);
@@ -94,9 +96,6 @@
     }
 
     installOrientationRefresh();
-    /* Deze module gebruikt in standalone iOS zo nodig de lange/korte zijde
-       van screen als fallback. Daardoor kan een oude portrait CSS-viewport
-       de breedte na rotatie niet meer vasthouden. */
     await load(`/orientation-layout-71835.js?v=${V}`,'orientation-layout');
 
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
@@ -123,7 +122,7 @@
     setTimeout(syncVersion,250);
     setTimeout(syncVersion,1000);
     window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{
-      detail:{build:window.MIJSERENITY_BUILD||'7.18.35'}
+      detail:{build:window.MIJSERENITY_BUILD||'7.18.36'}
     }));
   }
 
