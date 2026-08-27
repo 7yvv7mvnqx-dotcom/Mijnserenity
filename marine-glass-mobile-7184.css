@@ -1,61 +1,122 @@
-/* MijnSerenity 7.18.4 — veilige mobiele cockpit-layout
-   Alleen layout: geen navigatie/data/logica. */
+/* MijnSerenity 7.18.33 — veilige mobiele cockpit-layout
+   iPhone: normale documentscroll, geen vaste dashboardhoogte en geen clipping. */
 @media (max-width: 760px){
-  html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important}
+  html{
+    width:100%!important;
+    max-width:100%!important;
+    min-height:100%!important;
+    height:auto!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+  }
+  body{
+    width:100%!important;
+    max-width:100%!important;
+    min-height:100%!important;
+    height:auto!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+  }
 
-  /* De oude simple-ui regel richt zich op ALLE main-elementen. Neutraliseer die
-     voor de outer app-shell en de nieuwe Marine Glass grid. */
+  /* Oude simple/captain/native styles gaven main, appView of dashboard een
+     viewporthoogte en overflow:hidden. Dat knipte de cockpit midden in
+     Energie & Stroom af. Deze keten moet op iPhone altijd meegroeien. */
   body.ms750-simple-ui > main,
   body.ms760-captain-experience > main,
+  body.ms708-native-pages-active > main,
+  body > main,
+  body #appView,
+  body #dashboard,
+  body #dashboard.mg-active,
+  body #msMarineGlass,
+  body #msMarineGlass > main.mg-grid{
+    max-height:none!important;
+    height:auto!important;
+    overflow-y:visible!important;
+  }
+
+  body.ms750-simple-ui > main,
+  body.ms760-captain-experience > main,
+  body.ms708-native-pages-active > main,
   body > main{
     width:100%!important;
     max-width:none!important;
+    min-height:0!important;
     margin:0!important;
     padding:0!important;
+    position:relative!important;
+    top:auto!important;
+    bottom:auto!important;
+    transform:none!important;
+    overflow-x:hidden!important;
   }
 
   body #appView{
     width:100%!important;
     max-width:none!important;
+    min-height:0!important;
     margin:0!important;
     padding:0 0 calc(76px + env(safe-area-inset-bottom))!important;
     position:relative!important;
+    inset:auto!important;
     top:auto!important;
+    bottom:auto!important;
     transform:none!important;
+    overflow-x:hidden!important;
   }
 
   body #dashboard,
   body #dashboard.mg-active{
+    display:block!important;
     width:100%!important;
     max-width:none!important;
+    min-height:0!important;
     margin:0!important;
     padding:0!important;
     position:relative!important;
+    inset:auto!important;
     top:auto!important;
+    bottom:auto!important;
     transform:none!important;
+    overflow-x:hidden!important;
   }
 
   body #msMarineGlass{
+    display:block!important;
     width:100%!important;
     max-width:none!important;
     min-height:100dvh!important;
     margin:0!important;
     padding:0 7px calc(86px + env(safe-area-inset-bottom))!important;
     position:relative!important;
+    inset:auto!important;
     top:auto!important;
+    bottom:auto!important;
     transform:none!important;
+    overflow-x:hidden!important;
   }
 
+  /* Op telefoon gebruiken we bewust een eenvoudige verticale flex-kolom.
+     Daarmee kunnen oude grid-row/implicit-row regels de onderste kaarten
+     niet meer buiten een vaste gridhoogte plaatsen. */
   body.ms750-simple-ui #msMarineGlass > main.mg-grid,
   body.ms760-captain-experience #msMarineGlass > main.mg-grid,
+  body.ms708-native-pages-active #msMarineGlass > main.mg-grid,
   body #msMarineGlass > main.mg-grid{
     width:100%!important;
     max-width:none!important;
+    min-height:0!important;
     margin:0!important;
     padding:7px 0 0!important;
-    display:grid!important;
-    grid-template-columns:minmax(0,1fr)!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
     gap:8px!important;
+    grid-template-columns:none!important;
+    grid-template-rows:none!important;
+    grid-auto-rows:auto!important;
+    overflow:visible!important;
   }
 
   body #msMarineGlass .mg-top{
@@ -65,6 +126,7 @@
     width:100%!important;
     height:58px!important;
     min-height:58px!important;
+    max-height:58px!important;
     margin:0!important;
     padding:0 6px!important;
     border-radius:0!important;
@@ -79,35 +141,52 @@
   body #msMarineGlass .mg-status small{display:none!important}
   body #msMarineGlass .mg-status strong{font-size:12px!important;white-space:nowrap!important}
 
-  body #msMarineGlass .mg-card{
-    grid-column:1!important;
+  body #msMarineGlass > main.mg-grid > .mg-card{
+    display:block!important;
+    flex:0 0 auto!important;
+    grid-column:auto!important;
     grid-row:auto!important;
     width:100%!important;
     min-width:0!important;
+    max-width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
     margin:0!important;
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+    overflow:visible!important;
     border-radius:10px!important;
   }
 
   /* Op iPhone hoeft de kaart niet bijna het hele eerste scherm te vullen. */
-  body #msMarineGlass .mg-map{
+  body #msMarineGlass > main.mg-grid > .mg-map{
+    display:block!important;
+    flex:none!important;
     min-height:300px!important;
     height:42dvh!important;
     max-height:410px!important;
+    overflow:hidden!important;
   }
   body #msMarineGlass .mg-map-tools{left:10px!important;top:10px!important;gap:6px!important}
   body #msMarineGlass .mg-map-tools button{width:38px!important;height:38px!important;min-height:38px!important;padding:0!important}
   body #msMarineGlass .mg-north{right:10px!important;top:10px!important;padding:8px 10px!important;font-size:10px!important}
   body #msMarineGlass .mg-radar{width:96px!important;height:96px!important;right:15px!important;bottom:38px!important}
 
-  body #msMarineGlass .mg-gauges{
+  body #msMarineGlass > main.mg-grid > .mg-gauges{
     display:grid!important;
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
     grid-template-rows:none!important;
+    grid-auto-rows:auto!important;
+    height:auto!important;
+    max-height:none!important;
     overflow:visible!important;
   }
   body #msMarineGlass .mg-gauge{
     min-height:154px!important;
     height:auto!important;
+    max-height:none!important;
     padding:8px 5px 6px!important;
     overflow:hidden!important;
   }
@@ -117,17 +196,45 @@
   body #msMarineGlass .mg-dial>b{font-size:25px!important}
   body #msMarineGlass .mg-dial>em{font-size:9px!important}
 
-  body #msMarineGlass .mg-energy-grid{grid-template-columns:1fr!important;gap:8px!important;padding:0 10px 10px!important}
+  /* Alles vanaf Energie moet expliciet intrinsieke hoogte behouden. Dit is
+     de plek waar iOS in de oude layout precies afbrak. */
+  body #msMarineGlass > main.mg-grid > .mg-energy,
+  body #msMarineGlass > main.mg-grid > .mg-systems,
+  body #msMarineGlass > main.mg-grid > .mg-route,
+  body #msMarineGlass > main.mg-grid > .mg-poi,
+  body #msMarineGlass > main.mg-grid > .mg-weather,
+  body #msMarineGlass > main.mg-grid > .mg-tide{
+    display:block!important;
+    flex:0 0 auto!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body #msMarineGlass .mg-energy-grid{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    grid-template-rows:none!important;
+    grid-auto-rows:auto!important;
+    align-items:stretch!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    gap:8px!important;
+    padding:0 10px 10px!important;
+  }
   body #msMarineGlass .mg-battery,
   body #msMarineGlass .mg-start,
   body #msMarineGlass .mg-sources,
   body #msMarineGlass .mg-flow,
   body #msMarineGlass .mg-conv,
-  body #msMarineGlass .mg-strip{grid-column:1!important;grid-row:auto!important}
+  body #msMarineGlass .mg-strip{grid-column:1!important;grid-row:auto!important;max-height:none!important}
   body #msMarineGlass .mg-sources,
-  body #msMarineGlass .mg-conv{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  body #msMarineGlass .mg-conv{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
 
-  /* Houd de bestaande 5-knops navigatie, maar laat hem nooit over de inhoud heen groeien. */
+  /* Houd de bestaande 5-knops navigatie, maar laat hem nooit de documenthoogte bepalen. */
   body .bottom-nav.ms744-compact-nav,
   body .bottom-nav{
     position:fixed!important;
@@ -140,6 +247,7 @@
     max-width:none!important;
     height:calc(68px + env(safe-area-inset-bottom))!important;
     min-height:calc(68px + env(safe-area-inset-bottom))!important;
+    max-height:none!important;
     margin:0!important;
     padding:5px 5px env(safe-area-inset-bottom)!important;
     transform:none!important;
@@ -153,7 +261,7 @@
 }
 
 @media (max-width: 390px){
-  body #msMarineGlass .mg-map{height:39dvh!important;min-height:285px!important;max-height:365px!important}
+  body #msMarineGlass > main.mg-grid > .mg-map{height:39dvh!important;min-height:285px!important;max-height:365px!important}
   body #msMarineGlass .mg-gauge{min-height:146px!important}
   body #msMarineGlass .mg-dial{width:min(108px,78%)!important}
 }
