@@ -1,44 +1,17 @@
-/* MijnSerenity 7.18.34 — voorspelbare PWA-update zonder herlaadlus */
-const CACHE_NAME='mijnserenity-7.18.34-single-build';
-const BUILD_TOKEN='718340';
+/* MijnSerenity 7.19.0 — eenvoudige PWA-cache zonder navigatie- of update-loop */
+const CACHE_NAME='mijnserenity-7.19.0-stable';
+const BUILD_TOKEN='719000';
 const CORE_ASSETS=[
   '/',
   '/index.html',
   '/manifest.json',
-  /* index.html gebruikt voorlopig nog deze vaste bootstrap-URL. Beide worden
-     gecachet zodat een bestaande iPhone-installatie ook offline kan starten. */
   '/auth-bootstrap.js?v=718130',
   `/auth-bootstrap.js?v=${BUILD_TOKEN}`,
   `/app.js?v=${BUILD_TOKEN}`,
-  `/waterkaarten-route-receiver-71870.js?v=${BUILD_TOKEN}`,
-  `/waterkaarten-route-enrichment-71811.js?v=${BUILD_TOKEN}`,
-  `/marine-map-route-fit-71812.js?v=${BUILD_TOKEN}`,
   `/professional-ui-71700.css?v=${BUILD_TOKEN}`,
-  `/page-swipe.css?v=${BUILD_TOKEN}`,
-  `/simple-accessible.css?v=${BUILD_TOKEN}`,
-  `/captain-experience.css?v=${BUILD_TOKEN}`,
+  `/marine-glass-mobile-7184.css?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71531-loader.js?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
-  `/start-battery-soc-71822.js?v=${BUILD_TOKEN}`,
-  `/tank-systems-climate-71823.js?v=${BUILD_TOKEN}`,
-  `/dashboard-ais-map-71825.js?v=${BUILD_TOKEN}`,
-  `/marine-glass-start-fix-71801.js?v=${BUILD_TOKEN}`,
-  `/marine-glass-mobile-7184.css?v=${BUILD_TOKEN}`,
-  `/marine-glass-polish-7185.css?v=${BUILD_TOKEN}`,
-  `/marine-glass-polish-7185.js?v=${BUILD_TOKEN}`,
-  `/marine-glass-waterkaarten-route-7188.js?v=${BUILD_TOKEN}`,
-  `/cerbo-truth-71818.js?v=${BUILD_TOKEN}`,
-  `/serenity-control-dashboard.css?v=${BUILD_TOKEN}`,
-  `/serenity-control-dashboard.js?v=${BUILD_TOKEN}`,
-  `/multiplus-control-71830.js?v=${BUILD_TOKEN}`,
-  `/navigation-compact.css?v=${BUILD_TOKEN}`,
-  `/navigation-compact.js?v=${BUILD_TOKEN}`,
-  `/ai-destination-search.css?v=${BUILD_TOKEN}`,
-  `/ai-destination-search.js?v=${BUILD_TOKEN}`,
-  `/captain-ai-71814.js?v=${BUILD_TOKEN}`,
-  `/serenity-alarm-notifications-71826.js?v=${BUILD_TOKEN}`,
-  `/serenity-background-push-71827.js?v=${BUILD_TOKEN}`,
-  `/logbook-route-assist-71828.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -47,31 +20,22 @@ async function cacheCore(cache,path){
   try{
     const response=await fetch(path,{cache:'reload'});
     if(response.ok)await cache.put(path,response);
-  }catch(error){
-    console.warn('Core asset niet vooraf opgeslagen:',path,error);
-  }
+  }catch(error){console.warn('Core asset niet vooraf opgeslagen:',path,error)}
 }
 
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     const cache=await caches.open(CACHE_NAME);
     await Promise.all(CORE_ASSETS.map(path=>cacheCore(cache,path)));
-    /* Niet automatisch skipWaiting. app.js toont één Bijwerken-knop en
-       activeert deze worker pas na de tik van de gebruiker. */
+    /* Bewust niet automatisch skipWaiting: app.js toont één updateknop. */
   })());
 });
 
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     const keys=await caches.keys();
-    await Promise.all(
-      keys
-        .filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME)
-        .map(key=>caches.delete(key))
-    );
+    await Promise.all(keys.filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME).map(key=>caches.delete(key)));
     await self.clients.claim();
-    /* Geen client.navigate() meer. Dat was de oorzaak van de iOS
-       update/herlaad/inlog-lus. */
   })());
 });
 
@@ -88,20 +52,11 @@ async function networkFirst(request,fallbackPath=null){
       if(fallbackPath)cache.put(fallbackPath,response.clone()).catch(()=>{});
     }
     return response;
-  }catch(error){
-    const cached=(await caches.match(request,{ignoreSearch:false}))||
-      (fallbackPath?await caches.match(fallbackPath):null);
-    return cached||new Response('',{status:503});
+  }catch{
+    return (await caches.match(request,{ignoreSearch:false}))||
+      (fallbackPath?await caches.match(fallbackPath):null)||
+      new Response('',{status:503});
   }
-}
-
-async function networkFirstNavigation(request){
-  const response=await networkFirst(request,'/index.html');
-  if(response.status!==503)return response;
-  return new Response(
-    'MijnSerenity is offline. Controleer de verbinding en probeer opnieuw.',
-    {status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}}
-  );
 }
 
 async function staleWhileRevalidate(request){
@@ -113,11 +68,8 @@ async function staleWhileRevalidate(request){
     }
     return response;
   }).catch(()=>null);
-  if(cached){
-    network.catch(()=>{});
-    return cached;
-  }
-  return(await network)||new Response('',{status:503});
+  if(cached){network.catch(()=>{});return cached}
+  return (await network)||new Response('',{status:503});
 }
 
 self.addEventListener('fetch',event=>{
@@ -128,15 +80,13 @@ self.addEventListener('fetch',event=>{
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
 
   if(request.mode==='navigate'){
-    event.respondWith(networkFirstNavigation(request));
+    event.respondWith(networkFirst(request,'/index.html'));
     return;
   }
-
-  if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')){
+  if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){
     event.respondWith(networkFirst(request));
     return;
   }
-
   event.respondWith(staleWhileRevalidate(request));
 });
 
@@ -153,13 +103,9 @@ self.addEventListener('push',event=>{
   const body=String(payload.body||payload.text||'Controleer MijnSerenity.');
   const url=String(payload.url||'/?alarm=1');
   event.waitUntil(self.registration.showNotification(title,{
-    body,
-    icon:'/icon-192.png',
-    badge:'/favicon-64.png',
-    tag:String(payload.tag||`serenity-${level}-alarm`),
-    renotify:true,
-    requireInteraction:level==='critical',
-    silent:false,
+    body,icon:'/icon-192.png',badge:'/favicon-64.png',
+    tag:String(payload.tag||`serenity-${level}-alarm`),renotify:true,
+    requireInteraction:level==='critical',silent:false,
     vibrate:level==='critical'?[300,120,300,120,500]:[180,80,180],
     data:{...payload,url,level}
   }));
@@ -167,8 +113,7 @@ self.addEventListener('push',event=>{
 
 self.addEventListener('notificationclick',event=>{
   event.notification.close();
-  const requested=String(event.notification?.data?.url||'/?alarm=1');
-  const target=new URL(requested,self.location.origin).href;
+  const target=new URL(String(event.notification?.data?.url||'/?alarm=1'),self.location.origin).href;
   event.waitUntil((async()=>{
     const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of windows){
@@ -178,7 +123,6 @@ self.addEventListener('notificationclick',event=>{
         if('focus' in client)return client.focus();
       }catch{}
     }
-    if(self.clients.openWindow)return self.clients.openWindow(target);
-    return null;
+    return self.clients.openWindow?self.clients.openWindow(target):null;
   })());
 });
