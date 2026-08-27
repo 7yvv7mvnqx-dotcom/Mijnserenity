@@ -25,10 +25,18 @@
       document.head.appendChild(script);
     });
   }
-  function css(href,id){
-    let link=document.getElementById(id);
-    if(!link){link=document.createElement('link');link.id=id;link.rel='stylesheet';document.head.appendChild(link)}
-    link.href=href;
+  function ensureStableCss(){
+    const href=`/marine-glass-mobile-7184.css?v=${V}`;
+    let link=document.getElementById('msStableShell71900');
+    if(!link){
+      link=document.createElement('link');
+      link.id='msStableShell71900';
+      link.rel='stylesheet';
+      document.head.appendChild(link);
+    }
+    if(link.getAttribute('href')!==href)link.setAttribute('href',href);
+    /* Oude dubbele instantie uit eerdere 7.19.0-testbuilds opruimen. */
+    document.getElementById('msMarineGlassStable71900')?.remove();
   }
   function removeConflicts(){
     document.getElementById('msOrientationLayout71835Style')?.remove();
@@ -37,6 +45,7 @@
     document.getElementById('msSerenityControlCss')?.remove();
     document.getElementById('msSerenityControl')?.remove();
     document.getElementById('mgMoreNav')?.remove();
+    document.getElementById('msMarineGlassStable71900')?.remove();
     const dashboard=document.getElementById('dashboard');
     dashboard?.classList.remove('scd-active','mspro-active');
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav','bottom-nav-viewport-fixed','bottom-nav-always-visible','bottom-nav-auto-hidden');
@@ -51,7 +60,7 @@
 
   async function start(){
     removeConflicts();
-    css(`/marine-glass-mobile-7184.css?v=${V}`,'msMarineGlassStable71900');
+    ensureStableCss();
 
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     await load(`/start-battery-soc-71822.js?v=${V}`,'start-battery-soc');
@@ -61,6 +70,7 @@
     await load(`/cerbo-truth-71818.js?v=${V}`,'cerbo-truth');
 
     removeConflicts();
+    ensureStableCss();
     syncVersion();
     window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.0'}}));
   }
