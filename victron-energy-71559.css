@@ -1,65 +1,97 @@
-/* MijnSerenity 7.19.1 — Serenity Victron Live, één helder energiescherm */
-#msVictronDiagnosis{display:none!important}
-.ms-victron-legacy-hidden{display:none!important}
-#msVictronEnergy{margin:0 0 18px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
-#msMarineGlass{--mg-bg:#061522;--mg-card:#0a1d2b;--mg-card2:#0c2232;--mg-line:rgba(116,190,230,.25);--mg-line2:rgba(116,190,230,.13);--mg-white:#f5fbff;--mg-muted:#a7bdcd;--mg-dim:#6f8798;--mg-green:#46d879;--mg-blue:#2ca8f2;--mg-yellow:#ffc43d;--mg-red:#ff625c;position:relative;overflow:hidden;margin:0;padding:14px 14px 16px;border:1px solid rgba(62,164,218,.34);border-radius:27px;color:var(--mg-white);background:radial-gradient(circle at 48% 19%,rgba(18,108,153,.17),transparent 34%),linear-gradient(180deg,#061724 0%,#06131f 100%);box-shadow:0 20px 55px rgba(0,0,0,.23);font-family:inherit}
-#msMarineGlass *{box-sizing:border-box}
-#msMarineGlass .mg-live-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:6px 4px 16px}
-#msMarineGlass .mg-brand{display:flex;align-items:center;gap:11px;min-width:0}
-#msMarineGlass .mg-boat{display:grid;place-items:center;width:45px;height:45px;font-size:31px;line-height:1;filter:drop-shadow(0 0 14px rgba(255,255,255,.08))}
+/* MijnSerenity 7.19.2 — Serenity Victron Live */
+#msVictronDiagnosis,.ms-victron-legacy-hidden{display:none!important}
+#msVictronEnergy,#msVictronEnergy.ms-victron-live-host{
+  position:relative!important;inset:auto!important;float:none!important;transform:none!important;
+  display:block!important;width:100%!important;max-width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
+  margin:0 0 18px!important;padding:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;overflow:visible!important;grid-column:1/-1!important;
+}
+#msMarineGlass{
+  --mg-bg:#061522;--mg-card:#0a1d2b;--mg-line:rgba(116,190,230,.25);--mg-line2:rgba(116,190,230,.12);
+  --mg-white:#f5fbff;--mg-muted:#9fb7c7;--mg-green:#46d879;--mg-blue:#33a9ef;--mg-yellow:#ffc43d;--mg-red:#ff625c;
+  box-sizing:border-box!important;position:relative!important;inset:auto!important;display:block!important;width:100%!important;max-width:100%!important;
+  margin:0!important;padding:14px!important;overflow:hidden!important;border:1px solid rgba(62,164,218,.34)!important;border-radius:24px!important;
+  color:var(--mg-white)!important;background:radial-gradient(circle at 50% 22%,rgba(23,118,163,.16),transparent 34%),linear-gradient(180deg,#071927,#06131f 100%)!important;
+  box-shadow:0 18px 48px rgba(0,0,0,.22)!important;font-family:inherit!important;
+}
+#msMarineGlass *{box-sizing:border-box!important;min-width:0}
+#msMarineGlass .mg-live-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:3px 3px 14px}
+#msMarineGlass .mg-brand{display:flex;align-items:center;gap:10px}
+#msMarineGlass .mg-boat{display:grid;place-items:center;width:42px;height:42px;font-size:29px;line-height:1}
 #msMarineGlass .mg-brand-copy{display:grid;gap:1px}
-#msMarineGlass .mg-brand-copy strong{font-size:22px;letter-spacing:.01em;line-height:1.05}
-#msMarineGlass .mg-brand-copy small{color:var(--mg-blue);font-size:13px;font-weight:700}
-#msMarineGlass .mg-live-pill{display:flex;align-items:center;gap:8px;color:var(--mg-green);font-size:12px;font-weight:900;letter-spacing:.08em}
-#msMarineGlass .mg-live-pill i{width:9px;height:9px;border-radius:50%;background:var(--mg-green);box-shadow:0 0 12px rgba(70,216,121,.85)}
-#msMarineGlass .mg-live-pill.offline{color:#95a9b7}#msMarineGlass .mg-live-pill.offline i{background:#667d8c;box-shadow:none}
-#msMarineGlass .mg-main{display:grid;grid-template-columns:minmax(0,.78fr) minmax(180px,1.25fr) minmax(0,.78fr);grid-template-areas:"solar battery use" "shore battery dc";gap:10px;padding:13px;border:1px solid var(--mg-line);border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,.006))}
-#msMarineGlass .mg-mini,#msMarineGlass .mg-info-card,#msMarineGlass .mg-system{min-width:0;border:1px solid var(--mg-line);background:linear-gradient(180deg,rgba(255,255,255,.028),rgba(255,255,255,.012));box-shadow:inset 0 1px rgba(255,255,255,.025)}
-#msMarineGlass .mg-mini{padding:12px;border-radius:16px;min-height:93px}
+#msMarineGlass .mg-brand-copy strong{font-size:21px;line-height:1.05;letter-spacing:.01em}
+#msMarineGlass .mg-brand-copy small{color:var(--mg-blue);font-size:12px;font-weight:800}
+#msMarineGlass .mg-live-pill{display:flex;align-items:center;gap:7px;color:var(--mg-green);font-size:11px;font-weight:900;letter-spacing:.08em;white-space:nowrap}
+#msMarineGlass .mg-live-pill i{width:8px;height:8px;border-radius:50%;background:var(--mg-green);box-shadow:0 0 11px rgba(70,216,121,.85)}
+#msMarineGlass .mg-live-pill.offline{color:#879dac}#msMarineGlass .mg-live-pill.offline i{background:#667d8c;box-shadow:none}
+
+#msMarineGlass .mg-main{display:grid;grid-template-columns:minmax(0,.8fr) minmax(150px,1.25fr) minmax(0,.8fr);grid-template-areas:"solar battery use" "shore battery dc";gap:8px;padding:10px;border:1px solid var(--mg-line);border-radius:18px;background:rgba(255,255,255,.012)}
+#msMarineGlass .mg-mini,#msMarineGlass .mg-info-card,#msMarineGlass .mg-system,#msMarineGlass .mg-climate-mini button{border:1px solid var(--mg-line);background:linear-gradient(180deg,rgba(255,255,255,.027),rgba(255,255,255,.01));box-shadow:inset 0 1px rgba(255,255,255,.025)}
+#msMarineGlass .mg-mini{padding:10px;border-radius:14px;min-height:84px}
 #msMarineGlass .mg-mini.solar{grid-area:solar;border-color:transparent;background:transparent;box-shadow:none}
 #msMarineGlass .mg-mini.use{grid-area:use;border-color:transparent;background:transparent;box-shadow:none}
-#msMarineGlass .mg-mini.shore{grid-area:shore}
-#msMarineGlass .mg-mini.dc{grid-area:dc}
-#msMarineGlass .mg-mini small,#msMarineGlass .mg-info-card small,#msMarineGlass .mg-system small{display:block;color:var(--mg-muted);font-size:10px;font-weight:750;letter-spacing:.045em;text-transform:uppercase}
-#msMarineGlass .mg-mini strong{display:block;margin-top:8px;font-size:24px;line-height:1;font-weight:900}
-#msMarineGlass .mg-mini em{display:block;margin-top:7px;color:var(--mg-muted);font-size:10px;font-style:normal;white-space:normal}
-#msMarineGlass .mg-mini .good{color:var(--mg-green)}#msMarineGlass .mg-mini .warn{color:var(--mg-yellow)}#msMarineGlass .mg-mini .bad{color:var(--mg-red)}
-#msMarineGlass .mg-battery{grid-area:battery;display:flex;align-items:center;justify-content:center;min-height:265px;padding:4px}
-#msMarineGlass .mg-ring{--p:0;position:relative;display:grid;place-items:center;width:min(236px,100%);aspect-ratio:1;border-radius:50%;background:conic-gradient(from 218deg,var(--mg-green) 0 calc(var(--p)*1%),#17334b calc(var(--p)*1%) 72%,transparent 72% 100%);filter:drop-shadow(0 0 15px rgba(70,216,121,.07))}
-#msMarineGlass .mg-ring:before{content:"";position:absolute;inset:17px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#0b2232,#071724 72%);box-shadow:0 0 0 1px rgba(115,193,231,.12),inset 0 0 32px rgba(0,0,0,.3)}
+#msMarineGlass .mg-mini.shore{grid-area:shore}#msMarineGlass .mg-mini.dc{grid-area:dc}
+#msMarineGlass .mg-mini small,#msMarineGlass .mg-info-card small,#msMarineGlass .mg-system small,#msMarineGlass .mg-climate-mini small{display:block;color:var(--mg-muted);font-size:9px;font-weight:800;line-height:1.2;letter-spacing:.04em;text-transform:uppercase}
+#msMarineGlass .mg-mini strong{display:block;margin-top:7px;font-size:20px;line-height:1.05;font-weight:900;overflow-wrap:anywhere}
+#msMarineGlass .mg-mini em{display:block;margin-top:6px;color:var(--mg-muted);font-size:8px;line-height:1.25;font-style:normal}
+
+#msMarineGlass .mg-battery{grid-area:battery;display:flex;align-items:center;justify-content:center;min-height:224px;padding:2px}
+#msMarineGlass .mg-ring{--p:0;position:relative;display:grid;place-items:center;width:min(190px,100%);aspect-ratio:1;border-radius:50%;background:conic-gradient(from 218deg,var(--mg-green) 0 calc(var(--p)*1%),#17334b calc(var(--p)*1%) 72%,transparent 72% 100%);filter:drop-shadow(0 0 14px rgba(70,216,121,.08))}
+#msMarineGlass .mg-ring:before{content:"";position:absolute;inset:13px;border-radius:50%;background:radial-gradient(circle at 50% 34%,#0b2232,#071724 72%);box-shadow:0 0 0 1px rgba(115,193,231,.12),inset 0 0 28px rgba(0,0,0,.28)}
 #msMarineGlass .mg-ring-copy{position:relative;z-index:1;display:grid;justify-items:center;text-align:center}
-#msMarineGlass .mg-ring-copy small{color:var(--mg-muted);font-size:10px;letter-spacing:.045em}
-#msMarineGlass .mg-ring-copy strong{margin:4px 0 1px;font-size:49px;line-height:1;font-weight:950;letter-spacing:-.04em}
-#msMarineGlass .mg-ring-copy strong span{font-size:.48em;margin-left:2px}
-#msMarineGlass .mg-ring-copy b{font-size:15px;font-weight:650;color:#c7d7e2}
-#msMarineGlass .mg-ring-copy em{margin-top:7px;color:var(--mg-green);font-size:12px;font-style:normal;font-weight:700}
-#msMarineGlass .mg-charge-pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:9px;padding:7px 12px;border:1px solid rgba(70,216,121,.22);border-radius:999px;color:var(--mg-green);background:rgba(70,216,121,.08);font-size:11px;font-weight:800}
-#msMarineGlass .mg-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
-#msMarineGlass .mg-info-card{padding:14px;border-radius:17px;min-height:128px}
-#msMarineGlass .mg-info-card .mg-icon{display:inline-block;margin-right:6px;font-size:16px}
-#msMarineGlass .mg-info-card strong{display:block;margin-top:12px;font-size:23px;line-height:1;font-weight:900}
-#msMarineGlass .mg-info-card em{display:block;margin-top:8px;color:#d0dde5;font-size:11px;font-style:normal}
-#msMarineGlass .mg-info-card .state{display:block;margin-top:10px;color:var(--mg-green);font-size:11px;font-weight:800}
-#msMarineGlass .mg-level-bar{height:5px;margin-top:12px;border-radius:999px;background:#173149;overflow:hidden}
-#msMarineGlass .mg-level-bar i{display:block;width:0;height:100%;border-radius:inherit;background:var(--mg-blue);transition:width .35s ease}
-#msMarineGlass .fuel .mg-level-bar i{background:var(--mg-yellow)}
-#msMarineGlass .mg-systems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
-#msMarineGlass .mg-system{padding:14px;border-radius:17px;min-height:112px}
-#msMarineGlass .mg-system-row{display:flex;align-items:flex-start;gap:10px}
-#msMarineGlass .mg-system-icon{display:grid;place-items:center;width:34px;height:48px;font-size:25px}
-#msMarineGlass .mg-system strong{display:block;margin-top:8px;color:var(--mg-green);font-size:19px;line-height:1.05}
-#msMarineGlass .mg-system em{display:block;margin-top:7px;color:var(--mg-muted);font-size:10px;font-style:normal}
-#msMarineGlass .mg-climate-mini{grid-column:1/-1}
-#msMarineGlass .mg-flow-card{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:7px;margin-top:10px;padding:14px;border:1px solid var(--mg-line);border-radius:17px;background:rgba(255,255,255,.012)}
-#msMarineGlass .mg-flow-node{text-align:center;min-width:0}
-#msMarineGlass .mg-flow-node small{display:block;color:var(--mg-muted);font-size:9px;font-weight:750;text-transform:uppercase}
-#msMarineGlass .mg-flow-node strong{display:block;margin-top:5px;font-size:17px;white-space:nowrap}
-#msMarineGlass .mg-flow-arrow{color:var(--mg-green);font-size:25px;line-height:1;transition:opacity .2s,transform .2s}
-#msMarineGlass .mg-flow-card[data-dir="idle"] .mg-flow-arrow{opacity:.25}
-#msMarineGlass .mg-flow-card[data-dir="in"] .mg-flow-arrow{opacity:1}
-#msMarineGlass .mg-flow-card[data-dir="out"] .mg-flow-arrow:last-of-type{opacity:1}
-#msMarineGlass .mg-foot{display:flex;align-items:center;gap:8px;padding:13px 5px 2px;color:var(--mg-muted);font-size:10px}
-#msMarineGlass .mg-foot i{width:8px;height:8px;border-radius:50%;background:var(--mg-green);box-shadow:0 0 10px rgba(70,216,121,.6)}
-#msMarineGlass .mg-foot.offline i{background:#657d8d;box-shadow:none}
-@media(max-width:650px){#msMarineGlass{margin-inline:-2px;padding:11px 10px 13px;border-radius:23px}#msMarineGlass .mg-live-head{padding:5px 3px 13px}#msMarineGlass .mg-brand-copy strong{font-size:20px}#msMarineGlass .mg-main{grid-template-columns:1fr 1.42fr 1fr;gap:6px;padding:9px}#msMarineGlass .mg-mini{min-height:86px;padding:9px;border-radius:13px}#msMarineGlass .mg-mini strong{font-size:18px}#msMarineGlass .mg-mini em{font-size:8px}#msMarineGlass .mg-battery{min-height:228px}#msMarineGlass .mg-ring{width:min(212px,100%)}#msMarineGlass .mg-ring:before{inset:14px}#msMarineGlass .mg-ring-copy strong{font-size:43px}#msMarineGlass .mg-ring-copy b{font-size:13px}#msMarineGlass .mg-three{gap:7px}#msMarineGlass .mg-info-card{padding:11px;min-height:116px}#msMarineGlass .mg-info-card strong{font-size:19px}#msMarineGlass .mg-info-card em{font-size:9px}#msMarineGlass .mg-systems{gap:7px}#msMarineGlass .mg-system{padding:11px;min-height:105px}#msMarineGlass .mg-system strong{font-size:17px}#msMarineGlass .mg-flow-card{padding:11px 8px;gap:4px}#msMarineGlass .mg-flow-node strong{font-size:14px}#msMarineGlass .mg-flow-arrow{font-size:20px}}
-@media(max-width:390px){#msMarineGlass .mg-main{grid-template-columns:1fr 1.32fr 1fr}#msMarineGlass .mg-ring-copy strong{font-size:38px}#msMarineGlass .mg-mini small{font-size:8px}#msMarineGlass .mg-mini strong{font-size:16px}#msMarineGlass .mg-three{grid-template-columns:1fr 1fr}#msMarineGlass .mg-info-card.start{grid-column:1/-1}#msMarineGlass .mg-flow-card{grid-template-columns:1fr auto 1fr}#msMarineGlass .mg-flow-node:last-child,#msMarineGlass .mg-flow-arrow:last-of-type{display:none}}
+#msMarineGlass .mg-ring-copy small{color:var(--mg-muted);font-size:9px;letter-spacing:.04em}
+#msMarineGlass .mg-ring-copy strong{margin:4px 0 2px;font-size:42px;line-height:.95;font-weight:950;letter-spacing:-.04em;white-space:nowrap}
+#msMarineGlass .mg-ring-copy strong span{font-size:.47em;margin-left:2px}
+#msMarineGlass .mg-ring-copy>b{font-size:14px;font-weight:700;color:#c7d7e2}
+#msMarineGlass .mg-ring-copy em{margin-top:6px;color:var(--mg-green);font-size:11px;font-style:normal;font-weight:800;white-space:nowrap}
+#msMarineGlass .mg-charge-pill{display:inline-flex;align-items:center;justify-content:center;margin-top:8px;padding:6px 10px;border:1px solid rgba(70,216,121,.22);border-radius:999px;color:var(--mg-green);background:rgba(70,216,121,.08);font-size:10px;font-weight:850;white-space:nowrap}
+
+#msMarineGlass .mg-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+#msMarineGlass .mg-info-card{padding:11px;border-radius:14px;min-height:108px}
+#msMarineGlass .mg-info-card .mg-icon{display:inline-block;margin-right:4px;font-size:14px}
+#msMarineGlass .mg-info-card strong{display:block;margin-top:9px;font-size:20px;line-height:1;font-weight:900}
+#msMarineGlass .mg-info-card em{display:block;margin-top:6px;color:#d0dde5;font-size:9px;font-style:normal}
+#msMarineGlass .mg-info-card .state{display:block;margin-top:7px;color:var(--mg-green);font-size:9px;font-weight:850}.mg-info-card .state.warn{color:var(--mg-yellow)!important}.mg-info-card .state.bad{color:var(--mg-red)!important}
+#msMarineGlass .mg-level-bar{height:5px;margin-top:9px;border-radius:999px;background:#173149;overflow:hidden}
+#msMarineGlass .mg-level-bar i{display:block;width:0;height:100%;border-radius:inherit;background:var(--mg-blue);transition:width .3s ease}#msMarineGlass .fuel .mg-level-bar i{background:var(--mg-yellow)}
+
+#msMarineGlass .mg-systems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+#msMarineGlass .mg-system{padding:11px;border-radius:14px;min-height:96px}
+#msMarineGlass .mg-system-row{display:flex;align-items:flex-start;gap:8px}
+#msMarineGlass .mg-system-icon{display:grid;place-items:center;width:29px;height:40px;font-size:22px}
+#msMarineGlass .mg-system strong{display:block;margin-top:7px;color:var(--mg-green);font-size:17px;line-height:1.05}
+#msMarineGlass .mg-system em{display:block;margin-top:6px;color:var(--mg-muted);font-size:9px;font-style:normal}
+#msMarineGlass .mg-climate-mini{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#msMarineGlass .mg-climate-mini button{appearance:none;width:100%;margin:0;padding:10px;border-radius:13px;color:inherit;text-align:left;font:inherit}
+#msMarineGlass .mg-climate-values{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-top:7px}
+#msMarineGlass .mg-climate-values strong{font-size:16px;white-space:nowrap}#msMarineGlass .mg-climate-values b{color:var(--mg-blue);font-size:11px;white-space:nowrap}
+#msMarineGlass .mg-climate-mini em{display:block;margin-top:6px;color:#718c9e;font-size:8px;font-style:normal}
+
+#msMarineGlass .mg-flow-card{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:5px;margin-top:8px;padding:11px 8px;border:1px solid var(--mg-line);border-radius:14px;background:rgba(255,255,255,.01)}
+#msMarineGlass .mg-flow-node{text-align:center}.mg-flow-node small{display:block;color:var(--mg-muted);font-size:8px;font-weight:800;text-transform:uppercase}.mg-flow-node strong{display:block;margin-top:4px;font-size:14px;white-space:nowrap}
+#msMarineGlass .mg-flow-arrow{color:var(--mg-green);font-size:20px;line-height:1}#msMarineGlass .mg-flow-card[data-dir="idle"] .mg-flow-arrow{opacity:.25}
+#msMarineGlass .mg-foot{display:flex;align-items:center;gap:7px;padding:11px 3px 1px;color:var(--mg-muted);font-size:9px}
+#msMarineGlass .mg-foot i{width:7px;height:7px;border-radius:50%;background:var(--mg-green);box-shadow:0 0 9px rgba(70,216,121,.6)}#msMarineGlass .mg-foot.offline i{background:#657d8d;box-shadow:none}
+
+@media(max-width:500px){
+  #msMarineGlass{padding:10px!important;border-radius:21px!important}
+  #msMarineGlass .mg-live-head{padding:2px 2px 11px}
+  #msMarineGlass .mg-brand-copy strong{font-size:19px}#msMarineGlass .mg-brand-copy small{font-size:11px}
+  #msMarineGlass .mg-main{grid-template-columns:minmax(0,.8fr) minmax(130px,1.25fr) minmax(0,.8fr);gap:5px;padding:7px}
+  #msMarineGlass .mg-mini{padding:7px;min-height:74px;border-radius:11px}
+  #msMarineGlass .mg-mini small{font-size:7.5px}#msMarineGlass .mg-mini strong{font-size:16px}#msMarineGlass .mg-mini em{font-size:7px}
+  #msMarineGlass .mg-battery{min-height:190px}#msMarineGlass .mg-ring{width:min(168px,100%)}#msMarineGlass .mg-ring:before{inset:11px}
+  #msMarineGlass .mg-ring-copy strong{font-size:36px}#msMarineGlass .mg-ring-copy>b{font-size:12px}#msMarineGlass .mg-ring-copy em{font-size:9px}
+  #msMarineGlass .mg-charge-pill{padding:5px 8px;font-size:8px}
+  #msMarineGlass .mg-three{gap:5px}#msMarineGlass .mg-info-card{padding:8px;min-height:98px;border-radius:11px}
+  #msMarineGlass .mg-info-card small{font-size:7.5px}#msMarineGlass .mg-info-card strong{font-size:17px}#msMarineGlass .mg-info-card em,#msMarineGlass .mg-info-card .state{font-size:8px}
+  #msMarineGlass .mg-systems{gap:5px}#msMarineGlass .mg-system{padding:9px;min-height:90px;border-radius:11px}#msMarineGlass .mg-system strong{font-size:15px}
+  #msMarineGlass .mg-climate-mini{gap:5px}#msMarineGlass .mg-climate-mini button{padding:8px}#msMarineGlass .mg-climate-values strong{font-size:14px}#msMarineGlass .mg-climate-values b{font-size:9px}
+  #msMarineGlass .mg-flow-card{padding:9px 5px;gap:3px}#msMarineGlass .mg-flow-node strong{font-size:12px}#msMarineGlass .mg-flow-arrow{font-size:17px}
+}
+@media(max-width:360px){
+  #msMarineGlass .mg-main{grid-template-columns:1fr 1.2fr 1fr}
+  #msMarineGlass .mg-ring-copy strong{font-size:32px}
+  #msMarineGlass .mg-three{grid-template-columns:1fr 1fr}#msMarineGlass .mg-info-card.start{grid-column:1/-1}
+  #msMarineGlass .mg-flow-card{grid-template-columns:1fr auto 1fr}#msMarineGlass .mg-flow-node:last-child,#msMarineGlass .mg-flow-arrow:last-of-type{display:none}
+}
