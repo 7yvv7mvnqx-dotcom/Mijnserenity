@@ -8,7 +8,7 @@
 
   const $=id=>document.getElementById(id);
   const TOKEN_KEYS=['ms7148_vrm_token','ms7148VrmToken','mijnserenity_vrm_token','vrm_api_token'];
-  let liveBusy=false,lastLiveAttempt=0,refreshTimer=0,renderFrame=0,mounted=false,lastPaintAt=0;
+  let liveBusy=false,lastLiveAttempt=0,refreshTimer=0,renderFrame=0;
 
   const num=value=>{const m=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):null};
   const finite=value=>value!==null&&value!==undefined&&Number.isFinite(Number(value));
@@ -64,14 +64,14 @@
   }
 
   function markup(){return `
-    <div id="msMarineGlass" aria-label="Serenity Victron Live">
+    <div id="msMarineGlass" data-ms-victron-live="7191" aria-label="Serenity Victron Live">
       <div class="mg-live-head">
         <div class="mg-brand"><span class="mg-boat" aria-hidden="true">🛥️</span><span class="mg-brand-copy"><strong>SERENITY</strong><small>Victron Live</small></span></div>
         <span id="mgLivePill" class="mg-live-pill"><i></i> LIVE</span>
       </div>
       <div class="mg-main">
         <div class="mg-mini solar"><small>☀️ Zonne-energie</small><strong id="mgSolar">– W</strong><em id="mgSolarMeta">MPPT</em></div>
-        <div class="mg-battery"><div id="mgSocRing" class="mg-ring"><div class="mg-ring-copy"><small>HUISHOUDACCU</small><strong><b id="mgSoc">–</b><span>%</span></strong><b id="mgVolt">– V</b><em><span id="mgAmp">– A</span> · <span id="mgBatP">– W</span></em><span id="mgBatteryMode" class="mg-charge-pill">⚡ Live</span></div></div></div>
+        <div class="mg-battery"><div id="mgSocRing" class="mg-ring"><div class="mg-ring-copy"><small>HUISHOUDACCU</small><strong><b id="mgSoc" style="font:inherit;color:inherit">–</b><span>%</span></strong><b id="mgVolt">– V</b><em><span id="mgAmp">– A</span> · <span id="mgBatP">– W</span></em><span id="mgBatteryMode" class="mg-charge-pill">⚡ Live</span></div></div></div>
         <div class="mg-mini use"><small>💡 Verbruik</small><strong id="mgLoad">– W</strong><em id="mgLoadMeta">Actueel</em></div>
         <div class="mg-mini shore"><small>🔌 Walstroom</small><strong id="mgShore">–</strong><em id="mgShoreMeta">Sensor wordt gelezen</em></div>
         <div class="mg-mini dc"><small>☷ DC-verbruik</small><strong id="mgDcLoad">– W</strong><em id="mgDcMeta">12 V boordnet</em></div>
@@ -84,6 +84,10 @@
       <div class="mg-systems">
         <div class="mg-system"><div class="mg-system-row"><span class="mg-system-icon">🔷</span><div><small>MultiPlus-II</small><strong id="mgMultiState">Stand-by</strong><em id="mgInv">– W</em></div></div></div>
         <div class="mg-system"><div class="mg-system-row"><span class="mg-system-icon">⚡</span><div><small>Laadstatus</small><strong id="mgChargeState">Lader uit</strong><em id="mgChg">– W</em></div></div></div>
+        <div id="mgClimateMini" class="mg-climate-mini">
+          <button type="button" data-go="technical"><small>🌡️ Machinekamer</small><span class="mg-climate-values"><strong id="mgMachineTemp">– °C</strong><b id="mgMachineRv">– % RV</b></span><em>Ruuvi · Machinekamer Serenity</em></button>
+          <button type="button" data-go="technical"><small>🌡️ Salon</small><span class="mg-climate-values"><strong id="mgSalonTemp">– °C</strong><b id="mgSalonRv">– % RV</b></span><em>Ruuvi · Salon Serenity</em></button>
+        </div>
       </div>
       <div id="mgFlow" class="mg-flow-card" data-dir="idle">
         <div class="mg-flow-node"><small>☀️ PV</small><strong id="mgPv">– W</strong></div><span class="mg-flow-arrow">→</span>
@@ -97,15 +101,14 @@
   function mount(){
     const host=$('msVictronEnergy');
     if(!host)return false;
-    if(!$('msMarineGlass'))host.innerHTML=markup();
+    const current=$('msMarineGlass');
+    if(!current||current.dataset.msVictronLive!=='7191')host.innerHTML=markup();
     host.classList.add('ms-victron-live-host');
-    mounted=true;
     cleanLegacy();
-    window.dispatchEvent(new CustomEvent('mijnserenity-victron-live-mounted'));
     return true;
   }
 
-  function hideCardById(id){const el=$(id);if(!el||el.closest('#msVictronEnergy'))return;const card=el.closest('.technical-gauge,.technical-card,.card');if(card)card.classList.add('ms-victron-legacy-hidden')}
+  function hideCardById(id){const el=$(id);if(!el||el.closest('#msVictronEnergy'))return;const card=el.closest('.technical-gauge,.technical-card');if(card)card.classList.add('ms-victron-legacy-hidden')}
   function cleanLegacy(){
     const diagnosis=$('msVictronDiagnosis');if(diagnosis){diagnosis.hidden=true;diagnosis.setAttribute('aria-hidden','true')}
     ['techHouseVoltage','techSolarPower','techStartVoltage','techShorePowerStatus','techFuelLevel','techWaterLevel'].forEach(hideCardById);
@@ -115,13 +118,26 @@
   function ageLabel(value){const at=Date.parse(String(value||''));if(!Number.isFinite(at))return 'zojuist';const sec=Math.max(0,Math.round((Date.now()-at)/1000));if(sec<5)return '1 sec geleden';if(sec<60)return `${sec} sec geleden`;const min=Math.round(sec/60);return `${min} min geleden`}
   function startState(v){if(!finite(v))return ['Wachten op meting',''];if(v>=13.2)return ['Laden','good'];if(v>=12.2)return ['OK','good'];if(v>=12)return ['Laag','warn'];return ['Controleren','bad']}
   function multiState(s){if(finite(s.charger)&&s.charger>5)return ['Laden','Lader aan'];if(finite(s.inverter)&&Math.abs(s.inverter)>5)return ['Omvormen','Lader uit'];if(s.shore===true)return ['Walstroom','Lader stand-by'];return ['Stand-by','Lader uit']}
+  function renderClimate(){
+    let climate=null;try{if(typeof window.ms7102GetRuuviClimate==='function')climate=window.ms7102GetRuuviClimate()}catch{}
+    const vrm=window.MIJSERENITY_VRM_DATA||{},salon=climate?.salon||{},machine=climate?.forward||climate?.machinekamer||{};
+    const salonTemp=num(salon.temperature)??num(vrm.salon?.temperature),salonHum=num(salon.humidity)??num(vrm.salon?.humidity),machineTemp=num(machine.temperature)??num(vrm.machinekamer?.temperature)??num(vrm.forward?.temperature),machineHum=num(machine.humidity)??num(vrm.machinekamer?.humidity)??num(vrm.forward?.humidity);
+    set('mgSalonTemp',fmt(salonTemp,1,' °C'));set('mgSalonRv',fmt(salonHum,0,'% RV'));set('mgMachineTemp',fmt(machineTemp,1,' °C'));set('mgMachineRv',fmt(machineHum,0,'% RV'));
+  }
+  function renderTankFallbacks(){
+    const tanks=window.MIJSERENITY_TANK_LIVE||{},t=technical();
+    const fuel=num(tanks.fuel?.value)??num(t.fuelPct),water=num(tanks.water?.value)??num(t.waterPct);
+    if(finite(fuel)){set('mg-fuel',`${Math.round(fuel)}%`);const bar=$('mg-fuel-bar');if(bar)bar.style.width=`${Math.max(0,Math.min(100,fuel))}%`}
+    if(finite(water)){set('mg-water',`${Math.round(water)}%`);const bar=$('mg-water-bar');if(bar)bar.style.width=`${Math.max(0,Math.min(100,water))}%`}
+    const fuelLiters=num(t.fuelLiters);if(finite(fuelLiters))set('mg-fuel-l',`${Math.round(fuelLiters)} L`);
+  }
 
   function render(){
     if(!mount())return;
-    const s=snapshot();lastPaintAt=Date.now();
+    const s=snapshot();
     const soc=finite(s.soc)?Math.max(0,Math.min(100,Number(s.soc))):null;
     set('mgSoc',soc===null?'–':fmt(soc,0,''));set('mgVolt',fmt(s.voltage,2,' V'));set('mgAmp',signed(s.current,2,' A'));set('mgBatP',signed(s.power,0,' W'));
-    const ring=$('mgSocRing');if(ring)ring.style.setProperty('--p',soc===null?0:soc);
+    const ring=$('mgSocRing');if(ring)ring.style.setProperty('--p',soc===null?0:soc*.72);
     set('mgSolar',fmt(s.solar,0,' W'));set('mgPv',fmt(s.solar,0,' W'));
     const load=s.load!==null?s.load:(s.power!==null&&s.power<0?Math.abs(s.power):null);set('mgLoad',fmt(load,0,' W'));set('mgLoadFlow',fmt(load,0,' W'));
     set('mgShore',s.shore===true?'AAN':s.shore===false?'UIT':'–');const shoreEl=$('mgShore');if(shoreEl){shoreEl.classList.toggle('good',s.shore===true);shoreEl.classList.toggle('warn',s.shore===false)}
@@ -131,6 +147,7 @@
     const [multi,charge]=multiState(s);set('mgMultiState',multi);set('mgChargeState',charge);set('mgInv',fmt(s.inverter,0,' W'));set('mgInv2',fmt(s.inverter,0,' W'));set('mgChg',fmt(s.charger,0,' W'));set('mgChg2',fmt(s.charger,0,' W'));
     const mode=$('mgBatteryMode');if(mode)mode.textContent=s.power>5?'⚡ Laden':s.power<-5?'⚡ Ontladen':'⚡ Stand-by';
     set('mgNetPower',signed(s.power,0,' W'));const flow=$('mgFlow');if(flow)flow.dataset.dir=s.power===null?'idle':s.power>10?'in':s.power<-10?'out':'idle';
+    renderTankFallbacks();renderClimate();
     const hasData=[s.soc,s.voltage,s.solar,s.start,s.shoreV].some(finite)||s.shore!==null;const livePill=$('mgLivePill'),foot=$('mgFoot');if(livePill){livePill.classList.toggle('offline',!hasData);livePill.lastChild.textContent=hasData?' LIVE':' WACHT'}if(foot)foot.classList.toggle('offline',!hasData);
     set('mgUpdated',hasData?`Laatst bijgewerkt: ${ageLabel(s.sampledAt)} · Cerbo GX`:'Laatst bijgewerkt: wachten op Cerbo GX');
     cleanLegacy();
@@ -145,7 +162,7 @@
   window.msRenderVictronEnergy=queueRender;window.msRefreshVictronEnergy=force=>refreshLiveEnergy(Boolean(force));
   window.msOpenVictronConsole=()=>{let url=localStorage.getItem('ms-victron-console-url')||'';if(!url){url=window.prompt?.('Plak het beveiligde Cerbo GX / VRM Remote Console-adres:','')||'';if(url)try{localStorage.setItem('ms-victron-console-url',url)}catch{}}if(url)window.open(url,'_blank','noopener,noreferrer')};
 
-  const events=['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-vrm-updated','mijnserenity-ruuvi-vrm-updated','mijnserenity-vrm-diagnostics-updated','mijnserenity-vrm-energy-live-updated','mijnserenity:dashboard-ready','mijnserenity-victron-live-mounted'];
+  const events=['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-vrm-updated','mijnserenity-ruuvi-vrm-updated','mijnserenity-vrm-diagnostics-updated','mijnserenity-vrm-energy-live-updated','mijnserenity:dashboard-ready'];
   events.forEach(name=>window.addEventListener(name,queueRender,{passive:true}));
   window.addEventListener('mijnserenity-ha-connected',()=>refreshLiveEnergy(false),{passive:true});
   window.addEventListener('focus',()=>{queueRender();refreshLiveEnergy(false)},{passive:true});
