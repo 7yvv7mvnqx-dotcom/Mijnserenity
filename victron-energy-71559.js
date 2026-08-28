@@ -1,10 +1,10 @@
-/* MijnSerenity 7.19.4 — Serenity Victron Live
-   Kleine visuele correcties zonder documentbrede observer.
-   Zichtbare kernwaarden gebruiken eigen 7.19.4-ID's zodat oudere compatibiliteitsscripts ze niet overschrijven. */
+/* MijnSerenity 7.19.5 — Serenity Victron Live
+   Compacte mobiele layout, één verbruikswaarde en oude dubbele tankkaart verborgen.
+   Geen documentbrede MutationObserver: alleen gerichte dashboard-elementen worden aangepast. */
 (()=>{
   'use strict';
-  if(window.__msVictronEnergy71940)return;
-  window.__msVictronEnergy71940=true;
+  if(window.__msVictronEnergy71950)return;
+  window.__msVictronEnergy71950=true;
 
   const $=id=>document.getElementById(id);
   const TOKEN_KEYS=['ms7148_vrm_token','ms7148VrmToken','mijnserenity_vrm_token','vrm_api_token'];
@@ -80,7 +80,8 @@
     const charger=metric(['sensor.vrm_charger_power','sensor.vrm_ac_charger_power'],['charger power','acculader vermogen','lader vermogen'],'w',['solar','pv','mppt','inverter'])??num(ac.chargerPower)??num(acDiag.chargerPower)??num(t.chargerPower);
     const inverter=metric(['sensor.vrm_inverter_power','sensor.vrm_inverter_output_power','sensor.vrm_ac_output_power'],['inverter power','omvormer vermogen','ac output power'],'w',['solar','charger','lader'])??num(ac.inverterPower)??num(acDiag.inverterPower)??num(t.inverterPower);
     const explicitLoad=metric(['sensor.vrm_ac_load_power','sensor.vrm_load_power','sensor.vrm_consumption_power'],['ac load power','load power','consumption power','verbruik vermogen'],'w',['solar','charger','battery'])??num(ac.loadPower)??num(acDiag.loadPower)??num(t.loadPower);
-    const load=finite(explicitLoad)?Math.abs(Number(explicitLoad)):(finite(power)&&Number(power)<0?Math.abs(Number(power)):null);
+    const batteryDischarge=finite(power)&&Number(power)<-1?Math.abs(Number(power)):null;
+    const load=finite(batteryDischarge)?batteryDischarge:(finite(explicitLoad)?Math.abs(Number(explicitLoad)):null);
     const dcLoad=metric(['sensor.vrm_dc_load_power','sensor.vrm_dc_system_power','sensor.vrm_dc_consumption_power'],['dc load power','dc system power','dc consumption power','dc verbruik'],'w',['battery','solar','charger']);
 
     const tanks=window.MIJSERENITY_TANK_LIVE||{};
@@ -106,13 +107,13 @@
   }
 
   function markup(){return `
-    <div id="msMarineGlass" data-ms-victron-live="7194" aria-label="Serenity Victron Live">
+    <div id="msMarineGlass" data-ms-victron-live="7195" aria-label="Serenity Victron Live">
       <div class="mg-live-head"><div class="mg-brand"><span class="mg-boat" aria-hidden="true">🛥️</span><span class="mg-brand-copy"><strong>SERENITY</strong><small>Victron Live</small></span></div><span id="mgLivePill" class="mg-live-pill"><i></i> LIVE</span></div>
       <div class="mg-main">
         <div class="mg-mini solar"><small>☀️ Zonne-energie</small><strong id="mgSolar">– W</strong><em>SmartSolar MPPT</em></div>
-        <div class="mg-battery"><div id="mgSocRing" class="mg-ring"><div class="mg-ring-copy"><small>HUISHOUDACCU</small><strong><b id="mg7194Soc" style="font:inherit;color:inherit">–%</b></strong><b id="mgVolt">– V</b><em><span id="mgAmp">– A</span> · <span id="mgBatP">– W</span></em><span id="mgBatteryMode" class="mg-charge-pill">⚡ Live</span></div></div></div>
-        <div class="mg-mini use"><small>💡 Verbruik</small><strong id="mgLoad">– W</strong><em>Actueel boordnet</em></div>
-        <div class="mg-mini shore"><small>🔌 Walstroom</small><strong id="mg7194Shore">–</strong><em id="mg7194ShoreMeta">Cerbo / MultiPlus</em></div>
+        <div class="mg-battery"><div id="mgSocRing" class="mg-ring"><div class="mg-ring-copy"><small>HUISHOUDACCU</small><strong><b id="mg7195Soc" style="font:inherit;color:inherit">–%</b></strong><b id="mgVolt">– V</b><em><span id="mgAmp">– A</span> · <span id="mgBatP">– W</span></em><span id="mgBatteryMode" class="mg-charge-pill">⚡ Live</span></div></div></div>
+        <div class="mg-mini use"><small>💡 Verbruik</small><strong id="mg7195Load">– W</strong><em>Actueel totaal</em></div>
+        <div class="mg-mini shore"><small>🔌 Walstroom</small><strong id="mg7195Shore">–</strong><em id="mg7195ShoreMeta">Cerbo / MultiPlus</em></div>
         <div class="mg-mini dc"><small>☷ DC-verbruik</small><strong id="mgDcLoad">– W</strong><em>12 V boordnet</em></div>
       </div>
       <div class="mg-three">
@@ -121,15 +122,15 @@
         <div class="mg-info-card water"><small><span class="mg-icon">💧</span>Watertank</small><strong id="mg-water">–%</strong><em>Cerbo live</em><div class="mg-level-bar"><i id="mg-water-bar"></i></div></div>
       </div>
       <div class="mg-systems">
-        <div class="mg-system"><div class="mg-system-row"><span class="mg-system-icon">🔷</span><div><small>MultiPlus-II</small><strong id="mg7194MultiState">Stand-by</strong><em id="mgInv">– W</em></div></div></div>
-        <div class="mg-system"><div class="mg-system-row"><span class="mg-system-icon">⚡</span><div><small>Laadstatus</small><strong id="mg7194ChargeState">Lader uit</strong><em id="mgChg">– W</em></div></div></div>
+        <div class="mg-system"><div class="mg-system-row"><span class="mg-system-icon">🔷</span><div><small>MultiPlus-II</small><strong id="mg7195MultiState">Stand-by</strong><em id="mgInv">– W</em></div></div></div>
+        <div class="mg-system"><div class="mg-system-row"><span class="mg-system-icon">⚡</span><div><small>Laadstatus</small><strong id="mg7195ChargeState">Lader uit</strong><em id="mgChg">– W</em></div></div></div>
         <div id="mgClimateMini" class="mg-climate-mini">
           <button type="button" data-go="technical"><small>🌡️ Machinekamer</small><span class="mg-climate-values"><strong id="mgMachineTemp">– °C</strong><b id="mgMachineRv">– % RV</b></span><em>Ruuvi · Machinekamer</em></button>
           <button type="button" data-go="technical"><small>🌡️ Salon</small><span class="mg-climate-values"><strong id="mgSalonTemp">– °C</strong><b id="mgSalonRv">– % RV</b></span><em>Ruuvi · Salon</em></button>
         </div>
       </div>
-      <div id="mgFlow" class="mg-flow-card" data-dir="idle"><div class="mg-flow-node"><small>☀️ PV</small><strong id="mgPv">– W</strong></div><span class="mg-flow-arrow">→</span><div class="mg-flow-node"><small>🔋 Accu</small><strong id="mgNetPower">– W</strong></div><span class="mg-flow-arrow">→</span><div class="mg-flow-node"><small>💡 Verbruikers</small><strong id="mg7194LoadFlow">– W</strong></div></div>
-      <div id="mgHiddenCompat" hidden><span id="mgSoc"></span><span id="mgShore"></span><span id="mgShoreMeta"></span><span id="mgMultiState"></span><span id="mgChargeState"></span><span id="mgLoadFlow"></span><span id="mgChg2"></span><span id="mgInv2"></span><span id="mg-waste"></span><span id="mg-waste-l"></span><i id="mg-waste-bar"></i></div>
+      <div id="mgFlow" class="mg-flow-card" data-dir="idle"><div class="mg-flow-node"><small>☀️ PV</small><strong id="mgPv">– W</strong></div><span class="mg-flow-arrow">→</span><div class="mg-flow-node"><small>🔋 Accu</small><strong id="mgNetPower">– W</strong></div><span class="mg-flow-arrow">→</span><div class="mg-flow-node"><small>💡 Verbruikers</small><strong id="mg7195LoadFlow">– W</strong></div></div>
+      <div id="mgHiddenCompat" hidden><span id="mgSoc"></span><span id="mg7194Soc"></span><span id="mgLoad"></span><span id="mgLoadFlow"></span><span id="mg7194LoadFlow"></span><span id="mgShore"></span><span id="mgShoreMeta"></span><span id="mg7194Shore"></span><span id="mg7194ShoreMeta"></span><span id="mgMultiState"></span><span id="mg7194MultiState"></span><span id="mgChargeState"></span><span id="mg7194ChargeState"></span><span id="mgChg2"></span><span id="mgInv2"></span><span id="mg-waste"></span><span id="mg-waste-l"></span><i id="mg-waste-bar"></i></div>
       <div id="mgFoot" class="mg-foot"><i></i><span id="mgUpdated">Laatst bijgewerkt: wachten op Cerbo GX</span></div>
     </div>`}
 
@@ -139,13 +140,11 @@
     const headings=[...root.querySelectorAll('h1,h2,h3,h4,h5,h6,strong,.card-title,.section-title')];
     const heading=headings.find(el=>/^energie\s*&\s*stroom$/i.test(String(el.textContent||'').trim()));
     if(!heading)return null;
-
     const preferred=heading.closest('.card,section,article');
     if(preferred&&preferred!==root){
       const txt=String(preferred.innerText||preferred.textContent||'');
       if(/walstroom/i.test(txt)&&/omvormer/i.test(txt)&&/netto\s*stroom/i.test(txt))return preferred;
     }
-
     let node=heading.parentElement;
     for(let depth=0;node&&node!==root&&depth<5;depth++,node=node.parentElement){
       const txt=String(node.innerText||node.textContent||'');
@@ -166,15 +165,41 @@
     if(direct){direct.hidden=true;direct.classList.add('ms-victron-legacy-hidden');direct.setAttribute('aria-hidden','true')}
   }
 
+  function hideDuplicateTankSystems(){
+    const root=$('dashboard');
+    if(!root)return;
+    const headings=[...root.querySelectorAll('h1,h2,h3,h4,h5,h6,strong,.card-title,.section-title')];
+    const heading=headings.find(el=>/^(tanks\s*&\s*systems|tanks?\s*&\s*systemen|tanks?\s+en\s+systemen)$/i.test(String(el.textContent||'').trim()));
+    if(!heading)return;
+    let card=heading.closest('.card,section,article');
+    if(!card||card===root||card.id==='msVictronEnergy'||card.contains($('msMarineGlass'))){
+      card=null;
+      let node=heading.parentElement;
+      for(let depth=0;node&&node!==root&&depth<6;depth++,node=node.parentElement){
+        const txt=String(node.innerText||node.textContent||'');
+        if(/drinkwater/i.test(txt)&&/dieseltank/i.test(txt)){card=node;break}
+      }
+    }
+    if(card&&card!==root&&!card.contains($('msMarineGlass'))){
+      card.hidden=true;
+      card.classList.add('ms-victron-legacy-hidden');
+      card.setAttribute('aria-hidden','true');
+    }
+  }
+
   function mount(){
     const host=locateHost();
     if(!host)return false;
     if(host.id!=='msVictronEnergy')host.id='msVictronEnergy';
     host.classList.add('ms-victron-live-host');
-    if(!$('msMarineGlass')||$('msMarineGlass')?.dataset.msVictronLive!=='7194'||!host.contains($('msMarineGlass'))){
-      host.innerHTML=markup();
-    }
+    host.style.setProperty('height','auto','important');
+    host.style.setProperty('min-height','0','important');
+    host.style.setProperty('max-height','none','important');
+    host.style.setProperty('aspect-ratio','auto','important');
+    host.style.setProperty('align-self','start','important');
+    if(!$('msMarineGlass')||$('msMarineGlass')?.dataset.msVictronLive!=='7195'||!host.contains($('msMarineGlass'))){host.innerHTML=markup()}
     hideDiagnosis();
+    hideDuplicateTankSystems();
     return true;
   }
 
@@ -186,13 +211,13 @@
     if(!mount())return;
     const s=snapshot();
     const soc=finite(s.soc)?Math.max(0,Math.min(100,Number(s.soc))):null;
-    set('mg7194Soc',finite(soc)?`${Math.round(soc)}%`:'–%');
+    set('mg7195Soc',finite(soc)?`${Math.round(soc)}%`:'–%');
     const ring=$('mgSocRing');if(ring)ring.style.setProperty('--p',finite(soc)?soc:0);
     set('mgVolt',fmt(s.voltage,2,' V'));set('mgAmp',signed(s.current,2,' A'));set('mgBatP',signed(s.power,0,' W'));
     set('mgSolar',fmt(s.solar,0,' W'));set('mgPv',fmt(s.solar,0,' W'));
-    set('mgLoad',fmt(s.load,0,' W'));set('mg7194LoadFlow',fmt(s.load,0,' W'));set('mgDcLoad',fmt(s.dcLoad,0,' W'));set('mgNetPower',signed(s.power,0,' W'));
-    set('mg7194Shore',s.shore===true?'Aangesloten':s.shore===false?'Niet aangesloten':'Niet gekoppeld');
-    set('mg7194ShoreMeta',s.shore===true&&finite(s.shoreV)?`${fmt(s.shoreV,0,' V')} via MultiPlus`:s.shore===false?'Geen walspanning':'Sensor nog niet beschikbaar');
+    set('mg7195Load',fmt(s.load,0,' W'));set('mg7195LoadFlow',fmt(s.load,0,' W'));set('mgDcLoad',fmt(s.dcLoad,0,' W'));set('mgNetPower',signed(s.power,0,' W'));
+    set('mg7195Shore',s.shore===true?'Aangesloten':s.shore===false?'Niet aangesloten':'Niet gekoppeld');
+    set('mg7195ShoreMeta',s.shore===true&&finite(s.shoreV)?`${fmt(s.shoreV,0,' V')} via MultiPlus`:s.shore===false?'Geen walspanning':'Sensor nog niet beschikbaar');
 
     const [startLabel,startClass]=startState(s.start);set('mgStartVoltage',fmt(s.start,2,' V'));set('mgStartState',startLabel);
     const start=$('mgStartState');if(start)start.className=`state ${startClass}`.trim();
@@ -201,7 +226,7 @@
     const fuelBar=$('mg-fuel-bar');if(fuelBar)fuelBar.style.width=`${finite(s.fuel)?Math.max(0,Math.min(100,Number(s.fuel))):0}%`;
     set('mg-water',finite(s.water)?`${Math.round(Number(s.water))}%`:'–%');const waterBar=$('mg-water-bar');if(waterBar)waterBar.style.width=`${finite(s.water)?Math.max(0,Math.min(100,Number(s.water))):0}%`;
 
-    const [multi,charge]=multiState(s);set('mg7194MultiState',multi);set('mg7194ChargeState',charge);set('mgInv',fmt(s.inverter,0,' W'));set('mgChg',fmt(s.charger,0,' W'));set('mgInv2',fmt(s.inverter,0,' W'));set('mgChg2',fmt(s.charger,0,' W'));
+    const [multi,charge]=multiState(s);set('mg7195MultiState',multi);set('mg7195ChargeState',charge);set('mgInv',fmt(s.inverter,0,' W'));set('mgChg',fmt(s.charger,0,' W'));set('mgInv2',fmt(s.inverter,0,' W'));set('mgChg2',fmt(s.charger,0,' W'));
     set('mgSalonTemp',fmt(s.salonTemp,1,' °C'));set('mgSalonRv',fmt(s.salonHum,0,'% RV'));set('mgMachineTemp',fmt(s.machineTemp,1,' °C'));set('mgMachineRv',fmt(s.machineHum,0,'% RV'));
 
     const mode=$('mgBatteryMode');if(mode)mode.textContent=finite(s.power)&&Number(s.power)>10?'⚡ Laden':finite(s.power)&&Number(s.power)<-10?'⚡ Ontladen':'⚡ Live';
