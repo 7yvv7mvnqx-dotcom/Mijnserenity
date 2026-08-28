@@ -1,13 +1,13 @@
-/* MijnSerenity 7.19.0 — stabiliteitsbootstrap
+/* MijnSerenity 7.19.1 — stabiliteitsbootstrap
    Eén dashboard, één navigatielaag en pagina-uitbreidingen alleen op aanvraag. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap71900)return;
-  window.__msBootstrap71900=true;
+  if(window.__msBootstrap71910)return;
+  window.__msBootstrap71910=true;
   window.__msDisableLegacyVisuals=true;
 
-  const BUILD='7.19.0';
-  const VERSION='719000';
+  const BUILD='7.19.1';
+  const VERSION='719010';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
