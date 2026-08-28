@@ -1,6 +1,6 @@
-/* MijnSerenity 7.19.0 — eenvoudige PWA-cache zonder navigatie- of update-loop */
-const CACHE_NAME='mijnserenity-7.19.0-stable';
-const BUILD_TOKEN='719000';
+/* MijnSerenity 7.19.1 — eenvoudige PWA-cache zonder navigatie- of update-loop */
+const CACHE_NAME='mijnserenity-7.19.1-stable';
+const BUILD_TOKEN='719010';
 const CORE_ASSETS=[
   '/',
   '/index.html',
