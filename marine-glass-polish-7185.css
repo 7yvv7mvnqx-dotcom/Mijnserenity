@@ -1,5 +1,8 @@
 /* MijnSerenity 7.18.6 — professionele Marine Glass polish */
 
+/* Tanks & Systems is dubbelop: Victron is hiervoor de leidende weergave. */
+#msMarineGlass .mg-systems{display:none!important}
+
 #msMarineGlass .mg-card,
 #msMarineGlass .mg-card button,
 #msMarineGlass .mg-energy-grid,
