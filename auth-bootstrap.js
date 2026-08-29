@@ -1,13 +1,15 @@
-/* MijnSerenity 7.19.8 — stabiliteitsbootstrap
-   Eén dashboard, één navigatielaag en iPhone-layoutfix direct vanuit de bootstrap. */
+/* MijnSerenity 7.19.9 — stabiliteitsbootstrap
+   Eén dashboard, één navigatielaag en een volledig geïsoleerde Victron Live kaart. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap71980)return;
-  window.__msBootstrap71980=true;
+  if(window.__msBootstrap71990)return;
+  window.__msBootstrap71990=true;
   window.__msDisableLegacyVisuals=true;
+  /* index.html laadt deze oude module nog; blokkeer hem vóór de parser daar aankomt. */
+  window.__msVictronEnergy71950=true;
 
-  const BUILD='7.19.8';
-  const VERSION='719080';
+  const BUILD='7.19.9';
+  const VERSION='719090';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
@@ -21,7 +23,6 @@
     `/runtime-performance-71700.js?v=${VERSION}`,
     `/orientation-layout-71835.js?v=${VERSION}`,
     `/dashboard-pro-71531-loader.js?v=${VERSION}`,
-    `/victron-panel-layout-fix-71971.js?v=${VERSION}`,
     `/victron-diagnostics.js?v=${VERSION}`,
     `/ha-live-bridge.js?v=${VERSION}`,
     `/movement-presence.js?v=${VERSION}`,
@@ -55,10 +56,11 @@
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');if(badge)badge.textContent=BUILD;
   }
   function removeLegacyLayoutLayers(){
-    const blocked=['page-swipe.css','simple-accessible.css','captain-experience.css','navigation-compact.css','marine-glass-mobile-7182.css','marine-glass-polish-7185.css','serenity-control-dashboard.css'];
+    const blocked=['page-swipe.css','simple-accessible.css','captain-experience.css','navigation-compact.css','marine-glass-mobile-7182.css','marine-glass-polish-7185.css','serenity-control-dashboard.css','victron-energy-71559.css'];
     document.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{const path=pathOf(link.href);if(blocked.some(name=>path.endsWith('/'+name)||path.endsWith(name)))link.remove()});
     ['msMobileFlowGuard71836','msOrientationLayout71835Style','msOrientationLayout71836Style','msSerenityControlCss','msMarineGlassPolish7185','mgNav718Style','msMarineGlassStable71900'].forEach(id=>document.getElementById(id)?.remove());
     document.getElementById('msSerenityControl')?.remove();document.getElementById('mgMoreNav')?.remove();
+    document.querySelectorAll('[id="msMarineGlass"][data-ms-victron-live]').forEach(panel=>panel.remove());
     document.body?.classList.remove('ms750-simple-ui','ms760-captain-experience','ms744-keyboard-open','ms744-nav-repositioning');
     document.getElementById('dashboard')?.classList.remove('scd-active','mspro-active');
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav','bottom-nav-viewport-fixed','bottom-nav-always-visible','bottom-nav-auto-hidden');
