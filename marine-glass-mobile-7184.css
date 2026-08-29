@@ -1,12 +1,17 @@
-/* MijnSerenity 7.19.1 — stabiele responsive shell
+/* MijnSerenity 7.19.2 — stabiele responsive shell
    Eén CSS-laag voor document, Marine Glass en ondernavigatie.
    Verborgen routes winnen altijd van dashboard-layoutregels. */
 :root{--ms719-nav-h:68px}
 html,body{width:100%!important;max-width:100%!important;min-width:0!important;min-height:100%!important;height:auto!important;margin:0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-x:none}
-body{padding-bottom:calc(var(--ms719-nav-h) + env(safe-area-inset-bottom))!important}
+/* Slechts één plek reserveert ruimte voor de vaste ondernavigatie. */
+body{padding-bottom:0!important}
 body>main,body.ms750-simple-ui>main,body.ms760-captain-experience>main,body.ms708-native-pages-active>main,#appView,#dashboard,#dashboard.mg-active,#msMarineGlass{box-sizing:border-box!important;width:100%!important;max-width:none!important;min-width:0!important;height:auto!important;max-height:none!important;margin-left:0!important;margin-right:0!important;position:relative!important;inset:auto!important;transform:none!important;translate:none!important;contain:none!important;overflow-x:hidden!important;overflow-y:visible!important}
 body>main{margin:0!important;padding:0!important}
-#appView{padding:0 0 calc(var(--ms719-nav-h) + env(safe-area-inset-bottom) + 12px)!important}
+#appView{padding:0 0 calc(var(--ms719-nav-h) + env(safe-area-inset-bottom) + 8px)!important}
+
+/* Alles met hidden moet echt uit de layout verdwijnen. Dit voorkomt losse pijlen,
+   sluittekens en verborgen modals onderaan de pagina. */
+.hidden,[hidden]{display:none!important}
 
 /* Routewaarheid: als captainNavigate/showTab een pagina hidden maakt, mag geen
    dashboard-specifieke regel die pagina alsnog zichtbaar forceren. */
@@ -18,7 +23,7 @@ body>main{margin:0!important;padding:0!important}
 .ms708-native-pager>.ms708-native-page{position:relative!important;width:100%!important;max-width:none!important;min-width:0!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;transform:none!important}
 #dashboard.mg-active:not(.hidden){display:block!important;padding:0!important;background:#061321!important}
 #dashboard.mg-active>*:not(#msMarineGlass){display:none!important}
-#msMarineGlass{display:block!important;min-height:100dvh!important;padding:0 10px calc(var(--ms719-nav-h) + env(safe-area-inset-bottom) + 16px)!important}
+#msMarineGlass{display:block!important;min-height:0!important;padding:0 10px 8px!important}
 #msMarineGlass>.mg-top,#msMarineGlass>main.mg-grid{box-sizing:border-box!important;width:100%!important;max-width:none!important;min-width:0!important}
 #msMarineGlass>main.mg-grid{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}
 #msMarineGlass>main.mg-grid>.mg-card{min-width:0!important;height:auto!important;max-height:none!important}
