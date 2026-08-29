@@ -1,9 +1,9 @@
-/* MijnSerenity 7.19.4 — één dashboardloader, met iPhone-layoutfix, live getijden en actuele weer-hotfix */
+/* MijnSerenity 7.19.6 — één dashboardloader, met actuele Victron-, weer- en mobiele fixes */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71940)return;
-  window.__msDashboardLoader71940=true;
-  const V='719040';
+  if(window.__msDashboardLoader71960)return;
+  window.__msDashboardLoader71960=true;
+  const V='719060';
 
   function currentPath(src){
     try{return new URL(src,location.href).pathname}catch{return src}
@@ -38,7 +38,6 @@
   function ensureStableCss(){
     ensureCssLink('msStableShell71900',`/marine-glass-mobile-7184.css?v=${V}`);
     ensureCssLink('msMarineGlassFixes7193',`/marine-glass-fixes-7193.css?v=${V}`);
-    /* Oude dubbele instantie uit eerdere 7.19.0-testbuilds opruimen. */
     document.getElementById('msMarineGlassStable71900')?.remove();
   }
   function removeConflicts(){
@@ -54,7 +53,7 @@
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav','bottom-nav-viewport-fixed','bottom-nav-always-visible','bottom-nav-auto-hidden');
   }
   function syncVersion(){
-    const build=window.MIJSERENITY_BUILD||'7.19.4';
+    const build=window.MIJSERENITY_BUILD||'7.19.6';
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(badge)badge.textContent=build;
     const settings=document.getElementById('settingsAppVersion');
@@ -66,20 +65,20 @@
     ensureStableCss();
 
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
-    /* Deze module vult de weersfooter en vervangt de oude statische getijden-placeholder. */
     await load(`/marine-glass-polish-7185.js?v=${V}`,'live-weather-tides');
-    /* Hotfix: alle zichtbare weerwaarden komen uit dezelfde actuele meting en blijven synchroon. */
     await load(`/marine-glass-weather-fix-71931.js?v=${V}`,'live-weather-unified');
     await load(`/start-battery-soc-71822.js?v=${V}`,'start-battery-soc');
     await load(`/tank-systems-climate-71823.js?v=${V}`,'tank-systems-climate');
     await load(`/dashboard-ais-map-71825.js?v=${V}`,'dashboard-ais-map');
     await load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info');
     await load(`/cerbo-truth-71818.js?v=${V}`,'cerbo-truth');
+    /* 7.19.6: de verse VRM-response schrijft nu rechtstreeks naar de zichtbare Victron Live velden. */
+    await load(`/victron-live-direct-71960.js?v=${V}`,'victron-live-direct');
 
     removeConflicts();
     ensureStableCss();
     syncVersion();
-    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.4'}}));
+    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.6'}}));
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
