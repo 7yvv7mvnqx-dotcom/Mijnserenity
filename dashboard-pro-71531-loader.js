@@ -1,9 +1,9 @@
-/* MijnSerenity 7.19.0 — één dashboardloader, zonder layoutloops */
+/* MijnSerenity 7.19.3 — één dashboardloader, met actieve mobiele fixes en live getijden */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71900)return;
-  window.__msDashboardLoader71900=true;
-  const V='719000';
+  if(window.__msDashboardLoader71930)return;
+  window.__msDashboardLoader71930=true;
+  const V='719030';
 
   function currentPath(src){
     try{return new URL(src,location.href).pathname}catch{return src}
@@ -25,16 +25,19 @@
       document.head.appendChild(script);
     });
   }
-  function ensureStableCss(){
-    const href=`/marine-glass-mobile-7184.css?v=${V}`;
-    let link=document.getElementById('msStableShell71900');
+  function ensureCssLink(id,href){
+    let link=document.getElementById(id);
     if(!link){
       link=document.createElement('link');
-      link.id='msStableShell71900';
+      link.id=id;
       link.rel='stylesheet';
       document.head.appendChild(link);
     }
     if(link.getAttribute('href')!==href)link.setAttribute('href',href);
+  }
+  function ensureStableCss(){
+    ensureCssLink('msStableShell71900',`/marine-glass-mobile-7184.css?v=${V}`);
+    ensureCssLink('msMarineGlassFixes7193',`/marine-glass-fixes-7193.css?v=${V}`);
     /* Oude dubbele instantie uit eerdere 7.19.0-testbuilds opruimen. */
     document.getElementById('msMarineGlassStable71900')?.remove();
   }
@@ -51,7 +54,7 @@
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav','bottom-nav-viewport-fixed','bottom-nav-always-visible','bottom-nav-auto-hidden');
   }
   function syncVersion(){
-    const build=window.MIJSERENITY_BUILD||'7.19.0';
+    const build=window.MIJSERENITY_BUILD||'7.19.3';
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(badge)badge.textContent=build;
     const settings=document.getElementById('settingsAppVersion');
@@ -63,6 +66,8 @@
     ensureStableCss();
 
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
+    /* Deze module vult de weersfooter en vervangt de oude statische getijden-placeholder. */
+    await load(`/marine-glass-polish-7185.js?v=${V}`,'live-weather-tides');
     await load(`/start-battery-soc-71822.js?v=${V}`,'start-battery-soc');
     await load(`/tank-systems-climate-71823.js?v=${V}`,'tank-systems-climate');
     await load(`/dashboard-ais-map-71825.js?v=${V}`,'dashboard-ais-map');
@@ -72,7 +77,7 @@
     removeConflicts();
     ensureStableCss();
     syncVersion();
-    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.0'}}));
+    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.3'}}));
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
