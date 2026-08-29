@@ -1,9 +1,9 @@
-/* MijnSerenity 7.19.3 — één dashboardloader, met actieve mobiele fixes, live getijden en actuele weer-hotfix */
+/* MijnSerenity 7.19.4 — één dashboardloader, met iPhone-layoutfix, live getijden en actuele weer-hotfix */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71931)return;
-  window.__msDashboardLoader71931=true;
-  const V='719031';
+  if(window.__msDashboardLoader71940)return;
+  window.__msDashboardLoader71940=true;
+  const V='719040';
 
   function currentPath(src){
     try{return new URL(src,location.href).pathname}catch{return src}
@@ -54,7 +54,7 @@
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav','bottom-nav-viewport-fixed','bottom-nav-always-visible','bottom-nav-auto-hidden');
   }
   function syncVersion(){
-    const build=window.MIJSERENITY_BUILD||'7.19.3';
+    const build=window.MIJSERENITY_BUILD||'7.19.4';
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(badge)badge.textContent=build;
     const settings=document.getElementById('settingsAppVersion');
@@ -79,7 +79,7 @@
     removeConflicts();
     ensureStableCss();
     syncVersion();
-    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.3'}}));
+    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.4'}}));
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
