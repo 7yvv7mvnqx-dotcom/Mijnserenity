@@ -1,13 +1,13 @@
-/* MijnSerenity 7.19.7 — stabiliteitsbootstrap
-   Eén dashboard, één navigatielaag en pagina-uitbreidingen alleen op aanvraag. */
+/* MijnSerenity 7.19.8 — stabiliteitsbootstrap
+   Eén dashboard, één navigatielaag en iPhone-layoutfix direct vanuit de bootstrap. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap71970)return;
-  window.__msBootstrap71970=true;
+  if(window.__msBootstrap71980)return;
+  window.__msBootstrap71980=true;
   window.__msDisableLegacyVisuals=true;
 
-  const BUILD='7.19.7';
-  const VERSION='719070';
+  const BUILD='7.19.8';
+  const VERSION='719080';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
@@ -21,6 +21,7 @@
     `/runtime-performance-71700.js?v=${VERSION}`,
     `/orientation-layout-71835.js?v=${VERSION}`,
     `/dashboard-pro-71531-loader.js?v=${VERSION}`,
+    `/victron-panel-layout-fix-71971.js?v=${VERSION}`,
     `/victron-diagnostics.js?v=${VERSION}`,
     `/ha-live-bridge.js?v=${VERSION}`,
     `/movement-presence.js?v=${VERSION}`,
@@ -54,7 +55,7 @@
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');if(badge)badge.textContent=BUILD;
   }
   function removeLegacyLayoutLayers(){
-    const blocked=['page-swipe.css','simple-accessible.css','captain-experience.css','navigation-compact.css','marine-glass-polish-7185.css','serenity-control-dashboard.css'];
+    const blocked=['page-swipe.css','simple-accessible.css','captain-experience.css','navigation-compact.css','marine-glass-mobile-7182.css','marine-glass-polish-7185.css','serenity-control-dashboard.css'];
     document.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{const path=pathOf(link.href);if(blocked.some(name=>path.endsWith('/'+name)||path.endsWith(name)))link.remove()});
     ['msMobileFlowGuard71836','msOrientationLayout71835Style','msOrientationLayout71836Style','msSerenityControlCss','msMarineGlassPolish7185','mgNav718Style','msMarineGlassStable71900'].forEach(id=>document.getElementById(id)?.remove());
     document.getElementById('msSerenityControl')?.remove();document.getElementById('mgMoreNav')?.remove();
@@ -86,7 +87,11 @@
   }
   async function start(){
     try{
-      syncBuildVersion();removeLegacyLayoutLayers();ensureCss('professional-ui-71700.css','msProfessionalUi71900');ensureCss('marine-glass-mobile-7184.css','msStableShell71900');setAuthStatus('Beveiligde inlog wordt geladen…');
+      syncBuildVersion();removeLegacyLayoutLayers();
+      ensureCss('professional-ui-71700.css','msProfessionalUi71900');
+      ensureCss('marine-glass-mobile-7184.css','msStableShell71900');
+      ensureCss('marine-glass-fixes-7193.css','msMarineGlassFixes7193');
+      setAuthStatus('Beveiligde inlog wordt geladen…');
       await ensureSupabase();await loadScript(CORE_SCRIPT,25000);if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');const button=document.getElementById('signInButton');if(button)button.disabled=false;
       installLazyRouteHooks();await loadQueue(ESSENTIAL,'Kern');wrapNavigation();removeLegacyLayoutLayers();syncBuildVersion();
       setTimeout(()=>{loadQueue(SAFE_BACKGROUND,'Achtergrond').then(()=>{syncBuildVersion();window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}))}).catch(error=>console.warn('Achtergrondmodules:',error))},1800);
