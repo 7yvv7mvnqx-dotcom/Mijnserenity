@@ -1,9 +1,9 @@
-/* MijnSerenity 7.19.7.1 — dashboardloader met compacte Victron Live kaart */
+/* MijnSerenity 7.19.8 — dashboardloader met iPhone layoutfix direct gecachebust */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71971)return;
-  window.__msDashboardLoader71971=true;
-  const V='719071';
+  if(window.__msDashboardLoader71980)return;
+  window.__msDashboardLoader71980=true;
+  const V='719080';
 
   function currentPath(src){
     try{return new URL(src,location.href).pathname}catch{return src}
@@ -53,7 +53,7 @@
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav','bottom-nav-viewport-fixed','bottom-nav-always-visible','bottom-nav-auto-hidden');
   }
   function syncVersion(){
-    const build=window.MIJSERENITY_BUILD||'7.19.7';
+    const build=window.MIJSERENITY_BUILD||'7.19.8';
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(badge)badge.textContent=build;
     const settings=document.getElementById('settingsAppVersion');
@@ -73,13 +73,12 @@
     await load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info');
     await load(`/cerbo-truth-71818.js?v=${V}`,'cerbo-truth');
     await load(`/victron-live-direct-71960.js?v=${V}`,'victron-live-direct');
-    /* iPhone: neutraliseer de viewporthoogte van de ingesloten Serenity Victron Live kaart. */
     await load(`/victron-panel-layout-fix-71971.js?v=${V}`,'victron-panel-layout');
 
     removeConflicts();
     ensureStableCss();
     syncVersion();
-    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.7'}}));
+    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.8'}}));
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
