@@ -1,17 +1,17 @@
-/* MijnSerenity 7.19.1 — eenvoudige PWA-cache zonder navigatie- of update-loop */
-const CACHE_NAME='mijnserenity-7.19.1-stable';
-const BUILD_TOKEN='719010';
+/* MijnSerenity 7.19.6 — eenvoudige PWA-cache met directe activatie van deze hotfix */
+const CACHE_NAME='mijnserenity-7.19.6-stable';
+const BUILD_TOKEN='719060';
 const CORE_ASSETS=[
   '/',
   '/index.html',
   '/manifest.json',
-  '/auth-bootstrap.js?v=718130',
   `/auth-bootstrap.js?v=${BUILD_TOKEN}`,
   `/app.js?v=${BUILD_TOKEN}`,
   `/professional-ui-71700.css?v=${BUILD_TOKEN}`,
   `/marine-glass-mobile-7184.css?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71531-loader.js?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
+  `/victron-live-direct-71960.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -27,7 +27,7 @@ self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     const cache=await caches.open(CACHE_NAME);
     await Promise.all(CORE_ASSETS.map(path=>cacheCore(cache,path)));
-    /* Bewust niet automatisch skipWaiting: app.js toont één updateknop. */
+    await self.skipWaiting();
   })());
 });
 
