@@ -1,6 +1,6 @@
-/* MijnSerenity 7.19.8 — eenvoudige PWA-cache met directe activatie van de iPhone-layoutfix */
-const CACHE_NAME='mijnserenity-7.19.8-stable';
-const BUILD_TOKEN='719080';
+/* MijnSerenity 7.19.9 — PWA-cache zonder legacy Victron/MarineGlass botsing */
+const CACHE_NAME='mijnserenity-7.19.9-stable';
+const BUILD_TOKEN='719090';
 const CORE_ASSETS=[
   '/',
   '/index.html',
@@ -12,10 +12,7 @@ const CORE_ASSETS=[
   `/marine-glass-fixes-7193.css?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71531-loader.js?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
-  `/victron-panel-layout-fix-71971.js?v=${BUILD_TOKEN}`,
-  `/victron-energy-71559.css?v=${BUILD_TOKEN}`,
-  `/victron-energy-71559.js?v=${BUILD_TOKEN}`,
-  `/victron-live-direct-71960.js?v=${BUILD_TOKEN}`,
+  `/victron-live-panel-71990.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -43,9 +40,7 @@ self.addEventListener('activate',event=>{
   })());
 });
 
-self.addEventListener('message',event=>{
-  if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
-});
+self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting()});
 
 async function networkFirst(request,fallbackPath=null){
   try{
@@ -57,19 +52,14 @@ async function networkFirst(request,fallbackPath=null){
     }
     return response;
   }catch{
-    return (await caches.match(request,{ignoreSearch:false}))||
-      (fallbackPath?await caches.match(fallbackPath):null)||
-      new Response('',{status:503});
+    return (await caches.match(request,{ignoreSearch:false}))||(fallbackPath?await caches.match(fallbackPath):null)||new Response('',{status:503});
   }
 }
 
 async function staleWhileRevalidate(request){
   const cached=await caches.match(request,{ignoreSearch:false});
   const network=fetch(request,{cache:'no-cache'}).then(async response=>{
-    if(response.ok){
-      const cache=await caches.open(CACHE_NAME);
-      cache.put(request,response.clone()).catch(()=>{});
-    }
+    if(response.ok){const cache=await caches.open(CACHE_NAME);cache.put(request,response.clone()).catch(()=>{})}
     return response;
   }).catch(()=>null);
   if(cached){network.catch(()=>{});return cached}
@@ -82,15 +72,8 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
-
-  if(request.mode==='navigate'){
-    event.respondWith(networkFirst(request,'/index.html'));
-    return;
-  }
-  if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){
-    event.respondWith(networkFirst(request));
-    return;
-  }
+  if(request.mode==='navigate'){event.respondWith(networkFirst(request,'/index.html'));return}
+  if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){event.respondWith(networkFirst(request));return}
   event.respondWith(staleWhileRevalidate(request));
 });
 
@@ -106,13 +89,7 @@ self.addEventListener('push',event=>{
   const title=String(payload.title||(level==='critical'?'🚨 SERENITY ALARM':'⚠️ Serenity waarschuwing'));
   const body=String(payload.body||payload.text||'Controleer MijnSerenity.');
   const url=String(payload.url||'/?alarm=1');
-  event.waitUntil(self.registration.showNotification(title,{
-    body,icon:'/icon-192.png',badge:'/favicon-64.png',
-    tag:String(payload.tag||`serenity-${level}-alarm`),renotify:true,
-    requireInteraction:level==='critical',silent:false,
-    vibrate:level==='critical'?[300,120,300,120,500]:[180,80,180],
-    data:{...payload,url,level}
-  }));
+  event.waitUntil(self.registration.showNotification(title,{body,icon:'/icon-192.png',badge:'/favicon-64.png',tag:String(payload.tag||`serenity-${level}-alarm`),renotify:true,requireInteraction:level==='critical',silent:false,vibrate:level==='critical'?[300,120,300,120,500]:[180,80,180],data:{...payload,url,level}}));
 });
 
 self.addEventListener('notificationclick',event=>{
