@@ -154,6 +154,21 @@
     const clean=String(value||'').trim();
     return clean&&clean!=='–'&&clean!=='-'&&!/^–\s*(?:°|°C|Bft)?$/i.test(clean);
   };
+  const syncSource=(id,value)=>{
+    if(!valid(value))return;
+    let node=$(id);
+    if(!node){
+      node=document.createElement('span');
+      node.id=id;
+      node.hidden=true;
+      node.dataset.msDashboardWeatherSource='1';
+      (document.body||document.documentElement).appendChild(node);
+    }
+    if(node.dataset.msDashboardWeatherSource==='1'||!valid(node.textContent)){
+      node.dataset.msDashboardWeatherSource='1';
+      if(node.textContent!==String(value))node.textContent=String(value);
+    }
+  };
 
   let busy=false;
   let lastRefresh=0;
@@ -175,14 +190,27 @@
     const visibility=text('ms709WeatherVisibility');
     const precipitation=text('ms709WeatherRain');
 
-    if(valid(wind))set('mgBft',wind);
-    if(valid(direction)&&!/onbekend/i.test(direction))set('mgDir',direction);
+    if(valid(wind)){
+      set('mgBft',wind);
+      syncSource('ms71510WindBft',wind);
+    }
+    if(valid(direction)&&!/onbekend/i.test(direction)){
+      set('mgDir',direction);
+      syncSource('ms71512WindDirection',direction);
+    }
     if(valid(outside)){
       set('mgOutTemp',outside);
       set('mgTempTop',outside.replace(/\s/g,''));
+      syncSource('weatherCurrentTemp',outside);
     }
-    if(valid(water)&&!/niet beschikbaar/i.test(water))set('mgWaterTemp',water);
-    if(valid(pressure))set('mgPressure',pressure);
+    if(valid(water)&&!/niet beschikbaar/i.test(water)){
+      set('mgWaterTemp',water);
+      syncSource('ms71510WaterTemp',water);
+    }
+    if(valid(pressure)){
+      set('mgPressure',pressure);
+      syncSource('ivmsClimatePressure',pressure);
+    }
     if(valid(visibility))set('mgVisibility',visibility);
     if(valid(precipitation))set('mgPrecipitation',precipitation);
 
