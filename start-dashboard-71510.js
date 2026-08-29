@@ -134,3 +134,123 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
+
+/* Marine Glass dashboard: haal het actuele weer op de huidige GPS-positie op.
+   Het dashboard las eerder alleen losse/stale DOM-waarden en ververste de
+   Open-Meteo data niet zolang de aparte Weer-pagina niet geopend was. */
+(()=>{
+  'use strict';
+  if(window.__ms719LiveDashboardWeather)return;
+  window.__ms719LiveDashboardWeather=true;
+
+  const REFRESH_MS=5*60*1000;
+  const $=id=>document.getElementById(id);
+  const text=id=>String($(id)?.textContent||'').trim();
+  const set=(id,value)=>{
+    const node=$(id);
+    if(node&&value&&node.textContent!==String(value))node.textContent=String(value);
+  };
+  const valid=value=>{
+    const clean=String(value||'').trim();
+    return clean&&clean!=='–'&&clean!=='-'&&!/^–\s*(?:°|°C|Bft)?$/i.test(clean);
+  };
+
+  let busy=false;
+  let lastRefresh=0;
+
+  function ensureDashboardWeatherIds(){
+    const fields=document.querySelectorAll('#msMarineGlass .mg-weather-foot span');
+    if(fields[1]?.querySelector('b'))fields[1].querySelector('b').id='mgVisibility';
+    if(fields[2]?.querySelector('b'))fields[2].querySelector('b').id='mgPrecipitation';
+  }
+
+  function copyLiveWeatherToDashboard(){
+    ensureDashboardWeatherIds();
+
+    const wind=text('ms709WeatherWind');
+    const direction=text('ms709WeatherDirection');
+    const outside=text('ms709WeatherTemp');
+    const water=text('ms793WeatherWaterTemp');
+    const pressure=text('ms709WeatherPressure');
+    const visibility=text('ms709WeatherVisibility');
+    const precipitation=text('ms709WeatherRain');
+
+    if(valid(wind))set('mgBft',wind);
+    if(valid(direction)&&!/onbekend/i.test(direction))set('mgDir',direction);
+    if(valid(outside)){
+      set('mgOutTemp',outside);
+      set('mgTempTop',outside.replace(/\s/g,''));
+    }
+    if(valid(water)&&!/niet beschikbaar/i.test(water))set('mgWaterTemp',water);
+    if(valid(pressure))set('mgPressure',pressure);
+    if(valid(visibility))set('mgVisibility',visibility);
+    if(valid(precipitation))set('mgPrecipitation',precipitation);
+
+    const degrees=Number(window.liveNavState?.weather?.windDirection);
+    const arrow=$('mgWindArrow');
+    if(arrow&&Number.isFinite(degrees))arrow.style.transform=`translate(-50%,-85%) rotate(${degrees}deg)`;
+  }
+
+  function weatherRefreshFunction(){
+    try{
+      return typeof ms709RefreshWeather==='function'?ms709RefreshWeather:null;
+    }catch{
+      return null;
+    }
+  }
+
+  async function refreshDashboardWeather(force=false){
+    if(busy)return;
+    const now=Date.now();
+    if(!force&&now-lastRefresh<REFRESH_MS){
+      copyLiveWeatherToDashboard();
+      return;
+    }
+
+    const refresh=weatherRefreshFunction();
+    if(!refresh){
+      setTimeout(()=>refreshDashboardWeather(force),1000);
+      return;
+    }
+
+    busy=true;
+    lastRefresh=now;
+    try{
+      /* force=true voorkomt een oude cache; forceGps=true verplaatst het weer
+         mee met de boot in plaats van op de laatst opgeslagen positie te blijven. */
+      await refresh(true,true);
+    }catch(error){
+      console.debug('Dashboardweer verversen:',error);
+    }finally{
+      busy=false;
+      copyLiveWeatherToDashboard();
+    }
+  }
+
+  function dashboardVisible(){
+    const dashboard=$('dashboard');
+    return dashboard&&!dashboard.classList.contains('hidden')&&!document.hidden;
+  }
+
+  function start(){
+    copyLiveWeatherToDashboard();
+    setTimeout(()=>refreshDashboardWeather(true),700);
+
+    setInterval(()=>{
+      if(dashboardVisible())refreshDashboardWeather(false);
+    },60000);
+
+    window.addEventListener('online',()=>refreshDashboardWeather(true),{passive:true});
+    window.addEventListener('mijnserenity:routechange',()=>refreshDashboardWeather(true),{passive:true});
+    window.addEventListener('mijnserenity:dashboard-ready',()=>refreshDashboardWeather(false),{passive:true});
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden){
+        copyLiveWeatherToDashboard();
+        if(dashboardVisible())refreshDashboardWeather(false);
+      }
+    },{passive:true});
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
