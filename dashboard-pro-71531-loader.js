@@ -1,9 +1,9 @@
-/* MijnSerenity 7.19.3 — één dashboardloader, met actieve mobiele fixes en live getijden */
+/* MijnSerenity 7.19.3 — één dashboardloader, met actieve mobiele fixes, live getijden en actuele weer-hotfix */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71930)return;
-  window.__msDashboardLoader71930=true;
-  const V='719030';
+  if(window.__msDashboardLoader71931)return;
+  window.__msDashboardLoader71931=true;
+  const V='719031';
 
   function currentPath(src){
     try{return new URL(src,location.href).pathname}catch{return src}
@@ -68,6 +68,8 @@
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
     /* Deze module vult de weersfooter en vervangt de oude statische getijden-placeholder. */
     await load(`/marine-glass-polish-7185.js?v=${V}`,'live-weather-tides');
+    /* Hotfix: alle zichtbare weerwaarden komen uit dezelfde actuele meting en blijven synchroon. */
+    await load(`/marine-glass-weather-fix-71931.js?v=${V}`,'live-weather-unified');
     await load(`/start-battery-soc-71822.js?v=${V}`,'start-battery-soc');
     await load(`/tank-systems-climate-71823.js?v=${V}`,'tank-systems-climate');
     await load(`/dashboard-ais-map-71825.js?v=${V}`,'dashboard-ais-map');
