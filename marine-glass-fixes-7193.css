@@ -1,4 +1,4 @@
-/* MijnSerenity 7.19.7 — actieve Marine Glass correcties */
+/* MijnSerenity 7.19.7.1 — actieve Marine Glass correcties */
 /* Deze laag wordt door de stabiele dashboardloader geladen en niet door de legacy-cleanup verwijderd. */
 #msMarineGlass .mg-tide .mg-tide-icon{display:inline-block;text-align:center;color:#d8edf8;font-style:normal}
 #msMarineGlass .mg-tide svg{height:120px!important;min-height:120px!important;max-height:120px!important;width:100%!important}
@@ -72,6 +72,45 @@
     min-height:0!important;
     height:0!important;
   }
+
+  /* De Serenity Victron Live-kaart is een onderdeel van het dashboard en nooit zelf een viewport. */
+  html body #msVictronEnergy,
+  html body #msVictronEnergy.ms-victron-live-host,
+  html body #msVictronEnergy>#msMarineGlass{
+    position:relative!important;
+    inset:auto!important;
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    min-block-size:0!important;
+    block-size:auto!important;
+    aspect-ratio:auto!important;
+    align-self:start!important;
+    overflow:visible!important;
+    transform:none!important;
+    contain:none!important;
+  }
+
+  html body #msVictronEnergy>#msMarineGlass>.mg-live-head{display:flex!important;height:auto!important;min-height:0!important;max-height:none!important}
+  html body #msVictronEnergy>#msMarineGlass>.mg-main,
+  html body #msVictronEnergy>#msMarineGlass>.mg-three,
+  html body #msVictronEnergy>#msMarineGlass>.mg-systems,
+  html body #msVictronEnergy>#msMarineGlass>.mg-flow-card{
+    display:grid!important;
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    grid-row:auto!important;
+    grid-column:auto!important;
+    visibility:visible!important;
+    opacity:1!important;
+  }
+  html body #msVictronEnergy>#msMarineGlass>.mg-foot{display:flex!important;position:relative!important;height:auto!important;min-height:0!important;max-height:none!important;visibility:visible!important;opacity:1!important}
 
   html body .ms708-native-pager,html body .ms708-native-pager>.ms708-native-page{
     min-height:0!important;
