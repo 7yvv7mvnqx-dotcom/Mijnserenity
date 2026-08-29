@@ -1,6 +1,6 @@
-/* MijnSerenity 7.19.6 — eenvoudige PWA-cache met directe activatie van deze hotfix */
-const CACHE_NAME='mijnserenity-7.19.6-stable';
-const BUILD_TOKEN='719060';
+/* MijnSerenity 7.19.8 — eenvoudige PWA-cache met directe activatie van de iPhone-layoutfix */
+const CACHE_NAME='mijnserenity-7.19.8-stable';
+const BUILD_TOKEN='719080';
 const CORE_ASSETS=[
   '/',
   '/index.html',
@@ -9,8 +9,12 @@ const CORE_ASSETS=[
   `/app.js?v=${BUILD_TOKEN}`,
   `/professional-ui-71700.css?v=${BUILD_TOKEN}`,
   `/marine-glass-mobile-7184.css?v=${BUILD_TOKEN}`,
+  `/marine-glass-fixes-7193.css?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71531-loader.js?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
+  `/victron-panel-layout-fix-71971.js?v=${BUILD_TOKEN}`,
+  `/victron-energy-71559.css?v=${BUILD_TOKEN}`,
+  `/victron-energy-71559.js?v=${BUILD_TOKEN}`,
   `/victron-live-direct-71960.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
