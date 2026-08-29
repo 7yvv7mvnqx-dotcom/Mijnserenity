@@ -1,4 +1,4 @@
-/* MijnSerenity 7.18.25 — iOS-safe live AIS in de bovenste dashboardkaart */
+/* MijnSerenity 7.19.2 — standaard AIS-kaart in de bovenste dashboardkaart */
 (()=>{
   'use strict';
   if(window.__msDashboardAis71825)return;
@@ -80,7 +80,7 @@
   function widgetDocument(position){
     const lat=Number(position.lat).toFixed(6);
     const lon=Number(position.lon).toFixed(6);
-    return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#061827}body>iframe,body>object,body>embed,iframe,object,embed{display:block!important;width:100%!important;height:100%!important;min-height:100%!important;border:0!important}</style></head><body><script>var mst_width="100%";var mst_height=((window.innerHeight||620)+"px");var mst_border="0";var mst_map_style="simple";var mst_mmsi="";var mst_show_track="false";var mst_show_info="true";var mst_fleet="";var mst_lat="${lat}";var mst_lng="${lon}";var mst_zoom="13";var mst_show_names="1";var mst_scroll_wheel="true";var mst_show_menu="false";(function(){var send=function(state,message){try{parent.postMessage({source:'mijnserenity-dashboard-ais',state:state,message:message||''},'*')}catch(e){}};var done=false;var ready=function(){if(done)return;var map=document.querySelector('iframe,object,embed');if(!map)return;done=true;map.style.width='100%';map.style.height='100%';map.style.minHeight='100%';map.style.border='0';send('ready','')};var observer=new MutationObserver(ready);observer.observe(document.documentElement,{childList:true,subtree:true});document.addEventListener('DOMContentLoaded',ready);setTimeout(ready,500);setTimeout(function(){if(!done)send('waiting','')},9000)})();<\/script><script id="myshiptrackingscript" src="${WIDGET_SCRIPT}" async defer onerror="parent.postMessage({source:'mijnserenity-dashboard-ais',state:'error',message:'AIS-bron kon niet worden geladen'},'*')"><\/script></body></html>`;
+    return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#061827}body>iframe,body>object,body>embed,iframe,object,embed{display:block!important;width:100%!important;height:100%!important;min-height:100%!important;border:0!important}</style></head><body><script>var mst_width="100%";var mst_height=((window.innerHeight||620)+"px");var mst_border="0";var mst_map_style="simple";var mst_mmsi="";var mst_show_track="false";var mst_show_info="true";var mst_fleet="";var mst_lat="${lat}";var mst_lng="${lon}";var mst_zoom="13";var mst_show_names="1";var mst_scroll_wheel="true";var mst_show_menu="true";(function(){var send=function(state,message){try{parent.postMessage({source:'mijnserenity-dashboard-ais',state:state,message:message||''},'*')}catch(e){}};var done=false;var ready=function(){if(done)return;var map=document.querySelector('iframe,object,embed');if(!map)return;done=true;map.style.width='100%';map.style.height='100%';map.style.minHeight='100%';map.style.border='0';send('ready','')};var observer=new MutationObserver(ready);observer.observe(document.documentElement,{childList:true,subtree:true});document.addEventListener('DOMContentLoaded',ready);setTimeout(ready,500);setTimeout(function(){if(!done)send('waiting','')},9000)})();<\/script><script id="myshiptrackingscript" src="${WIDGET_SCRIPT}" async defer onerror="parent.postMessage({source:'mijnserenity-dashboard-ais',state:'error',message:'AIS-bron kon niet worden geladen'},'*')"><\/script></body></html>`;
   }
 
   function ensureStyle(){
@@ -94,6 +94,7 @@
       #msMarineGlass .mg-map-mode-switch button{min-height:34px!important;padding:0 13px!important;border:0!important;border-radius:999px!important;background:transparent!important;color:#a9becc!important;font-size:11px!important;font-weight:760!important;white-space:nowrap!important}
       #msMarineGlass .mg-map-mode-switch button.active{background:#0e466d!important;color:#eefaff!important;box-shadow:inset 0 0 0 1px rgba(77,188,255,.30)!important}
       #msMarineGlass .mg-map-mode-switch button[data-mode="ais"].active:before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:#51e68e;box-shadow:0 0 9px rgba(81,230,142,.75)}
+      #msMarineGlass .mg-radar{display:none!important}
       #msMarineGlass .mg-ais-live-layer{position:absolute;inset:0;z-index:700;background:#061827;display:none;overflow:hidden}
       #msMarineGlass .mg-map.mg-ais-mode .mg-ais-live-layer{display:block}
       #msMarineGlass .mg-ais-live-layer>iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#061827}
@@ -103,7 +104,7 @@
       #msMarineGlass .mg-ais-status.online i{background:#51e68e;box-shadow:0 0 9px rgba(81,230,142,.75)}
       #msMarineGlass .mg-ais-status.error i{background:#ff6762;box-shadow:0 0 9px rgba(255,103,98,.65)}
       #msMarineGlass .mg-ais-open{pointer-events:auto!important;min-height:34px!important;padding:0 11px!important;border:1px solid rgba(80,172,226,.40)!important;border-radius:9px!important;background:rgba(5,32,51,.93)!important;color:#8ed8ff!important;font-size:10px!important;font-weight:760!important;white-space:nowrap!important}
-      #msMarineGlass .mg-map.mg-ais-mode #mgMap,#msMarineGlass .mg-map.mg-ais-mode .mg-north,#msMarineGlass .mg-map.mg-ais-mode .mg-radar,#msMarineGlass .mg-map.mg-ais-mode .leaflet-control-container{visibility:hidden!important;pointer-events:none!important}
+      #msMarineGlass .mg-map.mg-ais-mode #mgMap,#msMarineGlass .mg-map.mg-ais-mode .mg-north,#msMarineGlass .mg-map.mg-ais-mode .leaflet-control-container{visibility:hidden!important;pointer-events:none!important}
       #msMarineGlass .mg-map.mg-ais-mode .mg-map-mode-switch{visibility:visible!important;pointer-events:auto!important}
       @media(max-width:760px){#msMarineGlass .mg-map-mode-switch{top:9px}#msMarineGlass .mg-map-mode-switch button{min-height:32px!important;padding:0 11px!important;font-size:10px!important}#msMarineGlass .mg-ais-overlay{bottom:8px;left:8px;right:8px}#msMarineGlass .mg-ais-status{max-width:67%;font-size:9px;padding:6px 8px}#msMarineGlass .mg-ais-open{font-size:9px!important}}
     `;
@@ -115,6 +116,14 @@
     if(!card)return null;
     ensureStyle();
 
+    const radar=card.querySelector('.mg-radar');
+    if(radar){
+      radar.hidden=true;
+      radar.setAttribute('aria-hidden','true');
+      radar.removeAttribute('role');
+      radar.removeAttribute('tabindex');
+    }
+
     let switcher=$('mgMapModeSwitch');
     if(!switcher){
       switcher=document.createElement('div');
@@ -122,8 +131,11 @@
       switcher.className='mg-map-mode-switch';
       switcher.setAttribute('role','group');
       switcher.setAttribute('aria-label','Kaartweergave');
-      switcher.innerHTML='<button type="button" data-mode="map" class="active">Kaart</button><button type="button" data-mode="ais">AIS live</button>';
+      switcher.innerHTML='<button type="button" data-mode="map" class="active">Kaart</button><button type="button" data-mode="ais">AIS kaart</button>';
       card.appendChild(switcher);
+    }else{
+      const aisButton=switcher.querySelector('button[data-mode="ais"]');
+      if(aisButton)aisButton.textContent='AIS kaart';
     }
     if(!switcher.dataset.ais71825){
       switcher.dataset.ais71825='1';
@@ -141,7 +153,7 @@
       layer=document.createElement('div');
       layer.id='mgAisLiveLayer';
       layer.className='mg-ais-live-layer';
-      layer.innerHTML='<iframe id="mgAisLiveFrame" title="Live AIS-schepen rond Serenity" loading="eager" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="mg-ais-overlay"><span id="mgAisLiveStatus" class="mg-ais-status"><i></i><span>AIS gereed</span></span><button id="mgAisOpenFull" class="mg-ais-open" type="button">Open volledige AIS ›</button></div>';
+      layer.innerHTML='<iframe id="mgAisLiveFrame" title="Standaard AIS-kaart rond Serenity" loading="eager" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="mg-ais-overlay"><span id="mgAisLiveStatus" class="mg-ais-status"><i></i><span>AIS gereed</span></span><button id="mgAisOpenFull" class="mg-ais-open" type="button">Volledige AIS ›</button></div>';
       card.appendChild(layer);
     }
     const open=$('mgAisOpenFull');
@@ -175,7 +187,7 @@
       if(data.state==='ready'){
         lastLoadedAt=Date.now();
         const time=new Date(lastLoadedAt).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
-        status(`AIS live · schepen in de buurt · ${time}`,'online');
+        status(`AIS online · schepen in de buurt · ${time}`,'online');
       }else if(data.state==='error'){
         status(data.message||'AIS tijdelijk niet beschikbaar','error');
       }else if(data.state==='waiting'){
