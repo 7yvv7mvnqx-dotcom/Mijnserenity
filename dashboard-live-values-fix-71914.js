@@ -183,3 +183,20 @@
   window.ms71915RenderEnergy=render;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
+
+/* Startscherm: laad de compacte live AIS-aanvaringsradar na de dashboardwaarden. */
+(()=>{
+  if(window.__msCollisionRadarLoader8201)return;
+  window.__msCollisionRadarLoader8201=true;
+  const load=()=>{
+    if(window.__msDashboardCollisionRadar8201)return;
+    if(document.querySelector('script[data-ms-collision-radar-8201]'))return;
+    const script=document.createElement('script');
+    script.src='/dashboard-collision-radar-8201.js?v=820101';
+    script.async=false;
+    script.dataset.msCollisionRadar8201='1';
+    script.onerror=()=>console.warn('Aanvaringsradar kon niet worden geladen.');
+    document.head.appendChild(script);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();
+})();
