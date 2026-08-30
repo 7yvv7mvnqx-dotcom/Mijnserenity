@@ -1,9 +1,9 @@
-/* MijnSerenity 7.19.9 — dashboardloader zonder Victron/MarineGlass ID- en CSS-botsing */
+/* MijnSerenity 7.19.10 — kritieke dashboarddelen eerst, optionele modules met time-out */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader71990)return;
-  window.__msDashboardLoader71990=true;
-  const V='719090';
+  if(window.__msDashboardLoader719100)return;
+  window.__msDashboardLoader719100=true;
+  const V='719100';
 
   function currentPath(src){
     try{return new URL(src,location.href).pathname}catch{return src}
@@ -12,16 +12,23 @@
     const wanted=currentPath(src);
     return [...document.scripts].some(script=>script.src&&currentPath(script.src)===wanted&&script.dataset.ms719Loaded==='1');
   }
-  function load(src,key){
-    if(scriptAlreadyLoaded(src))return Promise.resolve();
+  function load(src,key,timeoutMs=7000){
+    if(scriptAlreadyLoaded(src))return Promise.resolve(true);
     return new Promise(resolve=>{
       const script=document.createElement('script');
+      let done=false;
+      const finish=ok=>{
+        if(done)return;done=true;clearTimeout(timer);script.onload=null;script.onerror=null;
+        if(!ok)console.warn('Dashboardmodule overgeslagen of te traag:',src);
+        resolve(ok);
+      };
+      const timer=setTimeout(()=>finish(false),timeoutMs);
       script.src=src;
       script.async=false;
       script.dataset.ms719Loaded='1';
       script.dataset.msDashboard=key;
-      script.onload=()=>resolve();
-      script.onerror=()=>{console.warn('Dashboardmodule overgeslagen:',src);resolve()};
+      script.onload=()=>finish(true);
+      script.onerror=()=>finish(false);
       document.head.appendChild(script);
     });
   }
@@ -52,7 +59,7 @@
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav','bottom-nav-viewport-fixed','bottom-nav-always-visible','bottom-nav-auto-hidden');
   }
   function syncVersion(){
-    const build=window.MIJSERENITY_BUILD||'7.19.9';
+    const build=window.MIJSERENITY_BUILD||'7.19.10';
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(badge)badge.textContent=build;
     const settings=document.getElementById('settingsAppVersion');
@@ -61,17 +68,30 @@
 
   async function start(){
     removeConflicts();ensureStableCss();
-    await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass');
-    await load(`/marine-glass-polish-7185.js?v=${V}`,'live-weather-tides');
-    await load(`/marine-glass-weather-fix-71931.js?v=${V}`,'live-weather-unified');
-    await load(`/start-battery-soc-71822.js?v=${V}`,'start-battery-soc');
-    await load(`/tank-systems-climate-71823.js?v=${V}`,'tank-systems-climate');
-    await load(`/dashboard-ais-map-71825.js?v=${V}`,'dashboard-ais-map');
-    await load(`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info');
-    await load(`/cerbo-truth-71818.js?v=${V}`,'cerbo-truth');
-    await load(`/victron-live-panel-71990.js?v=${V}`,'victron-live-panel');
+
+    /* Alleen de cockpit zelf is blokkerend. */
+    await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass',9000);
+
+    /* Kritiek voor het zichtbare deel: laad Victron direct daarna, niet pas als laatste. */
+    await load(`/victron-live-panel-71990.js?v=${V}`,'victron-live-panel',5000);
+
     removeConflicts();ensureStableCss();syncVersion();
-    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.9'}}));
+    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.10'}}));
+
+    /* Alles hieronder is aanvullend en mag het scherm nooit meer blokkeren. */
+    const optional=[
+      [`/marine-glass-polish-7185.js?v=${V}`,'live-weather-tides'],
+      [`/marine-glass-weather-fix-71931.js?v=${V}`,'live-weather-unified'],
+      [`/start-battery-soc-71822.js?v=${V}`,'start-battery-soc'],
+      [`/tank-systems-climate-71823.js?v=${V}`,'tank-systems-climate'],
+      [`/dashboard-ais-map-71825.js?v=${V}`,'dashboard-ais-map'],
+      [`/marine-glass-waterkaarten-route-7188.js?v=${V}`,'waterkaarten-route-info'],
+      [`/cerbo-truth-71818.js?v=${V}`,'cerbo-truth']
+    ];
+    Promise.allSettled(optional.map(([src,key])=>load(src,key,6000))).then(()=>{
+      removeConflicts();ensureStableCss();syncVersion();
+      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-optional-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.10'}}));
+    });
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
