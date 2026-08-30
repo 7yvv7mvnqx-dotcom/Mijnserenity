@@ -1,0 +1,30 @@
+/* MijnSerenity 7.19.13 — volledige navigatie bereikbaar op iPhone en iPad */
+
+/* De oude mobiele shell verstopte vanaf item 6 alles, ook de knop Meer. */
+.bottom-nav .bottom-nav-item:nth-child(n+6){display:flex!important}
+
+/* iPhone: vijf vaste hoofdknoppen + Meer. */
+@media (max-width:600px){
+  .bottom-nav,.bottom-nav.ms744-compact-nav{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  }
+  .bottom-nav .bottom-nav-item:nth-child(n+6):not(#mgMoreNav){display:none!important}
+  .bottom-nav #mgMoreNav{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+}
+
+/* iPad/tablet: toon de volledige bestaande hoofdnavigatie. */
+@media (min-width:601px){
+  .bottom-nav,.bottom-nav.ms744-compact-nav{
+    grid-template-columns:repeat(12,minmax(0,1fr))!important;
+    overflow:hidden!important;
+  }
+  .bottom-nav .bottom-nav-item{
+    display:flex!important;
+    min-width:0!important;
+  }
+  .bottom-nav #mgMoreNav{display:none!important}
+}
