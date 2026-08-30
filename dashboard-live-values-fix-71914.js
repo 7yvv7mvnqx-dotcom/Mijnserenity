@@ -13,11 +13,18 @@
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
   const TOKEN_KEYS=['ms7148_vrm_token','ms7148VrmToken','mijnserenity_vrm_token','vrm_api_token'];
   let busy=false,lastFetch=0,frame=0,lastDbLoad=0;
+  let fallbackTechnical={};
+  let fallbackDiagnostics={};
 
   function client(){try{return typeof sb!=='undefined'?sb:null}catch{return null}}
   function boat(){try{return typeof currentBoat!=='undefined'?currentBoat:null}catch{return null}}
   function user(){try{return typeof currentUser!=='undefined'?currentUser:null}catch{return null}}
-  function technical(){try{return typeof technicalStateCache!=='undefined'&&technicalStateCache?technicalStateCache:{}}catch{return {}}}
+  function technical(){
+    try{
+      const local=typeof technicalStateCache!=='undefined'&&technicalStateCache?technicalStateCache:{};
+      return {...fallbackTechnical,...local};
+    }catch{return {...fallbackTechnical}}
+  }
   function token(){
     for(const key of TOKEN_KEYS){const value=localStorage.getItem(key);if(value&&String(value).trim())return String(value).trim().replace(/^Token\s+/i,'')}
     try{const cfg=JSON.parse(localStorage.getItem('mijnserenity-ruuvi-climate-v7102')||'{}');if(cfg?.vrmToken)return String(cfg.vrmToken).trim().replace(/^Token\s+/i,'')}catch{}
@@ -31,7 +38,7 @@
   }
   function diagnostics(){
     const diag=window.MIJSERENITY_VRM_DIAGNOSTICS;
-    return diag&&typeof diag==='object'?diag:{};
+    return diag&&typeof diag==='object'?diag:fallbackDiagnostics;
   }
   function metric(v){return num(v?.value??v)}
 
@@ -101,14 +108,16 @@
     try{
       const {data,error}=await c.from('victron_diagnostics').select('data,sampled_at,updated_at').eq('boat_id',b.id).maybeSingle();
       if(!error&&data?.data){
-        window.MIJSERENITY_VRM_DIAGNOSTICS={...data.data,sampledAt:data.sampled_at||data.data.sampledAt,saved:true};
-        window.dispatchEvent(new CustomEvent('mijnserenity-vrm-diagnostics-updated',{detail:window.MIJSERENITY_VRM_DIAGNOSTICS}));
+        fallbackDiagnostics={...data.data,sampledAt:data.sampled_at||data.data.sampledAt,saved:true};
+        window.MIJSERENITY_VRM_DIAGNOSTICS=fallbackDiagnostics;
+        window.dispatchEvent(new CustomEvent('mijnserenity-vrm-diagnostics-updated',{detail:fallbackDiagnostics}));
         changed=true;
       }
     }catch(error){console.warn('Victron fallback uit database laden mislukt:',error)}
     try{
       const {data,error}=await c.from('technical_state').select('data,updated_at').eq('boat_id',b.id).maybeSingle();
       if(!error&&data?.data){
+        fallbackTechnical=data.data;
         try{
           if(typeof technicalStateCache!=='undefined'&&technicalStateCache&&typeof technicalStateCache==='object')Object.assign(technicalStateCache,data.data);
           else if(typeof technicalStateCache!=='undefined')technicalStateCache=data.data;
@@ -142,18 +151,35 @@
     }finally{busy=false}
   }
 
-  ['mijnserenity:dashboard-ready','mijnserenity-vrm-energy-live-updated','mijnserenity-vrm-diagnostics-updated','mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity:routechange'].forEach(name=>window.addEventListener(name,queue,{passive:true}));
-  window.addEventListener('focus',()=>{queue();refreshLive(false)},{passive:true});
-  window.addEventListener('pageshow',()=>{queue();refreshLive(false)},{passive:true});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden){queue();refreshLive(false)}},{passive:true});
+  const wake=()=>{queue();setTimeout(()=>{loadDatabaseFallback(false);refreshLive(false)},50)};
+  ['mijnserenity:dashboard-ready','mijnserenity-vrm-energy-live-updated','mijnserenity-vrm-diagnostics-updated','mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity:routechange','mijnserenity:modules-ready'].forEach(name=>window.addEventListener(name,wake,{passive:true}));
+  window.addEventListener('focus',()=>{queue();loadDatabaseFallback(false);refreshLive(false)},{passive:true});
+  window.addEventListener('pageshow',()=>{queue();loadDatabaseFallback(false);refreshLive(false)},{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){queue();loadDatabaseFallback(false);refreshLive(false)}},{passive:true});
 
   function start(){
     queue();
-    setTimeout(queue,200);setTimeout(()=>loadDatabaseFallback(true),500);setTimeout(()=>refreshLive(true),1200);
+    setTimeout(queue,200);
+    setTimeout(()=>loadDatabaseFallback(true),500);
+    setTimeout(()=>refreshLive(true),1200);
+
+    /* De bootkoppeling/currentBoat komt pas na de async login/membership-load.
+       De vorige code probeerde op 0,5 en 1,2 s en wachtte daarna 60 s. Op een
+       iPhone was dat vaak te vroeg, waardoor het dashboard minutenlang streepjes
+       liet zien terwijl de Victron-data al in Supabase stond. Herprobeer kort
+       totdat de eerste databasefallback gelukt is. */
+    let attempts=0;
+    const retry=setInterval(async()=>{
+      if(document.hidden)return;
+      attempts+=1;
+      const ok=await loadDatabaseFallback(true);
+      if(ok||attempts>=15)clearInterval(retry);
+    },2000);
+
     setInterval(()=>{if(!document.hidden)queue()},1000);
-    setInterval(()=>{if(!document.hidden)refreshLive(false)},60000);
+    setInterval(()=>{if(!document.hidden){loadDatabaseFallback(false);refreshLive(false)}},60000);
   }
-  window.ms71915RefreshEnergy=()=>refreshLive(true);
+  window.ms71915RefreshEnergy=()=>Promise.allSettled([loadDatabaseFallback(true),refreshLive(true)]);
   window.ms71915RenderEnergy=render;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
