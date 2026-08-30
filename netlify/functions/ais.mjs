@@ -1,0 +1,132 @@
+const API_BASE='https://api.vesselapi.com/v1';
+const cache=globalThis.__mijnSerenityCollisionAisCache||(globalThis.__mijnSerenityCollisionAisCache=new Map());
+
+function apiKey(){
+  try{
+    const value=globalThis.Netlify?.env?.get?.('VESSELAPI_KEY');
+    if(value)return value;
+  }catch{}
+  return process.env.VESSELAPI_KEY||'';
+}
+
+function json(data,status=200,headers={}){
+  return new Response(JSON.stringify(data),{
+    status,
+    headers:{
+      'content-type':'application/json; charset=utf-8',
+      'cache-control':'no-store',
+      'x-content-type-options':'nosniff',
+      ...headers
+    }
+  });
+}
+
+function numberParam(params,name,min,max,fallback=null){
+  const raw=params.get(name);
+  const value=raw===null||raw===''?fallback:Number(raw);
+  if(!Number.isFinite(value)||value<min||value>max){
+    const error=new Error(`${name} moet tussen ${min} en ${max} liggen.`);
+    error.status=400;
+    error.code='invalid_parameter';
+    throw error;
+  }
+  return value;
+}
+
+async function vesselRequest(path,params,ttlMs=20000){
+  const key=apiKey();
+  if(!key){
+    const error=new Error('AIS-databron is nog niet ingesteld.');
+    error.status=503;
+    error.code='ais_not_configured';
+    throw error;
+  }
+
+  const cacheKey=`${path}?${params.toString()}`;
+  const cached=cache.get(cacheKey);
+  if(cached&&Date.now()-cached.at<ttlMs)return {...cached.value,cached:true};
+
+  const response=await fetch(`${API_BASE}${path}?${params.toString()}`,{
+    headers:{
+      accept:'application/json',
+      authorization:`Bearer ${key}`,
+      'user-agent':'MijnSerenity/8.20.0'
+    }
+  });
+
+  let payload={};
+  try{payload=await response.json()}catch{}
+
+  if(!response.ok){
+    const error=new Error(
+      payload?.error?.message||payload?.message||`AIS-databron gaf fout ${response.status}`
+    );
+    error.status=response.status;
+    error.code=payload?.error?.code||payload?.code||'upstream_error';
+    error.requestId=response.headers.get('x-request-id');
+    error.retryAfter=response.headers.get('retry-after');
+    throw error;
+  }
+
+  const value={
+    data:payload,
+    fetchedAt:new Date().toISOString(),
+    requestId:response.headers.get('x-request-id'),
+    remaining:response.headers.get('x-ratelimit-remaining')
+  };
+  cache.set(cacheKey,{at:Date.now(),value});
+  return value;
+}
+
+export default async request=>{
+  if(request.method!=='GET'){
+    return json({error:{code:'method_not_allowed',message:'Alleen GET wordt ondersteund.'}},405,{allow:'GET'});
+  }
+
+  const url=new URL(request.url);
+  const mode=String(url.searchParams.get('mode')||'status').toLowerCase();
+
+  try{
+    if(mode==='status'){
+      return json({
+        configured:Boolean(apiKey()),
+        provider:'VesselAPI',
+        proxy:true,
+        collisionRadar:'8.20.0'
+      });
+    }
+
+    if(mode==='nearby'){
+      const lat=numberParam(url.searchParams,'lat',-90,90);
+      const lon=numberParam(url.searchParams,'lon',-180,180);
+      const radiusKm=numberParam(url.searchParams,'radiusKm',1,100,3);
+      const limit=Math.round(numberParam(url.searchParams,'limit',1,50,50));
+      const now=new Date();
+      const from=new Date(now.getTime()-45*60*60*1000);
+
+      const params=new URLSearchParams({
+        'filter.latitude':String(lat),
+        'filter.longitude':String(lon),
+        'filter.radius':String(Math.round(radiusKm*1000)),
+        'time.from':from.toISOString(),
+        'time.to':now.toISOString(),
+        'pagination.limit':String(limit)
+      });
+
+      const result=await vesselRequest('/location/vessels/radius',params,20000);
+      return json(result);
+    }
+
+    return json({error:{code:'invalid_mode',message:'Onbekende AIS-opdracht.'}},400);
+  }catch(error){
+    const headers={};
+    if(error?.retryAfter)headers['retry-after']=String(error.retryAfter);
+    return json({
+      error:{
+        code:error?.code||'ais_error',
+        message:error?.message||'AIS-service kon niet worden uitgevoerd.',
+        requestId:error?.requestId||null
+      }
+    },Number(error?.status)||500,headers);
+  }
+};
