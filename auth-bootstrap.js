@@ -1,15 +1,15 @@
-/* MijnSerenity 7.19.16 — stabiliteitsbootstrap
-   iPhone gebruikt Marine Glass; iPad behoudt het reeds goed gerenderde startdashboard. */
+/* MijnSerenity 7.19.17 — stabiliteitsbootstrap
+   iPhone gebruikt Marine Glass; iPad behoudt het stabiele native dashboard, ook bij venster-resize. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap719160)return;
-  window.__msBootstrap719160=true;
+  if(window.__msBootstrap719170)return;
+  window.__msBootstrap719170=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='7.19.16';
-  const VERSION='719160';
+  const BUILD='7.19.17';
+  const VERSION='719170';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
