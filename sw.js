@@ -1,6 +1,6 @@
-/* MijnSerenity 7.19.13 — PWA-cache voor iPhone Marine Glass + iPad legacy start */
-const CACHE_NAME='mijnserenity-7.19.13-stable';
-const BUILD_TOKEN='719130';
+/* MijnSerenity 7.19.14 — PWA-cache voor iPhone Marine Glass + iPad legacy start */
+const CACHE_NAME='mijnserenity-7.19.14-stable';
+const BUILD_TOKEN='719140';
 const CORE_ASSETS=[
   '/',
   '/index.html',
@@ -15,6 +15,7 @@ const CORE_ASSETS=[
   `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
   `/mobile-viewport-guard-71911.js?v=${BUILD_TOKEN}`,
   `/victron-live-panel-71990.js?v=${BUILD_TOKEN}`,
+  `/dashboard-live-values-fix-71914.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
 ];
