@@ -1,10 +1,11 @@
-/* MijnSerenity 7.19.15 — één responsive Marine Glass dashboard voor iPhone en iPad */
+/* MijnSerenity 7.19.15 — iPhone Marine Glass, iPad behoudt het reeds goed gerenderde dashboard */
 (()=>{
   'use strict';
   if(window.__msDashboardLoader719150)return;
   window.__msDashboardLoader719150=true;
   const V='719150';
   const BUILD='7.19.15';
+  const isIPadLike=()=>/iPad/i.test(navigator.userAgent||'')||((navigator.platform==='MacIntel'||/Macintosh/i.test(navigator.userAgent||''))&&Number(navigator.maxTouchPoints||0)>1&&Math.min(Number(screen.width||0),Number(screen.height||0))>=700);
 
   function currentPath(src){try{return new URL(src,location.href).pathname}catch{return src}}
   function scriptAlreadyLoaded(src){const wanted=currentPath(src);return [...document.scripts].some(script=>script.src&&currentPath(script.src)===wanted&&script.dataset.ms719Loaded==='1')}
@@ -40,13 +41,35 @@
     const settings=document.getElementById('settingsAppVersion');if(settings)settings.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
   }
+  function preserveIPadDashboard(){
+    /* Op iPad is het dashboard direct na app-start al correct. De zwarte startpagina
+       ontstond doordat Marine Glass ongeveer een seconde later alle bestaande
+       dashboarddelen verborg. Op iPad vindt daarom geen tweede dashboardwissel plaats. */
+    const dashboard=document.getElementById('dashboard');
+    dashboard?.classList.remove('mg-active','scd-active','mspro-active');
+    dashboard?.style.removeProperty('display');
+    dashboard?.style.removeProperty('visibility');
+    dashboard?.style.removeProperty('opacity');
+    document.getElementById('msMarineGlass')?.remove();
+    document.getElementById('mgMore')?.remove();
+    document.getElementById('mgMoreNav')?.remove();
+    const nav=document.querySelector('.bottom-nav');
+    nav?.classList.remove('mg-nav');
+    document.documentElement.dataset.msIpadDashboard='native';
+    requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
+  }
 
   async function start(){
-    removeConflicts();ensureStableCss();syncVersion();
+    removeConflicts();syncVersion();
 
-    /* Alle schermen gebruiken dezelfde responsive cockpit. De bestaande
-       Energie & Stroom-kaart blijft intact; alleen de live-data wordt eroverheen
-       gesynchroniseerd, zodat een tweede Victron-layout de kaart niet vervangt. */
+    if(isIPadLike()){
+      preserveIPadDashboard();
+      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,ipadNative:true}}));
+      console.info(`MijnSerenity ${BUILD}: iPad startdashboard behouden; late Marine Glass-overname uitgeschakeld.`);
+      return;
+    }
+
+    ensureStableCss();
     await load(`/mobile-viewport-guard-71911.js?v=${V}`,'mobile-viewport-guard',5000);
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass',9000);
     await load(`/dashboard-live-values-fix-71914.js?v=${V}`,'dashboard-live-values-fix',5000);
