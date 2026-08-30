@@ -1,10 +1,10 @@
-/* MijnSerenity 7.19.13 — iPhone Marine Glass, iPad stabiele legacy startpagina */
+/* MijnSerenity 7.19.14 — iPhone Marine Glass, iPad stabiele legacy startpagina */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader719130)return;
-  window.__msDashboardLoader719130=true;
-  const V='719130';
-  const BUILD='7.19.13';
+  if(window.__msDashboardLoader719140)return;
+  window.__msDashboardLoader719140=true;
+  const V='719140';
+  const BUILD='7.19.14';
   const isIPadLike=()=>/iPad/i.test(navigator.userAgent||'')||((navigator.platform==='MacIntel'||/Macintosh/i.test(navigator.userAgent||''))&&Number(navigator.maxTouchPoints||0)>1&&Math.min(Number(screen.width||0),Number(screen.height||0))>=700);
 
   function currentPath(src){try{return new URL(src,location.href).pathname}catch{return src}}
@@ -69,6 +69,7 @@
     await load(`/mobile-viewport-guard-71911.js?v=${V}`,'mobile-viewport-guard',5000);
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass',9000);
     await load(`/victron-live-panel-71990.js?v=${V}`,'victron-live-panel',5000);
+    await load(`/dashboard-live-values-fix-71914.js?v=${V}`,'dashboard-live-values-fix',5000);
 
     removeConflicts();ensureStableCss();syncVersion();
     window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD}}));
