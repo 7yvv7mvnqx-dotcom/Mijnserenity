@@ -1,15 +1,15 @@
-/* MijnSerenity 7.19.15 — stabiliteitsbootstrap
-   iPhone en iPad gebruiken dezelfde responsive Marine Glass cockpit. */
+/* MijnSerenity 7.19.16 — stabiliteitsbootstrap
+   iPhone gebruikt Marine Glass; iPad behoudt het reeds goed gerenderde startdashboard. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap719150)return;
-  window.__msBootstrap719150=true;
+  if(window.__msBootstrap719160)return;
+  window.__msBootstrap719160=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='7.19.15';
-  const VERSION='719150';
+  const BUILD='7.19.16';
+  const VERSION='719160';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
@@ -59,7 +59,6 @@
     document.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{const path=pathOf(link.href);if(blocked.some(name=>path.endsWith('/'+name)||path.endsWith(name)))link.remove()});
     ['msMobileFlowGuard71836','msOrientationLayout71835Style','msOrientationLayout71836Style','msSerenityControlCss','msMarineGlassPolish7185','mgNav718Style','msMarineGlassStable71900'].forEach(id=>document.getElementById(id)?.remove());
     document.getElementById('msSerenityControl')?.remove();
-    /* mgMoreNav bewust behouden: op iPhone is dit de toegang tot de overige pagina's. */
     document.querySelectorAll('[id="msMarineGlass"][data-ms-victron-live]').forEach(panel=>panel.remove());
     document.body?.classList.remove('ms750-simple-ui','ms760-captain-experience','ms744-keyboard-open','ms744-nav-repositioning');
     document.getElementById('dashboard')?.classList.remove('scd-active','mspro-active');
@@ -106,8 +105,6 @@
       try{await loadScript(`/dashboard-pro-71531-loader.js?v=${VERSION}`,10000)}catch(error){console.warn('Dashboardloader:',error)}
       wrapNavigation();removeLegacyLayoutLayers();syncBuildVersion();
 
-      /* Ook op iPad alle noodzakelijke live modules laden. De oude iPad-uitzondering
-         sloeg o.a. orientation cleanup, Victron diagnostics en technical live sync over. */
       Promise.allSettled(ESSENTIAL_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{removeLegacyLayoutLayers();syncBuildVersion()});
       setTimeout(()=>{Promise.allSettled(SAFE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{syncBuildVersion();window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}))})},1200);
 
