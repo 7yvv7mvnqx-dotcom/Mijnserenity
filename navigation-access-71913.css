@@ -1,18 +1,56 @@
-/* MijnSerenity 7.19.13 — volledige navigatie bereikbaar op iPhone en iPad */
+/* MijnSerenity 7.19.14 — volledige navigatie bereikbaar op iPhone en iPad */
 
 /* De oude mobiele shell verstopte vanaf item 6 alles, ook de knop Meer. */
 .bottom-nav .bottom-nav-item:nth-child(n+6){display:flex!important}
 
-/* iPhone: vijf vaste hoofdknoppen + Meer. */
+/* iPhone: vijf vaste hoofdknoppen + Meer.
+   Belangrijk: professional-ui verbergt AIS en Weer voor het Meer-menu.
+   Daarom zetten we de eerste vijf knoppen hier expliciet terug aan. */
 @media (max-width:600px){
-  .bottom-nav,.bottom-nav.ms744-compact-nav{
-    grid-template-columns:repeat(6,minmax(0,1fr))!important;
-  }
-  .bottom-nav .bottom-nav-item:nth-child(n+6):not(#mgMoreNav){display:none!important}
-  .bottom-nav #mgMoreNav{
+  .bottom-nav,
+  .bottom-nav.mg-nav,
+  .bottom-nav.ms744-compact-nav{
     display:flex!important;
+    grid-template-columns:none!important;
+    overflow-x:hidden!important;
+  }
+
+  .bottom-nav .bottom-nav-item:nth-child(-n+5),
+  .bottom-nav.mg-nav .bottom-nav-item:nth-child(-n+5),
+  .bottom-nav.ms744-compact-nav .bottom-nav-item:nth-child(-n+5){
+    display:flex!important;
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
     align-items:center!important;
     justify-content:center!important;
+  }
+
+  .bottom-nav .bottom-nav-item:nth-child(n+6):not(#mgMoreNav),
+  .bottom-nav.mg-nav .bottom-nav-item:nth-child(n+6):not(#mgMoreNav),
+  .bottom-nav.ms744-compact-nav .bottom-nav-item:nth-child(n+6):not(#mgMoreNav){
+    display:none!important;
+  }
+
+  .bottom-nav #mgMoreNav,
+  .bottom-nav.mg-nav #mgMoreNav,
+  .bottom-nav.ms744-compact-nav #mgMoreNav{
+    display:flex!important;
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+
+  /* Het Meer-venster mag nooit achter de vaste onderbalk verdwijnen. */
+  .mg-more>section{
+    max-height:calc(100dvh - 110px - env(safe-area-inset-bottom))!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
   }
 }
 
