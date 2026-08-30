@@ -1,17 +1,18 @@
-/* MijnSerenity 7.19.10 — stabiliteitsbootstrap
-   Dashboard en Victron eerst zichtbaar; aanvullende modules mogen de pagina niet blokkeren. */
+/* MijnSerenity 7.19.12 — stabiliteitsbootstrap
+   iPhone behoudt de werkende mobiele correcties; iPad blijft na de goede eerste render in safe mode. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap719100)return;
-  window.__msBootstrap719100=true;
+  if(window.__msBootstrap719120)return;
+  window.__msBootstrap719120=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
 
-  const BUILD='7.19.10';
-  const VERSION='719100';
+  const BUILD='7.19.12';
+  const VERSION='719120';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
+  const isIPadLike=()=>/iPad/i.test(navigator.userAgent||'')||((navigator.platform==='MacIntel'||/Macintosh/i.test(navigator.userAgent||''))&&Number(navigator.maxTouchPoints||0)>1&&Math.min(Number(screen.width||0),Number(screen.height||0))>=700);
 
   const SUPABASE_SOURCES=[
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
@@ -99,13 +100,19 @@
       const button=document.getElementById('signInButton');if(button)button.disabled=false;
       installLazyRouteHooks();
 
-      /* Dashboard eerst: geen wachten op diagnostiek, HA of andere aanvullende modules. */
       try{await loadScript(`/dashboard-pro-71531-loader.js?v=${VERSION}`,10000)}catch(error){console.warn('Dashboardloader:',error)}
       wrapNavigation();removeLegacyLayoutLayers();syncBuildVersion();
 
-      /* Aanvullende live modules parallel op de achtergrond. */
-      Promise.allSettled(ESSENTIAL_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{removeLegacyLayoutLayers();syncBuildVersion()});
-      setTimeout(()=>{Promise.allSettled(SAFE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{syncBuildVersion();window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}))})},1200);
+      if(isIPadLike()){
+        /* Het iPad-scherm is direct goed en werd pas zwart na deze achtergrondmodules.
+           Daarom bevriezen we de goede eerste render en laden we niets visueels meer na. */
+        document.documentElement.dataset.msIpadSafe='1';
+        console.info(`MijnSerenity ${BUILD}: iPad safe mode actief; late startupmodules overgeslagen.`);
+        setTimeout(()=>window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD,ipadSafe:true}})),50);
+      }else{
+        Promise.allSettled(ESSENTIAL_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{removeLegacyLayoutLayers();syncBuildVersion()});
+        setTimeout(()=>{Promise.allSettled(SAFE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{syncBuildVersion();window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}))})},1200);
+      }
 
       const openRoute=new URLSearchParams(location.search).get('open');if(openRoute)loadRouteModules(openRoute).catch(()=>{});
       const target=document.getElementById('authMsg');if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
