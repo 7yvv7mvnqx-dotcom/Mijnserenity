@@ -1,10 +1,10 @@
-/* MijnSerenity 7.19.15 — iPhone Marine Glass, iPad behoudt het reeds goed gerenderde dashboard */
+/* MijnSerenity 7.19.16 — iPhone Marine Glass, iPad behoudt het reeds goed gerenderde dashboard */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader719150)return;
-  window.__msDashboardLoader719150=true;
-  const V='719150';
-  const BUILD='7.19.15';
+  if(window.__msDashboardLoader719160)return;
+  window.__msDashboardLoader719160=true;
+  const V='719160';
+  const BUILD='7.19.16';
   const isIPadLike=()=>/iPad/i.test(navigator.userAgent||'')||((navigator.platform==='MacIntel'||/Macintosh/i.test(navigator.userAgent||''))&&Number(navigator.maxTouchPoints||0)>1&&Math.min(Number(screen.width||0),Number(screen.height||0))>=700);
 
   function currentPath(src){try{return new URL(src,location.href).pathname}catch{return src}}
