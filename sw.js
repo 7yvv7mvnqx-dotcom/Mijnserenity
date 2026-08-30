@@ -1,5 +1,6 @@
 /* MijnSerenity 7.19.19 — PWA-cache voor één uniforme runtime */
 const CACHE_NAME='mijnserenity-7.19.19-unified';
+const BUILD='7.19.19';
 const BUILD_TOKEN='719190';
 const CORE_ASSETS=[
   '/',
@@ -18,9 +19,37 @@ const CORE_ASSETS=[
   '/icon-512.png'
 ];
 
+function rewriteIndexHtml(html){
+  return String(html||'')
+    .replace(/(<meta\s+name=["']mijnserenity-build["']\s+content=["'])[^"']+(["']\s*\/?>)/i,`$1${BUILD}$2`)
+    .replace(/window\.MIJSERENITY_BUILD\s*=\s*['"][^'"]+['"]\s*;/g,`window.MIJSERENITY_BUILD='${BUILD}';`)
+    .replace(/auth-bootstrap\.js\?v=\d+/g,`auth-bootstrap.js?v=${BUILD_TOKEN}`)
+    .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`);
+}
+
+async function rewrittenHtmlResponse(response){
+  if(!response)return null;
+  try{
+    const type=String(response.headers.get('content-type')||'');
+    if(!type.includes('text/html'))return response;
+    const html=rewriteIndexHtml(await response.text());
+    const headers=new Headers(response.headers);
+    headers.set('cache-control','no-store, max-age=0');
+    return new Response(html,{status:response.status,statusText:response.statusText,headers});
+  }catch{return response}
+}
+
 async function cacheCore(cache,path){
-  try{const response=await fetch(path,{cache:'reload'});if(response.ok)await cache.put(path,response)}
-  catch(error){console.warn('Core asset niet vooraf opgeslagen:',path,error)}
+  try{
+    const response=await fetch(path,{cache:'reload'});
+    if(!response.ok)return;
+    if(path==='/'||path==='/index.html'){
+      const rewritten=await rewrittenHtmlResponse(response.clone());
+      if(rewritten)await cache.put(path,rewritten);
+      return;
+    }
+    await cache.put(path,response);
+  }catch(error){console.warn('Core asset niet vooraf opgeslagen:',path,error)}
 }
 
 self.addEventListener('install',event=>{
@@ -41,6 +70,23 @@ async function networkFirst(request,fallbackPath=null){
   }catch{return (await caches.match(request,{ignoreSearch:false}))||(fallbackPath?await caches.match(fallbackPath):null)||new Response('',{status:503})}
 }
 
+async function navigationNetworkFirst(request){
+  try{
+    const network=await fetch(request,{cache:'no-store'});
+    if(network.ok){
+      const rewritten=await rewrittenHtmlResponse(network);
+      if(rewritten){
+        const cache=await caches.open(CACHE_NAME);
+        cache.put('/index.html',rewritten.clone()).catch(()=>{});
+        return rewritten;
+      }
+    }
+  }catch{}
+  const cached=(await caches.match('/index.html'))||(await caches.match('/'));
+  if(cached){const rewritten=await rewrittenHtmlResponse(cached);if(rewritten)return rewritten}
+  return new Response('MijnSerenity kon niet worden geladen.',{status:503,headers:{'content-type':'text/plain; charset=utf-8'}});
+}
+
 async function staleWhileRevalidate(request){
   const cached=await caches.match(request,{ignoreSearch:false});
   const network=fetch(request,{cache:'no-cache'}).then(async response=>{if(response.ok){const cache=await caches.open(CACHE_NAME);cache.put(request,response.clone()).catch(()=>{})}return response}).catch(()=>null);
@@ -52,7 +98,7 @@ self.addEventListener('fetch',event=>{
   const request=event.request;if(request.method!=='GET')return;
   const url=new URL(request.url);if(url.origin!==self.location.origin)return;
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
-  if(request.mode==='navigate'){event.respondWith(networkFirst(request,'/index.html'));return}
+  if(request.mode==='navigate'){event.respondWith(navigationNetworkFirst(request));return}
   if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){event.respondWith(networkFirst(request));return}
   event.respondWith(staleWhileRevalidate(request));
 });
