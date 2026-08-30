@@ -1,6 +1,6 @@
-/* MijnSerenity 7.19.9 — PWA-cache zonder legacy Victron/MarineGlass botsing */
-const CACHE_NAME='mijnserenity-7.19.9-stable';
-const BUILD_TOKEN='719090';
+/* MijnSerenity 7.19.10 — PWA-cache voor dashboard-first laden */
+const CACHE_NAME='mijnserenity-7.19.10-stable';
+const BUILD_TOKEN='719100';
 const CORE_ASSETS=[
   '/',
   '/index.html',
