@@ -1,18 +1,21 @@
-/* MijnSerenity 7.19.17 — stabiliteitsbootstrap
-   iPhone gebruikt Marine Glass; iPad behoudt het stabiele native dashboard, ook bij venster-resize. */
+/* MijnSerenity 7.19.19 — uniforme stabiliteitsbootstrap
+   Eén runtime voor iPhone, iPad en Stage Manager. Oude dashboards blijven tijdens
+   het opstarten verborgen totdat de actuele Marine Glass-runtime gereed is. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap719170)return;
-  window.__msBootstrap719170=true;
+  if(window.__msBootstrap719190)return;
+  window.__msBootstrap719190=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='7.19.17';
-  const VERSION='719170';
+  const BUILD='7.19.19';
+  const VERSION='719190';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
+  let bootFinished=false;
+  let bootFailSafe=0;
 
   const SUPABASE_SOURCES=[
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
@@ -47,6 +50,54 @@
 
   function pathOf(value){try{return new URL(value,location.href).pathname}catch{return String(value||'')}}
   function setAuthStatus(message,isError=false){const target=document.getElementById('authMsg');if(!target)return;target.textContent=message;target.classList.toggle('error',Boolean(isError))}
+
+  function installBootGate(){
+    document.documentElement.dataset.msBooting='true';
+    if(!document.getElementById('msBootGate71919')){
+      const style=document.createElement('style');
+      style.id='msBootGate71919';
+      style.textContent=`
+        html[data-ms-booting="true"] #appView:not(.hidden){visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+        #msBootCover71919{position:fixed;inset:0;z-index:2147483640;display:none;place-items:center;background:#061321;color:#f6fbff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+        #msBootCover71919.is-visible{display:grid}
+        #msBootCover71919>div{display:grid;gap:8px;text-align:center;padding:24px}
+        #msBootCover71919 strong{font-size:28px;letter-spacing:-.04em}
+        #msBootCover71919 strong span{color:#39baff;font-weight:500}
+        #msBootCover71919 small{color:#9ab3c5;font-size:13px}
+      `;
+      document.head.appendChild(style);
+    }
+    if(!document.getElementById('msBootCover71919')&&document.body){
+      const cover=document.createElement('div');
+      cover.id='msBootCover71919';
+      cover.innerHTML='<div><strong>Mijn<span>Serenity</span></strong><small>Actuele versie 7.19.19 wordt geladen…</small></div>';
+      document.body.appendChild(cover);
+    }
+    const syncCover=()=>{
+      if(bootFinished)return;
+      const app=document.getElementById('appView');
+      const cover=document.getElementById('msBootCover71919');
+      cover?.classList.toggle('is-visible',Boolean(app&&!app.classList.contains('hidden')));
+    };
+    syncCover();
+    const app=document.getElementById('appView');
+    if(app&&!app.dataset.ms71919BootObserved){
+      app.dataset.ms71919BootObserved='1';
+      new MutationObserver(syncCover).observe(app,{attributes:true,attributeFilter:['class']});
+    }
+    clearTimeout(bootFailSafe);
+    bootFailSafe=setTimeout(()=>finishBoot('failsafe'),15000);
+  }
+
+  function finishBoot(reason='ready'){
+    if(bootFinished)return;
+    bootFinished=true;
+    clearTimeout(bootFailSafe);
+    document.documentElement.removeAttribute('data-ms-booting');
+    document.getElementById('msBootCover71919')?.remove();
+    requestAnimationFrame(()=>window.dispatchEvent(new CustomEvent('mijnserenity:boot-complete',{detail:{build:BUILD,reason}})));
+  }
+
   function syncBuildVersion(){
     window.MIJSERENITY_BUILD=BUILD;
     const meta=document.querySelector('meta[name="mijnserenity-build"]');if(meta)meta.content=BUILD;
@@ -54,6 +105,7 @@
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');if(badge)badge.textContent=BUILD;
   }
+
   function removeLegacyLayoutLayers(){
     const blocked=['page-swipe.css','simple-accessible.css','captain-experience.css','navigation-compact.css','marine-glass-mobile-7182.css','marine-glass-polish-7185.css','serenity-control-dashboard.css','victron-energy-71559.css'];
     document.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{const path=pathOf(link.href);if(blocked.some(name=>path.endsWith('/'+name)||path.endsWith(name)))link.remove()});
@@ -65,44 +117,74 @@
     document.querySelector('.bottom-nav')?.classList.remove('bottom-nav-viewport-fixed','bottom-nav-auto-hidden');
     document.documentElement.removeAttribute('data-ms-ipad-safe');
   }
+
   function ensureCss(path,id){const href=`/${path}?v=${VERSION}`;let link=document.getElementById(id);if(!link){link=document.createElement('link');link.id=id;link.rel='stylesheet';document.head.appendChild(link)}link.href=href}
-  function existingScript(path){const wanted=pathOf(path);return [...document.scripts].find(script=>script.src&&pathOf(script.src)===wanted)}
+  function existingScript(path){const wanted=pathOf(path);return [...document.scripts].find(script=>script.src&&pathOf(script.src)===wanted&&script.dataset.ms719Loaded==='1')}
+
   function loadScript(src,timeoutMs=12000){
     const pathname=pathOf(src);if(loaded.has(pathname))return Promise.resolve();if(existingScript(src)){loaded.add(pathname);return Promise.resolve()}
     return new Promise((resolve,reject)=>{const script=document.createElement('script');let done=false;const timer=setTimeout(()=>finish(new Error(`Time-out bij ${src}`)),timeoutMs);const finish=error=>{if(done)return;done=true;clearTimeout(timer);script.onload=null;script.onerror=null;if(error){script.remove();reject(error)}else{loaded.add(pathname);resolve()}};script.src=src;script.async=false;script.dataset.ms719Loaded='1';if(src.startsWith('http'))script.crossOrigin='anonymous';script.onload=()=>finish();script.onerror=()=>finish(new Error(`Laden mislukt: ${src}`));document.head.appendChild(script)})
   }
+
+  async function ensureFreshServiceWorker(){
+    if(!('serviceWorker' in navigator))return;
+    try{
+      const registration=await navigator.serviceWorker.register(`/sw.js?v=${VERSION}`,{updateViaCache:'none'});
+      await registration.update();
+      if(registration.waiting)registration.waiting.postMessage({type:'SKIP_WAITING'});
+    }catch(error){console.warn('Service worker kon niet direct worden vernieuwd:',error)}
+  }
+
+  async function purgeStaleRuntimeCaches(){
+    let previous='';
+    try{previous=localStorage.getItem('mijnserenity-runtime-build')||''}catch{}
+    if(previous===BUILD)return;
+    try{
+      if('caches' in window){
+        const names=await caches.keys();
+        await Promise.all(names.filter(name=>name.startsWith('mijnserenity-')).map(name=>caches.delete(name)));
+      }
+    }catch(error){console.warn('Oude MijnSerenity-cache kon niet volledig worden verwijderd:',error)}
+    try{localStorage.setItem('mijnserenity-runtime-build',BUILD)}catch{}
+  }
+
   async function ensureSupabase(){
     if(window.supabase?.createClient)return;let lastError=null;
     for(const source of SUPABASE_SOURCES){try{await loadScript(source,10000);if(window.supabase?.createClient)return}catch(error){lastError=error}}
     try{const module=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');if(typeof module?.createClient==='function'){window.supabase={...(window.supabase||{}),createClient:module.createClient};return}}catch(error){lastError=error}
     throw lastError||new Error('Supabase kon niet worden geladen.');
   }
+
   async function loadQueue(list,label){for(const src of list){try{await loadScript(src)}catch(error){console.warn(`${label} module overgeslagen:`,src,error)}}}
-  function normaliseRoute(route){const value=String(route||'').trim().toLowerCase();return value==='technical'?'technical':value}
+  function normaliseRoute(route){return String(route||'').trim().toLowerCase()}
   function loadRouteModules(route){const key=normaliseRoute(route);const modules=ROUTE_MODULES[key];if(!modules?.length)return Promise.resolve();if(routeLoads.has(key))return routeLoads.get(key);const task=loadQueue(modules,`Pagina ${key}`).finally(()=>routeLoads.delete(key));routeLoads.set(key,task);return task}
   window.ms719LoadRouteModules=loadRouteModules;
+
   function wrapNavigation(){if(window.__ms719NavigationWrapped||typeof window.captainNavigate!=='function')return;window.__ms719NavigationWrapped=true;const original=window.captainNavigate;window.captainNavigate=function(route,...args){loadRouteModules(route).catch(error=>console.warn('Lazy paginalaad:',route,error));return original.call(this,route,...args)}}
+
   function installLazyRouteHooks(){
     wrapNavigation();
-    document.addEventListener('click',event=>{const node=event.target instanceof Element?event.target.closest('[data-target],[data-go]'):null;const route=node?.dataset?.target||node?.dataset?.go;if(route)loadRouteModules(route).catch(()=>{})},{capture:true,passive:true});
+    document.addEventListener('click',event=>{const node=event.target instanceof Element?event.target.closest('[data-target],[data-go],[data-route]'):null;const route=node?.dataset?.target||node?.dataset?.go||node?.dataset?.route;if(route&&route!=='more')loadRouteModules(route).catch(()=>{})},{capture:true,passive:true});
     window.addEventListener('mijnserenity:routechange',event=>{const detail=event?.detail;const route=typeof detail==='string'?detail:(detail?.route||detail?.id||detail?.target);if(route)loadRouteModules(route).catch(()=>{})},{passive:true});
   }
+
   async function start(){
     try{
+      installBootGate();
       syncBuildVersion();removeLegacyLayoutLayers();
-      ensureCss('professional-ui-71700.css','msProfessionalUi71900');
-      ensureCss('marine-glass-mobile-7184.css','msStableShell71900');
-      ensureCss('marine-glass-fixes-7193.css','msMarineGlassFixes7193');
-      ensureCss('navigation-access-71913.css','msNavigationAccess71913');
+      ensureCss('professional-ui-71700.css','msProfessionalUi71919');
+      ensureCss('marine-glass-mobile-7184.css','msStableShell71919');
+      ensureCss('marine-glass-fixes-7193.css','msMarineGlassFixes71919');
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
+      await Promise.allSettled([purgeStaleRuntimeCaches(),ensureFreshServiceWorker()]);
       await ensureSupabase();
       await loadScript(CORE_SCRIPT,20000);
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
       const button=document.getElementById('signInButton');if(button)button.disabled=false;
       installLazyRouteHooks();
 
-      try{await loadScript(`/dashboard-pro-71531-loader.js?v=${VERSION}`,10000)}catch(error){console.warn('Dashboardloader:',error)}
+      try{await loadScript(`/dashboard-unified-71919-loader.js?v=${VERSION}`,12000)}catch(error){console.warn('Uniforme dashboardloader:',error)}
       wrapNavigation();removeLegacyLayoutLayers();syncBuildVersion();
 
       Promise.allSettled(ESSENTIAL_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{removeLegacyLayoutLayers();syncBuildVersion()});
@@ -110,10 +192,16 @@
 
       const openRoute=new URLSearchParams(location.search).get('open');if(openRoute)loadRouteModules(openRoute).catch(()=>{});
       const target=document.getElementById('authMsg');if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
-      console.info(`MijnSerenity ${BUILD}: stabiele bootstrap gestart.`);
-    }catch(error){console.error('MijnSerenity kon niet starten:',error);setAuthStatus('De beveiligde inlog kon niet worden geladen. Probeer de app opnieuw te openen.',true);const button=document.getElementById('signInButton');if(button)button.disabled=true}
+      console.info(`MijnSerenity ${BUILD}: uniforme bootstrap gestart.`);
+    }catch(error){
+      console.error('MijnSerenity kon niet starten:',error);
+      finishBoot('error');
+      setAuthStatus('De beveiligde inlog kon niet worden geladen. Probeer de app opnieuw te openen.',true);
+      const button=document.getElementById('signInButton');if(button)button.disabled=true;
+    }
   }
-  window.addEventListener('mijnserenity:dashboard-ready',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation()},{passive:true});
+
+  window.addEventListener('mijnserenity:dashboard-ready',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation();finishBoot('dashboard-ready')},{passive:true});
   window.addEventListener('pageshow',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation()},{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
