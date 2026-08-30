@@ -1,15 +1,14 @@
-/* MijnSerenity 7.19.9 — stabiliteitsbootstrap
-   Eén dashboard, één navigatielaag en een volledig geïsoleerde Victron Live kaart. */
+/* MijnSerenity 7.19.10 — stabiliteitsbootstrap
+   Dashboard en Victron eerst zichtbaar; aanvullende modules mogen de pagina niet blokkeren. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap71990)return;
-  window.__msBootstrap71990=true;
+  if(window.__msBootstrap719100)return;
+  window.__msBootstrap719100=true;
   window.__msDisableLegacyVisuals=true;
-  /* index.html laadt deze oude module nog; blokkeer hem vóór de parser daar aankomt. */
   window.__msVictronEnergy71950=true;
 
-  const BUILD='7.19.9';
-  const VERSION='719090';
+  const BUILD='7.19.10';
+  const VERSION='719100';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
@@ -19,10 +18,9 @@
     'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'
   ];
 
-  const ESSENTIAL=[
+  const ESSENTIAL_BACKGROUND=[
     `/runtime-performance-71700.js?v=${VERSION}`,
     `/orientation-layout-71835.js?v=${VERSION}`,
-    `/dashboard-pro-71531-loader.js?v=${VERSION}`,
     `/victron-diagnostics.js?v=${VERSION}`,
     `/ha-live-bridge.js?v=${VERSION}`,
     `/movement-presence.js?v=${VERSION}`,
@@ -67,13 +65,13 @@
   }
   function ensureCss(path,id){const href=`/${path}?v=${VERSION}`;let link=document.getElementById(id);if(!link){link=document.createElement('link');link.id=id;link.rel='stylesheet';document.head.appendChild(link)}link.href=href}
   function existingScript(path){const wanted=pathOf(path);return [...document.scripts].find(script=>script.src&&pathOf(script.src)===wanted)}
-  function loadScript(src,timeoutMs=20000){
+  function loadScript(src,timeoutMs=12000){
     const pathname=pathOf(src);if(loaded.has(pathname))return Promise.resolve();if(existingScript(src)){loaded.add(pathname);return Promise.resolve()}
     return new Promise((resolve,reject)=>{const script=document.createElement('script');let done=false;const timer=setTimeout(()=>finish(new Error(`Time-out bij ${src}`)),timeoutMs);const finish=error=>{if(done)return;done=true;clearTimeout(timer);script.onload=null;script.onerror=null;if(error){script.remove();reject(error)}else{loaded.add(pathname);resolve()}};script.src=src;script.async=false;script.dataset.ms719Loaded='1';if(src.startsWith('http'))script.crossOrigin='anonymous';script.onload=()=>finish();script.onerror=()=>finish(new Error(`Laden mislukt: ${src}`));document.head.appendChild(script)})
   }
   async function ensureSupabase(){
     if(window.supabase?.createClient)return;let lastError=null;
-    for(const source of SUPABASE_SOURCES){try{await loadScript(source,12000);if(window.supabase?.createClient)return}catch(error){lastError=error}}
+    for(const source of SUPABASE_SOURCES){try{await loadScript(source,10000);if(window.supabase?.createClient)return}catch(error){lastError=error}}
     try{const module=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');if(typeof module?.createClient==='function'){window.supabase={...(window.supabase||{}),createClient:module.createClient};return}}catch(error){lastError=error}
     throw lastError||new Error('Supabase kon niet worden geladen.');
   }
@@ -94,12 +92,24 @@
       ensureCss('marine-glass-mobile-7184.css','msStableShell71900');
       ensureCss('marine-glass-fixes-7193.css','msMarineGlassFixes7193');
       setAuthStatus('Beveiligde inlog wordt geladen…');
-      await ensureSupabase();await loadScript(CORE_SCRIPT,25000);if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');const button=document.getElementById('signInButton');if(button)button.disabled=false;
-      installLazyRouteHooks();await loadQueue(ESSENTIAL,'Kern');wrapNavigation();removeLegacyLayoutLayers();syncBuildVersion();
-      setTimeout(()=>{loadQueue(SAFE_BACKGROUND,'Achtergrond').then(()=>{syncBuildVersion();window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}))}).catch(error=>console.warn('Achtergrondmodules:',error))},1800);
+
+      await ensureSupabase();
+      await loadScript(CORE_SCRIPT,20000);
+      if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
+      const button=document.getElementById('signInButton');if(button)button.disabled=false;
+      installLazyRouteHooks();
+
+      /* Dashboard eerst: geen wachten op diagnostiek, HA of andere aanvullende modules. */
+      try{await loadScript(`/dashboard-pro-71531-loader.js?v=${VERSION}`,10000)}catch(error){console.warn('Dashboardloader:',error)}
+      wrapNavigation();removeLegacyLayoutLayers();syncBuildVersion();
+
+      /* Aanvullende live modules parallel op de achtergrond. */
+      Promise.allSettled(ESSENTIAL_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{removeLegacyLayoutLayers();syncBuildVersion()});
+      setTimeout(()=>{Promise.allSettled(SAFE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{syncBuildVersion();window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}))})},1200);
+
       const openRoute=new URLSearchParams(location.search).get('open');if(openRoute)loadRouteModules(openRoute).catch(()=>{});
       const target=document.getElementById('authMsg');if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
-      console.info(`MijnSerenity ${BUILD}: stabiele bootstrap gestart.`);
+      console.info(`MijnSerenity ${BUILD}: dashboard-first bootstrap gestart.`);
     }catch(error){console.error('MijnSerenity kon niet starten:',error);setAuthStatus('De beveiligde inlog kon niet worden geladen. Probeer de app opnieuw te openen.',true);const button=document.getElementById('signInButton');if(button)button.disabled=true}
   }
   window.addEventListener('mijnserenity:dashboard-ready',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation()},{passive:true});
