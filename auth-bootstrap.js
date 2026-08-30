@@ -1,19 +1,18 @@
-/* MijnSerenity 7.19.14 — stabiliteitsbootstrap
-   iPhone gebruikt Marine Glass; iPad behoudt de zichtbare stabiele startpagina en volledige navigatie. */
+/* MijnSerenity 7.19.15 — stabiliteitsbootstrap
+   iPhone en iPad gebruiken dezelfde responsive Marine Glass cockpit. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap719140)return;
-  window.__msBootstrap719140=true;
+  if(window.__msBootstrap719150)return;
+  window.__msBootstrap719150=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='7.19.14';
-  const VERSION='719140';
+  const BUILD='7.19.15';
+  const VERSION='719150';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
-  const isIPadLike=()=>/iPad/i.test(navigator.userAgent||'')||((navigator.platform==='MacIntel'||/Macintosh/i.test(navigator.userAgent||''))&&Number(navigator.maxTouchPoints||0)>1&&Math.min(Number(screen.width||0),Number(screen.height||0))>=700);
 
   const SUPABASE_SOURCES=[
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
@@ -65,6 +64,7 @@
     document.body?.classList.remove('ms750-simple-ui','ms760-captain-experience','ms744-keyboard-open','ms744-nav-repositioning');
     document.getElementById('dashboard')?.classList.remove('scd-active','mspro-active');
     document.querySelector('.bottom-nav')?.classList.remove('bottom-nav-viewport-fixed','bottom-nav-auto-hidden');
+    document.documentElement.removeAttribute('data-ms-ipad-safe');
   }
   function ensureCss(path,id){const href=`/${path}?v=${VERSION}`;let link=document.getElementById(id);if(!link){link=document.createElement('link');link.id=id;link.rel='stylesheet';document.head.appendChild(link)}link.href=href}
   function existingScript(path){const wanted=pathOf(path);return [...document.scripts].find(script=>script.src&&pathOf(script.src)===wanted)}
@@ -106,15 +106,10 @@
       try{await loadScript(`/dashboard-pro-71531-loader.js?v=${VERSION}`,10000)}catch(error){console.warn('Dashboardloader:',error)}
       wrapNavigation();removeLegacyLayoutLayers();syncBuildVersion();
 
-      if(isIPadLike()){
-        document.documentElement.dataset.msIpadSafe='legacy';
-        requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
-        console.info(`MijnSerenity ${BUILD}: iPad legacy startpagina actief.`);
-        setTimeout(()=>window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD,ipadLegacy:true}})),50);
-      }else{
-        Promise.allSettled(ESSENTIAL_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{removeLegacyLayoutLayers();syncBuildVersion()});
-        setTimeout(()=>{Promise.allSettled(SAFE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{syncBuildVersion();window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}))})},1200);
-      }
+      /* Ook op iPad alle noodzakelijke live modules laden. De oude iPad-uitzondering
+         sloeg o.a. orientation cleanup, Victron diagnostics en technical live sync over. */
+      Promise.allSettled(ESSENTIAL_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{removeLegacyLayoutLayers();syncBuildVersion()});
+      setTimeout(()=>{Promise.allSettled(SAFE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{syncBuildVersion();window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}))})},1200);
 
       const openRoute=new URLSearchParams(location.search).get('open');if(openRoute)loadRouteModules(openRoute).catch(()=>{});
       const target=document.getElementById('authMsg');if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
@@ -122,6 +117,6 @@
     }catch(error){console.error('MijnSerenity kon niet starten:',error);setAuthStatus('De beveiligde inlog kon niet worden geladen. Probeer de app opnieuw te openen.',true);const button=document.getElementById('signInButton');if(button)button.disabled=true}
   }
   window.addEventListener('mijnserenity:dashboard-ready',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation()},{passive:true});
-  window.addEventListener('pageshow',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation();if(isIPadLike())requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))},{passive:true});
+  window.addEventListener('pageshow',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation()},{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
