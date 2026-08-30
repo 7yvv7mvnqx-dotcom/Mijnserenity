@@ -1,9 +1,9 @@
-/* MijnSerenity 7.19.11 — stabiele mobiele viewport guard
-   Geen MutationObserver op style-attributen: dat veroorzaakte een render-loop op iPhone. */
+/* MijnSerenity 7.19.12 — iPhone-only viewport guard
+   De iPad gebruikt zijn goede eerste layout zonder late viewport-mutaties. */
 (()=>{
   'use strict';
-  if(window.__msMobileViewportGuard71911)return;
-  window.__msMobileViewportGuard71911=true;
+  if(window.__msMobileViewportGuard71912)return;
+  window.__msMobileViewportGuard71912=true;
 
   const imp=(el,name,value)=>el?.style?.setProperty(name,value,'important');
   function autoBox(el,overflow='visible'){
@@ -14,7 +14,8 @@
   }
 
   function apply(){
-    if(window.innerWidth>820)return;
+    /* Bewust alleen telefoons. iPad portrait zit ruim boven 600 CSS-pixels. */
+    if(window.innerWidth>600)return;
     const html=document.documentElement,body=document.body;
     autoBox(html,'visible');autoBox(body,'visible');
     imp(html,'overflow-x','hidden');imp(body,'overflow-x','hidden');imp(body,'padding-bottom','0');
