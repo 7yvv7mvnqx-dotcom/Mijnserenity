@@ -1,11 +1,10 @@
-/* MijnSerenity 7.19.14 — iPhone Marine Glass, iPad stabiele legacy startpagina */
+/* MijnSerenity 7.19.15 — één responsive Marine Glass dashboard voor iPhone en iPad */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader719140)return;
-  window.__msDashboardLoader719140=true;
-  const V='719140';
-  const BUILD='7.19.14';
-  const isIPadLike=()=>/iPad/i.test(navigator.userAgent||'')||((navigator.platform==='MacIntel'||/Macintosh/i.test(navigator.userAgent||''))&&Number(navigator.maxTouchPoints||0)>1&&Math.min(Number(screen.width||0),Number(screen.height||0))>=700);
+  if(window.__msDashboardLoader719150)return;
+  window.__msDashboardLoader719150=true;
+  const V='719150';
+  const BUILD='7.19.15';
 
   function currentPath(src){try{return new URL(src,location.href).pathname}catch{return src}}
   function scriptAlreadyLoaded(src){const wanted=currentPath(src);return [...document.scripts].some(script=>script.src&&currentPath(script.src)===wanted&&script.dataset.ms719Loaded==='1')}
@@ -32,6 +31,7 @@
     document.querySelectorAll('[id="msMarineGlass"][data-ms-victron-live]').forEach(panel=>panel.remove());
     const dashboard=document.getElementById('dashboard');dashboard?.classList.remove('scd-active','mspro-active');
     document.querySelector('.bottom-nav')?.classList.remove('bottom-nav-viewport-fixed','bottom-nav-auto-hidden');
+    document.documentElement.removeAttribute('data-ms-ipad-safe');
   }
   function syncVersion(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -40,32 +40,13 @@
     const settings=document.getElementById('settingsAppVersion');if(settings)settings.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
   }
-  function keepIPadStartVisible(){
-    const dashboard=document.getElementById('dashboard');
-    dashboard?.classList.remove('mg-active','scd-active','mspro-active');
-    document.getElementById('msMarineGlass')?.remove();
-    const legacy=document.getElementById('ms71510Dashboard');
-    if(legacy){
-      legacy.classList.remove('hidden');
-      legacy.style.setProperty('display','block','important');
-      legacy.style.setProperty('visibility','visible','important');
-      legacy.style.setProperty('opacity','1','important');
-    }
-    document.documentElement.dataset.msIpadSafe='legacy';
-    requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
-  }
 
   async function start(){
     removeConflicts();ensureStableCss();syncVersion();
 
-    if(isIPadLike()){
-      /* Op iPad is juist de statische startpagina goed. Marine Glass maakte hem daarna zwart.
-         Laat die overgang daarom niet meer plaatsvinden. */
-      keepIPadStartVisible();
-      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,ipadLegacy:true}}));
-      return;
-    }
-
+    /* Geen aparte iPad-legacy pagina meer. Die forceerde het oude startdashboard
+       buiten zijn eigen <=1024px CSS-breakpoint en veroorzaakte precies de halve,
+       felblauwe layout. Alle schermen gebruiken nu dezelfde responsive cockpit. */
     await load(`/mobile-viewport-guard-71911.js?v=${V}`,'mobile-viewport-guard',5000);
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass',9000);
     await load(`/victron-live-panel-71990.js?v=${V}`,'victron-live-panel',5000);
