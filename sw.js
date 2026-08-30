@@ -1,6 +1,6 @@
-/* MijnSerenity 7.19.16 — PWA-cache voor iPhone Marine Glass + stabiel iPad-startdashboard */
-const CACHE_NAME='mijnserenity-7.19.16-stable';
-const BUILD_TOKEN='719160';
+/* MijnSerenity 7.19.17 — PWA-cache voor iPhone Marine Glass + iPad Stage Manager fix */
+const CACHE_NAME='mijnserenity-7.19.17-stable';
+const BUILD_TOKEN='719170';
 const CORE_ASSETS=[
   '/',
   '/index.html',
