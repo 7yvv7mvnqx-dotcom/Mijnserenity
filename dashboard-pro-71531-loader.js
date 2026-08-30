@@ -56,7 +56,22 @@
     const nav=document.querySelector('.bottom-nav');
     nav?.classList.remove('mg-nav');
     document.documentElement.dataset.msIpadDashboard='native';
-    requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
+  }
+  function installIPadGuard(){
+    if(window.__msIpadNativeDashboardGuard719160)return;
+    window.__msIpadNativeDashboardGuard719160=true;
+    const dashboard=document.getElementById('dashboard');
+    if(!dashboard)return;
+    const enforce=()=>{
+      if(dashboard.classList.contains('mg-active')||document.getElementById('msMarineGlass')||document.getElementById('mgMoreNav')){
+        preserveIPadDashboard();
+      }
+    };
+    const observer=new MutationObserver(()=>requestAnimationFrame(enforce));
+    observer.observe(dashboard,{childList:true,subtree:false,attributes:true,attributeFilter:['class','style']});
+    [100,350,750,1200,2000,4000,8000].forEach(ms=>setTimeout(enforce,ms));
+    window.addEventListener('pageshow',enforce,{passive:true});
+    window.addEventListener('focus',enforce,{passive:true});
   }
 
   async function start(){
@@ -64,8 +79,10 @@
 
     if(isIPadLike()){
       preserveIPadDashboard();
+      installIPadGuard();
+      requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
       window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,ipadNative:true}}));
-      console.info(`MijnSerenity ${BUILD}: iPad startdashboard behouden; late Marine Glass-overname uitgeschakeld.`);
+      console.info(`MijnSerenity ${BUILD}: iPad startdashboard behouden; late Marine Glass-overname geblokkeerd.`);
       return;
     }
 
