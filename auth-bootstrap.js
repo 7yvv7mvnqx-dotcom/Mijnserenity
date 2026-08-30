@@ -1,14 +1,15 @@
-/* MijnSerenity 7.19.13 — stabiliteitsbootstrap
+/* MijnSerenity 7.19.14 — stabiliteitsbootstrap
    iPhone gebruikt Marine Glass; iPad behoudt de zichtbare stabiele startpagina en volledige navigatie. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap719130)return;
-  window.__msBootstrap719130=true;
+  if(window.__msBootstrap719140)return;
+  window.__msBootstrap719140=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
+  window.__msVictronEnergy71960=true;
 
-  const BUILD='7.19.13';
-  const VERSION='719130';
+  const BUILD='7.19.14';
+  const VERSION='719140';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
