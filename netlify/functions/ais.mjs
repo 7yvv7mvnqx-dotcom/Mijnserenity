@@ -58,9 +58,7 @@ async function vesselRequest(path,params,ttlMs=20000){
   try{payload=await response.json()}catch{}
 
   if(!response.ok){
-    const error=new Error(
-      payload?.error?.message||payload?.message||`AIS-databron gaf fout ${response.status}`
-    );
+    const error=new Error(payload?.error?.message||payload?.message||`AIS-databron gaf fout ${response.status}`);
     error.status=response.status;
     error.code=payload?.error?.code||payload?.code||'upstream_error';
     error.requestId=response.headers.get('x-request-id');
@@ -88,12 +86,7 @@ export default async request=>{
 
   try{
     if(mode==='status'){
-      return json({
-        configured:Boolean(apiKey()),
-        provider:'VesselAPI',
-        proxy:true,
-        collisionRadar:'8.20.0'
-      });
+      return json({configured:Boolean(apiKey()),provider:'VesselAPI',proxy:true,collisionRadar:'8.20.0'});
     }
 
     if(mode==='nearby'){
@@ -102,7 +95,7 @@ export default async request=>{
       const radiusKm=numberParam(url.searchParams,'radiusKm',1,100,3);
       const limit=Math.round(numberParam(url.searchParams,'limit',1,50,50));
       const now=new Date();
-      const from=new Date(now.getTime()-45*60*60*1000);
+      const from=new Date(now.getTime()-45*60*1000);
 
       const params=new URLSearchParams({
         'filter.latitude':String(lat),
@@ -114,6 +107,12 @@ export default async request=>{
       });
 
       const result=await vesselRequest('/location/vessels/radius',params,20000);
+      if(Array.isArray(result?.data?.vessels)){
+        result.data.vessels=result.data.vessels.map(vessel=>({
+          ...vessel,
+          vesselName:vessel?.vesselName||vessel?.vessel_name||''
+        }));
+      }
       return json(result);
     }
 
