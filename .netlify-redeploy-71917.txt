@@ -1,0 +1,1 @@
+MijnSerenity 7.19.17 — iPad Stage Manager resize guard + werkend Meer-menu.
