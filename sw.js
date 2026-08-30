@@ -1,6 +1,6 @@
-/* MijnSerenity 7.19.14 — PWA-cache voor iPhone Marine Glass + iPad legacy start */
-const CACHE_NAME='mijnserenity-7.19.14-stable';
-const BUILD_TOKEN='719140';
+/* MijnSerenity 7.19.15 — PWA-cache voor responsive Marine Glass op iPhone + iPad */
+const CACHE_NAME='mijnserenity-7.19.15-stable';
+const BUILD_TOKEN='719150';
 const CORE_ASSETS=[
   '/',
   '/index.html',
