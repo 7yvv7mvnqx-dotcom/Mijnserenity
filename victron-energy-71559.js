@@ -1,10 +1,10 @@
-/* MijnSerenity 7.19.5 — Serenity Victron Live
+/* MijnSerenity 7.19.6 — Serenity Victron Live
    Compacte mobiele layout, één verbruikswaarde en oude dubbele tankkaart verborgen.
-   Geen documentbrede MutationObserver: alleen gerichte dashboard-elementen worden aangepast. */
+   Gebruikt actuele VRM live-data als eerste bron en valt daarna terug op HA/diagnostiek/lokale data. */
 (()=>{
   'use strict';
-  if(window.__msVictronEnergy71950)return;
-  window.__msVictronEnergy71950=true;
+  if(window.__msVictronEnergy71960)return;
+  window.__msVictronEnergy71960=true;
 
   const $=id=>document.getElementById(id);
   const TOKEN_KEYS=['ms7148_vrm_token','ms7148VrmToken','mijnserenity_vrm_token','vrm_api_token'];
@@ -45,9 +45,9 @@
   function technical(){try{return typeof technicalStateCache!=='undefined'&&technicalStateCache?technicalStateCache:(typeof readTechnicalLocalState==='function'?readTechnicalLocalState()||{}:{})}catch{return {}}}
   function live(){
     const data=window.MIJSERENITY_VRM_LIVE_ENERGY;
-    if(!data||typeof data!=='object')return {};
+    if(!data||typeof data!=='object'||data.success===false)return {};
     const at=Date.parse(String(data.sampledAt||''));
-    if(Number.isFinite(at)&&Date.now()-at>180000)return {};
+    if(Number.isFinite(at)&&Date.now()-at>300000)return {};
     return data;
   }
   function safeStart(value){return finite(value)&&Number(value)>=9&&Number(value)<=16.8?Number(value):null}
@@ -56,33 +56,71 @@
     const t=technical();
     const diagnosis=window.MIJSERENITY_VRM_DIAGNOSTICS||{};
     const battery=diagnosis.battery||{},solarDiag=diagnosis.solar||{},acDiag=diagnosis.ac||{};
-    const liveData=live(),ac=liveData.ac||{};
+    const liveData=live();
+    const liveBattery=liveData.battery||{};
+    const liveSolar=liveData.solar||{};
+    const liveStarter=liveData.starter||{};
+    const ac=liveData.ac||{};
 
-    const soc=metric(['sensor.vrm_state_of_charge'],['state of charge','smartshunt soc','battery soc'],'%')??num(battery.soc?.value)??num(t.houseSoc);
-    const voltage=metric(['sensor.vrm_voltage'],['vrm voltage','smartshunt voltage','house battery voltage','huishoudaccu spanning'],'v',['starter','startaccu','aux'])??num(battery.voltage?.value)??num(t.houseVoltage);
-    const current=metric(['sensor.vrm_current'],['vrm current','smartshunt current','battery current','accustroom'],'a',['starter','startaccu','aux'])??num(battery.current?.value)??num(t.houseCurrent);
-    const power=metric(['sensor.vrm_battery_power'],['vrm battery power','smartshunt power','battery power','accuvermogen'],'w',['solar','pv','mppt','charger'])??num(battery.power?.value)??num(t.housePower)??(finite(voltage)&&finite(current)?Number(voltage)*Number(current):null);
-    const solar=metric(['sensor.vrm_solar_charger_power','sensor.vrm_pv_power'],['solar charger power','mppt power','pv power','zonnepaneel vermogen'],'w',['battery','load','voltage','current'])??num(solarDiag.power?.value)??num(t.solarPower);
+    // Actuele VRM-data heeft voorrang. Daardoor worden geldige live waarden niet
+    // overschreven door ontbrekende of verouderde Home Assistant-entiteiten.
+    const soc=num(liveBattery.soc)
+      ??metric(['sensor.vrm_state_of_charge'],['state of charge','smartshunt soc','battery soc'],'%')
+      ??num(battery.soc?.value)
+      ??num(t.houseSoc);
+    const voltage=num(liveBattery.voltage)
+      ??metric(['sensor.vrm_voltage'],['vrm voltage','smartshunt voltage','house battery voltage','huishoudaccu spanning'],'v',['starter','startaccu','aux'])
+      ??num(battery.voltage?.value)
+      ??num(t.houseVoltage);
+    const current=num(liveBattery.current)
+      ??metric(['sensor.vrm_current'],['vrm current','smartshunt current','battery current','accustroom'],'a',['starter','startaccu','aux'])
+      ??num(battery.current?.value)
+      ??num(t.houseCurrent);
+    const power=num(liveBattery.power)
+      ??metric(['sensor.vrm_battery_power'],['vrm battery power','smartshunt power','battery power','accuvermogen'],'w',['solar','pv','mppt','charger'])
+      ??num(battery.power?.value)
+      ??num(t.housePower)
+      ??(finite(voltage)&&finite(current)?Number(voltage)*Number(current):null);
+    const solar=num(liveSolar.power)
+      ??num(liveData.system?.solarPower)
+      ??metric(['sensor.vrm_solar_charger_power','sensor.vrm_pv_power'],['solar charger power','mppt power','pv power','zonnepaneel vermogen'],'w',['battery','load','voltage','current'])
+      ??num(solarDiag.power?.value)
+      ??num(t.solarPower);
 
     const start=[
+      num(liveBattery.starterVoltage),
+      num(liveStarter.voltage),
       num(battery.starterVoltage?.value),
       metric(['sensor.vrm_starter_battery_voltage','sensor.vrm_start_battery_voltage','sensor.vrm_auxiliary_battery_voltage','sensor.vrm_aux_voltage'],['starter battery voltage','start battery voltage','startaccu spanning','aux voltage'],'v',['house','huishoud']),
       num(t.startVoltage)
     ].map(safeStart).find(v=>v!==null)??null;
 
-    let shore=boolEntity(['binary_sensor.vrm_shore_power','binary_sensor.vrm_ac_input_connected','binary_sensor.vrm_grid_connected'],['shore power','walstroom','ac input connected','grid connected']);
-    const shoreV=metric(['sensor.vrm_ac_input_voltage','sensor.vrm_shore_voltage','sensor.vrm_grid_voltage'],['ac input voltage','shore voltage','walstroom spanning','grid voltage'],'v',['battery','dc','starter'])??num(ac.inputVoltage)??num(acDiag.inputVoltage)??num(t.shoreVoltage);
-    if(shore===null&&typeof ac.shoreConnected==='boolean')shore=ac.shoreConnected;
+    let shore=typeof ac.shoreConnected==='boolean'?ac.shoreConnected:null;
+    if(shore===null)shore=boolEntity(['binary_sensor.vrm_shore_power','binary_sensor.vrm_ac_input_connected','binary_sensor.vrm_grid_connected'],['shore power','walstroom','ac input connected','grid connected']);
+    const shoreV=num(ac.inputVoltage)
+      ??metric(['sensor.vrm_ac_input_voltage','sensor.vrm_shore_voltage','sensor.vrm_grid_voltage'],['ac input voltage','shore voltage','walstroom spanning','grid voltage'],'v',['battery','dc','starter'])
+      ??num(acDiag.inputVoltage)
+      ??num(t.shoreVoltage);
     if(shore===null&&typeof acDiag.shoreConnected==='boolean')shore=acDiag.shoreConnected;
     if(shore===null&&finite(shoreV)&&Number(shoreV)>=180&&Number(shoreV)<=280)shore=true;
     if(shore===null&&typeof t.shorePower==='boolean')shore=t.shorePower;
 
-    const charger=metric(['sensor.vrm_charger_power','sensor.vrm_ac_charger_power'],['charger power','acculader vermogen','lader vermogen'],'w',['solar','pv','mppt','inverter'])??num(ac.chargerPower)??num(acDiag.chargerPower)??num(t.chargerPower);
-    const inverter=metric(['sensor.vrm_inverter_power','sensor.vrm_inverter_output_power','sensor.vrm_ac_output_power'],['inverter power','omvormer vermogen','ac output power'],'w',['solar','charger','lader'])??num(ac.inverterPower)??num(acDiag.inverterPower)??num(t.inverterPower);
-    const explicitLoad=metric(['sensor.vrm_ac_load_power','sensor.vrm_load_power','sensor.vrm_consumption_power'],['ac load power','load power','consumption power','verbruik vermogen'],'w',['solar','charger','battery'])??num(ac.loadPower)??num(acDiag.loadPower)??num(t.loadPower);
+    const charger=num(ac.chargerPower)
+      ??metric(['sensor.vrm_charger_power','sensor.vrm_ac_charger_power'],['charger power','acculader vermogen','lader vermogen'],'w',['solar','pv','mppt','inverter'])
+      ??num(acDiag.chargerPower)
+      ??num(t.chargerPower);
+    const inverter=num(ac.inverterPower)
+      ??metric(['sensor.vrm_inverter_power','sensor.vrm_inverter_output_power','sensor.vrm_ac_output_power'],['inverter power','omvormer vermogen','ac output power'],'w',['solar','charger','lader'])
+      ??num(acDiag.inverterPower)
+      ??num(t.inverterPower);
+    const explicitLoad=num(ac.loadPower)
+      ??metric(['sensor.vrm_ac_load_power','sensor.vrm_load_power','sensor.vrm_consumption_power'],['ac load power','load power','consumption power','verbruik vermogen'],'w',['solar','charger','battery'])
+      ??num(acDiag.loadPower)
+      ??num(t.loadPower);
     const batteryDischarge=finite(power)&&Number(power)<-1?Math.abs(Number(power)):null;
-    const load=finite(batteryDischarge)?batteryDischarge:(finite(explicitLoad)?Math.abs(Number(explicitLoad)):null);
-    const dcLoad=metric(['sensor.vrm_dc_load_power','sensor.vrm_dc_system_power','sensor.vrm_dc_consumption_power'],['dc load power','dc system power','dc consumption power','dc verbruik'],'w',['battery','solar','charger']);
+    const load=finite(explicitLoad)?Math.abs(Number(explicitLoad)):(finite(batteryDischarge)?batteryDischarge:null);
+    const dcLoad=num(ac.dcPower)
+      ??metric(['sensor.vrm_dc_load_power','sensor.vrm_dc_system_power','sensor.vrm_dc_consumption_power'],['dc load power','dc system power','dc consumption power','dc verbruik'],'w',['battery','solar','charger']);
 
     const tanks=window.MIJSERENITY_TANK_LIVE||{};
     const fuel=num(tanks.fuel?.value)??num(t.fuelPct);
@@ -107,7 +145,7 @@
   }
 
   function markup(){return `
-    <div id="msMarineGlass" data-ms-victron-live="7195" aria-label="Serenity Victron Live">
+    <div id="msMarineGlass" data-ms-victron-live="7196" aria-label="Serenity Victron Live">
       <div class="mg-live-head"><div class="mg-brand"><span class="mg-boat" aria-hidden="true">🛥️</span><span class="mg-brand-copy"><strong>SERENITY</strong><small>Victron Live</small></span></div><span id="mgLivePill" class="mg-live-pill"><i></i> LIVE</span></div>
       <div class="mg-main">
         <div class="mg-mini solar"><small>☀️ Zonne-energie</small><strong id="mgSolar">– W</strong><em>SmartSolar MPPT</em></div>
@@ -119,7 +157,7 @@
       <div class="mg-three">
         <div class="mg-info-card start"><small><span class="mg-icon">🔋</span>Startaccu</small><strong id="mgStartVoltage">– V</strong><span id="mgStartState" class="state">Wachten op meting</span></div>
         <div class="mg-info-card fuel"><small><span class="mg-icon">⛽</span>Dieseltank</small><strong id="mg-fuel">–%</strong><em id="mg-fuel-l">– L</em><div class="mg-level-bar"><i id="mg-fuel-bar"></i></div></div>
-        <div class="mg-info-card water"><small><span class="mg-icon">💧</span>Watertank</small><strong id="mg-water">–%</strong><em>Cerbo live</em><div class="mg-level-bar"><i id="mg-water-bar"></i></div></div>
+        <div class="mg-info-card water"><small><span class="mg-icon">💧</span>Drinkwater</small><strong id="mg-water">–%</strong><em>Cerbo live</em><div class="mg-level-bar"><i id="mg-water-bar"></i></div></div>
       </div>
       <div class="mg-systems">
         <div class="mg-system"><div class="mg-system-row"><span class="mg-system-icon">🔷</span><div><small>MultiPlus-II</small><strong id="mg7195MultiState">Stand-by</strong><em id="mgInv">– W</em></div></div></div>
@@ -140,15 +178,16 @@
     const headings=[...root.querySelectorAll('h1,h2,h3,h4,h5,h6,strong,.card-title,.section-title')];
     const heading=headings.find(el=>/^energie\s*&\s*stroom$/i.test(String(el.textContent||'').trim()));
     if(!heading)return null;
+
+    // De oude kaart is meerdere keren qua inhoud veranderd. Alleen op de titel
+    // zoeken is daarom betrouwbaarder dan eisen dat specifieke oude labels bestaan.
     const preferred=heading.closest('.card,section,article');
-    if(preferred&&preferred!==root){
-      const txt=String(preferred.innerText||preferred.textContent||'');
-      if(/walstroom/i.test(txt)&&/omvormer/i.test(txt)&&/netto\s*stroom/i.test(txt))return preferred;
-    }
+    if(preferred&&preferred!==root)return preferred;
+
     let node=heading.parentElement;
-    for(let depth=0;node&&node!==root&&depth<5;depth++,node=node.parentElement){
+    for(let depth=0;node&&node!==root&&depth<6;depth++,node=node.parentElement){
       const txt=String(node.innerText||node.textContent||'');
-      if(/walstroom/i.test(txt)&&/omvormer/i.test(txt)&&/netto\s*stroom/i.test(txt))return node;
+      if(/huishoudaccu|zonne|walstroom|startaccu/i.test(txt))return node;
     }
     return null;
   }
@@ -183,7 +222,7 @@
     if(card&&card!==root&&!card.contains($('msMarineGlass'))){
       card.hidden=true;
       card.classList.add('ms-victron-legacy-hidden');
-      card.setAttribute('aria-hidden','true');
+      card.setAttribute('aria-hidden','true')
     }
   }
 
@@ -197,7 +236,7 @@
     host.style.setProperty('max-height','none','important');
     host.style.setProperty('aspect-ratio','auto','important');
     host.style.setProperty('align-self','start','important');
-    if(!$('msMarineGlass')||$('msMarineGlass')?.dataset.msVictronLive!=='7195'||!host.contains($('msMarineGlass'))){host.innerHTML=markup()}
+    if(!$('msMarineGlass')||$('msMarineGlass')?.dataset.msVictronLive!=='7196'||!host.contains($('msMarineGlass'))){host.innerHTML=markup()}
     hideDiagnosis();
     hideDuplicateTankSystems();
     return true;
@@ -217,7 +256,7 @@
     set('mgSolar',fmt(s.solar,0,' W'));set('mgPv',fmt(s.solar,0,' W'));
     set('mg7195Load',fmt(s.load,0,' W'));set('mg7195LoadFlow',fmt(s.load,0,' W'));set('mgDcLoad',fmt(s.dcLoad,0,' W'));set('mgNetPower',signed(s.power,0,' W'));
     set('mg7195Shore',s.shore===true?'Aangesloten':s.shore===false?'Niet aangesloten':'Niet gekoppeld');
-    set('mg7195ShoreMeta',s.shore===true&&finite(s.shoreV)?`${fmt(s.shoreV,0,' V')} via MultiPlus`:s.shore===false?'Geen walspanning':'Sensor nog niet beschikbaar');
+    set('mg7195ShoreMeta',s.shore===true&&finite(s.shoreV)?`${fmt(s.shoreV,0,' V')} via MultiPlus`:s.shore===false?'Geen walspanning':'Cerbo / MultiPlus-data ontbreekt');
 
     const [startLabel,startClass]=startState(s.start);set('mgStartVoltage',fmt(s.start,2,' V'));set('mgStartState',startLabel);
     const start=$('mgStartState');if(start)start.className=`state ${startClass}`.trim();
@@ -261,7 +300,7 @@
   function boot(){
     queueRender();
     setTimeout(queueRender,500);setTimeout(queueRender,1800);setTimeout(queueRender,4500);
-    setTimeout(()=>refreshLive(true),1800);
+    setTimeout(()=>refreshLive(true),1200);
     refreshTimer=setInterval(()=>{if(!document.hidden){queueRender();refreshLive(false)}},60000);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
