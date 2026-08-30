@@ -1,10 +1,10 @@
-/* MijnSerenity 7.19.12 — stabiele cockpit met iPad safe mode */
+/* MijnSerenity 7.19.13 — iPhone Marine Glass, iPad stabiele legacy startpagina */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader719120)return;
-  window.__msDashboardLoader719120=true;
-  const V='719120';
-  const BUILD='7.19.12';
+  if(window.__msDashboardLoader719130)return;
+  window.__msDashboardLoader719130=true;
+  const V='719130';
+  const BUILD='7.19.13';
   const isIPadLike=()=>/iPad/i.test(navigator.userAgent||'')||((navigator.platform==='MacIntel'||/Macintosh/i.test(navigator.userAgent||''))&&Number(navigator.maxTouchPoints||0)>1&&Math.min(Number(screen.width||0),Number(screen.height||0))>=700);
 
   function currentPath(src){try{return new URL(src,location.href).pathname}catch{return src}}
@@ -20,13 +20,18 @@
     });
   }
   function ensureCssLink(id,href){let link=document.getElementById(id);if(!link){link=document.createElement('link');link.id=id;link.rel='stylesheet';document.head.appendChild(link)}if(link.getAttribute('href')!==href)link.setAttribute('href',href)}
-  function ensureStableCss(){ensureCssLink('msStableShell71900',`/marine-glass-mobile-7184.css?v=${V}`);ensureCssLink('msMarineGlassFixes7193',`/marine-glass-fixes-7193.css?v=${V}`);document.getElementById('msMarineGlassStable71900')?.remove()}
+  function ensureStableCss(){
+    ensureCssLink('msStableShell71900',`/marine-glass-mobile-7184.css?v=${V}`);
+    ensureCssLink('msMarineGlassFixes7193',`/marine-glass-fixes-7193.css?v=${V}`);
+    ensureCssLink('msNavigationAccess71913',`/navigation-access-71913.css?v=${V}`);
+    document.getElementById('msMarineGlassStable71900')?.remove();
+  }
   function removeConflicts(){
-    ['msOrientationLayout71835Style','msOrientationLayout71836Style','msMarineGlassPolish7185','msSerenityControlCss','msSerenityControl','mgMoreNav','msMarineGlassStable71900'].forEach(id=>document.getElementById(id)?.remove());
+    ['msOrientationLayout71835Style','msOrientationLayout71836Style','msMarineGlassPolish7185','msSerenityControlCss','msSerenityControl','msMarineGlassStable71900'].forEach(id=>document.getElementById(id)?.remove());
     document.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{if(currentPath(link.href).endsWith('/victron-energy-71559.css'))link.remove()});
     document.querySelectorAll('[id="msMarineGlass"][data-ms-victron-live]').forEach(panel=>panel.remove());
     const dashboard=document.getElementById('dashboard');dashboard?.classList.remove('scd-active','mspro-active');
-    document.querySelector('.bottom-nav')?.classList.remove('mg-nav','bottom-nav-viewport-fixed','bottom-nav-always-visible','bottom-nav-auto-hidden');
+    document.querySelector('.bottom-nav')?.classList.remove('bottom-nav-viewport-fixed','bottom-nav-auto-hidden');
   }
   function syncVersion(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -35,20 +40,38 @@
     const settings=document.getElementById('settingsAppVersion');if(settings)settings.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
   }
+  function keepIPadStartVisible(){
+    const dashboard=document.getElementById('dashboard');
+    dashboard?.classList.remove('mg-active','scd-active','mspro-active');
+    document.getElementById('msMarineGlass')?.remove();
+    const legacy=document.getElementById('ms71510Dashboard');
+    if(legacy){
+      legacy.classList.remove('hidden');
+      legacy.style.setProperty('display','block','important');
+      legacy.style.setProperty('visibility','visible','important');
+      legacy.style.setProperty('opacity','1','important');
+    }
+    document.documentElement.dataset.msIpadSafe='legacy';
+    requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
+  }
 
   async function start(){
     removeConflicts();ensureStableCss();syncVersion();
 
-    /* De iPhone heeft de viewport-correctie nodig; op iPad laten we de goede eerste layout onaangeroerd. */
-    if(!isIPadLike())await load(`/mobile-viewport-guard-71911.js?v=${V}`,'mobile-viewport-guard',5000);
+    if(isIPadLike()){
+      /* Op iPad is juist de statische startpagina goed. Marine Glass maakte hem daarna zwart.
+         Laat die overgang daarom niet meer plaatsvinden. */
+      keepIPadStartVisible();
+      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,ipadLegacy:true}}));
+      return;
+    }
+
+    await load(`/mobile-viewport-guard-71911.js?v=${V}`,'mobile-viewport-guard',5000);
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass',9000);
     await load(`/victron-live-panel-71990.js?v=${V}`,'victron-live-panel',5000);
 
     removeConflicts();ensureStableCss();syncVersion();
-    if(isIPadLike())document.documentElement.dataset.msIpadSafe='1';
-    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,ipadSafe:isIPadLike()}}));
-
-    /* Geen late dashboardmodules zolang iPad safe mode actief is. */
+    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD}}));
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
