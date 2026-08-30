@@ -1,10 +1,11 @@
-/* MijnSerenity 7.19.11 — stabiele cockpit: geen late modules die het scherm zwart kunnen maken */
+/* MijnSerenity 7.19.12 — stabiele cockpit met iPad safe mode */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader719111)return;
-  window.__msDashboardLoader719111=true;
-  const V='719111';
-  const BUILD='7.19.11';
+  if(window.__msDashboardLoader719120)return;
+  window.__msDashboardLoader719120=true;
+  const V='719120';
+  const BUILD='7.19.12';
+  const isIPadLike=()=>/iPad/i.test(navigator.userAgent||'')||((navigator.platform==='MacIntel'||/Macintosh/i.test(navigator.userAgent||''))&&Number(navigator.maxTouchPoints||0)>1&&Math.min(Number(screen.width||0),Number(screen.height||0))>=700);
 
   function currentPath(src){try{return new URL(src,location.href).pathname}catch{return src}}
   function scriptAlreadyLoaded(src){const wanted=currentPath(src);return [...document.scripts].some(script=>script.src&&currentPath(script.src)===wanted&&script.dataset.ms719Loaded==='1')}
@@ -38,15 +39,16 @@
   async function start(){
     removeConflicts();ensureStableCss();syncVersion();
 
-    await load(`/mobile-viewport-guard-71911.js?v=${V}`,'mobile-viewport-guard',5000);
+    /* De iPhone heeft de viewport-correctie nodig; op iPad laten we de goede eerste layout onaangeroerd. */
+    if(!isIPadLike())await load(`/mobile-viewport-guard-71911.js?v=${V}`,'mobile-viewport-guard',5000);
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass',9000);
     await load(`/victron-live-panel-71990.js?v=${V}`,'victron-live-panel',5000);
 
     removeConflicts();ensureStableCss();syncVersion();
-    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD}}));
+    if(isIPadLike())document.documentElement.dataset.msIpadSafe='1';
+    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,ipadSafe:isIPadLike()}}));
 
-    /* Tijdelijk géén late dashboardmodules. Op iPad werd het goede eerste scherm
-       juist ná hun start zwart. Eerst de basis stabiel maken, daarna één voor één terugzetten. */
+    /* Geen late dashboardmodules zolang iPad safe mode actief is. */
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
