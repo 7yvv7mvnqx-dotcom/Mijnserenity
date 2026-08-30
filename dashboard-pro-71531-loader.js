@@ -1,9 +1,9 @@
-/* MijnSerenity 7.19.10 — kritieke dashboarddelen eerst, optionele modules met time-out */
+/* MijnSerenity 7.19.11 — viewport guard eerst, daarna kritieke dashboarddelen */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader719100)return;
-  window.__msDashboardLoader719100=true;
-  const V='719100';
+  if(window.__msDashboardLoader719110)return;
+  window.__msDashboardLoader719110=true;
+  const V='719110';
 
   function currentPath(src){
     try{return new URL(src,location.href).pathname}catch{return src}
@@ -59,7 +59,7 @@
     document.querySelector('.bottom-nav')?.classList.remove('mg-nav','bottom-nav-viewport-fixed','bottom-nav-always-visible','bottom-nav-auto-hidden');
   }
   function syncVersion(){
-    const build=window.MIJSERENITY_BUILD||'7.19.10';
+    const build=window.MIJSERENITY_BUILD||'7.19.11';
     const badge=document.querySelector('#msMarineGlass .mg-brand sup');
     if(badge)badge.textContent=build;
     const settings=document.getElementById('settingsAppVersion');
@@ -69,16 +69,15 @@
   async function start(){
     removeConflicts();ensureStableCss();
 
-    /* Alleen de cockpit zelf is blokkerend. */
-    await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass',9000);
+    /* Eerst de iPhone viewport/nav hard begrenzen. */
+    await load(`/mobile-viewport-guard-71911.js?v=${V}`,'mobile-viewport-guard',5000);
 
-    /* Kritiek voor het zichtbare deel: laad Victron direct daarna, niet pas als laatste. */
+    await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass',9000);
     await load(`/victron-live-panel-71990.js?v=${V}`,'victron-live-panel',5000);
 
     removeConflicts();ensureStableCss();syncVersion();
-    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.10'}}));
+    window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.11'}}));
 
-    /* Alles hieronder is aanvullend en mag het scherm nooit meer blokkeren. */
     const optional=[
       [`/marine-glass-polish-7185.js?v=${V}`,'live-weather-tides'],
       [`/marine-glass-weather-fix-71931.js?v=${V}`,'live-weather-unified'],
@@ -90,7 +89,7 @@
     ];
     Promise.allSettled(optional.map(([src,key])=>load(src,key,6000))).then(()=>{
       removeConflicts();ensureStableCss();syncVersion();
-      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-optional-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.10'}}));
+      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-optional-ready',{detail:{build:window.MIJSERENITY_BUILD||'7.19.11'}}));
     });
   }
 
