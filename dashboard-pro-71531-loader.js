@@ -44,12 +44,11 @@
   async function start(){
     removeConflicts();ensureStableCss();syncVersion();
 
-    /* Geen aparte iPad-legacy pagina meer. Die forceerde het oude startdashboard
-       buiten zijn eigen <=1024px CSS-breakpoint en veroorzaakte precies de halve,
-       felblauwe layout. Alle schermen gebruiken nu dezelfde responsive cockpit. */
+    /* Alle schermen gebruiken dezelfde responsive cockpit. De bestaande
+       Energie & Stroom-kaart blijft intact; alleen de live-data wordt eroverheen
+       gesynchroniseerd, zodat een tweede Victron-layout de kaart niet vervangt. */
     await load(`/mobile-viewport-guard-71911.js?v=${V}`,'mobile-viewport-guard',5000);
     await load(`/dashboard-pro-71700.js?v=${V}`,'marine-glass',9000);
-    await load(`/victron-live-panel-71990.js?v=${V}`,'victron-live-panel',5000);
     await load(`/dashboard-live-values-fix-71914.js?v=${V}`,'dashboard-live-values-fix',5000);
 
     removeConflicts();ensureStableCss();syncVersion();
