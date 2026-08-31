@@ -1,7 +1,7 @@
-/* MijnSerenity 8.21.0 — stabiele PWA-cache met ingebedde Cerbo Remote Console */
-const CACHE_NAME='mijnserenity-8.21.0-stable';
-const BUILD='8.21.0';
-const BUILD_TOKEN='821000';
+/* MijnSerenity 8.21.1 — officiële Victron GUI-v2 Remote Console live in MS */
+const CACHE_NAME='mijnserenity-8.21.1-stable';
+const BUILD='8.21.1';
+const BUILD_TOKEN='821100';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -155,7 +155,13 @@ self.addEventListener('fetch',event=>{
   if(request.method!=='GET')return;
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
+
+  /* De officiële Victron GUI-v2 is een zelfstandige WebAssembly-app. Laat al
+     haar HTML/JS/WASM/assets rechtstreeks door Netlify afhandelen. Anders zou
+     de gewone MijnSerenity navigatiefallback haar index.html vervangen. */
+  if(url.pathname.startsWith('/victron-gui/'))return;
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
+
   if(request.mode==='navigate'){
     event.respondWith(navigationNetworkFirst(request));
     return;
