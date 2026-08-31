@@ -1,15 +1,18 @@
-/* MijnSerenity 7.17.0 — runtime performance guard */
+/* MijnSerenity 8.20.2 — gerichte runtime performance guard
+   Geen documentbrede observer: alleen dynamische app-inhoud wordt gevolgd. */
 (()=>{
   'use strict';
-  if(window.__msRuntimePerformance71700)return;
-  window.__msRuntimePerformance71700=true;
+  if(window.__msRuntimePerformance8202)return;
+  window.__msRuntimePerformance8202=true;
 
   const STORAGE_SELECTOR='img[data-storage-bucket][data-storage-path]';
+  let observedRoot=null;
 
   function prepareImage(image){
     if(!(image instanceof HTMLImageElement))return;
     image.decoding='async';
-    if(!image.closest('#authScreen,.msc-head')&&!image.hasAttribute('loading')){
+    /* Login/logo en vaste dashboardkop niet lazy laden: die moeten direct zichtbaar zijn. */
+    if(!image.closest('#authView,.msc-head,.mg-top')&&!image.hasAttribute('loading')){
       image.loading='lazy';
     }
   }
@@ -46,6 +49,10 @@
   function replaceStorageMutationObserver(){
     try{
       if(typeof storageSafeMutationObserver==='undefined')return false;
+      const root=document.getElementById('appView');
+      if(!root)return false;
+      if(observedRoot===root)return true;
+
       storageSafeMutationObserver?.disconnect?.();
       storageSafeMutationObserver=new MutationObserver(mutations=>{
         for(const mutation of mutations){
@@ -53,7 +60,8 @@
           mutation.addedNodes.forEach(scanNode);
         }
       });
-      storageSafeMutationObserver.observe(document.body,{childList:true,subtree:true});
+      storageSafeMutationObserver.observe(root,{childList:true,subtree:true});
+      observedRoot=root;
       return true;
     }catch(error){
       console.warn('Gerichte storage-observer kon niet worden ingesteld:',error);
@@ -64,8 +72,11 @@
   function start(){
     optimiseExistingImages();
     replaceStorageMutationObserver();
-    document.documentElement.dataset.msPerformance='71700';
+    document.documentElement.dataset.msPerformance='8202';
   }
+
+  ['mijnserenity:boot-complete','mijnserenity:dashboard-ready','mijnserenity:routechange']
+    .forEach(name=>window.addEventListener(name,()=>requestAnimationFrame(start),{passive:true}));
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
