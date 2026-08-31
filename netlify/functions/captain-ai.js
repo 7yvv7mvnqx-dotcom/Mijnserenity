@@ -2,16 +2,28 @@ const recent=new Map();
 const MODEL='gpt-5-mini';
 const PRIMARY_MAX_OUTPUT_TOKENS=1400;
 const RETRY_MAX_OUTPUT_TOKENS=2400;
+const OPENAI_TIMEOUT_MS=18000;
+const RATE_RETENTION_MS=10*60*1000;
 
 function json(statusCode,body){
   return {
     statusCode,
     headers:{
       'Content-Type':'application/json; charset=utf-8',
-      'Cache-Control':'no-store'
+      'Cache-Control':'no-store',
+      'X-Content-Type-Options':'nosniff'
     },
     body:JSON.stringify(body)
   };
+}
+
+function pruneRecent(now=Date.now()){
+  for(const [key,at] of recent){if(now-at>RATE_RETENTION_MS)recent.delete(key)}
+  while(recent.size>500){
+    const key=recent.keys().next().value;
+    if(key===undefined)break;
+    recent.delete(key);
+  }
 }
 
 function outputText(data){
@@ -22,7 +34,7 @@ function outputText(data){
       .map(part=>part?.text||'')
       .join('')
       .trim();
-  }catch{return '';}
+  }catch{return ''}
 }
 
 function refusalText(data){
@@ -32,26 +44,42 @@ function refusalText(data){
       .map(part=>part?.refusal||'')
       .join('')
       .trim();
-  }catch{return '';}
+  }catch{return ''}
 }
 
 async function requestOpenAI({question,context,developer,maxOutputTokens}){
-  const response=await fetch('https://api.openai.com/v1/responses',{
-    method:'POST',
-    headers:{
-      Authorization:'Bearer '+process.env.OPENAI_API_KEY,
-      'Content-Type':'application/json'
-    },
-    body:JSON.stringify({
-      model:MODEL,
-      input:[
-        {role:'developer',content:developer},
-        {role:'user',content:`Vraag: ${question}\n\nBoordgegevens (JSON):\n${JSON.stringify(context)}`}
-      ],
-      reasoning:{effort:'low'},
-      max_output_tokens:maxOutputTokens
-    })
-  });
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),OPENAI_TIMEOUT_MS);
+  let response;
+  try{
+    response=await fetch('https://api.openai.com/v1/responses',{
+      method:'POST',
+      signal:controller.signal,
+      headers:{
+        Authorization:'Bearer '+process.env.OPENAI_API_KEY,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        model:MODEL,
+        input:[
+          {role:'developer',content:developer},
+          {role:'user',content:`Vraag: ${question}\n\nBoordgegevens (JSON):\n${JSON.stringify(context)}`}
+        ],
+        reasoning:{effort:'low'},
+        max_output_tokens:maxOutputTokens
+      })
+    });
+  }catch(error){
+    if(error?.name==='AbortError'){
+      const timeout=new Error('OpenAI request time-out');
+      timeout.status=504;
+      timeout.code='upstream_timeout';
+      throw timeout;
+    }
+    throw error;
+  }finally{
+    clearTimeout(timer);
+  }
 
   if(!response.ok){
     const detail=await response.text().catch(()=>String(response.status));
@@ -62,33 +90,25 @@ async function requestOpenAI({question,context,developer,maxOutputTokens}){
   }
 
   const data=await response.json();
-  return {
-    data,
-    answer:outputText(data),
-    refusal:refusalText(data)
-  };
+  return {data,answer:outputText(data),refusal:refusalText(data)};
 }
 
-exports.handler=async(event)=>{
+exports.handler=async event=>{
   if(event.httpMethod==='GET'){
-    return json(200,{
-      ok:true,
-      service:'captain-ai',
-      configured:Boolean(process.env.OPENAI_API_KEY),
-      model:MODEL
-    });
+    return json(200,{ok:true,service:'captain-ai',configured:Boolean(process.env.OPENAI_API_KEY),model:MODEL});
   }
-
   if(event.httpMethod!=='POST')return json(405,{error:'Alleen GET en POST toegestaan'});
 
   const ip=event.headers['x-nf-client-connection-ip']||event.headers['client-ip']||'unknown';
   const now=Date.now();
+  pruneRecent(now);
   const last=recent.get(ip)||0;
   if(now-last<900)return json(429,{error:'Wacht heel even en probeer opnieuw.'});
+  recent.delete(ip);
   recent.set(ip,now);
 
   let body={};
-  try{body=JSON.parse(event.body||'{}');}catch{return json(400,{error:'Ongeldige aanvraag.'});}
+  try{body=JSON.parse(event.body||'{}')}catch{return json(400,{error:'Ongeldige aanvraag.'})}
 
   const question=String(body.question||'').trim().slice(0,600);
   if(question.length<2)return json(400,{error:'Stel eerst een vraag.'});
@@ -99,7 +119,7 @@ exports.handler=async(event)=>{
     context=body.context&&typeof body.context==='object'?body.context:{};
     const serialized=JSON.stringify(context);
     if(serialized.length>30000)return json(413,{error:'Te veel gegevens voor één analyse.'});
-  }catch{return json(400,{error:'Ongeldige context.'});}
+  }catch{return json(400,{error:'Ongeldige context.'})}
 
   const developer=[
     'Je bent Captain AI in MijnSerenity, de boordassistent van Serenity.',
@@ -115,12 +135,7 @@ exports.handler=async(event)=>{
   ].join(' ');
 
   try{
-    let result=await requestOpenAI({
-      question,
-      context,
-      developer,
-      maxOutputTokens:PRIMARY_MAX_OUTPUT_TOKENS
-    });
+    let result=await requestOpenAI({question,context,developer,maxOutputTokens:PRIMARY_MAX_OUTPUT_TOKENS});
 
     if(!result.answer&&!result.refusal){
       console.warn(
@@ -129,19 +144,10 @@ exports.handler=async(event)=>{
         result.data?.incomplete_details||null,
         result.data?.usage?.output_tokens_details||null
       );
-
-      result=await requestOpenAI({
-        question,
-        context,
-        developer,
-        maxOutputTokens:RETRY_MAX_OUTPUT_TOKENS
-      });
+      result=await requestOpenAI({question,context,developer,maxOutputTokens:RETRY_MAX_OUTPUT_TOKENS});
     }
 
-    if(result.refusal){
-      return json(422,{error:'Captain AI kan deze vraag niet beantwoorden.'});
-    }
-
+    if(result.refusal)return json(422,{error:'Captain AI kan deze vraag niet beantwoorden.'});
     if(!result.answer){
       console.warn(
         'Captain AI antwoord bleef leeg:',
@@ -151,11 +157,11 @@ exports.handler=async(event)=>{
       );
       return json(502,{error:'Captain AI gaf geen bruikbaar antwoord. Probeer het nogmaals.'});
     }
-
     return json(200,{ai:true,answer:result.answer});
   }catch(error){
     if(error?.status){
-      console.warn('Captain AI OpenAI-fout:',error.status,String(error.detail||'').slice(0,500));
+      console.warn('Captain AI upstream-fout:',error.status,String(error.detail||error.code||'').slice(0,500));
+      if(error.status===504)return json(504,{error:'Captain AI reageert te langzaam. Probeer het opnieuw.'});
       return json(502,{error:'Captain AI kon de analyse niet afronden.'});
     }
     console.warn('Captain AI fout:',error);
