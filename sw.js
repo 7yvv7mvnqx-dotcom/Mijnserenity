@@ -1,7 +1,7 @@
-/* MijnSerenity 8.20.9 — stabiele PWA-cache met Cerbo GX live en Remote Console */
-const CACHE_NAME='mijnserenity-8.20.9-stable';
-const BUILD='8.20.9';
-const BUILD_TOKEN='820900';
+/* MijnSerenity 8.21.0 — stabiele PWA-cache met ingebedde Cerbo Remote Console */
+const CACHE_NAME='mijnserenity-8.21.0-stable';
+const BUILD='8.21.0';
+const BUILD_TOKEN='821000';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
