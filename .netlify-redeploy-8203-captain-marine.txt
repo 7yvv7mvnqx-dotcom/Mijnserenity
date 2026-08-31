@@ -1,0 +1,2 @@
+MijnSerenity Captain AI Marine Glass placement 8.20.3
+Triggered 2026-08-31 after verifying 8.20.2 hid the legacy dashboard host.
