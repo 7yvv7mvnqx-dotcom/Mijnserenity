@@ -1,7 +1,7 @@
-/* MijnSerenity 8.20.2 — stabiele PWA-cache met begrensde netwerkrequests */
-const CACHE_NAME='mijnserenity-8.20.2-stable';
-const BUILD='8.20.2';
-const BUILD_TOKEN='820200';
+/* MijnSerenity 8.20.6 — stabiele PWA-cache met begrensde netwerkrequests */
+const CACHE_NAME='mijnserenity-8.20.6-stable';
+const BUILD='8.20.6';
+const BUILD_TOKEN='820600';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -17,6 +17,7 @@ const CORE_ASSETS=[
   `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
   `/mobile-viewport-guard-71911.js?v=${BUILD_TOKEN}`,
   `/dashboard-live-values-fix-71914.js?v=${BUILD_TOKEN}`,
+  `/dashboard-energy-bridge-8206.js?v=${BUILD_TOKEN}`,
   `/dashboard-collision-radar-8201.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
