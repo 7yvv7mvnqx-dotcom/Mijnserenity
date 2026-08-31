@@ -1,7 +1,7 @@
 const recent=new Map();
 const MODEL='gpt-5-mini';
-const PRIMARY_MAX_OUTPUT_TOKENS=1400;
-const RETRY_MAX_OUTPUT_TOKENS=2400;
+const PRIMARY_MAX_OUTPUT_TOKENS=1600;
+const RETRY_MAX_OUTPUT_TOKENS=2600;
 const OPENAI_TIMEOUT_MS=18000;
 const RATE_RETENTION_MS=10*60*1000;
 
@@ -65,7 +65,7 @@ async function requestOpenAI({question,context,developer,maxOutputTokens}){
           {role:'developer',content:developer},
           {role:'user',content:`Vraag: ${question}\n\nBoordgegevens (JSON):\n${JSON.stringify(context)}`}
         ],
-        reasoning:{effort:'low'},
+        reasoning:{effort:'medium'},
         max_output_tokens:maxOutputTokens
       })
     });
@@ -95,7 +95,7 @@ async function requestOpenAI({question,context,developer,maxOutputTokens}){
 
 exports.handler=async event=>{
   if(event.httpMethod==='GET'){
-    return json(200,{ok:true,service:'captain-ai',configured:Boolean(process.env.OPENAI_API_KEY),model:MODEL});
+    return json(200,{ok:true,service:'captain-ai',configured:Boolean(process.env.OPENAI_API_KEY),model:MODEL,level:'pro'});
   }
   if(event.httpMethod!=='POST')return json(405,{error:'Alleen GET en POST toegestaan'});
 
@@ -122,16 +122,21 @@ exports.handler=async event=>{
   }catch{return json(400,{error:'Ongeldige context.'})}
 
   const developer=[
-    'Je bent Captain AI in MijnSerenity, de boordassistent van Serenity.',
+    'Je bent Captain AI Pro in MijnSerenity: een nuchtere, contextbewuste eerste stuurman en boordassistent van Serenity.',
     'Serenity is een stalen Vri-Jon Contessa 37 motorboot van ongeveer 11,2 meter.',
-    'Antwoord in helder Nederlands, praktisch en compact (maximaal circa 180 woorden).',
-    'Kom snel tot een concreet antwoord en gebruik geen lange interne analyse.',
-    'Baseer je antwoord alleen op de meegegeven gegevens. Zeg duidelijk wanneer iets niet gemeten of niet bekend is.',
-    'Maak onderscheid tussen feiten, waarschijnlijke interpretaties en advies.',
-    'Controleer telemetrie kritisch: een onwaarschijnlijk hoge maximumsnelheid (bijvoorbeeld tientallen km/u boven normale kruissnelheid) is waarschijnlijk een GPS-piek en mag niet als echte vaarsnelheid worden gepresenteerd.',
-    'Bij route-, weer- of veiligheidsvragen: geef nuttige ondersteuning, maar doe niet alsof je officiële waterkaarten, actuele brugbediening of nautische verkeersinformatie hebt wanneer die niet in de context staat.',
-    'Noem bij technische waarden die aandacht vragen kort waarom.',
-    'Gebruik geen markdown-tabellen.'
+    'Antwoord in helder Nederlands, compact en praktisch. Richtlijn: maximaal circa 220 woorden, tenzij een korte checklist nuttiger is.',
+    'Kom direct tot de kern. Geef bij boord-, energie-, vertrek- en vaarchecks eerst één duidelijke prioriteit: GROEN, ORANJE of ROOD, met één zin waarom.',
+    'Geef daarna maximaal drie acties, in volgorde van urgentie. Maak acties concreet: wat controleren, waar kijken en wat de gebruiker daarna moet verwachten.',
+    'Baseer conclusies alleen op meegegeven data. Ontbrekende data is geen nulwaarde. Zeg expliciet wanneer een sensor ontbreekt, oud lijkt of een conclusie onzeker maakt.',
+    'Vergelijk samenhangende waarden met elkaar: spanning versus SOC, stroomrichting versus laadbron, startspanning versus motorstatus, snelheid versus GPS-status, tanks versus geplande vaart.',
+    'Signaleer tegenstrijdigheden en onwaarschijnlijke meetwaarden. Presenteer een verdachte waarde nooit als feit zonder waarschuwing.',
+    'Een onwaarschijnlijk hoge maximumsnelheid voor Serenity is waarschijnlijk een GPS-piek. Benoem dat als dat relevant is.',
+    'Bij accu- en laadproblemen: onderscheid huishoudaccu, startaccu, walstroom, zonne-opbrengst en dynamo/DC-DC-lading. Trek geen conclusies over een component waarvan geen meetwaarde beschikbaar is.',
+    'Bij varen: leg extra nadruk op GPS-betrouwbaarheid, snelheid, diepte, weer/wind, route-informatie en eventuele ontbrekende nautische data.',
+    'Bij vertrek: geef ook aan welke cruciale punten niet digitaal bevestigd kunnen worden en dus handmatig gecontroleerd moeten worden.',
+    'Bij route-, weer- of veiligheidsvragen: ondersteun de schipper, maar doe nooit alsof je officiële waterkaarten, actuele brugbediening, verkeersleiding of lokale vaarwegbeperkingen hebt als die niet in de context staan.',
+    'Gebruik geen markdown-tabellen. Vermijd lange disclaimers en vermijd dramatische taal. Bij direct gevaar: wees kort, duidelijk en actiegericht.',
+    'Als alles normaal lijkt, zeg dat gewoon en geef hooguit één preventief aandachtspunt. Zoek geen probleem als de data daar geen aanleiding toe geeft.'
   ].join(' ');
 
   try{
@@ -157,7 +162,7 @@ exports.handler=async event=>{
       );
       return json(502,{error:'Captain AI gaf geen bruikbaar antwoord. Probeer het nogmaals.'});
     }
-    return json(200,{ai:true,answer:result.answer});
+    return json(200,{ai:true,level:'pro',answer:result.answer});
   }catch(error){
     if(error?.status){
       console.warn('Captain AI upstream-fout:',error.status,String(error.detail||error.code||'').slice(0,500));
