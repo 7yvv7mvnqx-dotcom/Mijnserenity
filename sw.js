@@ -1,7 +1,7 @@
-/* MijnSerenity 8.20.8 — stabiele PWA-cache met Cerbo GX live energiestroom */
-const CACHE_NAME='mijnserenity-8.20.8-stable';
-const BUILD='8.20.8';
-const BUILD_TOKEN='820800';
+/* MijnSerenity 8.20.9 — stabiele PWA-cache met Cerbo GX live en Remote Console */
+const CACHE_NAME='mijnserenity-8.20.9-stable';
+const BUILD='8.20.9';
+const BUILD_TOKEN='820900';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -19,6 +19,7 @@ const CORE_ASSETS=[
   `/dashboard-live-values-fix-71914.js?v=${BUILD_TOKEN}`,
   `/dashboard-energy-bridge-8206.js?v=${BUILD_TOKEN}`,
   `/dashboard-cerbo-live-8208.js?v=${BUILD_TOKEN}`,
+  `/victron-remote-console-8209.js?v=${BUILD_TOKEN}`,
   `/dashboard-collision-radar-8201.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
