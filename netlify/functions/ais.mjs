@@ -1,4 +1,6 @@
 const API_BASE='https://api.vesselapi.com/v1';
+const CACHE_MAX=120;
+const UPSTREAM_TIMEOUT_MS=9000;
 const cache=globalThis.__mijnSerenityCollisionAisCache||(globalThis.__mijnSerenityCollisionAisCache=new Map());
 
 function apiKey(){
@@ -33,7 +35,45 @@ function numberParam(params,name,min,max,fallback=null){
   return value;
 }
 
-async function vesselRequest(path,params,ttlMs=20000){
+function stableCacheKey(path,params){
+  const stable=new URLSearchParams(params);
+  /* De tijdvensters veranderen per request en mogen de ruimtelijke cache niet uniek maken. */
+  stable.delete('time.from');
+  stable.delete('time.to');
+  stable.sort();
+  return `${path}?${stable.toString()}`;
+}
+
+function pruneCache(now=Date.now(),ttlMs=20000){
+  for(const [key,item] of cache){
+    if(!item||now-item.at>Math.max(ttlMs*4,120000))cache.delete(key);
+  }
+  while(cache.size>CACHE_MAX){
+    const oldest=cache.keys().next().value;
+    if(oldest===undefined)break;
+    cache.delete(oldest);
+  }
+}
+
+async function fetchWithTimeout(url,options={},timeoutMs=UPSTREAM_TIMEOUT_MS){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+    return await fetch(url,{...options,signal:controller.signal});
+  }catch(error){
+    if(error?.name==='AbortError'){
+      const timeout=new Error('AIS-databron reageert te langzaam.');
+      timeout.status=504;
+      timeout.code='upstream_timeout';
+      throw timeout;
+    }
+    throw error;
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+async function vesselRequest(path,params,ttlMs=25000){
   const key=apiKey();
   if(!key){
     const error=new Error('AIS-databron is nog niet ingesteld.');
@@ -42,15 +82,17 @@ async function vesselRequest(path,params,ttlMs=20000){
     throw error;
   }
 
-  const cacheKey=`${path}?${params.toString()}`;
+  const now=Date.now();
+  pruneCache(now,ttlMs);
+  const cacheKey=stableCacheKey(path,params);
   const cached=cache.get(cacheKey);
-  if(cached&&Date.now()-cached.at<ttlMs)return {...cached.value,cached:true};
+  if(cached&&now-cached.at<ttlMs)return {...cached.value,cached:true};
 
-  const response=await fetch(`${API_BASE}${path}?${params.toString()}`,{
+  const response=await fetchWithTimeout(`${API_BASE}${path}?${params.toString()}`,{
     headers:{
       accept:'application/json',
       authorization:`Bearer ${key}`,
-      'user-agent':'MijnSerenity/8.20.0'
+      'user-agent':'MijnSerenity/8.20.2'
     }
   });
 
@@ -72,7 +114,9 @@ async function vesselRequest(path,params,ttlMs=20000){
     requestId:response.headers.get('x-request-id'),
     remaining:response.headers.get('x-ratelimit-remaining')
   };
+  cache.delete(cacheKey);
   cache.set(cacheKey,{at:Date.now(),value});
+  pruneCache(Date.now(),ttlMs);
   return value;
 }
 
@@ -86,7 +130,7 @@ export default async request=>{
 
   try{
     if(mode==='status'){
-      return json({configured:Boolean(apiKey()),provider:'VesselAPI',proxy:true,collisionRadar:'8.20.0'});
+      return json({configured:Boolean(apiKey()),provider:'VesselAPI',proxy:true,collisionRadar:'8.20.2'});
     }
 
     if(mode==='nearby'){
@@ -106,7 +150,7 @@ export default async request=>{
         'pagination.limit':String(limit)
       });
 
-      const result=await vesselRequest('/location/vessels/radius',params,20000);
+      const result=await vesselRequest('/location/vessels/radius',params,25000);
       if(Array.isArray(result?.data?.vessels)){
         result.data.vessels=result.data.vessels.map(vessel=>({
           ...vessel,
