@@ -1,4 +1,5 @@
 [build]
+  command = "node scripts/fetch-victron-gui.mjs"
   publish = "."
 
 
@@ -52,6 +53,13 @@
   status = 200
   force = true
 
+# MijnSerenity 8.21.1 — VRM MQTT-config voor de echte ingebedde Cerbo GUI-v2
+[[redirects]]
+  from = "/api/victron-console-config"
+  to = "/.netlify/functions/victron-console-config"
+  status = 200
+  force = true
+
 # MijnSerenity 7.15.16 — RWS WaterWebservices via same-origin proxy
 # Nodig voor iOS/Safari: directe cross-origin POST naar RWS gaf "Load failed".
 [[redirects]]
@@ -86,6 +94,22 @@
   for = "/auth-bootstrap.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
+
+# 8.21.1 — officiële Victron GUI-v2 wordt tijdens deploy als statische app opgebouwd.
+[[headers]]
+  for = "/victron-gui/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+    Referrer-Policy = "no-referrer"
+
+# De release bevat een gzip-WASM. De build maakt hiervan een bytekopie op het
+# normale .wasm-pad; deze header laat de browser hem correct decomprimeren.
+[[headers]]
+  for = "/victron-gui/venus-gui-v2.wasm"
+  [headers.values]
+    Content-Type = "application/wasm"
+    Content-Encoding = "gzip"
+    Cache-Control = "public, max-age=604800, immutable"
 
 # 7.18.33 — alle root-JS/CSS komt eerst vers van Netlify; offline caching
 # blijft via de service worker beschikbaar. Dit voorkomt een mix van oude
