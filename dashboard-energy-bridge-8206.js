@@ -1,4 +1,4 @@
-/* MijnSerenity 8.20.6 — energiebronbrug voor Marine Glass.
+/* MijnSerenity 8.20.8 — energiebronbrug voor Marine Glass.
    Gebruikt bestaande VRM/SmartShunt/Home Assistant waarden als fallback voor het energiedashboard.
    Er worden geen waarden verzonnen: alleen geldige live of reeds aanwezige metingen worden doorgezet. */
 (()=>{
@@ -106,4 +106,23 @@
   [250,800,1800,3500,7000].forEach(ms=>setTimeout(queue,ms));
   setInterval(()=>{if(!document.hidden)queue()},15000);
   window.msEnergyBridge8206Refresh=publish;
+})();
+
+/* 8.20.8: laad het eigen Cerbo-paneel met eigen DOM-ID's. Hierdoor kan de
+   oude Marine Glass energy()-loop de live waarden niet meer terugzetten naar streepjes. */
+(()=>{
+  'use strict';
+  if(window.__msCerboLoader8208)return;
+  window.__msCerboLoader8208=true;
+  function loadCerbo(){
+    if(window.__msCerboLive8208||document.querySelector('script[data-ms-cerbo-live="8208"]'))return;
+    const script=document.createElement('script');
+    script.src='/dashboard-cerbo-live-8208.js?v=820800';
+    script.async=false;
+    script.dataset.msCerboLive='8208';
+    script.onerror=()=>console.warn('Cerbo GX live dashboard kon niet worden geladen.');
+    document.head.appendChild(script);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCerbo,{once:true});
+  else loadCerbo();
 })();
