@@ -114,3 +114,21 @@
   setInterval(()=>{if(!document.hidden)check('periodic')},60000);
   setTimeout(()=>check('startup'),1500);
 })();
+
+/* Captain AI Pro 8.20.3 — laad alleen als verrijking van de bestaande Captain. */
+(()=>{
+  'use strict';
+  if(window.__msCaptainAiProLoader8203)return;
+  window.__msCaptainAiProLoader8203=true;
+  function load(){
+    if(window.__msCaptainAiPro8203||document.querySelector('script[data-ms-captain-pro]'))return;
+    const script=document.createElement('script');
+    script.src='/captain-ai-pro-8203.js?v=820300';
+    script.async=true;
+    script.dataset.msCaptainPro='1';
+    script.onerror=()=>console.warn('Captain AI Pro kon niet worden geladen.');
+    document.head.appendChild(script);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});
+  else load();
+})();
