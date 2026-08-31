@@ -126,3 +126,21 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCerbo,{once:true});
   else loadCerbo();
 })();
+
+/* 8.20.9: ingang naar de echte Victron Remote Console vanuit Techniek. */
+(()=>{
+  'use strict';
+  if(window.__msVictronConsoleLoader8209)return;
+  window.__msVictronConsoleLoader8209=true;
+  function loadConsole(){
+    if(window.__msVictronRemoteConsole8209||document.querySelector('script[data-ms-victron-console="8209"]'))return;
+    const script=document.createElement('script');
+    script.src='/victron-remote-console-8209.js?v=820900';
+    script.async=false;
+    script.dataset.msVictronConsole='8209';
+    script.onerror=()=>console.warn('Victron Remote Console ingang kon niet worden geladen.');
+    document.head.appendChild(script);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadConsole,{once:true});
+  else loadConsole();
+})();
