@@ -282,3 +282,24 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
+
+/* Publiceer de bestaande Captain AI-laag op het huidige dashboard.
+   We laden uitsluitend de reeds aanwezige Captain AI-module; er wordt geen tweede Captain gebouwd. */
+(()=>{
+  'use strict';
+  if(window.__msCaptainAiDashboardLoader)return;
+  window.__msCaptainAiDashboardLoader=true;
+
+  function loadCaptainAi(){
+    if(window.__msCaptainAi71814||document.querySelector('script[data-ms-captain-ai-loader]'))return;
+    const script=document.createElement('script');
+    script.src='captain-ai-71814.js?v=82020';
+    script.async=true;
+    script.dataset.msCaptainAiLoader='1';
+    script.onerror=()=>console.warn('Captain AI kon niet worden geladen.');
+    document.head.appendChild(script);
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCaptainAi,{once:true});
+  else loadCaptainAi();
+})();
