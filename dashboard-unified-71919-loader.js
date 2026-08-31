@@ -1,20 +1,21 @@
-/* MijnSerenity 7.19.19 — één dashboard op iPhone, iPad en Stage Manager.
-   Oude dashboardlagen worden pas zichtbaar nadat de actuele Marine Glass-runtime klaar is.
-   De hoofdnavigatie wordt altijd opgebouwd als vijf vaste knoppen + Meer. */
+/* MijnSerenity 8.20.2 — stabiele uniforme dashboardruntime
+   Eén dashboard en één navigatie-eigenaar op iPhone, iPad en Stage Manager.
+   Geen documentbrede MutationObserver of permanente DOM-repair-loop. */
 (()=>{
   'use strict';
-  if(window.__msUnifiedDashboard71919)return;
-  window.__msUnifiedDashboard71919=true;
+  if(window.__msUnifiedDashboard8202)return;
+  window.__msUnifiedDashboard8202=true;
 
-  const BUILD='7.19.19';
-  const VERSION='719190';
+  const BUILD='8.20.2';
+  const VERSION='820200';
   const $=id=>document.getElementById(id);
   const pathOf=value=>{try{return new URL(value,location.href).pathname}catch{return String(value||'')}};
 
   function ensureStyle(){
-    if($('msUnifiedDashboardStyle71919'))return;
+    if($('msUnifiedDashboardStyle8202'))return;
+    $('msUnifiedDashboardStyle71919')?.remove();
     const style=document.createElement('style');
-    style.id='msUnifiedDashboardStyle71919';
+    style.id='msUnifiedDashboardStyle8202';
     style.textContent=`
       #dashboard.mg-active>#ms71510Dashboard,
       #dashboard.mg-active>.ms750-simple-dashboard,
@@ -26,7 +27,7 @@
       #dashboard.mg-active>#latestRouteCard,
       #dashboard.mg-active>.compact-status{display:none!important}
 
-      .bottom-nav.ms71919-nav{
+      .bottom-nav.ms8202-nav{
         position:fixed!important;
         inset:auto 0 0 0!important;
         z-index:2147483000!important;
@@ -50,7 +51,7 @@
         pointer-events:auto!important;
         transform:none!important;
       }
-      .bottom-nav.ms71919-nav .bottom-nav-item{
+      .bottom-nav.ms8202-nav .bottom-nav-item{
         display:flex!important;
         flex-direction:column!important;
         align-items:center!important;
@@ -68,25 +69,25 @@
         background:transparent!important;
         color:#c8d9e4!important;
       }
-      .bottom-nav.ms71919-nav .bottom-nav-item span{display:block!important;font-size:23px!important;line-height:1!important;margin:0!important}
-      .bottom-nav.ms71919-nav .bottom-nav-item small{display:block!important;font-size:10px!important;line-height:1!important;font-weight:800!important;color:inherit!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
-      .bottom-nav.ms71919-nav .bottom-nav-item.active{background:rgba(57,186,255,.15)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(99,217,249,.25)!important}
+      .bottom-nav.ms8202-nav .bottom-nav-item span{display:block!important;font-size:23px!important;line-height:1!important;margin:0!important}
+      .bottom-nav.ms8202-nav .bottom-nav-item small{display:block!important;font-size:10px!important;line-height:1!important;font-weight:800!important;color:inherit!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
+      .bottom-nav.ms8202-nav .bottom-nav-item.active{background:rgba(57,186,255,.15)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(99,217,249,.25)!important}
 
-      #ms71919More{position:fixed;inset:0;z-index:2147483500;display:flex;align-items:flex-end;justify-content:center;padding:20px max(14px,env(safe-area-inset-right)) calc(82px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));background:rgba(0,7,13,.74);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-      #ms71919More.hidden{display:none!important}
-      #ms71919More .ms71919-more-panel{width:min(780px,100%);max-height:min(78dvh,760px);overflow:auto;background:#071a29;border:1px solid rgba(120,190,230,.28);border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.48);padding:18px}
-      #ms71919More .ms71919-more-head{position:sticky;top:-18px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:-18px -18px 14px;padding:18px;background:#071a29;border-bottom:1px solid rgba(255,255,255,.08)}
-      #ms71919More .ms71919-more-head h2{margin:0;color:#f5fbff;font-size:24px}
-      #ms71919More .ms71919-more-close{width:46px;height:46px;min-height:46px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.10);color:#fff;font-size:28px}
-      #ms71919More .ms71919-more-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-      #ms71919More .ms71919-more-grid button{min-height:86px;border:1px solid rgba(120,190,230,.20);border-radius:16px;background:#0d2a40;color:#f5fbff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;font-weight:800}
-      #ms71919More .ms71919-more-grid button span{font-size:27px;line-height:1}
+      #ms8202More{position:fixed;inset:0;z-index:2147483500;display:flex;align-items:flex-end;justify-content:center;padding:20px max(14px,env(safe-area-inset-right)) calc(82px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));background:rgba(0,7,13,.74);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+      #ms8202More.hidden{display:none!important}
+      #ms8202More .ms8202-more-panel{width:min(780px,100%);max-height:min(78dvh,760px);overflow:auto;background:#071a29;border:1px solid rgba(120,190,230,.28);border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.48);padding:18px}
+      #ms8202More .ms8202-more-head{position:sticky;top:-18px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:-18px -18px 14px;padding:18px;background:#071a29;border-bottom:1px solid rgba(255,255,255,.08)}
+      #ms8202More .ms8202-more-head h2{margin:0;color:#f5fbff;font-size:24px}
+      #ms8202More .ms8202-more-close{width:46px;height:46px;min-height:46px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.10);color:#fff;font-size:28px}
+      #ms8202More .ms8202-more-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+      #ms8202More .ms8202-more-grid button{min-height:86px;border:1px solid rgba(120,190,230,.20);border-radius:16px;background:#0d2a40;color:#f5fbff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;font-weight:800}
+      #ms8202More .ms8202-more-grid button span{font-size:27px;line-height:1}
       @media(max-width:700px){
-        .bottom-nav.ms71919-nav{height:calc(64px + env(safe-area-inset-bottom))!important;min-height:calc(64px + env(safe-area-inset-bottom))!important}
-        .bottom-nav.ms71919-nav .bottom-nav-item{height:52px!important;min-height:52px!important}
-        .bottom-nav.ms71919-nav .bottom-nav-item span{font-size:21px!important}
-        .bottom-nav.ms71919-nav .bottom-nav-item small{font-size:9px!important}
-        #ms71919More .ms71919-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .bottom-nav.ms8202-nav{height:calc(64px + env(safe-area-inset-bottom))!important;min-height:calc(64px + env(safe-area-inset-bottom))!important}
+        .bottom-nav.ms8202-nav .bottom-nav-item{height:52px!important;min-height:52px!important}
+        .bottom-nav.ms8202-nav .bottom-nav-item span{font-size:21px!important}
+        .bottom-nav.ms8202-nav .bottom-nav-item small{font-size:9px!important}
+        #ms8202More .ms8202-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       }
     `;
     document.head.appendChild(style);
@@ -100,9 +101,18 @@
   }
 
   function removeConflicts(){
-    const blocked=['simple-accessible.css','captain-experience.css','victron-energy-71559.css','marine-glass-mobile-7182.css','marine-glass-polish-7185.css','serenity-control-dashboard.css'];
-    document.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{const p=pathOf(link.href);if(blocked.some(name=>p.endsWith('/'+name)||p.endsWith(name)))link.remove()});
-    ['msOrientationLayout71835Style','msOrientationLayout71836Style','msMarineGlassPolish7185','msSerenityControlCss','msSerenityControl','msMarineGlassStable71900'].forEach(id=>$(id)?.remove());
+    const blocked=[
+      'simple-accessible.css','captain-experience.css','victron-energy-71559.css',
+      'marine-glass-mobile-7182.css','marine-glass-polish-7185.css','serenity-control-dashboard.css'
+    ];
+    document.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{
+      const p=pathOf(link.href);
+      if(blocked.some(name=>p.endsWith('/'+name)||p.endsWith(name)))link.remove();
+    });
+    [
+      'msOrientationLayout71835Style','msOrientationLayout71836Style','msMarineGlassPolish7185',
+      'msSerenityControlCss','msSerenityControl','msMarineGlassStable71900'
+    ].forEach(id=>$(id)?.remove());
     document.querySelectorAll('[id="msMarineGlass"][data-ms-victron-live]').forEach(node=>node.remove());
     const dashboard=$('dashboard');
     dashboard?.classList.remove('scd-active','mspro-active');
@@ -111,24 +121,39 @@
 
   function load(src,timeoutMs=10000){
     const wanted=pathOf(src);
-    const existing=[...document.scripts].find(script=>script.src&&pathOf(script.src)===wanted&&script.dataset.ms71919Loaded==='1');
+    const existing=[...document.scripts].find(script=>script.src&&pathOf(script.src)===wanted);
     if(existing)return Promise.resolve(true);
     return new Promise(resolve=>{
       const script=document.createElement('script');
       let done=false;
-      const finish=ok=>{if(done)return;done=true;clearTimeout(timer);script.onload=null;script.onerror=null;resolve(ok)};
+      const finish=ok=>{
+        if(done)return;
+        done=true;
+        clearTimeout(timer);
+        script.onload=null;
+        script.onerror=null;
+        if(!ok)script.remove();
+        resolve(ok);
+      };
       const timer=setTimeout(()=>finish(false),timeoutMs);
-      script.src=src;script.async=false;script.dataset.ms71919Loaded='1';
-      script.onload=()=>finish(true);script.onerror=()=>finish(false);document.head.appendChild(script);
+      script.src=src;
+      script.async=false;
+      script.dataset.ms8202Loaded='1';
+      script.onload=()=>finish(true);
+      script.onerror=()=>finish(false);
+      document.head.appendChild(script);
     });
   }
 
   function syncVersion(){
     window.MIJSERENITY_BUILD=BUILD;
-    const meta=document.querySelector('meta[name="mijnserenity-build"]');if(meta)meta.content=BUILD;
-    const settings=$('settingsAppVersion');if(settings)settings.textContent=BUILD;
+    const meta=document.querySelector('meta[name="mijnserenity-build"]');
+    if(meta)meta.content=BUILD;
+    const settings=$('settingsAppVersion');
+    if(settings)settings.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
-    const badge=document.querySelector('#msMarineGlass .mg-brand sup');if(badge)badge.textContent=BUILD;
+    const badge=document.querySelector('#msMarineGlass .mg-brand sup');
+    if(badge)badge.textContent=BUILD;
   }
 
   function navigate(route,button){
@@ -139,23 +164,38 @@
   }
 
   function activeRouteFromDom(){
-    const visible=[...document.querySelectorAll('#appView>section[id], #appView main>section[id]')].find(node=>!node.classList.contains('hidden')&&node.id!=='dashboard');
+    const visible=[...document.querySelectorAll('#appView>section[id], #appView main>section[id]')]
+      .find(node=>!node.classList.contains('hidden')&&node.id!=='dashboard');
     return visible?.id||'dashboard';
   }
 
   function syncNav(route=activeRouteFromDom()){
     const secondary=!['dashboard','live','map','planner','technical'].includes(route);
-    document.querySelectorAll('.bottom-nav.ms71919-nav .bottom-nav-item').forEach(button=>{
+    document.querySelectorAll('.bottom-nav.ms8202-nav .bottom-nav-item').forEach(button=>{
       const active=secondary?button.dataset.target==='more':button.dataset.target===route;
       button.classList.toggle('active',active);
-      if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+      if(active)button.setAttribute('aria-current','page');
+      else button.removeAttribute('aria-current');
     });
   }
 
+  function navigationElement(){
+    let nav=document.querySelector('.bottom-nav');
+    if(!nav){
+      nav=document.createElement('nav');
+      nav.className='bottom-nav';
+      document.body.appendChild(nav);
+    }
+    return nav;
+  }
+
   function rebuildNavigation(){
-    const nav=document.querySelector('.bottom-nav');if(!nav)return;
-    nav.className='bottom-nav ms71919-nav';
-    nav.setAttribute('aria-label','Hoofdnavigatie');nav.setAttribute('aria-hidden','false');nav.dataset.autoHide='false';
+    const nav=navigationElement();
+    if(!nav)return;
+    nav.className='bottom-nav ms8202-nav';
+    nav.setAttribute('aria-label','Hoofdnavigatie');
+    nav.setAttribute('aria-hidden','false');
+    nav.dataset.autoHide='false';
     nav.innerHTML=`
       <button type="button" class="bottom-nav-item" data-target="dashboard" aria-label="Start"><span>🏠</span><small>Start</small></button>
       <button type="button" class="bottom-nav-item" data-target="live" aria-label="Varen"><span>⛵</span><small>Varen</small></button>
@@ -163,15 +203,31 @@
       <button type="button" class="bottom-nav-item" data-target="planner" aria-label="Reisplanner"><span>🧭</span><small>Route</small></button>
       <button type="button" class="bottom-nav-item" data-target="technical" aria-label="Techniek"><span>⚙️</span><small>Techniek</small></button>
       <button type="button" class="bottom-nav-item" data-target="more" aria-label="Meer"><span>•••</span><small>Meer</small></button>`;
-    nav.onclick=event=>{const button=event.target.closest('.bottom-nav-item');if(button)navigate(button.dataset.target,button)};
+    nav.onclick=event=>{
+      const button=event.target.closest('.bottom-nav-item');
+      if(button)navigate(button.dataset.target,button);
+    };
     syncNav();
   }
 
+  function ensureNavigation(){
+    const nav=document.querySelector('.bottom-nav');
+    const buttons=nav?.querySelectorAll(':scope > .bottom-nav-item');
+    if(!nav||!nav.classList.contains('ms8202-nav')||buttons?.length!==6)rebuildNavigation();
+  }
+
   function ensureMore(){
-    $('mgMore')?.remove();$('msIpadMore71917')?.remove();$('ms71919More')?.remove();
+    $('mgMore')?.remove();
+    $('msIpadMore71917')?.remove();
+    $('ms71919More')?.remove();
+    if($('ms8202More'))return;
     const layer=document.createElement('div');
-    layer.id='ms71919More';layer.className='hidden';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-hidden','true');
-    layer.innerHTML=`<div class="ms71919-more-panel"><div class="ms71919-more-head"><h2>Meer</h2><button type="button" class="ms71919-more-close" aria-label="Sluiten">×</button></div><div class="ms71919-more-grid">
+    layer.id='ms8202More';
+    layer.className='hidden';
+    layer.setAttribute('role','dialog');
+    layer.setAttribute('aria-modal','true');
+    layer.setAttribute('aria-hidden','true');
+    layer.innerHTML=`<div class="ms8202-more-panel"><div class="ms8202-more-head"><h2>Meer</h2><button type="button" class="ms8202-more-close" aria-label="Sluiten">×</button></div><div class="ms8202-more-grid">
       <button data-route="ais"><span>📡</span>AIS</button>
       <button data-route="weather"><span>☀️</span>Weer</button>
       <button data-route="logbook"><span>📖</span>Logboek</button>
@@ -185,42 +241,97 @@
     </div></div>`;
     document.body.appendChild(layer);
     layer.onclick=event=>{
-      if(event.target===layer||event.target.closest('.ms71919-more-close')){closeMore();return}
-      const button=event.target.closest('[data-route]');if(button)navigate(button.dataset.route,button);
+      if(event.target===layer||event.target.closest('.ms8202-more-close')){closeMore();return}
+      const button=event.target.closest('[data-route]');
+      if(button)navigate(button.dataset.route,button);
     };
     window.ms797OpenMore=openMore;
   }
 
-  function openMore(){const layer=$('ms71919More');if(!layer)return;layer.classList.remove('hidden');layer.setAttribute('aria-hidden','false');syncNav('more');requestAnimationFrame(()=>layer.querySelector('.ms71919-more-close')?.focus())}
-  function closeMore(sync=true){const layer=$('ms71919More');if(!layer)return;layer.classList.add('hidden');layer.setAttribute('aria-hidden','true');if(sync)syncNav()}
+  function openMore(){
+    ensureMore();
+    const layer=$('ms8202More');
+    if(!layer)return;
+    layer.classList.remove('hidden');
+    layer.setAttribute('aria-hidden','false');
+    syncNav('more');
+    requestAnimationFrame(()=>layer.querySelector('.ms8202-more-close')?.focus());
+  }
+
+  function closeMore(sync=true){
+    const layer=$('ms8202More');
+    if(!layer)return;
+    layer.classList.add('hidden');
+    layer.setAttribute('aria-hidden','true');
+    if(sync)syncNav();
+  }
+
+  function enforceUnifiedUi(){
+    ensureStyle();
+    removeConflicts();
+    syncVersion();
+    ensureNavigation();
+    ensureMore();
+  }
+  window.ms8202RepairUnifiedUi=enforceUnifiedUi;
 
   function guardUnifiedUi(){
-    if(window.__msUnifiedUiGuard71919)return;window.__msUnifiedUiGuard71919=true;
+    if(window.__msUnifiedUiGuard8202)return;
+    window.__msUnifiedUiGuard8202=true;
     let queued=false;
-    const enforce=()=>{queued=false;ensureStyle();removeConflicts();syncVersion();if(!$('ms71919More'))ensureMore();const nav=document.querySelector('.bottom-nav');if(nav&&!nav.classList.contains('ms71919-nav'))rebuildNavigation();};
-    const queue=()=>{if(queued)return;queued=true;requestAnimationFrame(enforce)};
-    const observer=new MutationObserver(queue);
-    observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
-    [100,350,800,1600,3000,6000].forEach(ms=>setTimeout(queue,ms));
+    const queue=()=>{
+      if(queued)return;
+      queued=true;
+      requestAnimationFrame(()=>{queued=false;enforceUnifiedUi()});
+    };
+
+    /* Alleen directe structuurwijzigingen bewaken; geen documentbrede subtree/class observer. */
+    const bodyObserver=new MutationObserver(queue);
+    bodyObserver.observe(document.body,{childList:true});
+    const dashboard=$('dashboard');
+    if(dashboard){
+      const dashboardObserver=new MutationObserver(queue);
+      dashboardObserver.observe(dashboard,{childList:true});
+    }
+
+    [100,350,900,1800,3500].forEach(ms=>setTimeout(queue,ms));
     window.addEventListener('resize',queue,{passive:true});
     window.addEventListener('orientationchange',queue,{passive:true});
     window.addEventListener('pageshow',queue,{passive:true});
-    window.addEventListener('mijnserenity:routechange',event=>{const detail=event?.detail;const route=typeof detail==='string'?detail:(detail?.route||detail?.id||detail?.target);setTimeout(()=>syncNav(route||activeRouteFromDom()),0)},{passive:true});
+    window.addEventListener('mijnserenity:routechange',event=>{
+      const detail=event?.detail;
+      const route=typeof detail==='string'?detail:(detail?.route||detail?.id||detail?.target);
+      requestAnimationFrame(()=>{ensureNavigation();syncNav(route||activeRouteFromDom())});
+    },{passive:true});
   }
 
   async function start(){
-    ensureStyle();removeConflicts();syncVersion();
+    ensureStyle();
+    removeConflicts();
+    syncVersion();
     ensureCss('msProfessionalUi71919','professional-ui-71700.css');
     ensureCss('msStableShell71919','marine-glass-mobile-7184.css');
     ensureCss('msMarineGlassFixes71919','marine-glass-fixes-7193.css');
+
     await load(`/mobile-viewport-guard-71911.js?v=${VERSION}`,6000);
-    await load(`/dashboard-pro-71700.js?v=${VERSION}`,10000);
-    await load(`/dashboard-live-values-fix-71914.js?v=${VERSION}`,6000);
-    removeConflicts();syncVersion();
-    const dashboard=$('dashboard');if(dashboard&&$('msMarineGlass'))dashboard.classList.add('mg-active');
-    rebuildNavigation();ensureMore();guardUnifiedUi();
-    requestAnimationFrame(()=>{syncVersion();syncNav();window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,unified:true}}))});
-    console.info(`MijnSerenity ${BUILD}: uniforme Marine Glass-runtime actief.`);
+    const dashboardOk=await load(`/dashboard-pro-71700.js?v=${VERSION}`,10000);
+    if(!dashboardOk)console.warn('Marine Glass dashboard kon niet worden geladen.');
+    await load(`/dashboard-live-values-fix-71914.js?v=${VERSION}`,7000);
+    await load(`/dashboard-collision-radar-8201.js?v=${VERSION}`,7000);
+
+    removeConflicts();
+    syncVersion();
+    const dashboard=$('dashboard');
+    if(dashboard&&$('msMarineGlass'))dashboard.classList.add('mg-active');
+    rebuildNavigation();
+    ensureMore();
+    guardUnifiedUi();
+    requestAnimationFrame(()=>{
+      syncVersion();
+      syncNav();
+      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,unified:true}}));
+    });
+    console.info(`MijnSerenity ${BUILD}: stabiele uniforme dashboardruntime actief.`);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
