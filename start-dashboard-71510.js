@@ -283,23 +283,69 @@
   else start();
 })();
 
-/* Publiceer de bestaande Captain AI-laag op het huidige dashboard.
-   We laden uitsluitend de reeds aanwezige Captain AI-module; er wordt geen tweede Captain gebouwd. */
+/* Publiceer de bestaande Captain AI-laag op het huidige Marine Glass-dashboard.
+   De Captain-module bouwt de kaart eerst in de oude compatibiliteitslaag;
+   daarna verplaatsen we exact diezelfde kaart naar het zichtbare dashboard. */
 (()=>{
   'use strict';
   if(window.__msCaptainAiDashboardLoader)return;
   window.__msCaptainAiDashboardLoader=true;
 
+  function installMarineStyle(){
+    if(document.getElementById('msCaptainMarineStyle8203'))return;
+    const style=document.createElement('style');
+    style.id='msCaptainMarineStyle8203';
+    style.textContent=`
+      #msMarineGlass .mg-grid>#msDashboardCaptainSearch{
+        grid-column:1/-1!important;
+        width:100%!important;
+        box-sizing:border-box!important;
+        margin:0!important;
+      }
+      @media(max-width:700px){
+        #msMarineGlass .mg-grid>#msDashboardCaptainSearch{margin:0!important;border-radius:18px!important}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function placeCaptain(){
+    const marine=document.getElementById('msMarineGlass');
+    const grid=marine?.querySelector('.mg-grid');
+    const card=document.getElementById('msDashboardCaptainSearch');
+    if(!grid||!card)return false;
+    installMarineStyle();
+    const map=grid.querySelector('.mg-map');
+    if(card.parentElement!==grid){
+      if(map)map.insertAdjacentElement('afterend',card);
+      else grid.prepend(card);
+    }
+    card.dataset.msMarineCaptain='8203';
+    return true;
+  }
+
+  function watchPlacement(){
+    if(placeCaptain())return;
+    let attempts=0;
+    const timer=setInterval(()=>{
+      attempts+=1;
+      if(placeCaptain()||attempts>=30)clearInterval(timer);
+    },250);
+  }
+
   function loadCaptainAi(){
-    if(window.__msCaptainAi71814||document.querySelector('script[data-ms-captain-ai-loader]'))return;
+    if(window.__msCaptainAi71814){watchPlacement();return;}
+    if(document.querySelector('script[data-ms-captain-ai-loader]')){watchPlacement();return;}
     const script=document.createElement('script');
-    script.src='captain-ai-71814.js?v=82020';
+    script.src='captain-ai-71814.js?v=82030';
     script.async=true;
     script.dataset.msCaptainAiLoader='1';
+    script.onload=watchPlacement;
     script.onerror=()=>console.warn('Captain AI kon niet worden geladen.');
     document.head.appendChild(script);
   }
 
+  window.addEventListener('mijnserenity:dashboard-ready',()=>setTimeout(placeCaptain,0),{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCaptainAi,{once:true});
   else loadCaptainAi();
 })();
