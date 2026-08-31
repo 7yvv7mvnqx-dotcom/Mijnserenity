@@ -1,7 +1,7 @@
-/* MijnSerenity 8.20.6 — stabiele PWA-cache met begrensde netwerkrequests */
-const CACHE_NAME='mijnserenity-8.20.6-stable';
-const BUILD='8.20.6';
-const BUILD_TOKEN='820600';
+/* MijnSerenity 8.20.8 — stabiele PWA-cache met Cerbo GX live energiestroom */
+const CACHE_NAME='mijnserenity-8.20.8-stable';
+const BUILD='8.20.8';
+const BUILD_TOKEN='820800';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -18,6 +18,7 @@ const CORE_ASSETS=[
   `/mobile-viewport-guard-71911.js?v=${BUILD_TOKEN}`,
   `/dashboard-live-values-fix-71914.js?v=${BUILD_TOKEN}`,
   `/dashboard-energy-bridge-8206.js?v=${BUILD_TOKEN}`,
+  `/dashboard-cerbo-live-8208.js?v=${BUILD_TOKEN}`,
   `/dashboard-collision-radar-8201.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
