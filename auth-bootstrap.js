@@ -21,6 +21,8 @@
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
     'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'
   ];
+  const LEGACY_VRM_ENDPOINT='https://wufslczbtguvtgmfufid.supabase.co/functions/v1/vrm-ruuvi';
+  const RWS_API_ORIGIN='https://ddapi20-waterwebservices.rijkswaterstaat.nl';
 
   const ESSENTIAL_BACKGROUND=[
     `/runtime-performance-71700.js?v=${VERSION}`,
@@ -50,6 +52,55 @@
     ais:[`/ais-page.js?v=${VERSION}`],
     entertainment:[`/entertainment-page.js?v=${VERSION}`]
   };
+
+  function installBoundedExternalFetch(){
+    if(window.__msBoundedExternalFetch8202||typeof window.fetch!=='function')return;
+    window.__msBoundedExternalFetch8202=true;
+    const nativeFetch=window.fetch.bind(window);
+    const sharedVrm=new Map();
+
+    window.fetch=function(input,init={}){
+      let url='';
+      try{url=typeof input==='string'?input:input?.url||String(input||'')}catch{}
+      if(!url)return nativeFetch(input,init);
+
+      let parsed=null;
+      try{parsed=new URL(url,location.href)}catch{}
+      const isVrm=parsed?.href===LEGACY_VRM_ENDPOINT;
+      const isRws=parsed?.origin===RWS_API_ORIGIN;
+      if((!isVrm&&!isRws)||init?.signal)return nativeFetch(input,init);
+
+      let headers=null;
+      try{
+        const requestHeaders=typeof Request!=='undefined'&&input instanceof Request?input.headers:undefined;
+        headers=new Headers(init?.headers||requestHeaders||undefined);
+      }catch{}
+
+      const controller=new AbortController();
+      const timeoutMs=isVrm?12000:15000;
+      const timer=setTimeout(()=>controller.abort(),timeoutMs);
+      const options={...(init||{}),signal:controller.signal};
+
+      if(isVrm){
+        const token=String(headers?.get('x-vrm-token')||headers?.get('X-VRM-Token')||'').trim();
+        const key=token||'default';
+        const existing=sharedVrm.get(key);
+        if(existing){
+          clearTimeout(timer);
+          return existing.then(response=>response.clone());
+        }
+        const shared=nativeFetch(input,options).finally(()=>{
+          clearTimeout(timer);
+          sharedVrm.delete(key);
+        });
+        sharedVrm.set(key,shared);
+        return shared.then(response=>response.clone());
+      }
+
+      return nativeFetch(input,options).finally(()=>clearTimeout(timer));
+    };
+  }
+  installBoundedExternalFetch();
 
   function pathOf(value){
     try{return new URL(value,location.href).pathname}catch{return String(value||'')}
