@@ -6,10 +6,22 @@
   if(window.__msVictronRemoteConsole8209)return;
   window.__msVictronRemoteConsole8209=true;
 
+  const BUILD='8.20.9';
   const INSTALLATION_ID='1003203';
   const LOCAL_URL='http://venus.local/';
   const VRM_URL=`https://vrm.victronenergy.com/installation/${INSTALLATION_ID}/dashboard`;
   const $=id=>document.getElementById(id);
+
+  function syncBuild(){
+    window.MIJSERENITY_BUILD=BUILD;
+    const meta=document.querySelector('meta[name="mijnserenity-build"]');
+    if(meta)meta.content=BUILD;
+    const version=$('settingsAppVersion');
+    if(version)version.textContent=BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
+    const badge=document.querySelector('#msMarineGlass .mg-brand sup');
+    if(badge)badge.textContent=BUILD;
+  }
 
   function ensureStyle(){
     if($('msVictronConsoleStyle8209'))return;
@@ -71,7 +83,7 @@
     modal.innerHTML=`
       <div class="msvrc-panel" onclick="event.stopPropagation()">
         <div class="msvrc-title"><h2>Victron Live Console</h2><button type="button" class="msvrc-close" aria-label="Sluiten">×</button></div>
-        <p class="msvrc-intro">Open de echte Remote Console van de Cerbo GX. Kies automatisch de juiste route voor waar je bent.</p>
+        <p class="msvrc-intro">Open de echte Remote Console van de Cerbo GX. Kies de juiste verbinding voor waar je bent.</p>
         <div class="msvrc-choice">
           <button type="button" id="msVictronConsoleLocal"><i>⚓</i><b>Aan boord · Cerbo lokaal</b><span>Gebruik dit wanneer je iPhone/iPad op hetzelfde netwerk als de Cerbo GX zit. Opent venus.local met de minste vertraging.</span></button>
           <button type="button" id="msVictronConsoleVrm"><i>☁️</i><b>Op afstand · Victron VRM</b><span>Gebruik dit buiten de boot. Opent Serenity in VRM; van daaruit kun je de Remote Console openen.</span></button>
@@ -86,6 +98,7 @@
   }
 
   function mount(){
+    syncBuild();
     ensureStyle();
     ensureModal();
     if($('msVictronConsoleCard'))return true;
@@ -126,6 +139,7 @@
   window.msOpenVictronVrmConsole=()=>openExternal(VRM_URL);
 
   function start(){
+    syncBuild();
     let attempts=0;
     const tryMount=()=>{
       attempts+=1;
