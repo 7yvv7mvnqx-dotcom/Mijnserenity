@@ -1,13 +1,13 @@
-/* MijnSerenity 8.20.2 — stabiele uniforme dashboardruntime
+/* MijnSerenity 8.20.7 — stabiele uniforme dashboardruntime
    Eén dashboard en één navigatie-eigenaar op iPhone, iPad en Stage Manager.
    Geen documentbrede MutationObserver of permanente DOM-repair-loop. */
 (()=>{
   'use strict';
-  if(window.__msUnifiedDashboard8202)return;
-  window.__msUnifiedDashboard8202=true;
+  if(window.__msUnifiedDashboard8207)return;
+  window.__msUnifiedDashboard8207=true;
 
-  const BUILD='8.20.2';
-  const VERSION='820200';
+  const BUILD='8.20.7';
+  const VERSION='820700';
   const $=id=>document.getElementById(id);
   const pathOf=value=>{try{return new URL(value,location.href).pathname}catch{return String(value||'')}};
 
@@ -317,6 +317,7 @@
     const dashboardOk=await load(`/dashboard-pro-71700.js?v=${VERSION}`,10000);
     if(!dashboardOk)console.warn('Marine Glass dashboard kon niet worden geladen.');
     await load(`/dashboard-live-values-fix-71914.js?v=${VERSION}`,7000);
+    await load(`/dashboard-energy-bridge-8206.js?v=${VERSION}`,7000);
     await load(`/dashboard-collision-radar-8201.js?v=${VERSION}`,7000);
 
     removeConflicts();
