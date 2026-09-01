@@ -1,0 +1,5 @@
+MijnSerenity 8.21.3
+- Nieuwe eenvoudige startpagina met alle navigatieknoppen
+- Aandachtbadges voor storingen, onderhoud, conceptroutes en vaarwegmeldingen
+- Nieuwe cache/build-token 821300
+- Harde Netlify redeploy gevraagd op 2026-09-01
