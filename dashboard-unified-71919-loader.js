@@ -1,21 +1,23 @@
-/* MijnSerenity 8.20.7 — stabiele uniforme dashboardruntime
+/* MijnSerenity 8.21.4 — uniforme dashboardruntime met eenvoudige startpagina
    Eén dashboard en één navigatie-eigenaar op iPhone, iPad en Stage Manager.
-   Geen documentbrede MutationObserver of permanente DOM-repair-loop. */
+   Start is het centrale menu; het oude Meer-paneel wordt niet meer opgebouwd. */
 (()=>{
   'use strict';
-  if(window.__msUnifiedDashboard8207)return;
-  window.__msUnifiedDashboard8207=true;
+  if(window.__msUnifiedDashboard8214)return;
+  window.__msUnifiedDashboard8214=true;
 
-  const BUILD='8.20.7';
-  const VERSION='820700';
+  const BUILD='8.21.4';
+  const VERSION='821400';
   const $=id=>document.getElementById(id);
   const pathOf=value=>{try{return new URL(value,location.href).pathname}catch{return String(value||'')}};
 
   function ensureStyle(){
-    if($('msUnifiedDashboardStyle8202'))return;
+    let style=$('msUnifiedDashboardStyle8214');
+    if(style)return;
+    $('msUnifiedDashboardStyle8202')?.remove();
     $('msUnifiedDashboardStyle71919')?.remove();
-    const style=document.createElement('style');
-    style.id='msUnifiedDashboardStyle8202';
+    style=document.createElement('style');
+    style.id='msUnifiedDashboardStyle8214';
     style.textContent=`
       #dashboard.mg-active>#ms71510Dashboard,
       #dashboard.mg-active>.ms750-simple-dashboard,
@@ -27,12 +29,12 @@
       #dashboard.mg-active>#latestRouteCard,
       #dashboard.mg-active>.compact-status{display:none!important}
 
-      .bottom-nav.ms8202-nav{
+      .bottom-nav.ms8214-nav{
         position:fixed!important;
         inset:auto 0 0 0!important;
         z-index:2147483000!important;
         display:grid!important;
-        grid-template-columns:repeat(6,minmax(0,1fr))!important;
+        grid-template-columns:repeat(5,minmax(0,1fr))!important;
         width:100%!important;
         max-width:none!important;
         height:calc(68px + env(safe-area-inset-bottom))!important;
@@ -51,7 +53,7 @@
         pointer-events:auto!important;
         transform:none!important;
       }
-      .bottom-nav.ms8202-nav .bottom-nav-item{
+      .bottom-nav.ms8214-nav .bottom-nav-item{
         display:flex!important;
         flex-direction:column!important;
         align-items:center!important;
@@ -69,25 +71,15 @@
         background:transparent!important;
         color:#c8d9e4!important;
       }
-      .bottom-nav.ms8202-nav .bottom-nav-item span{display:block!important;font-size:23px!important;line-height:1!important;margin:0!important}
-      .bottom-nav.ms8202-nav .bottom-nav-item small{display:block!important;font-size:10px!important;line-height:1!important;font-weight:800!important;color:inherit!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
-      .bottom-nav.ms8202-nav .bottom-nav-item.active{background:rgba(57,186,255,.15)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(99,217,249,.25)!important}
-
-      #ms8202More{position:fixed;inset:0;z-index:2147483500;display:flex;align-items:flex-end;justify-content:center;padding:20px max(14px,env(safe-area-inset-right)) calc(82px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));background:rgba(0,7,13,.74);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-      #ms8202More.hidden{display:none!important}
-      #ms8202More .ms8202-more-panel{width:min(780px,100%);max-height:min(78dvh,760px);overflow:auto;background:#071a29;border:1px solid rgba(120,190,230,.28);border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.48);padding:18px}
-      #ms8202More .ms8202-more-head{position:sticky;top:-18px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:-18px -18px 14px;padding:18px;background:#071a29;border-bottom:1px solid rgba(255,255,255,.08)}
-      #ms8202More .ms8202-more-head h2{margin:0;color:#f5fbff;font-size:24px}
-      #ms8202More .ms8202-more-close{width:46px;height:46px;min-height:46px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.10);color:#fff;font-size:28px}
-      #ms8202More .ms8202-more-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-      #ms8202More .ms8202-more-grid button{min-height:86px;border:1px solid rgba(120,190,230,.20);border-radius:16px;background:#0d2a40;color:#f5fbff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;font-weight:800}
-      #ms8202More .ms8202-more-grid button span{font-size:27px;line-height:1}
+      .bottom-nav.ms8214-nav .bottom-nav-item span{display:block!important;font-size:23px!important;line-height:1!important;margin:0!important}
+      .bottom-nav.ms8214-nav .bottom-nav-item small{display:block!important;font-size:10px!important;line-height:1!important;font-weight:800!important;color:inherit!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
+      .bottom-nav.ms8214-nav .bottom-nav-item.active{background:rgba(57,186,255,.15)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(99,217,249,.25)!important}
+      #ms8202More,#mgMore,#msIpadMore71917,#ms71919More{display:none!important}
       @media(max-width:700px){
-        .bottom-nav.ms8202-nav{height:calc(64px + env(safe-area-inset-bottom))!important;min-height:calc(64px + env(safe-area-inset-bottom))!important}
-        .bottom-nav.ms8202-nav .bottom-nav-item{height:52px!important;min-height:52px!important}
-        .bottom-nav.ms8202-nav .bottom-nav-item span{font-size:21px!important}
-        .bottom-nav.ms8202-nav .bottom-nav-item small{font-size:9px!important}
-        #ms8202More .ms8202-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .bottom-nav.ms8214-nav{height:calc(64px + env(safe-area-inset-bottom))!important;min-height:calc(64px + env(safe-area-inset-bottom))!important}
+        .bottom-nav.ms8214-nav .bottom-nav-item{height:52px!important;min-height:52px!important}
+        .bottom-nav.ms8214-nav .bottom-nav-item span{font-size:21px!important}
+        .bottom-nav.ms8214-nav .bottom-nav-item small{font-size:9px!important}
       }
     `;
     document.head.appendChild(style);
@@ -138,7 +130,7 @@
       const timer=setTimeout(()=>finish(false),timeoutMs);
       script.src=src;
       script.async=false;
-      script.dataset.ms8202Loaded='1';
+      script.dataset.ms8214Loaded='1';
       script.onload=()=>finish(true);
       script.onerror=()=>finish(false);
       document.head.appendChild(script);
@@ -157,7 +149,7 @@
   }
 
   function navigate(route,button){
-    if(route==='more'){openMore();return}
+    if(route==='more')route='dashboard';
     closeMore(false);
     if(typeof window.captainNavigate==='function')window.captainNavigate(route,button);
     else if(typeof window.ms708GoToPage==='function')window.ms708GoToPage(route,true);
@@ -170,9 +162,8 @@
   }
 
   function syncNav(route=activeRouteFromDom()){
-    const secondary=!['dashboard','live','map','planner','technical'].includes(route);
-    document.querySelectorAll('.bottom-nav.ms8202-nav .bottom-nav-item').forEach(button=>{
-      const active=secondary?button.dataset.target==='more':button.dataset.target===route;
+    document.querySelectorAll('.bottom-nav.ms8214-nav .bottom-nav-item').forEach(button=>{
+      const active=button.dataset.target===route;
       button.classList.toggle('active',active);
       if(active)button.setAttribute('aria-current','page');
       else button.removeAttribute('aria-current');
@@ -192,7 +183,7 @@
   function rebuildNavigation(){
     const nav=navigationElement();
     if(!nav)return;
-    nav.className='bottom-nav ms8202-nav';
+    nav.className='bottom-nav ms8214-nav';
     nav.setAttribute('aria-label','Hoofdnavigatie');
     nav.setAttribute('aria-hidden','false');
     nav.dataset.autoHide='false';
@@ -201,8 +192,7 @@
       <button type="button" class="bottom-nav-item" data-target="live" aria-label="Varen"><span>⛵</span><small>Varen</small></button>
       <button type="button" class="bottom-nav-item" data-target="map" aria-label="Kaart"><span>🗺️</span><small>Kaart</small></button>
       <button type="button" class="bottom-nav-item" data-target="planner" aria-label="Reisplanner"><span>🧭</span><small>Route</small></button>
-      <button type="button" class="bottom-nav-item" data-target="technical" aria-label="Techniek"><span>⚙️</span><small>Techniek</small></button>
-      <button type="button" class="bottom-nav-item" data-target="more" aria-label="Meer"><span>•••</span><small>Meer</small></button>`;
+      <button type="button" class="bottom-nav-item" data-target="technical" aria-label="Techniek"><span>⚙️</span><small>Techniek</small></button>`;
     nav.onclick=event=>{
       const button=event.target.closest('.bottom-nav-item');
       if(button)navigate(button.dataset.target,button);
@@ -213,57 +203,32 @@
   function ensureNavigation(){
     const nav=document.querySelector('.bottom-nav');
     const buttons=nav?.querySelectorAll(':scope > .bottom-nav-item');
-    if(!nav||!nav.classList.contains('ms8202-nav')||buttons?.length!==6)rebuildNavigation();
+    if(!nav||!nav.classList.contains('ms8214-nav')||buttons?.length!==5)rebuildNavigation();
   }
 
   function ensureMore(){
     $('mgMore')?.remove();
     $('msIpadMore71917')?.remove();
     $('ms71919More')?.remove();
-    if($('ms8202More'))return;
-    const layer=document.createElement('div');
-    layer.id='ms8202More';
-    layer.className='hidden';
-    layer.setAttribute('role','dialog');
-    layer.setAttribute('aria-modal','true');
-    layer.setAttribute('aria-hidden','true');
-    layer.innerHTML=`<div class="ms8202-more-panel"><div class="ms8202-more-head"><h2>Meer</h2><button type="button" class="ms8202-more-close" aria-label="Sluiten">×</button></div><div class="ms8202-more-grid">
-      <button data-route="ais"><span>📡</span>AIS</button>
-      <button data-route="weather"><span>☀️</span>Weer</button>
-      <button data-route="logbook"><span>📖</span>Logboek</button>
-      <button data-route="pois"><span>📍</span>POI's</button>
-      <button data-route="rws"><span>📢</span>Vaarwegberichten</button>
-      <button data-route="costs"><span>🧾</span>Kosten</button>
-      <button data-route="finance"><span>💶</span>Financieel</button>
-      <button data-route="entertainment"><span>🏡</span>Home Assistant</button>
-      <button data-route="settings"><span>🚤</span>Instellingen</button>
-      <button data-route="boat"><span>👥</span>Boot & delen</button>
-    </div></div>`;
-    document.body.appendChild(layer);
-    layer.onclick=event=>{
-      if(event.target===layer||event.target.closest('.ms8202-more-close')){closeMore();return}
-      const button=event.target.closest('[data-route]');
-      if(button)navigate(button.dataset.route,button);
-    };
-    window.ms797OpenMore=openMore;
+    $('ms8202More')?.remove();
+    window.ms797OpenMore=()=>navigate('dashboard');
   }
 
-  function openMore(){
-    ensureMore();
-    const layer=$('ms8202More');
-    if(!layer)return;
-    layer.classList.remove('hidden');
-    layer.setAttribute('aria-hidden','false');
-    syncNav('more');
-    requestAnimationFrame(()=>layer.querySelector('.ms8202-more-close')?.focus());
-  }
+  function openMore(){navigate('dashboard')}
 
   function closeMore(sync=true){
-    const layer=$('ms8202More');
-    if(!layer)return;
-    layer.classList.add('hidden');
-    layer.setAttribute('aria-hidden','true');
+    $('ms8202More')?.remove();
     if(sync)syncNav();
+  }
+
+  async function ensureSimpleStart(){
+    const ok=await load(`/simple-start-8210.js?v=${VERSION}`,10000);
+    if(!ok){
+      console.warn('Eenvoudige startpagina kon niet worden geladen.');
+      return false;
+    }
+    try{window.ms8210RefreshAttention?.()}catch{}
+    return true;
   }
 
   function enforceUnifiedUi(){
@@ -272,12 +237,14 @@
     syncVersion();
     ensureNavigation();
     ensureMore();
+    if(!$('ms8210Start'))ensureSimpleStart();
   }
   window.ms8202RepairUnifiedUi=enforceUnifiedUi;
+  window.ms8214RepairUnifiedUi=enforceUnifiedUi;
 
   function guardUnifiedUi(){
-    if(window.__msUnifiedUiGuard8202)return;
-    window.__msUnifiedUiGuard8202=true;
+    if(window.__msUnifiedUiGuard8214)return;
+    window.__msUnifiedUiGuard8214=true;
     let queued=false;
     const queue=()=>{
       if(queued)return;
@@ -324,15 +291,16 @@
     syncVersion();
     const dashboard=$('dashboard');
     if(dashboard&&$('msMarineGlass'))dashboard.classList.add('mg-active');
+    await ensureSimpleStart();
     rebuildNavigation();
     ensureMore();
     guardUnifiedUi();
     requestAnimationFrame(()=>{
       syncVersion();
       syncNav();
-      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,unified:true}}));
+      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,unified:true,simpleStart:true}}));
     });
-    console.info(`MijnSerenity ${BUILD}: stabiele uniforme dashboardruntime actief.`);
+    console.info(`MijnSerenity ${BUILD}: uniforme runtime met eenvoudige startpagina actief.`);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
