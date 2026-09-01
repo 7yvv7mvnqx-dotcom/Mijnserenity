@@ -1,23 +1,24 @@
-/* MijnSerenity 8.21.4 — uniforme dashboardruntime met eenvoudige startpagina
+/* MijnSerenity 8.21.5 — uniforme dashboardruntime met eenvoudige startpagina
    Eén dashboard en één navigatie-eigenaar op iPhone, iPad en Stage Manager.
    Start is het centrale menu; het oude Meer-paneel wordt niet meer opgebouwd. */
 (()=>{
   'use strict';
-  if(window.__msUnifiedDashboard8214)return;
-  window.__msUnifiedDashboard8214=true;
+  if(window.__msUnifiedDashboard8215)return;
+  window.__msUnifiedDashboard8215=true;
 
-  const BUILD='8.21.4';
-  const VERSION='821400';
+  const BUILD='8.21.5';
+  const VERSION='821500';
   const $=id=>document.getElementById(id);
   const pathOf=value=>{try{return new URL(value,location.href).pathname}catch{return String(value||'')}};
 
   function ensureStyle(){
-    let style=$('msUnifiedDashboardStyle8214');
+    let style=$('msUnifiedDashboardStyle8215');
     if(style)return;
+    $('msUnifiedDashboardStyle8214')?.remove();
     $('msUnifiedDashboardStyle8202')?.remove();
     $('msUnifiedDashboardStyle71919')?.remove();
     style=document.createElement('style');
-    style.id='msUnifiedDashboardStyle8214';
+    style.id='msUnifiedDashboardStyle8215';
     style.textContent=`
       #dashboard.mg-active>#ms71510Dashboard,
       #dashboard.mg-active>.ms750-simple-dashboard,
@@ -130,7 +131,7 @@
       const timer=setTimeout(()=>finish(false),timeoutMs);
       script.src=src;
       script.async=false;
-      script.dataset.ms8214Loaded='1';
+      script.dataset.ms8215Loaded='1';
       script.onload=()=>finish(true);
       script.onerror=()=>finish(false);
       document.head.appendChild(script);
@@ -221,14 +222,32 @@
     if(sync)syncNav();
   }
 
+  function startRootReady(){
+    try{window.ms8210RefreshStart?.()}catch{}
+    return Boolean($('ms8210Start'));
+  }
+
   async function ensureSimpleStart(){
-    const ok=await load(`/simple-start-8210.js?v=${VERSION}`,10000);
-    if(!ok){
-      console.warn('Eenvoudige startpagina kon niet worden geladen.');
-      return false;
-    }
-    try{window.ms8210RefreshAttention?.()}catch{}
-    return true;
+    if(startRootReady())return true;
+
+    let ok=await load(`/simple-start-8210.js?v=${VERSION}`,10000);
+    await new Promise(resolve=>setTimeout(resolve,0));
+    if(startRootReady())return true;
+
+    /* Een al aanwezige maar niet uitgevoerde/verouderde script-tag kon in 8.21.4
+       als 'geladen' worden beschouwd. Als er nog geen Start-root is, één keer
+       geforceerd opnieuw laden en de moduleguard resetten. */
+    document.querySelectorAll('script[src]').forEach(script=>{
+      if(pathOf(script.src)==='/simple-start-8210.js')script.remove();
+    });
+    window.__msSimpleStart8210=false;
+    ok=await load(`/simple-start-8210.js?v=${VERSION}&retry=1`,10000);
+    await new Promise(resolve=>setTimeout(resolve,0));
+    if(startRootReady())return true;
+
+    if(!ok)console.warn('Eenvoudige startpagina kon niet worden geladen.');
+    else console.warn('Eenvoudige startpagina is geladen maar niet opgebouwd.');
+    return false;
   }
 
   function enforceUnifiedUi(){
@@ -240,11 +259,11 @@
     if(!$('ms8210Start'))ensureSimpleStart();
   }
   window.ms8202RepairUnifiedUi=enforceUnifiedUi;
-  window.ms8214RepairUnifiedUi=enforceUnifiedUi;
+  window.ms8215RepairUnifiedUi=enforceUnifiedUi;
 
   function guardUnifiedUi(){
-    if(window.__msUnifiedUiGuard8214)return;
-    window.__msUnifiedUiGuard8214=true;
+    if(window.__msUnifiedUiGuard8215)return;
+    window.__msUnifiedUiGuard8215=true;
     let queued=false;
     const queue=()=>{
       if(queued)return;
