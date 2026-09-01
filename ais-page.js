@@ -1,16 +1,18 @@
-/* MijnSerenity 8.20.0 — AIS Aanvaringsradar
-   Internet-AIS is ondersteunend en kan vertraagd/onvolledig zijn. */
+/* MijnSerenity 8.20.3 — AIS Aanvaringsradar
+   Veiligheidslogica: geen 'veilig' oordeel zonder bruikbare AIS/GPS-data. */
 (()=>{
   'use strict';
-  if(window.__MS_COLLISION_RADAR_8200)return;
-  window.__MS_COLLISION_RADAR_8200=true;
+  if(window.__MS_COLLISION_RADAR_8203)return;
+  window.__MS_COLLISION_RADAR_8203=true;
 
-  const VERSION='8.20.0';
+  const VERSION='8.20.3';
   const RANGE_NM=1.5;
   const FETCH_RADIUS_KM=3;
   const POLL_MS=30000;
   const GPS_MAX_AGE=120000;
+  const POSITION_CACHE_MAX_AGE=5*60*1000;
   const POSITION_CACHE_KEY='mijnserenity-ais-last-position';
+  const REQUEST_TIMEOUT_MS=12000;
 
   const state={
     mounted:false,
@@ -27,11 +29,13 @@
     selected:null
   };
 
-  const $=id=>document.getElementById(id);
   const finite=value=>{
+    if(value===null||value===undefined||typeof value==='boolean')return null;
+    if(typeof value==='string'&&value.trim()==='')return null;
     const n=Number(value);
     return Number.isFinite(n)?n:null;
   };
+
   const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
@@ -58,13 +62,36 @@
 
   function numValue(obj,paths){return finite(firstValue(obj,paths))}
 
+  function normalizeAngle(value){
+    const n=finite(value);
+    return n===null?null:((n%360)+360)%360;
+  }
+
+  async function fetchJson(url){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
+    try{
+      const response=await fetch(url,{cache:'no-store',signal:controller.signal});
+      const payload=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(payload?.error?.message||payload?.error||`HTTP ${response.status}`);
+      return payload;
+    }catch(error){
+      if(error?.name==='AbortError')throw new Error('AIS-request duurde te lang');
+      throw error;
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+
   function ownFromLiveState(){
     const nav=window.liveNavState||{};
     let point=null;
     const directLat=firstFinite(nav.currentLat,nav.lat,nav.position?.lat,nav.position?.latitude);
     const directLon=firstFinite(nav.currentLon,nav.lon,nav.lng,nav.position?.lon,nav.position?.lng,nav.position?.longitude);
+    const directTime=firstFinite(nav.timestamp,nav.time,nav.position?.timestamp,nav.position?.time)||Date.now();
+
     if(directLat!==null&&directLon!==null){
-      point={lat:directLat,lon:directLon,timestamp:Date.now()};
+      point={lat:directLat,lon:directLon,timestamp:directTime};
     }else{
       for(const list of [nav.trackPoints,nav.track,nav.history,nav.gpsTrack,nav.points]){
         if(!Array.isArray(list)||!list.length)continue;
@@ -77,16 +104,13 @@
         }
       }
     }
-    if(!point)return null;
-    if(Date.now()-Number(point.timestamp||Date.now())>GPS_MAX_AGE)return null;
 
-    const sog=firstFinite(
-      nav.sog,nav.speedKnots,nav.speedKts,nav.speed?.knots,
-      finite(nav.speedKmh)!==null?Number(nav.speedKmh)/1.852:null,
-      finite(nav.speedKmH)!==null?Number(nav.speedKmH)/1.852:null
-    );
-    const cog=firstFinite(nav.cog,nav.course,nav.courseOverGround,nav.position?.heading);
-    const heading=firstFinite(nav.heading,nav.compassHeading,nav.trueHeading);
+    if(!point||Date.now()-Number(point.timestamp||0)>GPS_MAX_AGE)return null;
+
+    const kmh=firstFinite(nav.speedKmh,nav.speedKmH);
+    const sog=firstFinite(nav.sog,nav.speedKnots,nav.speedKts,nav.speed?.knots,kmh!==null?kmh/1.852:null);
+    const cog=normalizeAngle(firstFinite(nav.cog,nav.course,nav.courseOverGround,nav.position?.heading));
+    const heading=normalizeAngle(firstFinite(nav.heading,nav.compassHeading,nav.trueHeading));
     const accuracy=firstFinite(nav.accuracy,nav.gpsAccuracy,nav.position?.accuracy);
     return {...point,sog,cog,heading,accuracy,source:'Live GPS'};
   }
@@ -96,8 +120,13 @@
       const value=JSON.parse(localStorage.getItem(POSITION_CACHE_KEY)||'null');
       const lat=finite(value?.lat),lon=finite(value?.lon),timestamp=finite(value?.timestamp);
       if(lat===null||lon===null||timestamp===null)return null;
-      if(Date.now()-timestamp>24*60*60*1000)return null;
-      return {lat,lon,timestamp,accuracy:finite(value?.accuracy),sog:finite(value?.sog),cog:finite(value?.cog),heading:finite(value?.heading),source:'Laatst bekende GPS'};
+      if(Date.now()-timestamp>POSITION_CACHE_MAX_AGE)return null;
+      return {
+        lat,lon,timestamp,
+        accuracy:finite(value?.accuracy),sog:finite(value?.sog),
+        cog:normalizeAngle(value?.cog),heading:normalizeAngle(value?.heading),
+        source:'Recente GPS-cache'
+      };
     }catch{return null}
   }
 
@@ -115,12 +144,13 @@
       if(!navigator.geolocation)return reject(new Error('GPS niet ondersteund'));
       navigator.geolocation.getCurrentPosition(position=>{
         const coords=position.coords||{};
+        const speed=finite(coords.speed);
         resolve({
           lat:Number(coords.latitude),lon:Number(coords.longitude),timestamp:Number(position.timestamp)||Date.now(),
-          accuracy:finite(coords.accuracy),sog:finite(coords.speed)!==null?Number(coords.speed)*1.943844:null,
-          cog:finite(coords.heading),heading:null,source:'Apparaat-GPS'
+          accuracy:finite(coords.accuracy),sog:speed!==null?speed*1.943844:null,
+          cog:normalizeAngle(coords.heading),heading:null,source:'Apparaat-GPS'
         });
-      },reject,{enableHighAccuracy:true,maximumAge:10000,timeout:12000});
+      },reject,{enableHighAccuracy:true,maximumAge:10000,timeout:10000});
     });
   }
 
@@ -129,14 +159,12 @@
     if(live&&!force)return live;
     try{
       const gps=await browserPosition();
-      if(Number.isFinite(gps.lat)&&Number.isFinite(gps.lon)){savePosition(gps);return gps}
+      if(Number.isFinite(gps.lat)&&Number.isFinite(gps.lon)){
+        savePosition(gps);
+        return gps;
+      }
     }catch{}
     return live||cachedPosition();
-  }
-
-  function normalizeAngle(value){
-    const n=finite(value);
-    return n===null?null:((n%360)+360)%360;
   }
 
   function normalizeTarget(raw,index){
@@ -151,6 +179,7 @@
     const cog=normalizeAngle(numValue(raw,['cog','courseOverGround','course','position.cog','position.course','navigation.cog','navigation.courseOverGround','lastPosition.cog']));
     const heading=normalizeAngle(numValue(raw,['heading','trueHeading','position.heading','navigation.heading','lastPosition.heading']));
     const timestamp=firstValue(raw,['timestamp','time','receivedAt','updatedAt','position.timestamp','position.time','lastPosition.timestamp']);
+
     return {
       id:mmsi||`${lat.toFixed(5)}:${lon.toFixed(5)}:${index}`,
       mmsi,name:name||(mmsi?`MMSI ${mmsi}`:'Onbekend AIS-doel'),lat,lon,
@@ -178,7 +207,8 @@
       if(!target)continue;
       const key=target.mmsi||`${target.lat.toFixed(5)}:${target.lon.toFixed(5)}`;
       if(seen.has(key))continue;
-      seen.add(key);targets.push(target);
+      seen.add(key);
+      targets.push(target);
     }
     return targets;
   }
@@ -188,7 +218,10 @@
     return {x:(target.lon-own.lon)*60*Math.cos(lat0),y:(target.lat-own.lat)*60};
   }
 
-  function distanceNm(own,target){const r=relativeNm(own,target);return Math.hypot(r.x,r.y)}
+  function distanceNm(own,target){
+    const r=relativeNm(own,target);
+    return Math.hypot(r.x,r.y);
+  }
 
   function velocity(sog,cog){
     const speed=finite(sog),course=normalizeAngle(cog);
@@ -201,11 +234,11 @@
 
   function cpaData(own,target){
     const r=relativeNm(own,target);
-    const ownV=velocity(own.sog,own.cog)||(finite(own.sog)!==null&&Number(own.sog)<0.05?{x:0,y:0}:null);
+    const ownV=velocity(own.sog,own.cog);
     const targetV=velocity(target.sog,target.cog);
-    if(!targetV)return null;
-    const ov=ownV||{x:0,y:0};
-    const vx=targetV.x-ov.x,vy=targetV.y-ov.y,vv=vx*vx+vy*vy;
+    if(!ownV||!targetV)return null;
+
+    const vx=targetV.x-ownV.x,vy=targetV.y-ownV.y,vv=vx*vx+vy*vy;
     if(vv<1e-9)return {cpaNm:Math.hypot(r.x,r.y),tcpaMin:null};
     const tcpa=-(r.x*vx+r.y*vy)/vv;
     if(tcpa<=0)return {cpaNm:Math.hypot(r.x,r.y),tcpaMin:tcpa};
@@ -213,21 +246,29 @@
   }
 
   function classify(target){
-    const distanceM=target.distanceNm*1852,cpa=target.cpa;
+    const distanceM=target.distanceNm*1852;
+    const cpa=target.cpa;
+
+    // Een schip dat nu al dichtbij is blijft een waarschuwing, ook als koersdata ontbreekt.
+    if(distanceM<50)return {level:'risk',rank:0,label:'RISICO'};
+    if(distanceM<120)return {level:'watch',rank:1,label:'OPLETTEN'};
     if(!cpa||!Number.isFinite(cpa.cpaNm))return {level:'unknown',rank:3,label:'ONBEKEND'};
+
     const cpaM=cpa.cpaNm*1852,t=cpa.tcpaMin;
-    const future=Number.isFinite(t)?t>0&&t<=30:distanceM<200;
-    if((future&&cpaM<50)||distanceM<50)return {level:'risk',rank:0,label:'RISICO'};
-    if((future&&cpaM<200)||distanceM<120)return {level:'watch',rank:1,label:'OPLETTEN'};
+    const future=Number.isFinite(t)&&t>0&&t<=30;
+    if(future&&cpaM<50)return {level:'risk',rank:0,label:'RISICO'};
+    if(future&&cpaM<200)return {level:'watch',rank:1,label:'OPLETTEN'};
     return {level:'safe',rank:2,label:'VEILIG'};
   }
 
   function enrichTargets(targets,own){
     return targets.map(target=>{
       const item={...target,distanceNm:distanceNm(own,target),cpa:cpaData(own,target)};
-      item.risk=classify(item);return item;
+      item.risk=classify(item);
+      return item;
     }).filter(item=>item.distanceNm<=RANGE_NM*1.35)
-      .sort((a,b)=>a.risk.rank-b.risk.rank||a.distanceNm-b.distanceNm).slice(0,25);
+      .sort((a,b)=>a.risk.rank-b.risk.rank||a.distanceNm-b.distanceNm)
+      .slice(0,25);
   }
 
   function radarPoint(target){
@@ -241,7 +282,9 @@
     return {x:start.x+(dist*Math.sin(rad)/RANGE_NM)*166,y:start.y-(dist*Math.cos(rad)/RANGE_NM)*166};
   }
 
-  function color(level){return level==='risk'?'#ff4d4d':level==='watch'?'#ff9f1a':level==='safe'?'#63dd4f':'#93a7b5'}
+  function color(level){
+    return level==='risk'?'#ff4d4d':level==='watch'?'#ff9f1a':level==='safe'?'#63dd4f':'#93a7b5';
+  }
 
   function targetSvg(target){
     const p=radarPoint(target);
@@ -254,7 +297,9 @@
     </g>`;
   }
 
-  function ownShipRotation(){return normalizeAngle(state.own.heading??state.own.cog)??0}
+  function ownShipRotation(){
+    return normalizeAngle(state.own.heading??state.own.cog)??0;
+  }
 
   function radarSvg(){
     const targets=state.targets.filter(t=>t.distanceNm<=RANGE_NM),shipRot=ownShipRotation();
@@ -281,16 +326,25 @@
     if(!Number.isFinite(nm))return '–';
     return nm<0.1?`${Math.round(nm*1852)} m`:`${nm.toFixed(2)} NM`;
   }
+
   function formatCpa(target){
-    const nm=target?.cpa?.cpaNm;if(!Number.isFinite(nm))return '–';
-    const m=nm*1852;return m<1000?`${Math.round(m)} m`:`${nm.toFixed(2)} NM`;
+    const nm=target?.cpa?.cpaNm;
+    if(!Number.isFinite(nm))return '–';
+    const m=nm*1852;
+    return m<1000?`${Math.round(m)} m`:`${nm.toFixed(2)} NM`;
   }
+
   function formatTcpa(target){
-    const t=target?.cpa?.tcpaMin;if(!Number.isFinite(t)||t<=0)return '–';
+    const t=target?.cpa?.tcpaMin;
+    if(!Number.isFinite(t)||t<=0)return '–';
     return t<1?'< 1 min':`${Math.round(t)} min`;
   }
+
   function formatKn(value){return Number.isFinite(value)?`${value.toFixed(1)} kn`:'–'}
-  function formatDeg(value){const n=normalizeAngle(value);return n===null?'–':`${String(Math.round(n)).padStart(3,'0')}°`}
+  function formatDeg(value){
+    const n=normalizeAngle(value);
+    return n===null?'–':`${String(Math.round(n)).padStart(3,'0')}°`;
+  }
 
   function targetCard(target){
     const risk=target.risk.level;
@@ -307,13 +361,35 @@
 
   function render(){
     if(!state.root)return;
-    const riskCount=state.targets.filter(t=>t.risk.level==='risk'&&t.distanceNm<=RANGE_NM).length;
-    const watchCount=state.targets.filter(t=>t.risk.level==='watch'&&t.distanceNm<=RANGE_NM).length;
+
     const visible=state.targets.filter(t=>t.distanceNm<=RANGE_NM);
-    const gpsOk=Boolean(state.position),motionOk=Number.isFinite(state.own.sog),courseOk=Number.isFinite(state.own.cog),headingOk=Number.isFinite(state.own.heading);
-    const cpaOk=visible.some(t=>Number.isFinite(t?.cpa?.cpaNm));
+    const riskCount=visible.filter(t=>t.risk.level==='risk').length;
+    const watchCount=visible.filter(t=>t.risk.level==='watch').length;
+    const unknownCount=visible.filter(t=>t.risk.level==='unknown').length;
+    const gpsOk=Boolean(state.position);
+    const motionOk=Number.isFinite(state.own.sog);
+    const courseOk=Number.isFinite(state.own.cog);
+    const headingOk=Number.isFinite(state.own.heading);
+    const cpaOk=visible.length===0
+      ? state.providerOnline&&gpsOk
+      : visible.every(t=>Number.isFinite(t?.cpa?.cpaNm));
+    const assessmentKnown=Boolean(state.providerOnline&&gpsOk&&unknownCount===0);
+
     const connectionText=state.busy?'AIS laden…':state.providerOnline?'AIS online':state.providerConfigured===false?'AIS niet ingesteld':'AIS offline';
-    const alarmText=riskCount?`Alarm: ${riskCount} risico${riskCount===1?'':'’s'}`:watchCount?`${watchCount} doel${watchCount===1?'':'en'} opletten`:'Geen risico';
+    const alarmText=riskCount
+      ? `Alarm: ${riskCount} risico${riskCount===1?'':'’s'}`
+      : watchCount
+        ? `${watchCount} doel${watchCount===1?'':'en'} opletten`
+        : assessmentKnown?'Geen risico':'Risico onbekend';
+    const alarmClass=riskCount?'danger':watchCount?'warn':assessmentKnown?'ok':'warn';
+    const alarmIcon=riskCount?'⚠':watchCount?'!':assessmentKnown?'✓':'?';
+    const targetSummary=riskCount
+      ? `${riskCount} risico`
+      : watchCount
+        ? `${watchCount} opletten`
+        : unknownCount
+          ? `${unknownCount} onbekend`
+          : assessmentKnown?'rustig':'onbekend';
     const updated=state.lastFetch?new Date(state.lastFetch).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'–';
 
     state.root.innerHTML=`
@@ -321,15 +397,18 @@
         <div><span class="ms820-kicker">AIS · COLLISION AWARENESS</span><h2><span class="ms820-radar-icon">◎</span> Aanvaringsradar</h2><p>Realtime overzicht van AIS-doelen rond Serenity</p></div>
         <div class="ms820-top-actions">
           <span id="ms711AisConnection" class="ms820-status ${state.providerOnline?'ok':state.busy?'busy':'bad'}"><i></i>${esc(connectionText)}</span>
-          <span class="ms820-status ${riskCount?'danger':watchCount?'warn':'ok'}">${riskCount?'⚠':'✓'} ${esc(alarmText)}</span>
+          <span class="ms820-status ${alarmClass}">${alarmIcon} ${esc(alarmText)}</span>
           <button type="button" class="ms820-refresh" id="ms820Refresh" aria-label="AIS verversen" title="AIS verversen">↻</button>
         </div>
       </div>
       ${state.lastError?`<div class="ms820-banner ${state.providerConfigured===false?'warn':'error'}">${esc(state.lastError)}</div>`:''}
       <div class="ms820-layout">
         <aside class="ms820-panel ms820-targets">
-          <div class="ms820-panel-head"><div><small>DOELEN</small><strong>${visible.length} binnen ${RANGE_NM.toFixed(1)} NM</strong></div><span>${riskCount?`${riskCount} risico`:watchCount?`${watchCount} opletten`:'rustig'}</span></div>
-          <div class="ms820-target-list">${visible.length?visible.map(targetCard).join(''):`<div class="ms820-empty"><span>◎</span><strong>${state.providerOnline?'Geen AIS-doelen binnen 1,5 NM':'Wachten op AIS-data'}</strong><small>${state.providerOnline?'Het actuele verkeersbeeld is rustig.':'Controleer internet en de AIS-databron.'}</small></div>`}</div>
+          <div class="ms820-panel-head"><div><small>DOELEN</small><strong>${visible.length} binnen ${RANGE_NM.toFixed(1)} NM</strong></div><span>${targetSummary}</span></div>
+          <div class="ms820-target-list">${visible.length
+            ? visible.map(targetCard).join('')
+            : `<div class="ms820-empty"><span>◎</span><strong>${state.providerOnline&&gpsOk?'Geen AIS-doelen binnen 1,5 NM':'Wachten op AIS- en GPS-data'}</strong><small>${state.providerOnline&&gpsOk?'Het actuele verkeersbeeld bevat geen doelen in dit bereik.':'Geen veiligheidsbeoordeling mogelijk zolang een databron ontbreekt.'}</small></div>`}
+          </div>
         </aside>
         <main class="ms820-center">
           <div class="ms820-radar-wrap">${radarSvg()}<div class="ms820-radar-range"><strong>1.5 NM</strong><small>Bereik</small></div></div>
@@ -343,7 +422,13 @@
           </section>
           <section class="ms820-panel ms820-data">
             <div class="ms820-panel-head"><div><small>LIVE CHECK</small><strong>Beschikbare data</strong></div><span>${updated}</span></div>
-            <ul>${checklistItem(state.providerOnline,'AIS targets',state.providerConfigured===false?'VESSELAPI_KEY ontbreekt':'Internet-AIS')}${checklistItem(gpsOk,'GPS positie')}${checklistItem(motionOk&&courseOk,'COG / SOG')}${checklistItem(headingOk,'Heading / kompas',headingOk?'Live':'Niet vereist voor CPA')}${checklistItem(cpaOk,'CPA / TCPA','Berekend in MijnSerenity')}</ul>
+            <ul>
+              ${checklistItem(state.providerOnline,'AIS targets',state.providerConfigured===false?'VESSELAPI_KEY ontbreekt':'Internet-AIS')}
+              ${checklistItem(gpsOk,'GPS positie')}
+              ${checklistItem(motionOk&&courseOk,'COG / SOG')}
+              ${checklistItem(headingOk,'Heading / kompas',headingOk?'Live':'Niet vereist voor CPA')}
+              ${checklistItem(cpaOk,'CPA / TCPA',visible.length?'Berekend in MijnSerenity':'Geen doelen om te berekenen')}
+            </ul>
           </section>
         </aside>
       </div>
@@ -353,10 +438,16 @@
     state.root.querySelectorAll('[data-target-id]').forEach(el=>{
       const select=()=>{state.selected=String(el.dataset.targetId||'');render()};
       el.addEventListener('click',select);
-      el.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select()}});
+      el.addEventListener('keydown',event=>{
+        if(event.key==='Enter'||event.key===' '){event.preventDefault();select()}
+      });
     });
 
-    window.ms820AisState={version:VERSION,online:state.providerOnline,configured:state.providerConfigured,riskCount,watchCount,targetCount:visible.length,lastFetch:state.lastFetch};
+    window.ms820AisState={
+      version:VERSION,online:state.providerOnline,configured:state.providerConfigured,
+      assessmentKnown,riskCount,watchCount,unknownCount,targetCount:visible.length,
+      lastFetch:state.lastFetch,error:state.lastError||''
+    };
     window.dispatchEvent(new CustomEvent('mijnserenity:ais-update',{detail:window.ms820AisState}));
   }
 
@@ -365,48 +456,77 @@
     const legacy=document.querySelector('.ms711-ais-hero');
     if(!legacy)return null;
     const parent=legacy.parentElement;
-    legacy.className='card ms820-ais-root';legacy.id='ms820AisRoot';
+    legacy.className='card ms820-ais-root';
+    legacy.id='ms820AisRoot';
     if(parent)parent.querySelectorAll('.ms711-ais-map-card,.ms711-ais-disclaimer').forEach(el=>el.remove());
-    state.root=legacy;state.mounted=true;render();return legacy;
+    state.root=legacy;
+    state.mounted=true;
+    render();
+    return legacy;
   }
 
   async function providerStatus(){
     try{
-      const response=await fetch('/.netlify/functions/ais?mode=status',{cache:'no-store'});
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok)throw new Error(data?.error?.message||`AIS-status ${response.status}`);
+      const data=await fetchJson('/.netlify/functions/ais?mode=status');
       state.providerConfigured=Boolean(data?.configured);
       if(!state.providerConfigured)state.lastError='AIS-databron is nog niet geconfigureerd. Voeg VESSELAPI_KEY toe in Netlify.';
       return state.providerConfigured;
     }catch(error){
-      state.providerConfigured=null;state.lastError=`AIS-service niet bereikbaar: ${error?.message||'onbekende fout'}`;return false;
+      state.providerConfigured=null;
+      state.lastError=`AIS-service niet bereikbaar: ${error?.message||'onbekende fout'}`;
+      return false;
     }
   }
 
   async function fetchTargets(){
     if(!state.position)return;
-    const query=new URLSearchParams({mode:'nearby',lat:Number(state.position.lat).toFixed(6),lon:Number(state.position.lon).toFixed(6),radiusKm:String(FETCH_RADIUS_KM),limit:'50'});
-    const response=await fetch(`/.netlify/functions/ais?${query}`,{cache:'no-store'});
-    const payload=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(payload?.error?.message||`AIS-data fout ${response.status}`);
+    const query=new URLSearchParams({
+      mode:'nearby',lat:Number(state.position.lat).toFixed(6),lon:Number(state.position.lon).toFixed(6),
+      radiusKm:String(FETCH_RADIUS_KM),limit:'50'
+    });
+    const payload=await fetchJson(`/.netlify/functions/ais?${query}`);
     const normalized=targetsFromPayload(payload?.data??payload);
-    state.targets=enrichTargets(normalized,state.position);state.providerOnline=true;state.lastFetch=Date.now();state.lastError='';
+    state.targets=enrichTargets(normalized,state.position);
+    state.providerOnline=true;
+    state.lastFetch=Date.now();
+    state.lastError='';
   }
 
   async function refresh(forceGps=false){
     if(state.busy)return;
-    mount();state.busy=true;render();
+    mount();
+    state.busy=true;
+    render();
+
     try{
       const pos=await acquirePosition(forceGps);
-      if(!pos)throw new Error('Geen GPS-positie beschikbaar. Sta locatie toe om de radar te gebruiken.');
+      if(!pos){
+        state.position=null;
+        state.own={sog:null,cog:null,heading:null,accuracy:null,source:''};
+        throw new Error('Geen GPS-positie beschikbaar. Sta locatie toe om de radar te gebruiken.');
+      }
+
       state.position={lat:Number(pos.lat),lon:Number(pos.lon)};
-      state.own={sog:finite(pos.sog),cog:normalizeAngle(pos.cog),heading:normalizeAngle(pos.heading),accuracy:finite(pos.accuracy),source:pos.source||'GPS'};
-      savePosition({...pos,timestamp:pos.timestamp||Date.now()});
+      state.own={
+        sog:finite(pos.sog),cog:normalizeAngle(pos.cog),heading:normalizeAngle(pos.heading),
+        accuracy:finite(pos.accuracy),source:pos.source||'GPS'
+      };
+      savePosition({...pos,...state.own,timestamp:pos.timestamp||Date.now()});
+
       const configured=await providerStatus();
-      if(configured)await fetchTargets();else state.providerOnline=false;
+      if(configured)await fetchTargets();
+      else{
+        state.providerOnline=false;
+        state.targets=[];
+      }
     }catch(error){
-      state.providerOnline=false;state.targets=[];state.lastError=error?.message||'AIS kon niet worden geladen.';
-    }finally{state.busy=false;render()}
+      state.providerOnline=false;
+      state.targets=[];
+      state.lastError=error?.message||'AIS kon niet worden geladen.';
+    }finally{
+      state.busy=false;
+      render();
+    }
   }
 
   function pageVisible(){
@@ -421,15 +541,25 @@
     state.timer=setInterval(()=>{if(pageVisible())refresh(false)},POLL_MS);
   }
 
-  async function initAisPage(){if(!mount())return;schedule();await refresh(false)}
+  async function initAisPage(){
+    if(!mount())return;
+    schedule();
+    await refresh(false);
+  }
 
   window.initAisPage=initAisPage;
   window.ms711CenterAis=()=>refresh(true);
   window.ms711RefreshAis=()=>refresh(false);
 
   window.addEventListener('online',()=>{if(pageVisible())refresh(false)},{passive:true});
-  window.addEventListener('offline',()=>{state.providerOnline=false;state.lastError='Geen internetverbinding. Internet-AIS is tijdelijk niet beschikbaar.';render()},{passive:true});
+  window.addEventListener('offline',()=>{
+    state.providerOnline=false;
+    state.targets=[];
+    state.lastError='Geen internetverbinding. Internet-AIS is tijdelijk niet beschikbaar.';
+    render();
+  },{passive:true});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&pageVisible())refresh(false)},{passive:true});
 
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});
+  else mount();
 })();
