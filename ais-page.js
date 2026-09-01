@@ -1,11 +1,11 @@
-/* MijnSerenity 8.20.4 — AIS Aanvaringsradar
+/* MijnSerenity 8.20.5 — AIS Aanvaringsradar
    Toon nooit "0 doelen" of "veilig" zolang de AIS-databron niet aantoonbaar online is. */
 (()=>{
   'use strict';
-  if(window.__MS_COLLISION_RADAR_8204)return;
-  window.__MS_COLLISION_RADAR_8204=true;
+  if(window.__MS_COLLISION_RADAR_8205)return;
+  window.__MS_COLLISION_RADAR_8205=true;
 
-  const VERSION='8.20.4';
+  const VERSION='8.20.5';
   const RANGE_NM=1.5;
   const FETCH_RADIUS_KM=3;
   const POLL_MS=30000;
@@ -17,7 +17,7 @@
   const state={
     mounted:false,root:null,position:null,
     own:{sog:null,cog:null,heading:null,accuracy:null,source:''},
-    targets:[],providerConfigured:null,providerOnline:false,lastFetch:null,
+    targets:[],providerConfigured:null,providerOnline:false,providerReason:'',lastFetch:null,
     lastError:'',busy:false,timer:null,selected:null
   };
 
@@ -256,17 +256,18 @@
     const gpsOk=Boolean(state.position);
     const motionOk=Number.isFinite(state.own.sog),courseOk=Number.isFinite(state.own.cog),headingOk=Number.isFinite(state.own.heading);
     const aisAvailable=Boolean(state.providerConfigured===true&&state.providerOnline);
+    const aisMissingConfig=state.providerConfigured===false;
     const cpaOk=aisAvailable&&gpsOk&&(visible.length===0||visible.every(t=>Number.isFinite(t?.cpa?.cpaNm)));
     const assessmentKnown=Boolean(aisAvailable&&gpsOk&&unknownCount===0);
 
-    const connectionText=state.busy?'AIS laden…':aisAvailable?'AIS online':state.providerConfigured===false?'AIS niet beschikbaar':'AIS offline';
-    const alarmText=riskCount?`Alarm: ${riskCount} risico${riskCount===1?'':'’s'}`:watchCount?`${watchCount} doel${watchCount===1?'':'en'} opletten`:assessmentKnown?'Geen risico':'Risico onbekend';
+    const connectionText=state.busy?'AIS laden…':aisAvailable?'AIS online':aisMissingConfig?'AIS niet gekoppeld':'AIS offline';
+    const alarmText=riskCount?`Alarm: ${riskCount} risico${riskCount===1?'':'’s'}`:watchCount?`${watchCount} doel${watchCount===1?'':'en'} opletten`:assessmentKnown?'Geen risico':aisMissingConfig?'Risico niet berekenbaar':'Risico onbekend';
     const alarmClass=riskCount?'danger':watchCount?'warn':assessmentKnown?'ok':'warn';
     const alarmIcon=riskCount?'⚠':watchCount?'!':assessmentKnown?'✓':'?';
-    const targetSummary=!aisAvailable?'niet beschikbaar':riskCount?`${riskCount} risico`:watchCount?`${watchCount} opletten`:unknownCount?`${unknownCount} onbekend`:'rustig';
-    const targetHeadline=aisAvailable?`${visible.length} binnen ${RANGE_NM.toFixed(1)} NM`:'AIS niet beschikbaar';
-    const emptyTitle=aisAvailable&&gpsOk?'Geen AIS-doelen binnen 1,5 NM':!gpsOk?'GPS-positie nodig':'Geen AIS-databron verbonden';
-    const emptyDetail=aisAvailable&&gpsOk?'Het actuele verkeersbeeld bevat geen doelen in dit bereik.':!gpsOk?'Sta locatie toe om de radar te gebruiken.':'Er wordt geen aantal doelen of veiligheidsstatus getoond zolang AIS niet online is.';
+    const targetSummary=!aisAvailable?(aisMissingConfig?'configuratie nodig':'niet beschikbaar'):riskCount?`${riskCount} risico`:watchCount?`${watchCount} opletten`:unknownCount?`${unknownCount} onbekend`:'rustig';
+    const targetHeadline=aisAvailable?`${visible.length} binnen ${RANGE_NM.toFixed(1)} NM`:aisMissingConfig?'AIS niet gekoppeld':'AIS niet beschikbaar';
+    const emptyTitle=aisAvailable&&gpsOk?'Geen AIS-doelen binnen 1,5 NM':!gpsOk?'GPS-positie nodig':aisMissingConfig?'VesselAPI niet gekoppeld':'Geen AIS-databron verbonden';
+    const emptyDetail=aisAvailable&&gpsOk?'Het actuele verkeersbeeld bevat geen doelen in dit bereik.':!gpsOk?'Sta locatie toe om de radar te gebruiken.':aisMissingConfig?'Voeg VESSELAPI_KEY toe aan de Netlify environment variables en publiceer opnieuw.':'Er wordt geen aantal doelen of veiligheidsstatus getoond zolang AIS niet online is.';
     const updated=state.lastFetch?new Date(state.lastFetch).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'–';
 
     state.root.innerHTML=`<div class="ms820-topbar"><div><span class="ms820-kicker">AIS · COLLISION AWARENESS</span><h2><span class="ms820-radar-icon">◎</span> Aanvaringsradar</h2><p>Realtime overzicht van AIS-doelen rond Serenity</p></div><div class="ms820-top-actions"><span id="ms711AisConnection" class="ms820-status ${aisAvailable?'ok':state.busy?'busy':'bad'}"><i></i>${esc(connectionText)}</span><span class="ms820-status ${alarmClass}">${alarmIcon} ${esc(alarmText)}</span><button type="button" class="ms820-refresh" id="ms820Refresh" aria-label="AIS verversen" title="AIS verversen">↻</button></div></div>
@@ -274,7 +275,7 @@
       <div class="ms820-layout"><aside class="ms820-panel ms820-targets"><div class="ms820-panel-head"><div><small>DOELEN</small><strong>${esc(targetHeadline)}</strong></div><span>${esc(targetSummary)}</span></div><div class="ms820-target-list">${visible.length?visible.map(targetCard).join(''):`<div class="ms820-empty"><span>◎</span><strong>${esc(emptyTitle)}</strong><small>${esc(emptyDetail)}</small></div>`}</div></aside>
       <main class="ms820-center"><div class="ms820-radar-wrap">${radarSvg()}<div class="ms820-radar-range"><strong>1.5 NM</strong><small>Bereik</small></div></div><div class="ms820-legend" aria-label="Risico legenda"><span class="safe"><i></i><b>Veilig</b><small>CPA ≥ 200 m</small></span><span class="watch"><i></i><b>Opletten</b><small>CPA 50–200 m</small></span><span class="risk"><i></i><b>Risico</b><small>CPA &lt; 50 m</small></span></div></main>
       <aside class="ms820-right"><section class="ms820-panel ms820-own"><div class="ms820-panel-head"><div><small>EIGEN SCHIP</small><strong>Serenity</strong></div><span class="${gpsOk?'gps-ok':'gps-bad'}">${gpsOk?'● GPS':'○ GPS'}</span></div><dl><dt>SOG</dt><dd>${formatKn(state.own.sog)}</dd><dt>COG</dt><dd>${formatDeg(state.own.cog)}</dd><dt>Heading</dt><dd>${formatDeg(state.own.heading)}</dd><dt>GPS</dt><dd>${gpsOk?(Number.isFinite(state.own.accuracy)?`±${Math.round(state.own.accuracy)} m`:'Fix'):'Geen fix'}</dd></dl><small class="ms820-own-source">${esc(state.own.source||'GPS-bron nog onbekend')}</small></section>
-      <section class="ms820-panel ms820-data"><div class="ms820-panel-head"><div><small>LIVE CHECK</small><strong>Beschikbare data</strong></div><span>${updated}</span></div><ul>${checklistItem(aisAvailable,'AIS targets',aisAvailable?'Internet-AIS online':state.providerConfigured===false?'AIS-koppeling niet geconfigureerd':'AIS-service niet bereikbaar')}${checklistItem(gpsOk,'GPS positie')}${checklistItem(motionOk&&courseOk,'COG / SOG')}${checklistItem(headingOk,'Heading / kompas',headingOk?'Live':'Niet vereist voor CPA')}${checklistItem(cpaOk,'CPA / TCPA',!aisAvailable?'AIS-data nodig':visible.length?'Berekend in MijnSerenity':'Geen doelen om te berekenen')}</ul></section></aside></div>
+      <section class="ms820-panel ms820-data"><div class="ms820-panel-head"><div><small>LIVE CHECK</small><strong>Beschikbare data</strong></div><span>${updated}</span></div><ul>${checklistItem(aisAvailable,'AIS targets',aisAvailable?'Internet-AIS online':aisMissingConfig?'VesselAPI-sleutel ontbreekt':'AIS-service niet bereikbaar')}${checklistItem(gpsOk,'GPS positie')}${checklistItem(motionOk&&courseOk,'COG / SOG')}${checklistItem(headingOk,'Heading / kompas',headingOk?'Live':'Niet vereist voor CPA')}${checklistItem(cpaOk,'CPA / TCPA',!aisAvailable?'AIS-data nodig':visible.length?'Berekend in MijnSerenity':'Geen doelen om te berekenen')}</ul></section></aside></div>
       <div class="ms820-footnote"><span>ⓘ CPA = kleinste verwachte passeerafstand · TCPA = tijd tot dat punt.</span><strong>Internet-AIS kan vertraagd of onvolledig zijn. Blijf altijd zelf uitkijken en gebruik dit niet als vervanging voor gecertificeerde navigatieapparatuur.</strong></div>`;
 
     state.root.querySelector('#ms820Refresh')?.addEventListener('click',()=>refresh(true));
@@ -283,7 +284,7 @@
       el.addEventListener('click',select);
       el.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select()}});
     });
-    window.ms820AisState={version:VERSION,online:state.providerOnline,configured:state.providerConfigured,
+    window.ms820AisState={version:VERSION,online:state.providerOnline,configured:state.providerConfigured,reason:state.providerReason,
       assessmentKnown,riskCount,watchCount,unknownCount,targetCount:aisAvailable?visible.length:null,
       lastFetch:state.lastFetch,error:state.lastError||''};
     window.dispatchEvent(new CustomEvent('mijnserenity:ais-update',{detail:window.ms820AisState}));
@@ -303,10 +304,18 @@
     try{
       const data=await fetchJson('/.netlify/functions/ais?mode=status');
       state.providerConfigured=Boolean(data?.configured);
-      if(!state.providerConfigured)state.lastError='AIS-databron is niet beschikbaar. Controleer de AIS-koppeling in Beheer.';
+      state.providerReason=String(data?.reason||'');
+      if(!state.providerConfigured){
+        state.lastError=state.providerReason==='missing_vesselapi_key'
+          ?'AIS is nog niet gekoppeld. Voeg VESSELAPI_KEY toe als Netlify environment variable en publiceer opnieuw.'
+          :'AIS-databron is niet geconfigureerd.';
+      }else if(state.lastError.startsWith('AIS is nog niet gekoppeld')||state.lastError==='AIS-databron is niet geconfigureerd.'){
+        state.lastError='';
+      }
       return state.providerConfigured;
     }catch(error){
       state.providerConfigured=null;
+      state.providerReason=error?.code||'status_unreachable';
       state.lastError='AIS-service is tijdelijk niet bereikbaar. Probeer opnieuw.';
       return false;
     }
@@ -336,6 +345,7 @@
       else{state.providerOnline=false;state.targets=[]}
     }catch(error){
       state.providerOnline=false;state.targets=[];
+      state.providerReason=error?.code||state.providerReason;
       state.lastError=error?.message||'AIS kon niet worden geladen.';
     }finally{state.busy=false;render()}
   }
@@ -353,7 +363,7 @@
   window.ms711CenterAis=()=>refresh(true);
   window.ms711RefreshAis=()=>refresh(false);
   window.addEventListener('online',()=>{if(pageVisible())refresh(false)},{passive:true});
-  window.addEventListener('offline',()=>{state.providerOnline=false;state.targets=[];state.lastError='Geen internetverbinding. Internet-AIS is tijdelijk niet beschikbaar.';render()},{passive:true});
+  window.addEventListener('offline',()=>{state.providerOnline=false;state.targets=[];state.providerReason='offline';state.lastError='Geen internetverbinding. Internet-AIS is tijdelijk niet beschikbaar.';render()},{passive:true});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&pageVisible())refresh(false)},{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
