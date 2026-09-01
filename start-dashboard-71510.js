@@ -349,3 +349,21 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCaptainAi,{once:true});
   else loadCaptainAi();
 })();
+
+/* MijnSerenity 8.1.0 — laad Bootbeheer los van de bestaande pagina's. */
+(()=>{
+  'use strict';
+  if(window.__msBootbeheerLoader8100)return;
+  window.__msBootbeheerLoader8100=true;
+  function loadBootbeheer(){
+    if(window.__msBootbeheer8100||document.querySelector('script[data-ms-bootbeheer-loader]'))return;
+    const script=document.createElement('script');
+    script.src='bootbeheer-8100.js?v=81000';
+    script.async=true;
+    script.dataset.msBootbeheerLoader='1';
+    script.onerror=()=>console.warn('Bootbeheer kon niet worden geladen.');
+    document.head.appendChild(script);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadBootbeheer,{once:true});
+  else loadBootbeheer();
+})();
