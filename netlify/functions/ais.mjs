@@ -99,7 +99,7 @@ async function vesselRequest(path,params,ttlMs=25000){
     headers:{
       accept:'application/json',
       authorization:`Bearer ${key}`,
-      'user-agent':'MijnSerenity/8.20.3'
+      'user-agent':'MijnSerenity/8.20.5'
     }
   });
 
@@ -137,7 +137,14 @@ export default async request=>{
 
   try{
     if(mode==='status'){
-      return json({configured:Boolean(apiKey()),provider:'VesselAPI',proxy:true,collisionRadar:'8.20.3'});
+      const configured=Boolean(apiKey());
+      return json({
+        configured,
+        provider:'VesselAPI',
+        proxy:true,
+        reason:configured?null:'missing_vesselapi_key',
+        collisionRadar:'8.20.5'
+      });
     }
 
     if(mode==='nearby'){
