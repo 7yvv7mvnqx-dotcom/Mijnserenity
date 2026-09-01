@@ -61,6 +61,9 @@
       #msbmCloudStatus[data-tone="error"],#msbmCloudLauncher[data-tone="error"]{color:#ff9f9f;border-color:rgba(255,107,107,.25);background:rgba(255,107,107,.09)}
       .msbm-cloud-upload{border:1px solid rgba(69,197,255,.35);background:rgba(69,197,255,.1);color:#89dcff;border-radius:13px;padding:9px 11px;font-weight:850}
       .msbm-cloud-file{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+      body:has(.msbm-form-actions) #msSerenityNotificationSetup{display:none!important}
+      .msbm-form-actions{position:sticky!important;bottom:0;z-index:30;background:#0d2030;padding:12px 0 calc(8px + env(safe-area-inset-bottom));margin-top:10px!important;border-top:1px solid rgba(255,255,255,.1)}
+      @media(max-width:680px){.msbm-form-actions .msbm-button{flex:1;min-height:48px}}
     `;
     document.head.appendChild(style);
   }
@@ -136,12 +139,12 @@
     return attr.match(/msBootbeheerSection\('([^']+)'\)/)?.[1]||'overview';
   }
 
-  function refreshOpenOverlay(section='overview'){
+  async function refreshOpenOverlay(section='overview'){
     const overlay=$('msBootbeheerOverlay');
     if(!overlay?.classList.contains('open'))return;
     try{
       window.msBootbeheerClose?.();
-      window.msBootbeheerOpen?.();
+      await window.msBootbeheerOpen?.();
       if(section&&section!=='overview')window.msBootbeheerSection?.(section);
     }catch(error){console.debug('Bootbeheer scherm verversen:',error)}
   }
@@ -157,7 +160,7 @@
         if(remoteBy&&remoteBy===userId())return;
         const section=activeSection();
         await pullCloud({force:true});
-        refreshOpenOverlay(section);
+        await refreshOpenOverlay(section);
       })
       .subscribe(statusValue=>{
         if(statusValue==='SUBSCRIBED')status('Cloud live','ok');
@@ -192,7 +195,7 @@
       writeLocal(local);
       await pushCloud({force:true});
       status('Document opgeslagen','ok');
-      refreshOpenOverlay('documents');
+      await refreshOpenOverlay('documents');
     }catch(error){
       console.error('Bootbeheer documentupload mislukt:',error);
       status('Upload mislukt','error');
