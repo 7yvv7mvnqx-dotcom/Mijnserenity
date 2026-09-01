@@ -3,12 +3,20 @@ const CACHE_MAX=120;
 const UPSTREAM_TIMEOUT_MS=9000;
 const cache=globalThis.__mijnSerenityCollisionAisCache||(globalThis.__mijnSerenityCollisionAisCache=new Map());
 
+const AIS_ENV_KEYS=['VESSELAPI_KEY','VESSELF_API_KEY','VESSEL_API_KEY'];
+
 function apiKey(){
-  try{
-    const value=globalThis.Netlify?.env?.get?.('VESSELAPI_KEY');
+  for(const name of AIS_ENV_KEYS){
+    try{
+      const value=globalThis.Netlify?.env?.get?.(name);
+      if(value)return value;
+    }catch{}
+  }
+  for(const name of AIS_ENV_KEYS){
+    const value=process.env[name];
     if(value)return value;
-  }catch{}
-  return process.env.VESSELAPI_KEY||'';
+  }
+  return '';
 }
 
 function json(data,status=200,headers={}){
@@ -37,7 +45,6 @@ function numberParam(params,name,min,max,fallback=null){
 
 function stableCacheKey(path,params){
   const stable=new URLSearchParams(params);
-  /* De tijdvensters veranderen per request en mogen de ruimtelijke cache niet uniek maken. */
   stable.delete('time.from');
   stable.delete('time.to');
   stable.sort();
@@ -92,7 +99,7 @@ async function vesselRequest(path,params,ttlMs=25000){
     headers:{
       accept:'application/json',
       authorization:`Bearer ${key}`,
-      'user-agent':'MijnSerenity/8.20.2'
+      'user-agent':'MijnSerenity/8.20.3'
     }
   });
 
@@ -130,7 +137,7 @@ export default async request=>{
 
   try{
     if(mode==='status'){
-      return json({configured:Boolean(apiKey()),provider:'VesselAPI',proxy:true,collisionRadar:'8.20.2'});
+      return json({configured:Boolean(apiKey()),provider:'VesselAPI',proxy:true,collisionRadar:'8.20.3'});
     }
 
     if(mode==='nearby'){
