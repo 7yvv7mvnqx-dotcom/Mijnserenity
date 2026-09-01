@@ -1,7 +1,7 @@
-/* MijnSerenity 8.21.1 — officiële Victron GUI-v2 Remote Console live in MS */
-const CACHE_NAME='mijnserenity-8.21.1-stable';
-const BUILD='8.21.1';
-const BUILD_TOKEN='821100';
+/* MijnSerenity 8.21.5 — eenvoudige Startpagina hard gekoppeld en cache vernieuwd */
+const CACHE_NAME='mijnserenity-8.21.5-stable';
+const BUILD='8.21.5';
+const BUILD_TOKEN='821500';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -21,6 +21,7 @@ const CORE_ASSETS=[
   `/dashboard-cerbo-live-8208.js?v=${BUILD_TOKEN}`,
   `/victron-remote-console-8209.js?v=${BUILD_TOKEN}`,
   `/dashboard-collision-radar-8201.js?v=${BUILD_TOKEN}`,
+  `/simple-start-8210.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -32,11 +33,21 @@ function fetchWithTimeout(input,init={},timeoutMs=NETWORK_TIMEOUT_MS){
 }
 
 function rewriteIndexHtml(html){
-  return String(html||'')
+  let rewritten=String(html||'')
     .replace(/(<meta\s+name=["']mijnserenity-build["']\s+content=["'])[^"']+(["']\s*\/?>)/i,`$1${BUILD}$2`)
     .replace(/window\.MIJSERENITY_BUILD\s*=\s*['"][^'"]+['"]\s*;/g,`window.MIJSERENITY_BUILD='${BUILD}';`)
     .replace(/auth-bootstrap\.js\?v=\d+/g,`auth-bootstrap.js?v=${BUILD_TOKEN}`)
+    .replace(/dashboard-unified-71919-loader\.js\?v=\d+/g,`dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`)
+    .replace(/simple-start-8210\.js\?v=\d+/g,`simple-start-8210.js?v=${BUILD_TOKEN}`)
     .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`);
+
+  /* Fail-safe voor iOS/PWA: laad de eenvoudige Startpagina altijd rechtstreeks.
+     De uniforme runtime probeert dit ook, maar deze koppeling voorkomt dat alleen
+     de nieuwe ondernavigatie zichtbaar wordt terwijl de oude dashboardinhoud blijft staan. */
+  if(!/simple-start-8210\.js/i.test(rewritten)){
+    rewritten=rewritten.replace(/<\/body>/i,`<script src="/simple-start-8210.js?v=${BUILD_TOKEN}"></script>\n</body>`);
+  }
+  return rewritten;
 }
 
 async function rewrittenHtmlResponse(response){
