@@ -1,0 +1,7 @@
+MijnSerenity 8.21.4
+- Centrale dashboardruntime bijgewerkt van 8.20.7 naar 8.21.4
+- Eenvoudige startpagina is nu onderdeel van de centrale runtime
+- Oude Meer-popup wordt verwijderd en niet opnieuw opgebouwd
+- Onderste navigatie: Start, Varen, Kaart, Route, Techniek
+- Start bevat alle overige navigatieknoppen en aandachtbadges
+- Netlify production redeploy geforceerd op 2026-09-01
