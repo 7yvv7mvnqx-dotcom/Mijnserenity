@@ -200,3 +200,35 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
+
+/* MijnSerenity 8.21.8 — Bootbeheer live loader */
+(()=>{
+  'use strict';
+  if(window.__msBootbeheerLoader8218)return;
+  window.__msBootbeheerLoader8218=true;
+
+  function loadCloud(){
+    if(window.__msBootbeheerCloud8100||document.querySelector('script[data-ms-bootbeheer-cloud-loader]'))return;
+    const cloud=document.createElement('script');
+    cloud.src='bootbeheer-cloud-8100.js?v=821800';
+    cloud.async=true;
+    cloud.dataset.msBootbeheerCloudLoader='1';
+    cloud.onerror=()=>console.warn('Bootbeheer cloudlaag kon niet worden geladen.');
+    document.head.appendChild(cloud);
+  }
+
+  function loadBootbeheer(){
+    if(window.__msBootbeheer8100){loadCloud();return;}
+    if(document.querySelector('script[data-ms-bootbeheer-loader]')){setTimeout(loadCloud,250);return;}
+    const script=document.createElement('script');
+    script.src='bootbeheer-8100.js?v=821800';
+    script.async=true;
+    script.dataset.msBootbeheerLoader='1';
+    script.onload=loadCloud;
+    script.onerror=()=>console.warn('Bootbeheer kon niet worden geladen.');
+    document.head.appendChild(script);
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadBootbeheer,{once:true});
+  else loadBootbeheer();
+})();
