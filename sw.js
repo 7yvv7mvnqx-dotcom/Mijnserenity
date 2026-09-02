@@ -1,7 +1,7 @@
-/* MijnSerenity 8.22.0 — direct starten vanuit app-cache, verversen op achtergrond */
-const CACHE_NAME='mijnserenity-8.22.0-fast';
-const BUILD='8.22.0';
-const BUILD_TOKEN='822000';
+/* MijnSerenity 8.22.1 — direct starten vanuit app-cache, verversen op achtergrond + AIS GPS herstel */
+const CACHE_NAME='mijnserenity-8.22.1-fast';
+const BUILD='8.22.1';
+const BUILD_TOKEN='822100';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -23,6 +23,7 @@ const CORE_ASSETS=[
   `/victron-remote-console-8209.js?v=${BUILD_TOKEN}`,
   `/dashboard-collision-radar-8201.js?v=${BUILD_TOKEN}`,
   `/simple-start-8210.js?v=${BUILD_TOKEN}`,
+  `/ais-gps-fix-8221.js?v=${BUILD_TOKEN}`,
   `/runtime-performance-71700.js?v=${BUILD_TOKEN}`,
   `/orientation-layout-71835.js?v=${BUILD_TOKEN}`,
   `/victron-diagnostics.js?v=${BUILD_TOKEN}`,
@@ -49,13 +50,20 @@ function rewriteIndexHtml(html){
     .replace(/auth-bootstrap\.js\?v=\d+/g,`auth-bootstrap.js?v=${BUILD_TOKEN}`)
     .replace(/dashboard-unified-71919-loader\.js\?v=\d+/g,`dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`)
     .replace(/simple-start-8210\.js\?v=\d+/g,`simple-start-8210.js?v=${BUILD_TOKEN}`)
-    .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`);
+    .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`)
+    .replace(/\\n(?=\s*<\/body>)/gi,'\n');
 
   /* Fail-safe voor iOS/PWA: laad de eenvoudige Startpagina altijd rechtstreeks.
      De uniforme runtime probeert dit ook, maar deze koppeling voorkomt dat alleen
      de nieuwe ondernavigatie zichtbaar wordt terwijl de oude dashboardinhoud blijft staan. */
   if(!/simple-start-8210\.js/i.test(rewritten)){
     rewritten=rewritten.replace(/<\/body>/i,`<script src="/simple-start-8210.js?v=${BUILD_TOKEN}"></script>\n</body>`);
+  }
+
+  /* AIS-herstel wordt als laatste script geplaatst. Daardoor wint de robuuste
+     iPhone/PWA GPS-flow van oudere AIS-runtimes en verdwijnt ook de losse \\n tekst. */
+  if(!/ais-gps-fix-8221\.js/i.test(rewritten)){
+    rewritten=rewritten.replace(/<\/body>/i,`<script src="/ais-gps-fix-8221.js?v=${BUILD_TOKEN}"></script>\n</body>`);
   }
   return rewritten;
 }
@@ -203,6 +211,10 @@ self.addEventListener('fetch',event=>{
 
   if(request.mode==='navigate'){
     event.respondWith(navigationCacheFirst(request));
+    return;
+  }
+  if(url.pathname==='/ais-gps-fix-8221.js'){
+    event.respondWith(networkFirst(request));
     return;
   }
   if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){
