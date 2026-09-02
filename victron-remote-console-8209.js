@@ -1,4 +1,4 @@
-/* MijnSerenity 8.21.6 — officiële Victron Cerbo GX Remote Console LIVE in MijnSerenity.
+/* MijnSerenity 8.21.7 — officiële Victron Cerbo GX Remote Console LIVE in MijnSerenity.
    Geen VRM-snelkoppeling en geen iframe naar de VRM-website. MijnSerenity host de
    officiële Victron GUI-v2 en verbindt die rechtstreeks met Serenity via VRM MQTT. */
 (()=>{
@@ -6,7 +6,7 @@
   if(window.__msVictronRemoteConsole8216)return;
   window.__msVictronRemoteConsole8216=true;
 
-  const BUILD='8.21.6';
+  const BUILD='8.21.7';
   const CONFIG_URL='/api/victron-console-config';
   const GUI_URL='/victron-gui/index.html';
   const TOKEN_KEYS=['ms7148_vrm_token','ms7148VrmToken','mijnserenity_vrm_token','vrm_api_token'];

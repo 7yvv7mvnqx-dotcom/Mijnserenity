@@ -1,7 +1,7 @@
-/* MijnSerenity 8.21.6 — Victron-token direct in Remote Console toevoegen */
-const CACHE_NAME='mijnserenity-8.21.6-stable';
-const BUILD='8.21.6';
-const BUILD_TOKEN='821600';
+/* MijnSerenity 8.21.7 — direct starten vanuit app-cache, verversen op achtergrond */
+const CACHE_NAME='mijnserenity-8.21.7-fast';
+const BUILD='8.21.7';
+const BUILD_TOKEN='821700';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -22,6 +22,15 @@ const CORE_ASSETS=[
   `/victron-remote-console-8209.js?v=${BUILD_TOKEN}`,
   `/dashboard-collision-radar-8201.js?v=${BUILD_TOKEN}`,
   `/simple-start-8210.js?v=${BUILD_TOKEN}`,
+  `/runtime-performance-71700.js?v=${BUILD_TOKEN}`,
+  `/orientation-layout-71835.js?v=${BUILD_TOKEN}`,
+  `/victron-diagnostics.js?v=${BUILD_TOKEN}`,
+  `/ha-live-bridge.js?v=${BUILD_TOKEN}`,
+  `/movement-presence.js?v=${BUILD_TOKEN}`,
+  `/technical-live-sync.js?v=${BUILD_TOKEN}`,
+  `/waterkaarten-route-receiver-71870.js?v=${BUILD_TOKEN}`,
+  `/serenity-alarm-notifications-71826.js?v=${BUILD_TOKEN}`,
+  `/serenity-background-push-71827.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -66,7 +75,7 @@ async function rewrittenHtmlResponse(response){
 
 async function cacheCore(cache,path){
   try{
-    const response=await fetchWithTimeout(path,{cache:'reload'},10000);
+    const response=await fetchWithTimeout(path,{cache:'reload'},30000);
     if(!response.ok)return;
     if(path==='/'||path==='/index.html'){
       const rewritten=await rewrittenHtmlResponse(response.clone());
@@ -144,6 +153,24 @@ async function navigationNetworkFirst(request){
   });
 }
 
+async function navigationCacheFirst(request){
+  const cached=(await caches.match('/index.html'))||(await caches.match('/'));
+  if(cached){
+    /* Toon de reeds geïnstalleerde app direct. Vernieuw dezelfde cache op de
+       achtergrond, zodat de volgende start actueel is zonder wachttijd. */
+    fetchWithTimeout(request,{cache:'no-store'},10000).then(async response=>{
+      if(!response.ok)return;
+      const rewritten=await rewrittenHtmlResponse(response);
+      if(!rewritten)return;
+      const cache=await caches.open(CACHE_NAME);
+      await cache.put('/index.html',rewritten.clone());
+      await cache.put('/',rewritten.clone());
+    }).catch(()=>{});
+    return (await rewrittenHtmlResponse(cached))||cached;
+  }
+  return navigationNetworkFirst(request);
+}
+
 async function staleWhileRevalidate(request){
   const cached=await caches.match(request,{ignoreSearch:false});
   const network=fetchWithTimeout(request,{cache:'no-cache'}).then(async response=>{
@@ -174,11 +201,11 @@ self.addEventListener('fetch',event=>{
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
 
   if(request.mode==='navigate'){
-    event.respondWith(navigationNetworkFirst(request));
+    event.respondWith(navigationCacheFirst(request));
     return;
   }
   if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){
-    event.respondWith(networkFirst(request));
+    event.respondWith(staleWhileRevalidate(request));
     return;
   }
   event.respondWith(staleWhileRevalidate(request));

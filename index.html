@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="7.18.13">
+<meta name="mijnserenity-build" content="8.21.7">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='7.18.13';
+window.MIJSERENITY_BUILD='8.21.7';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -30,9 +30,11 @@ window.repairMijnSerenity=async function(){
 };
 </script>
 <link rel="manifest" href="manifest.json?v=715140">
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="styles.css?v=715140">
   <link rel="stylesheet" href="ha-live-bridge.css?v=715140">
   <link rel="stylesheet" href="live-cameras.css?v=715140">
@@ -4846,7 +4848,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   </div>
 </div>
 
-<script src="auth-bootstrap.js?v=718130"></script>
+<script src="auth-bootstrap.js?v=821700"></script>
 <script src="futuristic-analog-7140.js?v=715140"></script>
 <script src="dashboard-analog-7141.js?v=715140"></script>
 <script src="dashboard-premium-7143.js?v=71430"></script>

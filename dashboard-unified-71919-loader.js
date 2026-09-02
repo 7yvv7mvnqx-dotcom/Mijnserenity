@@ -1,4 +1,4 @@
-/* MijnSerenity 8.21.6 — uniforme dashboardruntime met eenvoudige startpagina
+/* MijnSerenity 8.21.7 — uniforme dashboardruntime met eenvoudige startpagina
    Eén dashboard en één navigatie-eigenaar op iPhone, iPad en Stage Manager.
    Start is het centrale menu; het oude Meer-paneel wordt niet meer opgebouwd. */
 (()=>{
@@ -6,8 +6,8 @@
   if(window.__msUnifiedDashboard8215)return;
   window.__msUnifiedDashboard8215=true;
 
-  const BUILD='8.21.6';
-  const VERSION='821600';
+  const BUILD='8.21.7';
+  const VERSION='821700';
   const $=id=>document.getElementById(id);
   const pathOf=value=>{try{return new URL(value,location.href).pathname}catch{return String(value||'')}};
 

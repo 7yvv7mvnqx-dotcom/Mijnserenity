@@ -1,16 +1,16 @@
-/* MijnSerenity 8.20.2 — uniforme stabiliteitsbootstrap
+/* MijnSerenity 8.21.7 — snelle uniforme stabiliteitsbootstrap
    Eén runtime voor iPhone, iPad en Stage Manager. Legacy visuele lagen worden
    vóór uitvoering uitgeschakeld; zware paginamodules blijven lazy geladen. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap820200)return;
-  window.__msBootstrap820200=true;
+  if(window.__msBootstrap821700)return;
+  window.__msBootstrap821700=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='8.20.2';
-  const VERSION='820200';
+  const BUILD='8.21.7';
+  const VERSION='821700';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
@@ -133,7 +133,7 @@
       document.getElementById('msBootCover71919')?.remove();
       const cover=document.createElement('div');
       cover.id='msBootCover8202';
-      cover.innerHTML='<div><strong>Mijn<span>Serenity</span></strong><small>Stabiele versie 8.20.2 wordt geladen…</small></div>';
+      cover.innerHTML='<div><strong>Mijn<span>Serenity</span></strong><small>MijnSerenity wordt geladen…</small></div>';
       document.body.appendChild(cover);
     }
     const syncCover=()=>{
@@ -351,7 +351,10 @@
       ensureCss('marine-glass-fixes-7193.css','msMarineGlassFixes71919');
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
-      await Promise.allSettled([purgeStaleRuntimeCaches(),ensureFreshServiceWorker()]);
+      /* Een updatecontrole of cache-opruiming mag het openen van de app nooit
+         blokkeren. De service worker ruimt oude versies pas op nadat de nieuwe
+         cache volledig klaarstaat. */
+      ensureFreshServiceWorker();
       await ensureSupabase();
       await loadScript(CORE_SCRIPT,20000);
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
