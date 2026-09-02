@@ -1,8 +1,8 @@
-/* MijnSerenity 8.21.9 — rustige Start + duidelijke paginakop en Thuisknop */
+/* MijnSerenity 8.22.0 — rustige Start + duidelijke paginakop en Thuisknop */
 (()=>{
   'use strict';
 
-  const BUILD='8.21.9';
+  const BUILD='8.22.0';
   const ROOT_ID='ms8210Start';
   const PAGE_TITLE_CLASS='ms8219-page-title';
   const $=id=>document.getElementById(id);

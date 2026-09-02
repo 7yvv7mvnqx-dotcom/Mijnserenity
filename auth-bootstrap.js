@@ -1,16 +1,16 @@
-/* MijnSerenity 8.21.7 — snelle uniforme stabiliteitsbootstrap
+/* MijnSerenity 8.22.0 — snelle uniforme stabiliteitsbootstrap
    Eén runtime voor iPhone, iPad en Stage Manager. Legacy visuele lagen worden
    vóór uitvoering uitgeschakeld; zware paginamodules blijven lazy geladen. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap821700)return;
-  window.__msBootstrap821700=true;
+  if(window.__msBootstrap822000)return;
+  window.__msBootstrap822000=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='8.21.7';
-  const VERSION='821700';
+  const BUILD='8.22.0';
+  const VERSION='822000';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
@@ -41,7 +41,11 @@
 
   const ROUTE_MODULES={
     live:[`/live-split.js?v=${VERSION}`,`/live-cameras.js?v=${VERSION}`],
-    map:[`/waterkaarten-gpx-share-71700.js?v=${VERSION}`,`/marine-map-route-fit-71812.js?v=${VERSION}`],
+    map:[
+      `/map-next-level-8220.js?v=${VERSION}`,
+      `/waterkaarten-gpx-share-71700.js?v=${VERSION}`,
+      `/marine-map-route-fit-71812.js?v=${VERSION}`
+    ],
     planner:[
       `/route-control.js?v=${VERSION}`,`/waterkaarten-gpx-share-71700.js?v=${VERSION}`,
       `/waterkaarten-route-enrichment-71811.js?v=${VERSION}`,`/marine-map-route-fit-71812.js?v=${VERSION}`
@@ -349,6 +353,7 @@
       ensureCss('professional-ui-71700.css','msProfessionalUi71919');
       ensureCss('marine-glass-mobile-7184.css','msStableShell71919');
       ensureCss('marine-glass-fixes-7193.css','msMarineGlassFixes71919');
+      ensureCss('map-next-level-8220.css','msMapNextLevel8220');
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
       /* Een updatecontrole of cache-opruiming mag het openen van de app nooit

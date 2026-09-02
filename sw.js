@@ -1,7 +1,7 @@
-/* MijnSerenity 8.21.7 — direct starten vanuit app-cache, verversen op achtergrond */
-const CACHE_NAME='mijnserenity-8.21.7-fast';
-const BUILD='8.21.7';
-const BUILD_TOKEN='821700';
+/* MijnSerenity 8.22.0 — direct starten vanuit app-cache, verversen op achtergrond */
+const CACHE_NAME='mijnserenity-8.22.0-fast';
+const BUILD='8.22.0';
+const BUILD_TOKEN='822000';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -13,6 +13,7 @@ const CORE_ASSETS=[
   `/professional-ui-71700.css?v=${BUILD_TOKEN}`,
   `/marine-glass-mobile-7184.css?v=${BUILD_TOKEN}`,
   `/marine-glass-fixes-7193.css?v=${BUILD_TOKEN}`,
+  `/map-next-level-8220.css?v=${BUILD_TOKEN}`,
   `/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
   `/mobile-viewport-guard-71911.js?v=${BUILD_TOKEN}`,
