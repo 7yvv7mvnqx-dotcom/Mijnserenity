@@ -127,17 +127,17 @@
   else loadCerbo();
 })();
 
-/* 8.21.1: officiële Victron GUI-v2 Remote Console live ín Techniek. */
+/* 8.21.6: officiële Victron GUI-v2 Remote Console live ín Techniek, met tokeninvoer op het foutscherm. */
 (()=>{
   'use strict';
-  if(window.__msVictronConsoleLoader8211)return;
-  window.__msVictronConsoleLoader8211=true;
+  if(window.__msVictronConsoleLoader8216)return;
+  window.__msVictronConsoleLoader8216=true;
   function loadConsole(){
-    if(window.__msVictronRemoteConsole8211||document.querySelector('script[data-ms-victron-console="8211"]'))return;
+    if(window.__msVictronRemoteConsole8216||document.querySelector('script[data-ms-victron-console="8216"]'))return;
     const script=document.createElement('script');
-    script.src='/victron-remote-console-8209.js?v=821100';
+    script.src='/victron-remote-console-8209.js?v=821600';
     script.async=false;
-    script.dataset.msVictronConsole='8211';
+    script.dataset.msVictronConsole='8216';
     script.onerror=()=>console.warn('Victron Remote Console live kon niet worden geladen.');
     document.head.appendChild(script);
   }

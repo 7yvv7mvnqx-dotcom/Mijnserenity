@@ -1,12 +1,12 @@
-/* MijnSerenity 8.21.1 — officiële Victron Cerbo GX Remote Console LIVE in MijnSerenity.
+/* MijnSerenity 8.21.6 — officiële Victron Cerbo GX Remote Console LIVE in MijnSerenity.
    Geen VRM-snelkoppeling en geen iframe naar de VRM-website. MijnSerenity host de
    officiële Victron GUI-v2 en verbindt die rechtstreeks met Serenity via VRM MQTT. */
 (()=>{
   'use strict';
-  if(window.__msVictronRemoteConsole8211)return;
-  window.__msVictronRemoteConsole8211=true;
+  if(window.__msVictronRemoteConsole8216)return;
+  window.__msVictronRemoteConsole8216=true;
 
-  const BUILD='8.21.1';
+  const BUILD='8.21.6';
   const CONFIG_URL='/api/victron-console-config';
   const GUI_URL='/victron-gui/index.html';
   const TOKEN_KEYS=['ms7148_vrm_token','ms7148VrmToken','mijnserenity_vrm_token','vrm_api_token'];
@@ -34,6 +34,21 @@
       if(value)return value;
     }
     return '';
+  }
+
+  function saveToken(value){
+    const token=String(value||'').trim().replace(/^Token\s+/i,'');
+    if(!token)return '';
+    for(const key of TOKEN_KEYS){
+      try{localStorage.setItem(key,token)}catch{}
+    }
+    try{
+      const configKey='mijnserenity-ruuvi-climate-v7102';
+      const config=JSON.parse(localStorage.getItem(configKey)||'{}');
+      localStorage.setItem(configKey,JSON.stringify({...config,vrmToken:token}));
+    }catch{}
+    window.dispatchEvent(new CustomEvent('mijnserenity:vrm-token-saved'));
+    return token;
   }
 
   function currentEmail(){
@@ -69,6 +84,14 @@
     }
   }
 
+  function showTokenSetup(show=true){
+    const setup=$('msVictronConsoleTokenSetup');
+    const normal=$('msVictronConsoleLoadingNormal');
+    setup?.classList.toggle('hidden',!show);
+    normal?.classList.toggle('hidden',show);
+    if(show)setTimeout(()=>$('msVictronConsoleToken')?.focus(),80);
+  }
+
   function ensureStyle(){
     if($('msVictronConsoleStyle8211'))return;
     $('msVictronConsoleStyle8210')?.remove();
@@ -92,6 +115,17 @@
       #msVictronConsoleLoading.error{color:#ffd4d4;background:#16090b}
       #msVictronConsoleLoading .msvrc-spinner{width:32px;height:32px;margin:0 auto 13px;border:3px solid rgba(104,194,244,.20);border-top-color:#43baff;border-radius:50%;animation:msvrc-spin .9s linear infinite}
       #msVictronConsoleLoading.error .msvrc-spinner{display:none}
+      #msVictronConsoleLoadingNormal.hidden,#msVictronConsoleTokenSetup.hidden{display:none}
+      #msVictronConsoleTokenSetup{width:min(100%,420px);padding:22px;border:1px solid rgba(83,194,255,.32);border-radius:18px;background:linear-gradient(145deg,#081d2e,#0a273b);box-shadow:0 18px 44px rgba(0,0,0,.36);color:#eef9ff;text-align:left}
+      #msVictronConsoleTokenSetup h3{margin:0 0 7px;font-size:20px;color:#fff}
+      #msVictronConsoleTokenSetup p{margin:0 0 15px;color:#b9d0df;font-size:13px;line-height:1.45}
+      #msVictronConsoleTokenSetup label{display:block;margin-bottom:7px;color:#dff3ff;font-size:13px;font-weight:800}
+      #msVictronConsoleTokenSetup .msvrc-token-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+      #msVictronConsoleToken{width:100%;min-width:0;height:48px;padding:0 13px;border:1px solid rgba(103,201,255,.42);border-radius:12px;background:#04131f;color:#fff;font:inherit;font-size:16px;outline:none}
+      #msVictronConsoleToken:focus{border-color:#53c2ff;box-shadow:0 0 0 3px rgba(83,194,255,.16)}
+      #msVictronConsoleTokenSetup button{min-height:48px;padding:0 14px;border:1px solid rgba(83,194,255,.38);border-radius:12px;background:#0a3550;color:#fff;font:inherit;font-weight:800}
+      #msVictronConsoleTokenSetup .msvrc-token-save{width:100%;margin-top:10px;background:#0878bd;border-color:#2ca8ed}
+      #msVictronConsoleTokenSetup small{display:block;margin-top:10px;color:#8fb5ce;font-size:11px;line-height:1.4}
       @keyframes msvrc-spin{to{transform:rotate(360deg)}}
       #msVictronConsoleCard .msvrc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:#071a29;color:#9eb9ca;font-size:10px;line-height:1.35}
       #msVictronConsoleCard .msvrc-status{display:flex;align-items:center;gap:7px}
@@ -167,10 +201,12 @@
     const token=savedToken();
     if(!token){
       setStatus('VRM-token ontbreekt. Sla eerst de Victron-koppeling in MijnSerenity op.','error');
+      showTokenSetup(true);
       return false;
     }
 
     loading=true;
+    showTokenSetup(false);
     frame.dataset.msVictronStarted='1';
     setStatus('Live Cerbo-console via VRM voorbereiden…','loading');
     try{
@@ -190,6 +226,7 @@
     }catch(error){
       frame.dataset.msVictronStarted='0';
       setStatus(error?.message||'Victron Remote Console kon niet starten.','error');
+      if(/token|toegang/i.test(String(error?.message||'')))showTokenSetup(true);
       return false;
     }finally{
       loading=false;
@@ -234,7 +271,20 @@
         </div>
       </div>
       <div class="msvrc-view">
-        <div id="msVictronConsoleLoading"><div><div class="msvrc-spinner"></div><strong data-ms-victron-loading-text>Live Cerbo-console wordt voorbereid…</strong></div></div>
+        <div id="msVictronConsoleLoading">
+          <div id="msVictronConsoleLoadingNormal"><div class="msvrc-spinner"></div><strong data-ms-victron-loading-text>Live Cerbo-console wordt voorbereid…</strong></div>
+          <form id="msVictronConsoleTokenSetup" class="hidden" autocomplete="off">
+            <h3>Victron-token toevoegen</h3>
+            <p>Plak je VRM API-token om de live Cerbo GX-console te verbinden.</p>
+            <label for="msVictronConsoleToken">VRM API-token</label>
+            <div class="msvrc-token-row">
+              <input id="msVictronConsoleToken" type="password" autocapitalize="none" spellcheck="false" placeholder="Plak hier je token" required>
+              <button id="msVictronConsoleTokenToggle" type="button">Toon</button>
+            </div>
+            <button class="msvrc-token-save" type="submit">Token opslaan en verbinden</button>
+            <small>De token blijft alleen op dit apparaat bewaard en komt niet in MijnSerenity of GitHub terecht.</small>
+          </form>
+        </div>
         <iframe id="msVictronConsoleFrame" allow="fullscreen; clipboard-read; clipboard-write" referrerpolicy="no-referrer" title="Victron Cerbo GX Remote Console"></iframe>
       </div>
       <div class="msvrc-foot">
@@ -248,6 +298,26 @@
 
     $('msVictronConsoleReload')?.addEventListener('click',reloadFrame);
     $('msVictronConsoleExpand')?.addEventListener('click',toggleFullscreen);
+    $('msVictronConsoleTokenToggle')?.addEventListener('click',event=>{
+      const input=$('msVictronConsoleToken');
+      if(!input)return;
+      const reveal=input.type==='password';
+      input.type=reveal?'text':'password';
+      event.currentTarget.textContent=reveal?'Verberg':'Toon';
+    });
+    $('msVictronConsoleTokenSetup')?.addEventListener('submit',event=>{
+      event.preventDefault();
+      const input=$('msVictronConsoleToken');
+      const token=saveToken(input?.value);
+      if(!token){
+        setStatus('Plak eerst je Victron VRM API-token.','error');
+        input?.focus();
+        return;
+      }
+      if(input)input.value='';
+      showTokenSetup(false);
+      loadFrame(true);
+    });
     setTimeout(()=>loadFrame(false),60);
     return true;
   }
@@ -275,6 +345,7 @@
   ['mijnserenity:modules-ready','mijnserenity:routechange','mijnserenity:dashboard-ready']
     .forEach(name=>window.addEventListener(name,()=>setTimeout(()=>{mount();loadFrame(false)},80),{passive:true}));
   window.addEventListener('pageshow',()=>setTimeout(()=>{mount();loadFrame(false)},80),{passive:true});
+  window.addEventListener('mijnserenity:vrm-token-saved',()=>setTimeout(()=>loadFrame(true),80),{passive:true});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>loadFrame(false),80)},{passive:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();

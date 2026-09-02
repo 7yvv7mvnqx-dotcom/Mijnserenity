@@ -1,7 +1,7 @@
-/* MijnSerenity 8.21.5 — eenvoudige Startpagina hard gekoppeld en cache vernieuwd */
-const CACHE_NAME='mijnserenity-8.21.5-stable';
-const BUILD='8.21.5';
-const BUILD_TOKEN='821500';
+/* MijnSerenity 8.21.6 — Victron-token direct in Remote Console toevoegen */
+const CACHE_NAME='mijnserenity-8.21.6-stable';
+const BUILD='8.21.6';
+const BUILD_TOKEN='821600';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
