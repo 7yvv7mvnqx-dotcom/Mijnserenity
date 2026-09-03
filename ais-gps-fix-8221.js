@@ -1,20 +1,24 @@
-/* MijnSerenity 8.22.1 — AIS GPS + MyShipTracking herstel voor iPhone/PWA */
+/* MijnSerenity 8.22.2 — AIS GPS + MyShipTracking herstel voor iPhone/PWA */
 (()=>{
   'use strict';
   if(window.__MS_AIS_GPS_FIX_8221)return;
   window.__MS_AIS_GPS_FIX_8221=true;
 
-  const VERSION='8.22.1';
+  const VERSION='8.22.2';
   const POSITION_KEYS=['ms8221-ais-last-position','mijnserenity-ais-last-position'];
   const CACHE_MAX_AGE=7*24*60*60*1000;
   const MAP_REFRESH_MS=2*60*1000;
-  const WIDGET_SCRIPT='https://www.myshiptracking.com/js/widgetApi.js';
+  const MAP_LOAD_TIMEOUT_MS=12000;
+  const EMBED_MAP_URL='https://embed.myshiptracking.com/embed';
+  const EXTERNAL_MAP_URL='https://www.myshiptracking.com/';
 
   let busy=false;
   let started=false;
   let lastRefresh=0;
   let lastGpsError=null;
   let pageTimer=null;
+  let mapLoadTimer=null;
+  let mapSession=0;
   let state={position:null,source:'',accuracy:null,updatedAt:null,widgetState:'waiting'};
 
   const finite=value=>{
@@ -52,6 +56,8 @@
       .ms8221-actions button{min-height:48px;border-radius:14px;font-weight:900}.ms8221-map{position:relative;height:min(58vh,640px);min-height:390px;border-radius:17px;overflow:hidden;border:1px solid rgba(113,181,211,.26);background:#061827}
       .ms8221-map iframe{width:100%;height:100%;border:0;display:block;background:#061827}.ms8221-map-loading{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:#b9cbd5;background:linear-gradient(145deg,#061827,#03111c);z-index:1}
       .ms8221-map-loading strong{display:block;color:#eef8fc;font-size:1.05rem;margin-bottom:6px}.ms8221-note{padding:11px 12px;border-radius:13px;background:rgba(3,19,30,.72);border:1px solid rgba(113,181,211,.18);color:#b8cad5;font-size:.84rem;line-height:1.4}
+      .ms8221-map-loading.is-error{background:linear-gradient(145deg,#081b2a,#071520)}.ms8221-map-fallback{width:min(100%,420px)}.ms8221-map-fallback p{margin:7px 0 15px;line-height:1.45}
+      .ms8221-fallback-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.ms8221-fallback-actions button,.ms8221-fallback-actions a{display:flex;align-items:center;justify-content:center;min-height:48px;padding:9px 12px;border-radius:14px;font-weight:900;text-decoration:none;text-align:center}
       .ms8221-error{padding:16px;border-radius:15px;background:rgba(115,36,42,.18);border:1px solid rgba(255,112,112,.28)}.ms8221-error strong{display:block;margin-bottom:5px;color:#fff}.ms8221-error p{margin:0 0 12px;color:#d9c3c7;line-height:1.45}
       .ms8221-error button{width:100%;min-height:48px;font-weight:900}.ms8221-coords{font-variant-numeric:tabular-nums}
       .ms8221-map.ms8221-fullscreen{position:fixed;z-index:99999;inset:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0) 0;height:auto!important;min-height:0!important;border-radius:0!important;border:0!important}.ms8221-map.ms8221-fullscreen iframe{height:100%}
@@ -191,10 +197,52 @@
     throw lastGpsError||new Error('Geen GPS-positie beschikbaar.');
   }
 
-  function widgetDocument(position){
-    const lat=Number(position.lat).toFixed(6);
-    const lon=Number(position.lon).toFixed(6);
-    return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#061827}iframe,object,embed{width:100%!important;height:100%!important;min-height:100%!important;border:0!important;display:block!important}</style></head><body><script>var mst_width="100%";var mst_height=((window.innerHeight||620)+"px");var mst_border="0";var mst_map_style="simple";var mst_mmsi="";var mst_show_track="false";var mst_show_info="true";var mst_fleet="";var mst_lat="${lat}";var mst_lng="${lon}";var mst_zoom="13";var mst_show_names="1";var mst_scroll_wheel="true";var mst_show_menu="true";(function(){var sent=false;function ready(){if(sent)return;var x=document.querySelector("iframe,object,embed");if(!x)return;sent=true;try{parent.postMessage({source:"ms8221-ais-widget",state:"ready"},"*")}catch(e){}}new MutationObserver(ready).observe(document.documentElement,{childList:true,subtree:true});setTimeout(ready,500);setTimeout(function(){if(!sent)try{parent.postMessage({source:"ms8221-ais-widget",state:"waiting"},"*")}catch(e){}},9000)})();<\/script><script src="${WIDGET_SCRIPT}" async defer onerror="parent.postMessage({source:'ms8221-ais-widget',state:'error'},'*')"><\/script></body></html>`;
+  function mapUrl(position,external=false){
+    const params=new URLSearchParams({
+      lat:Number(position.lat).toFixed(6),
+      lng:Number(position.lon).toFixed(6),
+      zoom:'13'
+    });
+    if(external)return `${EXTERNAL_MAP_URL}?${params.toString()}`;
+    params.set('show_menu','true');
+    params.set('show_info','true');
+    params.set('show_track','false');
+    params.set('show_names','1');
+    params.set('scroll_wheel','true');
+    params.set('map_style','simple');
+    return `${EMBED_MAP_URL}?myst&${params.toString()}`;
+  }
+
+  function cancelWidgetLoad(){
+    mapSession+=1;
+    if(mapLoadTimer!==null)clearTimeout(mapLoadTimer);
+    mapLoadTimer=null;
+  }
+
+  function setWidgetReady(session){
+    if(session!==mapSession)return;
+    if(mapLoadTimer!==null)clearTimeout(mapLoadTimer);
+    mapLoadTimer=null;
+    state.widgetState='ready';
+    const node=document.getElementById('ms8221WidgetStatus');
+    const loading=document.getElementById('ms8221MapLoading');
+    if(node){node.className='ms8221-pill ok';node.textContent='● AIS-kaart online'}
+    if(loading)loading.style.display='none';
+  }
+
+  function setWidgetError(session,message='De AIS-dienst reageert niet op tijd.'){
+    if(session!==mapSession)return;
+    if(mapLoadTimer!==null)clearTimeout(mapLoadTimer);
+    mapLoadTimer=null;
+    state.widgetState='error';
+    const node=document.getElementById('ms8221WidgetStatus');
+    const loading=document.getElementById('ms8221MapLoading');
+    if(node){node.className='ms8221-pill bad';node.textContent='● AIS tijdelijk niet bereikbaar'}
+    if(!loading||!state.position)return;
+    loading.classList.add('is-error');
+    loading.style.display='grid';
+    loading.innerHTML=`<div class="ms8221-map-fallback"><strong>Live AIS tijdelijk niet beschikbaar</strong><p>${esc(message)} De GPS-positie van Serenity is wel beschikbaar.</p><div class="ms8221-fallback-actions"><button id="ms8221MapRetry" type="button">↻ Opnieuw proberen</button><a href="${esc(mapUrl(state.position,true))}" target="_blank" rel="noopener noreferrer">Open AIS-kaart</a></div></div>`;
+    document.getElementById('ms8221MapRetry')?.addEventListener('click',()=>refresh(false,true));
   }
 
   function formatTime(timestamp){
@@ -202,11 +250,13 @@
   }
 
   function renderLoading(){
+    cancelWidgetLoad();
     const root=ensureRoot();if(!root)return;
     root.innerHTML=`<div class="ms8221-head"><span class="ms8221-kicker">GRATIS INTERNET-AIS · MYSHIPTRACKING</span><h2>📡 Boten rond Serenity</h2><p>Huidige GPS-locatie wordt bepaald…</p><div class="ms8221-status-row"><span class="ms8221-pill warn">● GPS zoeken</span><span class="ms8221-pill">AIS voorbereiden</span></div></div><div class="ms8221-body"><div class="ms8221-note">MijnSerenity probeert eerst de live vaar-GPS, daarna de iPhone-GPS en tenslotte de laatst bekende geldige positie.</div></div>`;
   }
 
   function renderError(error){
+    cancelWidgetLoad();
     const root=ensureRoot();if(!root)return;
     const message=gpsErrorText(error);
     root.innerHTML=`<div class="ms8221-head"><span class="ms8221-kicker">GRATIS INTERNET-AIS · MYSHIPTRACKING</span><h2>📡 Boten rond Serenity</h2><p>GPS is nodig om de AIS-kaart rond Serenity te openen.</p><div class="ms8221-status-row"><span class="ms8221-pill bad">● GPS niet beschikbaar</span></div></div><div class="ms8221-body"><div class="ms8221-error"><strong>Locatie kon niet worden bepaald</strong><p>${esc(message)}</p><button id="ms8221GpsRetry" type="button">📍 GPS opnieuw proberen</button></div><div class="ms8221-note">Werkt het nog niet? Controleer op de iPhone bij Instellingen → Privacy en beveiliging → Locatievoorzieningen of locatie voor Safari/MijnSerenity is toegestaan.</div></div>`;
@@ -214,6 +264,7 @@
   }
 
   function renderMap(position){
+    cancelWidgetLoad();
     const root=ensureRoot();if(!root)return;
     const cached=position.source==='Laatst bekende GPS';
     const accuracy=finite(position.accuracy);
@@ -238,12 +289,18 @@
         </div>
         <div id="ms8221Map" class="ms8221-map">
           <div id="ms8221MapLoading" class="ms8221-map-loading"><div><strong>AIS-kaart wordt geladen…</strong><span>Schepen rond Serenity worden opgehaald.</span></div></div>
-          <iframe id="ms8221Widget" title="Live AIS-schepen rond Serenity" loading="eager" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          <iframe id="ms8221Widget" title="Live AIS-schepen rond Serenity" loading="eager" referrerpolicy="no-referrer" allowfullscreen></iframe>
         </div>
         <div class="ms8221-note">Laatste GPS: ${formatTime(position.timestamp)}. Internet-AIS kan vertraagd of onvolledig zijn en vervangt geen eigen uitkijk of navigatieapparatuur.</div>
       </div>`;
     const frame=document.getElementById('ms8221Widget');
-    if(frame)frame.srcdoc=widgetDocument(position);
+    if(frame){
+      const session=++mapSession;
+      frame.addEventListener('load',()=>setWidgetReady(session),{once:true});
+      frame.addEventListener('error',()=>setWidgetError(session,'De AIS-kaart kon niet worden geopend.'),{once:true});
+      frame.src=mapUrl(position);
+      mapLoadTimer=setTimeout(()=>setWidgetError(session),MAP_LOAD_TIMEOUT_MS);
+    }
     document.getElementById('ms8221GpsRetry')?.addEventListener('click',()=>refresh(true));
     document.getElementById('ms8221MapRefresh')?.addEventListener('click',()=>refresh(false,true));
     document.getElementById('ms8221Fullscreen')?.addEventListener('click',toggleFullscreen);
@@ -286,24 +343,6 @@
     if(!aisVisible())return;
     if(!started||Date.now()-lastRefresh>MAP_REFRESH_MS)refresh(false);
   }
-
-  window.addEventListener('message',event=>{
-    const data=event?.data;
-    if(!data||data.source!=='ms8221-ais-widget')return;
-    const node=document.getElementById('ms8221WidgetStatus');
-    const loading=document.getElementById('ms8221MapLoading');
-    if(data.state==='ready'){
-      state.widgetState='ready';
-      if(node){node.className='ms8221-pill ok';node.textContent='● AIS-kaart online'}
-      if(loading)loading.style.display='none';
-    }else if(data.state==='error'){
-      state.widgetState='error';
-      if(node){node.className='ms8221-pill bad';node.textContent='● AIS-kaart niet bereikbaar'}
-      if(loading){loading.innerHTML='<div><strong>AIS-kaart kon niet worden geladen</strong><span>Controleer de internetverbinding en tik op Ververs.</span></div>'}
-    }else if(data.state==='waiting'){
-      if(node){node.className='ms8221-pill warn';node.textContent='● AIS-kaart laden'}
-    }
-  });
 
   window.initAisPage=()=>refresh(false,true);
   window.ms711CenterAis=()=>refresh(true,true);

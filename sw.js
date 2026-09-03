@@ -1,7 +1,7 @@
-/* MijnSerenity 8.22.1 — direct starten vanuit app-cache, verversen op achtergrond + AIS GPS herstel */
-const CACHE_NAME='mijnserenity-8.22.1-fast';
-const BUILD='8.22.1';
-const BUILD_TOKEN='822100';
+/* MijnSerenity 8.22.2 — directe AIS-kaart met iPhone-veilige foutafhandeling */
+const CACHE_NAME='mijnserenity-8.22.2-fast';
+const BUILD='8.22.2';
+const BUILD_TOKEN='822200';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -50,6 +50,7 @@ function rewriteIndexHtml(html){
     .replace(/auth-bootstrap\.js\?v=\d+/g,`auth-bootstrap.js?v=${BUILD_TOKEN}`)
     .replace(/dashboard-unified-71919-loader\.js\?v=\d+/g,`dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`)
     .replace(/simple-start-8210\.js\?v=\d+/g,`simple-start-8210.js?v=${BUILD_TOKEN}`)
+    .replace(/ais-gps-fix-8221\.js\?v=\d+/g,`ais-gps-fix-8221.js?v=${BUILD_TOKEN}`)
     .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`)
     .replace(/\\n(?=\s*<\/body>)/gi,'\n');
 
