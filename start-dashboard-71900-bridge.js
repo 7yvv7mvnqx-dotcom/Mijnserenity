@@ -349,3 +349,102 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCaptainAi,{once:true});
   else loadCaptainAi();
 })();
+
+/* MijnSerenity 8.23.1 — toon de gemeten RWS-watertemperatuur ook in de
+   bestaande Watertemperatuur-kaart. Open-Meteo Marine blijft alleen fallback. */
+(()=>{
+  'use strict';
+  if(window.__msRwsWaterCardSync8231)return;
+  window.__msRwsWaterCardSync8231=true;
+
+  const $=id=>document.getElementById(id);
+  const finite=value=>{
+    if(value===null||value===undefined||value===''||typeof value==='boolean')return null;
+    const number=Number(value);
+    return Number.isFinite(number)?number:null;
+  };
+  const formatTemp=value=>`${Number(value).toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})} °C`;
+  const formatDistance=value=>{
+    const distance=finite(value);
+    if(distance===null)return '';
+    return distance<1?`${Math.round(distance*1000)} m`:`${distance.toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})} km`;
+  };
+
+  function weatherVisible(){
+    if(document.hidden)return false;
+    const page=$('weather');
+    if(!page)return false;
+    if(!page.classList.contains('hidden'))return true;
+    try{return typeof window.ms708CurrentPageId==='function'&&window.ms708CurrentPageId()==='weather'}catch{return false}
+  }
+
+  function rwsReading(){
+    const weather=window.liveNavState?.weather||{};
+    const stateValue=finite(weather.waterTemperature);
+    if(stateValue!==null){
+      return {
+        value:stateValue,
+        station:String(weather.waterTemperatureStation||'').trim(),
+        distanceKm:finite(weather.waterTemperatureDistanceKm)
+      };
+    }
+
+    const raw=String($('ms71515RwsWaterValue')?.textContent||'').replace(',','.');
+    const match=raw.match(/-?\d+(?:\.\d+)?/);
+    if(!match)return null;
+    const value=finite(match[0]);
+    if(value===null||value<=-5||value>=45)return null;
+    return {
+      value,
+      station:String($('ms71515RwsStation')?.textContent||'').trim(),
+      distanceKm:null
+    };
+  }
+
+  function sync(){
+    const reading=rwsReading();
+    if(!reading)return false;
+
+    const temperature=formatTemp(reading.value);
+    const valueNode=$('ms793WeatherWaterTemp');
+    if(valueNode)valueNode.textContent=temperature;
+
+    const details=[];
+    if(reading.station&&reading.station!=='–')details.push(reading.station);
+    const distance=formatDistance(reading.distanceKm);
+    if(distance)details.push(distance);
+    const source=$('ms793WeatherWaterSource');
+    if(source)source.textContent=`Rijkswaterstaat · gemeten${details.length?' · '+details.join(' · '):''}`;
+
+    const dashboard=$('ms71510WaterTemp');
+    if(dashboard)dashboard.textContent=temperature;
+    const marine=$('mgWaterTemp');
+    if(marine)marine.textContent=temperature;
+    return true;
+  }
+
+  let lastKick=0;
+  function kickRws(){
+    if(sync()||!weatherVisible())return;
+    const now=Date.now();
+    if(now-lastKick<30000)return;
+    const button=$('ms71515RwsRefresh');
+    if(!button)return;
+    lastKick=now;
+    try{button.click()}catch{}
+  }
+
+  function schedule(){
+    [0,500,1200,2500,5000,9000,16000].forEach(delay=>setTimeout(()=>{
+      if(!sync())kickRws();
+    },delay));
+  }
+
+  ['mijnserenity-weather-updated','mijnserenity:routechange','mijnserenity:dashboard-ready','online']
+    .forEach(name=>window.addEventListener(name,schedule,{passive:true}));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()},{passive:true});
+  window.addEventListener('pageshow',schedule,{passive:true});
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});
+  else schedule();
+})();
