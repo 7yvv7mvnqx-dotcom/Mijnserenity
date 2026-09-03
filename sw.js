@@ -1,7 +1,7 @@
-/* MijnSerenity 8.22.2 — directe AIS-kaart met iPhone-veilige foutafhandeling */
-const CACHE_NAME='mijnserenity-8.22.2-fast';
-const BUILD='8.22.2';
-const BUILD_TOKEN='822200';
+/* MijnSerenity 8.23.0 — slimme bonscanner en actuele app-cache */
+const CACHE_NAME='mijnserenity-8.23.0-fast';
+const BUILD='8.23.0';
+const BUILD_TOKEN='823000';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -9,6 +9,7 @@ const CORE_ASSETS=[
   '/manifest.json',
   `/auth-bootstrap.js?v=${BUILD_TOKEN}`,
   `/app.js?v=${BUILD_TOKEN}`,
+  `/receipt-reader-pro.js?v=${BUILD_TOKEN}`,
   `/runtime-stability-8202.js?v=${BUILD_TOKEN}`,
   `/professional-ui-71700.css?v=${BUILD_TOKEN}`,
   `/marine-glass-mobile-7184.css?v=${BUILD_TOKEN}`,

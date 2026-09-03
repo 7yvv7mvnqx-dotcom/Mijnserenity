@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="8.22.2">
+<meta name="mijnserenity-build" content="8.23.0">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='8.22.2';
+window.MIJSERENITY_BUILD='8.23.0';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -3984,7 +3984,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
         <div><label>Bedrag €</label><input id="costAmount" type="number" inputmode="decimal" step="0.01"></div>
       </div>
       <div class="row">
-        <div><label>Categorie</label><select id="costCategory" required><option value="" selected disabled>Selecteer categorie…</option><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Winterstalling</option><option>Boodschappen</option><option>Eten &amp; Drinken</option><option>Materialen</option><option>Verzekering</option><option>Ligplaats</option><option>Overig</option></select></div>
+        <div><label>Categorie</label><select id="costCategory" required><option value="" selected disabled>Selecteer categorie…</option><option>Havengeld</option><option>Diesel</option><option>Onderhoud</option><option>Onderdelen</option><option>Elektra</option><option>Winterstalling</option><option>Boodschappen</option><option>Eten &amp; Drinken</option><option>Materialen</option><option>Verzekering</option><option>Ligplaats</option><option>Overig</option></select></div>
         <div><label>Omschrijving</label><input id="costDescription" placeholder="Bijv. Da Giorgio"></div>
       </div>
 
@@ -4103,6 +4103,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
               <option>Diesel</option>
               <option>Onderhoud</option>
               <option>Onderdelen</option>
+              <option>Elektra</option>
               <option>Winterstalling</option>
               <option>Boodschappen</option>
               <option>Eten &amp; Drinken</option>
@@ -4848,7 +4849,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   </div>
 </div>
 
-<script src="auth-bootstrap.js?v=821700"></script>
+<script src="auth-bootstrap.js?v=823000"></script>
 <script src="futuristic-analog-7140.js?v=715140"></script>
 <script src="dashboard-analog-7141.js?v=715140"></script>
 <script src="dashboard-premium-7143.js?v=71430"></script>

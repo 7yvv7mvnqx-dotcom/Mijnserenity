@@ -1,16 +1,16 @@
-/* MijnSerenity 8.22.0 — snelle uniforme stabiliteitsbootstrap
+/* MijnSerenity 8.23.0 — snelle uniforme stabiliteitsbootstrap
    Eén runtime voor iPhone, iPad en Stage Manager. Legacy visuele lagen worden
    vóór uitvoering uitgeschakeld; zware paginamodules blijven lazy geladen. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap822000)return;
-  window.__msBootstrap822000=true;
+  if(window.__msBootstrap823000)return;
+  window.__msBootstrap823000=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='8.22.0';
-  const VERSION='822000';
+  const BUILD='8.23.0';
+  const VERSION='823000';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
@@ -363,6 +363,9 @@
       await ensureSupabase();
       await loadScript(CORE_SCRIPT,20000);
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
+      try{await loadScript(`/receipt-reader-pro.js?v=${VERSION}`,12000)}catch(error){
+        console.warn('Slimme bonscanner kon niet worden geladen:',error);
+      }
       const button=document.getElementById('signInButton');
       if(button)button.disabled=false;
 
