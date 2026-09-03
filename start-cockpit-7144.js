@@ -94,3 +94,22 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
 })();
+
+/* MijnSerenity 8.23.2 — herstel RWS WaterWebservices via same-origin Netlify proxy.
+   De RWS module in wind-direction gebruikt directe cross-origin POSTs; iOS/Safari
+   blokkeert die. De proxy-routes bestaan nog in netlify.toml, dus stuur alleen
+   deze twee RWS-aanvragen weer door dezelfde origin zoals in 7.15.16. */
+(()=>{
+  'use strict';
+  if(window.__msRwsFetchProxy8232)return;
+  window.__msRwsFetchProxy8232=true;
+  const nativeFetch=window.fetch.bind(window);
+  const catalog='https://ddapi20-waterwebservices.rijkswaterstaat.nl/METADATASERVICES/OphalenCatalogus';
+  const latest='https://ddapi20-waterwebservices.rijkswaterstaat.nl/ONLINEWAARNEMINGENSERVICES/OphalenLaatsteWaarnemingen';
+  window.fetch=function(input,init){
+    const url=typeof input==='string'?input:input?.url;
+    if(url===catalog)return nativeFetch('/api/rws-water-catalogus',init);
+    if(url===latest)return nativeFetch('/api/rws-water-latest',init);
+    return nativeFetch(input,init);
+  };
+})();
