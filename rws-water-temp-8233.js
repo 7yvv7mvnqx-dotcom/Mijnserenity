@@ -1,6 +1,7 @@
-/* MijnSerenity 8.23.3 — robuuste RWS-watertemperatuur voor binnenwater.
+/* MijnSerenity 8.23.4 — robuuste RWS-watertemperatuur voor binnenwater.
    Gebruikt de officiële actuele RWS-temperatuurmeting via de bestaande
-   same-origin Netlify-proxy en houdt de zichtbare weerkaart leidend. */
+   same-origin Netlify-proxy en houdt de zichtbare weerkaart leidend.
+   Tik op de gemeten temperatuur voor de exacte RWS-meetlocatie. */
 (()=>{
   'use strict';
   if(window.__msRwsWaterTemp8233)return;
@@ -17,6 +18,7 @@
   let busy=false;
   let lastAttempt=0;
   let lastReading=null;
+  let locationMap=null;
 
   function finite(value){
     if(value===null||value===undefined||value===''||typeof value==='boolean')return null;
@@ -267,6 +269,165 @@
   const formatTemp=value=>`${Number(value).toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})} °C`;
   const formatDistance=value=>value<1?`${Math.round(value*1000)} m`:`${value.toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1})} km`;
 
+  function formatMeasuredAt(value){
+    if(!value)return 'Tijdstip niet beschikbaar';
+    const date=new Date(value);
+    if(Number.isNaN(date.getTime()))return 'Tijdstip niet beschikbaar';
+    return date.toLocaleString('nl-NL',{
+      day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'
+    });
+  }
+
+  function ensureLocationSheet(){
+    let sheet=$('ms8234WaterLocationSheet');
+    if(sheet)return sheet;
+
+    if(!$('ms8234WaterLocationStyle')){
+      const style=document.createElement('style');
+      style.id='ms8234WaterLocationStyle';
+      style.textContent=`
+        #ms793WeatherWaterTemp[data-ms-water-location="1"]{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(132,220,244,.48);text-decoration-thickness:1px;text-underline-offset:5px;touch-action:manipulation}
+        #ms793WeatherWaterTemp[data-ms-water-location="1"]:focus-visible{outline:2px solid #8fe4f6;outline-offset:5px;border-radius:6px}
+        .ms8234-water-overlay{position:fixed;inset:0;z-index:100000;background:rgba(1,12,19,.72);display:flex;align-items:flex-end;justify-content:center;padding:18px 12px 0}
+        .ms8234-water-overlay[hidden]{display:none!important}
+        .ms8234-water-sheet{width:min(100%,620px);max-height:82%;overflow:auto;background:linear-gradient(180deg,#123847 0%,#082734 100%);color:#f5fbfd;border:1px solid rgba(137,214,237,.3);border-bottom:0;border-radius:24px 24px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -18px 60px rgba(0,0,0,.34);-webkit-overflow-scrolling:touch}
+        .ms8234-water-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+        .ms8234-water-kicker{font-size:12px;line-height:1.2;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#9dc4d0}
+        .ms8234-water-title{font-size:24px;line-height:1.1;font-weight:850;margin:4px 0 0}
+        .ms8234-water-close{border:1px solid rgba(155,216,233,.26);background:rgba(255,255,255,.05);color:#fff;width:44px;height:44px;border-radius:50%;font-size:26px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+        .ms8234-water-reading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:12px 0 15px;border-bottom:1px solid rgba(153,215,232,.18)}
+        .ms8234-water-temp{font-size:34px;font-weight:900;letter-spacing:-.02em;color:#9be7f8}
+        .ms8234-water-distance{font-size:14px;color:#afcbd4;text-align:right}
+        .ms8234-water-map{height:220px;margin:15px 0;border-radius:16px;overflow:hidden;background:#163946;border:1px solid rgba(153,215,232,.2)}
+        .ms8234-water-map-fallback{height:100%;display:grid;place-items:center;text-align:center;padding:20px;color:#bdd5dc;font-size:14px}
+        .ms8234-water-grid{display:grid;grid-template-columns:120px minmax(0,1fr);gap:9px 12px;font-size:14px;line-height:1.35;margin:0 0 16px}
+        .ms8234-water-grid dt{color:#8fbbc8;font-weight:700}
+        .ms8234-water-grid dd{margin:0;color:#f4fbfd;font-weight:650;overflow-wrap:anywhere}
+        .ms8234-water-actions{display:grid;grid-template-columns:1fr;gap:10px}
+        .ms8234-water-maplink{min-height:48px;border-radius:14px;background:#7fdcf2;color:#062532!important;font-weight:850;text-decoration:none;display:flex;align-items:center;justify-content:center;padding:12px 16px}
+        body.ms8234-water-open{overflow:hidden}
+        .ms8234-water-sheet .leaflet-control-attribution{font-size:9px}
+        @media (min-width:520px){.ms8234-water-grid{grid-template-columns:145px minmax(0,1fr)}}
+      `;
+      document.head.appendChild(style);
+    }
+
+    sheet=document.createElement('div');
+    sheet.id='ms8234WaterLocationSheet';
+    sheet.className='ms8234-water-overlay';
+    sheet.hidden=true;
+    sheet.setAttribute('aria-hidden','true');
+    sheet.innerHTML=`
+      <section class="ms8234-water-sheet" role="dialog" aria-modal="true" aria-labelledby="ms8234WaterLocationTitle">
+        <div class="ms8234-water-head">
+          <div>
+            <div class="ms8234-water-kicker">Rijkswaterstaat · meetpunt</div>
+            <h2 class="ms8234-water-title" id="ms8234WaterLocationTitle">Meetlocatie watertemperatuur</h2>
+          </div>
+          <button class="ms8234-water-close" type="button" data-ms-water-close aria-label="Sluiten">×</button>
+        </div>
+        <div class="ms8234-water-reading">
+          <div class="ms8234-water-temp" data-ms-water-temp>—</div>
+          <div class="ms8234-water-distance" data-ms-water-distance>—</div>
+        </div>
+        <div class="ms8234-water-map" data-ms-water-map aria-label="Kaart met RWS meetlocatie"></div>
+        <dl class="ms8234-water-grid">
+          <dt>Meetlocatie</dt><dd data-ms-water-station>—</dd>
+          <dt>Stationcode</dt><dd data-ms-water-code>—</dd>
+          <dt>Gemeten op</dt><dd data-ms-water-time>—</dd>
+          <dt>Coördinaten</dt><dd data-ms-water-coordinates>—</dd>
+        </dl>
+        <div class="ms8234-water-actions">
+          <a class="ms8234-water-maplink" data-ms-water-maplink href="#" target="_blank" rel="noopener">Open meetpunt in Kaarten</a>
+        </div>
+      </section>`;
+    document.body.appendChild(sheet);
+
+    const close=()=>closeLocationSheet();
+    sheet.querySelector('[data-ms-water-close]')?.addEventListener('click',close);
+    sheet.addEventListener('click',event=>{if(event.target===sheet)close()});
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&!sheet.hidden)close();
+    });
+    return sheet;
+  }
+
+  function closeLocationSheet(){
+    const sheet=$('ms8234WaterLocationSheet');
+    if(!sheet)return;
+    sheet.hidden=true;
+    sheet.setAttribute('aria-hidden','true');
+    document.body.classList.remove('ms8234-water-open');
+    if(locationMap){
+      try{locationMap.remove()}catch{}
+      locationMap=null;
+    }
+  }
+
+  function openLocationSheet(reading){
+    if(!reading)return;
+    const lat=finite(reading.lat),lon=finite(reading.lon);
+    if(lat===null||lon===null)return;
+    const station=String(reading.name||reading.code||'RWS meetpunt').trim();
+    const sheet=ensureLocationSheet();
+    sheet.querySelector('[data-ms-water-temp]').textContent=formatTemp(reading.value);
+    sheet.querySelector('[data-ms-water-distance]').textContent=`${formatDistance(reading.distanceKm)} vanaf huidige positie`;
+    sheet.querySelector('[data-ms-water-station]').textContent=station;
+    sheet.querySelector('[data-ms-water-code]').textContent=String(reading.code||'—');
+    sheet.querySelector('[data-ms-water-time]').textContent=formatMeasuredAt(reading.time);
+    sheet.querySelector('[data-ms-water-coordinates]').textContent=`${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    const mapLink=sheet.querySelector('[data-ms-water-maplink]');
+    mapLink.href=`https://maps.apple.com/?ll=${encodeURIComponent(`${lat},${lon}`)}&q=${encodeURIComponent(station)}`;
+
+    sheet.hidden=false;
+    sheet.setAttribute('aria-hidden','false');
+    document.body.classList.add('ms8234-water-open');
+    sheet.querySelector('[data-ms-water-close]')?.focus({preventScroll:true});
+
+    const mapNode=sheet.querySelector('[data-ms-water-map]');
+    if(locationMap){
+      try{locationMap.remove()}catch{}
+      locationMap=null;
+    }
+    mapNode.replaceChildren();
+    if(window.L&&typeof window.L.map==='function'){
+      try{
+        locationMap=window.L.map(mapNode,{zoomControl:true,attributionControl:true}).setView([lat,lon],14);
+        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+          maxZoom:19,
+          attribution:'&copy; OpenStreetMap'
+        }).addTo(locationMap);
+        window.L.marker([lat,lon]).addTo(locationMap).bindPopup(station).openPopup();
+        requestAnimationFrame(()=>{try{locationMap?.invalidateSize()}catch{}});
+      }catch(error){
+        console.debug('Meetlocatiekaart kon niet worden geopend:',error);
+        mapNode.innerHTML='<div class="ms8234-water-map-fallback">Kaartweergave niet beschikbaar.<br>Gebruik “Open meetpunt in Kaarten”.</div>';
+      }
+    }else{
+      mapNode.innerHTML='<div class="ms8234-water-map-fallback">Kaartweergave niet beschikbaar.<br>Gebruik “Open meetpunt in Kaarten”.</div>';
+    }
+  }
+
+  function bindLocationInteraction(reading){
+    const valueNode=$('ms793WeatherWaterTemp');
+    if(!valueNode)return;
+    valueNode.__msWaterLocationReading=reading;
+    valueNode.dataset.msWaterLocation='1';
+    valueNode.setAttribute('role','button');
+    valueNode.setAttribute('tabindex','0');
+    valueNode.setAttribute('aria-label',`Watertemperatuur ${formatTemp(reading.value)}. Toon RWS meetlocatie.`);
+    valueNode.title='Tik voor de RWS-meetlocatie';
+    if(valueNode.dataset.msWaterLocationBound==='1')return;
+    valueNode.dataset.msWaterLocationBound='1';
+    valueNode.addEventListener('click',()=>openLocationSheet(valueNode.__msWaterLocationReading));
+    valueNode.addEventListener('keydown',event=>{
+      if(event.key==='Enter'||event.key===' '){
+        event.preventDefault();
+        openLocationSheet(valueNode.__msWaterLocationReading);
+      }
+    });
+  }
+
   function render(reading){
     if(!reading)return false;
     lastReading=reading;
@@ -289,6 +450,8 @@
     if($('ms71515RwsStation'))$('ms71515RwsStation').textContent=station;
     if($('ms71515RwsDistance'))$('ms71515RwsDistance').textContent=distance;
 
+    bindLocationInteraction(reading);
+
     try{
       window.liveNavState=window.liveNavState||{};
       window.liveNavState.weather=window.liveNavState.weather||{};
@@ -296,6 +459,9 @@
         waterTemperature:reading.value,
         waterTemperatureSource:'Rijkswaterstaat',
         waterTemperatureStation:station,
+        waterTemperatureStationCode:reading.code||null,
+        waterTemperatureStationLat:reading.lat,
+        waterTemperatureStationLon:reading.lon,
         waterTemperatureDistanceKm:reading.distanceKm,
         waterTemperatureMeasuredAt:reading.time||null
       });
@@ -337,7 +503,7 @@
       render(result);
       return true;
     }catch(error){
-      console.warn('RWS watertemperatuur 8.23.3:',error);
+      console.warn('RWS watertemperatuur 8.23.4:',error);
       if(lastReading)render(lastReading);
       return false;
     }finally{
