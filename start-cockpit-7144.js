@@ -113,3 +113,16 @@
     return nativeFetch(input,init);
   };
 })();
+
+/* MijnSerenity 8.23.3 — laad de robuuste RWS-fallback met eigen cacheversie. */
+(()=>{
+  'use strict';
+  if(window.__msRwsWaterTempFixLoader8233)return;
+  window.__msRwsWaterTempFixLoader8233=true;
+  const script=document.createElement('script');
+  script.src='/rws-water-temp-8233.js?v=823300';
+  script.async=true;
+  script.dataset.msRwsWater8233='1';
+  script.onerror=()=>console.warn('RWS watertemperatuur-herstel kon niet worden geladen.');
+  document.head.appendChild(script);
+})();
