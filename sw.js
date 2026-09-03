@@ -1,7 +1,7 @@
-/* MijnSerenity 8.23.3 — actuele app-cache + RWS watertemperatuurherstel */
-const CACHE_NAME='mijnserenity-8.23.3-fast';
-const BUILD='8.23.3';
-const BUILD_TOKEN='823300';
+/* MijnSerenity 8.23.4 — actuele app-cache + robuuste bon-OCR */
+const CACHE_NAME='mijnserenity-8.23.4-fast';
+const BUILD='8.23.4';
+const BUILD_TOKEN='823400';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -10,6 +10,7 @@ const CORE_ASSETS=[
   `/auth-bootstrap.js?v=${BUILD_TOKEN}`,
   `/app.js?v=${BUILD_TOKEN}`,
   `/receipt-reader-pro.js?v=${BUILD_TOKEN}`,
+  `/receipt-ocr-fix-8234.js?v=${BUILD_TOKEN}`,
   `/runtime-stability-8202.js?v=${BUILD_TOKEN}`,
   `/professional-ui-71700.css?v=${BUILD_TOKEN}`,
   `/marine-glass-mobile-7184.css?v=${BUILD_TOKEN}`,
@@ -72,6 +73,13 @@ function rewriteIndexHtml(html){
      iPhone/PWA GPS-flow van oudere AIS-runtimes en verdwijnt ook de losse \\n tekst. */
   if(!/ais-gps-fix-8221\.js/i.test(rewritten)){
     rewritten=rewritten.replace(/<\/body>/i,`<script src="/ais-gps-fix-8221.js?v=${BUILD_TOKEN}"></script>\n</body>`);
+  }
+
+  /* De bon-OCR fix wacht zelf tot app.js en receipt-reader-pro.js klaar zijn.
+     Door hem hier te injecteren krijgt ook een geïnstalleerde iOS-PWA de fix
+     zonder dat index.html handmatig hoeft te worden bijgewerkt. */
+  if(!/receipt-ocr-fix-8234\.js/i.test(rewritten)){
+    rewritten=rewritten.replace(/<\/body>/i,`<script src="/receipt-ocr-fix-8234.js?v=${BUILD_TOKEN}"></script>\n</body>`);
   }
   return rewritten;
 }
