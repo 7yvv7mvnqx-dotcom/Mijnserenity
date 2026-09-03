@@ -1,7 +1,7 @@
-/* MijnSerenity 8.23.0 — slimme bonscanner en actuele app-cache */
-const CACHE_NAME='mijnserenity-8.23.0-fast';
-const BUILD='8.23.0';
-const BUILD_TOKEN='823000';
+/* MijnSerenity 8.23.3 — actuele app-cache + RWS watertemperatuurherstel */
+const CACHE_NAME='mijnserenity-8.23.3-fast';
+const BUILD='8.23.3';
+const BUILD_TOKEN='823300';
 const NETWORK_TIMEOUT_MS=8000;
 const CORE_ASSETS=[
   '/',
@@ -25,6 +25,9 @@ const CORE_ASSETS=[
   `/dashboard-collision-radar-8201.js?v=${BUILD_TOKEN}`,
   `/simple-start-8210.js?v=${BUILD_TOKEN}`,
   `/ais-gps-fix-8221.js?v=${BUILD_TOKEN}`,
+  `/start-cockpit-7144.js?v=${BUILD_TOKEN}`,
+  `/rws-water-temp-8233.js?v=${BUILD_TOKEN}`,
+  `/wind-direction-71512.js?v=${BUILD_TOKEN}`,
   `/runtime-performance-71700.js?v=${BUILD_TOKEN}`,
   `/orientation-layout-71835.js?v=${BUILD_TOKEN}`,
   `/victron-diagnostics.js?v=${BUILD_TOKEN}`,
@@ -52,6 +55,9 @@ function rewriteIndexHtml(html){
     .replace(/dashboard-unified-71919-loader\.js\?v=\d+/g,`dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`)
     .replace(/simple-start-8210\.js\?v=\d+/g,`simple-start-8210.js?v=${BUILD_TOKEN}`)
     .replace(/ais-gps-fix-8221\.js\?v=\d+/g,`ais-gps-fix-8221.js?v=${BUILD_TOKEN}`)
+    .replace(/start-cockpit-7144\.js\?v=\d+/g,`start-cockpit-7144.js?v=${BUILD_TOKEN}`)
+    .replace(/start-dashboard-71510\.js\?v=\d+/g,`start-dashboard-71510.js?v=${BUILD_TOKEN}`)
+    .replace(/wind-direction-71512\.js\?v=\d+/g,`wind-direction-71512.js?v=${BUILD_TOKEN}`)
     .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`)
     .replace(/\\n(?=\s*<\/body>)/gi,'\n');
 
