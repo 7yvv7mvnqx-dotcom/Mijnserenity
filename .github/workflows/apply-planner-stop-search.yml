@@ -18,302 +18,31 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Add live between-stop search
-        shell: python
+      - name: Add planner search loader
         run: |
+          python - <<'PY'
           from pathlib import Path
-
           path = Path('route-control.js')
           text = path.read_text(encoding='utf-8')
-          marker = 'MijnSerenity 8.23.6 — live zoeken in tussenstops'
-          if marker in text:
-              print('Patch already present; nothing to do.')
-              raise SystemExit(0)
+          marker = '__msPlannerStopSearchLoader8236'
+          if marker not in text:
+              loader = """
 
-          patch = r'''
-
-/* ============================================================
-   MijnSerenity 8.23.6 — live zoeken in tussenstops
-   Vervangt alleen de zichtbare iOS-select voor Tussenstop door een
-   zoekveld met directe suggesties. De bestaande select blijft de
-   bron van waarheid zodat addPlannerStop() ongewijzigd blijft werken.
-   ============================================================ */
-(()=>{
-  'use strict';
-  if(window.__msPlannerStopSearch8236)return;
-  window.__msPlannerStopSearch8236=true;
-
-  const SEARCH_ID='plannerStopSearch';
-  const LIST_ID='plannerStopSuggestions';
-  const MAX_RESULTS=10;
-  let activeIndex=-1;
-  let currentResults=[];
-  let selectObserver=null;
-
-  const normalize=value=>String(value||'')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase()
-    .replace(/\s+/g,' ')
-    .trim();
-
-  function ensureStyles(){
-    if(document.getElementById('msPlannerStopSearch8236Style'))return;
-    const style=document.createElement('style');
-    style.id='msPlannerStopSearch8236Style';
-    style.textContent=`
-      .planner-stop-add-row.ms-stop-search-ready{align-items:start!important}
-      .planner-stop-add-row.ms-stop-search-ready>#plannerStopSelect{display:none!important}
-      .ms-stop-search-shell{position:relative;min-width:0;flex:1 1 auto;width:100%}
-      .ms-stop-search-input-wrap{position:relative;display:flex;align-items:center}
-      #plannerStopSearch{width:100%;min-height:48px;padding-right:44px!important;-webkit-appearance:none;appearance:none}
-      #plannerStopSearch::-webkit-search-cancel-button{display:none}
-      .ms-stop-search-icon{position:absolute;left:14px;pointer-events:none;opacity:.72;font-size:1rem}
-      #plannerStopSearch.ms-has-search-icon{padding-left:42px!important}
-      .ms-stop-search-clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:34px;height:34px;min-height:34px!important;padding:0!important;border:0!important;border-radius:50%!important;background:transparent!important;color:inherit!important;font-size:22px!important;line-height:1!important;box-shadow:none!important;display:none;align-items:center;justify-content:center}
-      .ms-stop-search-shell.has-value .ms-stop-search-clear{display:flex}
-      .ms-stop-suggestions{position:absolute;z-index:10020;left:0;right:0;top:calc(100% + 7px);max-height:min(48vh,420px);overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid rgba(122,190,221,.34);border-radius:16px;background:#e8f1f8;color:#061321;box-shadow:0 18px 44px rgba(0,0,0,.34);padding:6px}
-      .ms-stop-suggestions[hidden]{display:none!important}
-      .ms-stop-suggestion{width:100%;min-height:54px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;text-align:left!important;padding:10px 12px!important;border:0!important;border-radius:12px!important;background:transparent!important;color:#061321!important;box-shadow:none!important}
-      .ms-stop-suggestion strong{font-size:1rem;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
-      .ms-stop-suggestion small{grid-column:1;color:#577080;font-size:.75rem;line-height:1.15}
-      .ms-stop-suggestion span{grid-row:1 / span 2;grid-column:2;font-size:1.1rem;opacity:.42}
-      .ms-stop-suggestion:hover,.ms-stop-suggestion.is-active{background:rgba(20,111,169,.14)!important}
-      .ms-stop-search-empty{padding:14px 12px;color:#577080;font-size:.88rem}
-      @media(max-width:700px){
-        .planner-stop-add-row.ms-stop-search-ready{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important}
-        .planner-stop-add-row.ms-stop-search-ready>.secondary{min-height:48px;white-space:nowrap}
-        .ms-stop-suggestions{max-height:44vh}
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function optionRecords(select){
-    return [...select.options]
-      .filter(option=>String(option.value||'').trim()&&!option.disabled)
-      .map(option=>({
-        value:String(option.value),
-        label:String(option.textContent||'').replace(/\s+/g,' ').trim(),
-        group:String(option.parentElement?.tagName==='OPTGROUP' ? option.parentElement.label||'' : ''),
-        search:normalize(`${option.textContent||''} ${option.parentElement?.tagName==='OPTGROUP' ? option.parentElement.label||'' : ''}`)
-      }));
-  }
-
-  function getNodes(){
-    return {
-      select:document.getElementById('plannerStopSelect'),
-      input:document.getElementById(SEARCH_ID),
-      list:document.getElementById(LIST_ID)
-    };
-  }
-
-  function setExpanded(input,list,expanded){
-    input?.setAttribute('aria-expanded',expanded?'true':'false');
-    if(list)list.hidden=!expanded;
-    if(!expanded){
-      activeIndex=-1;
-      currentResults=[];
-      input?.removeAttribute('aria-activedescendant');
-    }
-  }
-
-  function updateActive(input,list,next){
-    const buttons=[...list.querySelectorAll('.ms-stop-suggestion')];
-    if(!buttons.length){activeIndex=-1;return}
-    activeIndex=Math.max(0,Math.min(buttons.length-1,next));
-    buttons.forEach((button,index)=>button.classList.toggle('is-active',index===activeIndex));
-    const active=buttons[activeIndex];
-    if(active){
-      input.setAttribute('aria-activedescendant',active.id);
-      active.scrollIntoView({block:'nearest'});
-    }
-  }
-
-  function chooseResult(record){
-    const {select,input,list}=getNodes();
-    if(!select||!input||!list||!record)return;
-    select.value=record.value;
-    select.dispatchEvent(new Event('input',{bubbles:true}));
-    select.dispatchEvent(new Event('change',{bubbles:true}));
-    input.value=record.label;
-    input.dataset.selectedValue=record.value;
-    input.closest('.ms-stop-search-shell')?.classList.toggle('has-value',Boolean(input.value));
-    setExpanded(input,list,false);
-  }
-
-  function renderSuggestions(forceAll=false){
-    const {select,input,list}=getNodes();
-    if(!select||!input||!list)return;
-    const query=normalize(input.value);
-    const all=optionRecords(select);
-    let results=all;
-
-    if(query&&!forceAll){
-      results=all
-        .filter(item=>item.search.includes(query))
-        .sort((a,b)=>{
-          const aLabel=normalize(a.label),bLabel=normalize(b.label);
-          const aStarts=aLabel.startsWith(query)?0:1;
-          const bStarts=bLabel.startsWith(query)?0:1;
-          return aStarts-bStarts||aLabel.localeCompare(bLabel,'nl');
-        });
-    }
-
-    results=results.slice(0,MAX_RESULTS);
-    currentResults=results;
-    activeIndex=-1;
-
-    if(!results.length){
-      list.innerHTML='<div class="ms-stop-search-empty">Geen tussenstop gevonden.</div>';
-      setExpanded(input,list,true);
-      return;
-    }
-
-    list.innerHTML=results.map((item,index)=>`
-      <button type="button" class="ms-stop-suggestion" role="option"
-        id="plannerStopSuggestion${index}" data-index="${index}">
-        <strong>${typeof esc==='function'?esc(item.label):item.label}</strong>
-        ${item.group?`<small>${typeof esc==='function'?esc(item.group):item.group}</small>`:'<small>Tussenstop</small>'}
-        <span>›</span>
-      </button>
-    `).join('');
-
-    list.querySelectorAll('.ms-stop-suggestion').forEach(button=>{
-      button.addEventListener('mousedown',event=>event.preventDefault());
-      button.addEventListener('click',()=>chooseResult(currentResults[Number(button.dataset.index)]));
-    });
-    setExpanded(input,list,true);
-  }
-
-  function clearSearch({focus=false}={}){
-    const {select,input,list}=getNodes();
-    if(select)select.value='';
-    if(input){
-      input.value='';
-      delete input.dataset.selectedValue;
-      input.closest('.ms-stop-search-shell')?.classList.remove('has-value');
-      if(focus){input.focus();renderSuggestions(true)}
-      else if(list)setExpanded(input,list,false);
-    }
-  }
-
-  function syncFromSelect(){
-    const {select,input}=getNodes();
-    if(!select||!input||document.activeElement===input)return;
-    const selected=select.options[select.selectedIndex];
-    const value=String(selected?.value||'');
-    if(value){
-      input.value=String(selected?.textContent||'').replace(/\s+/g,' ').trim();
-      input.dataset.selectedValue=value;
-    }else if(!input.dataset.selectedValue){
-      input.value='';
-    }
-    input.closest('.ms-stop-search-shell')?.classList.toggle('has-value',Boolean(input.value));
-  }
-
-  function install(){
-    const select=document.getElementById('plannerStopSelect');
-    if(!select)return false;
-    const row=select.closest('.planner-stop-add-row');
-    if(!row)return false;
-    ensureStyles();
-
-    if(document.getElementById(SEARCH_ID)){
-      syncFromSelect();
-      return true;
-    }
-
-    const shell=document.createElement('div');
-    shell.className='ms-stop-search-shell';
-    shell.innerHTML=`
-      <div class="ms-stop-search-input-wrap">
-        <span class="ms-stop-search-icon" aria-hidden="true">⌕</span>
-        <input id="${SEARCH_ID}" class="ms-has-search-icon" type="search"
-          autocomplete="off" autocapitalize="words" spellcheck="false"
-          placeholder="Zoek een tussenstop…" role="combobox"
-          aria-autocomplete="list" aria-controls="${LIST_ID}" aria-expanded="false">
-        <button type="button" class="ms-stop-search-clear" aria-label="Zoekveld wissen">×</button>
-      </div>
-      <div id="${LIST_ID}" class="ms-stop-suggestions" role="listbox" hidden></div>
-    `;
-    row.insertBefore(shell,select);
-    row.classList.add('ms-stop-search-ready');
-
-    const label=document.querySelector('label[for="plannerStopSelect"]');
-    if(label)label.setAttribute('for',SEARCH_ID);
-
-    const input=shell.querySelector(`#${SEARCH_ID}`);
-    const list=shell.querySelector(`#${LIST_ID}`);
-    const clear=shell.querySelector('.ms-stop-search-clear');
-
-    input.addEventListener('focus',()=>renderSuggestions(!normalize(input.value)));
-    input.addEventListener('input',()=>{
-      delete input.dataset.selectedValue;
-      shell.classList.toggle('has-value',Boolean(input.value));
-      select.value='';
-      renderSuggestions(false);
-    });
-    input.addEventListener('keydown',event=>{
-      if(event.key==='ArrowDown'){
-        event.preventDefault();
-        if(list.hidden)renderSuggestions(!normalize(input.value));
-        updateActive(input,list,activeIndex+1);
-      }else if(event.key==='ArrowUp'){
-        event.preventDefault();
-        if(list.hidden)renderSuggestions(!normalize(input.value));
-        updateActive(input,list,activeIndex<=0?currentResults.length-1:activeIndex-1);
-      }else if(event.key==='Enter'){
-        if(!list.hidden&&currentResults.length){
-          event.preventDefault();
-          chooseResult(currentResults[activeIndex>=0?activeIndex:0]);
-        }
-      }else if(event.key==='Escape'){
-        setExpanded(input,list,false);
-      }
-    });
-    clear.addEventListener('click',()=>clearSearch({focus:true}));
-
-    document.addEventListener('pointerdown',event=>{
-      if(!shell.contains(event.target))setExpanded(input,list,false);
-    });
-
-    const addButton=row.querySelector('button');
-    addButton?.addEventListener('click',()=>setTimeout(()=>clearSearch(),0));
-
-    select.addEventListener('change',syncFromSelect);
-    selectObserver?.disconnect();
-    selectObserver=new MutationObserver(()=>{
-      syncFromSelect();
-      if(document.activeElement===input&&!list.hidden)renderSuggestions(false);
-    });
-    selectObserver.observe(select,{childList:true,subtree:true});
-    syncFromSelect();
-    return true;
-  }
-
-  function start(){
-    if(install())return;
-    let attempts=0;
-    const timer=setInterval(()=>{
-      attempts+=1;
-      if(install()||attempts>40)clearInterval(timer);
-    },250);
-  }
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
-  else start();
-
-  window.addEventListener('mijnserenity:routechange',event=>{
-    const detail=event?.detail;
-    const route=typeof detail==='string'?detail:(detail?.route||detail?.id||detail?.target);
-    if(String(route||'').toLowerCase()==='planner')setTimeout(install,0);
-  });
-})();
-'''
-
-          path.write_text(text.rstrip() + patch + '\n', encoding='utf-8')
-          print('Planner stop live-search patch appended.')
+          /* MijnSerenity 8.23.6 — tussenstop zoekmodule laden */
+          (()=>{
+            if(window.__msPlannerStopSearchLoader8236)return;
+            window.__msPlannerStopSearchLoader8236=true;
+            const script=document.createElement('script');
+            script.src='/planner-stop-search-8236.js?v=823600';
+            script.async=false;
+            document.head.appendChild(script);
+          })();
+          """
+              path.write_text(text.rstrip() + loader + '\n', encoding='utf-8')
+              print('Loader appended.')
+          else:
+              print('Loader already present.')
+          PY
 
       - name: Commit patch
         run: |
@@ -324,5 +53,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add route-control.js
-          git commit -m "Add live search suggestions for planner stops"
+          git commit -m "Load live search for planner between stops"
           git push origin HEAD:main
