@@ -1,43 +1,34 @@
-/* MijnSerenity 8.23.4 — actuele app-cache + robuuste bon-OCR */
-const CACHE_NAME='mijnserenity-8.23.4-fast';
-const BUILD='8.23.4';
-const BUILD_TOKEN='823400';
+/* MijnSerenity 8.23.5 — snelle app-cache; Start en live kernwaarden eerst */
+const CACHE_NAME='mijnserenity-8.23.5-fast';
+const BUILD='8.23.5';
+const BUILD_TOKEN='823500';
 const NETWORK_TIMEOUT_MS=8000;
+
+/* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
+   worden vooraf gecachet. Zware paginafuncties cachen vanzelf bij eerste gebruik. */
 const CORE_ASSETS=[
   '/',
   '/index.html',
   '/manifest.json',
   `/auth-bootstrap.js?v=${BUILD_TOKEN}`,
   `/app.js?v=${BUILD_TOKEN}`,
-  `/receipt-reader-pro.js?v=${BUILD_TOKEN}`,
-  `/receipt-ocr-fix-8234.js?v=${BUILD_TOKEN}`,
   `/runtime-stability-8202.js?v=${BUILD_TOKEN}`,
   `/professional-ui-71700.css?v=${BUILD_TOKEN}`,
   `/marine-glass-mobile-7184.css?v=${BUILD_TOKEN}`,
   `/marine-glass-fixes-7193.css?v=${BUILD_TOKEN}`,
-  `/map-next-level-8220.css?v=${BUILD_TOKEN}`,
   `/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,
   `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
   `/mobile-viewport-guard-71911.js?v=${BUILD_TOKEN}`,
   `/dashboard-live-values-fix-71914.js?v=${BUILD_TOKEN}`,
   `/dashboard-energy-bridge-8206.js?v=${BUILD_TOKEN}`,
   `/dashboard-cerbo-live-8208.js?v=${BUILD_TOKEN}`,
-  `/victron-remote-console-8209.js?v=${BUILD_TOKEN}`,
-  `/dashboard-collision-radar-8201.js?v=${BUILD_TOKEN}`,
   `/simple-start-8210.js?v=${BUILD_TOKEN}`,
-  `/ais-gps-fix-8221.js?v=${BUILD_TOKEN}`,
-  `/start-cockpit-7144.js?v=${BUILD_TOKEN}`,
   `/rws-water-temp-8233.js?v=${BUILD_TOKEN}`,
   `/wind-direction-71512.js?v=${BUILD_TOKEN}`,
   `/runtime-performance-71700.js?v=${BUILD_TOKEN}`,
-  `/orientation-layout-71835.js?v=${BUILD_TOKEN}`,
   `/victron-diagnostics.js?v=${BUILD_TOKEN}`,
   `/ha-live-bridge.js?v=${BUILD_TOKEN}`,
-  `/movement-presence.js?v=${BUILD_TOKEN}`,
   `/technical-live-sync.js?v=${BUILD_TOKEN}`,
-  `/waterkaarten-route-receiver-71870.js?v=${BUILD_TOKEN}`,
-  `/serenity-alarm-notifications-71826.js?v=${BUILD_TOKEN}`,
-  `/serenity-background-push-71827.js?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -59,28 +50,24 @@ function rewriteIndexHtml(html){
     .replace(/start-cockpit-7144\.js\?v=\d+/g,`start-cockpit-7144.js?v=${BUILD_TOKEN}`)
     .replace(/start-dashboard-71510\.js\?v=\d+/g,`start-dashboard-71510.js?v=${BUILD_TOKEN}`)
     .replace(/wind-direction-71512\.js\?v=\d+/g,`wind-direction-71512.js?v=${BUILD_TOKEN}`)
+    .replace(/ruuvi-climate\.js\?v=\d+/g,`ruuvi-climate.js?v=${BUILD_TOKEN}`)
+    .replace(/rws-water-temp-8233\.js\?v=\d+/g,`rws-water-temp-8233.js?v=${BUILD_TOKEN}`)
+    .replace(/<script[^>]+src=["'][^"']*receipt-ocr-fix-8234\.js[^"']*["'][^>]*><\/script>\s*/gi,'')
     .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`)
     .replace(/\\n(?=\s*<\/body>)/gi,'\n');
 
-  /* Fail-safe voor iOS/PWA: laad de eenvoudige Startpagina altijd rechtstreeks.
-     De uniforme runtime probeert dit ook, maar deze koppeling voorkomt dat alleen
-     de nieuwe ondernavigatie zichtbaar wordt terwijl de oude dashboardinhoud blijft staan. */
+  /* Fail-safe voor iOS/PWA: de lichte Startmodule is klein en mag direct mee. */
   if(!/simple-start-8210\.js/i.test(rewritten)){
     rewritten=rewritten.replace(/<\/body>/i,`<script src="/simple-start-8210.js?v=${BUILD_TOKEN}"></script>\n</body>`);
   }
 
-  /* AIS-herstel wordt als laatste script geplaatst. Daardoor wint de robuuste
-     iPhone/PWA GPS-flow van oudere AIS-runtimes en verdwijnt ook de losse \\n tekst. */
+  /* AIS-herstel blijft als kleine navigatie-failsafe beschikbaar. */
   if(!/ais-gps-fix-8221\.js/i.test(rewritten)){
     rewritten=rewritten.replace(/<\/body>/i,`<script src="/ais-gps-fix-8221.js?v=${BUILD_TOKEN}"></script>\n</body>`);
   }
 
-  /* De bon-OCR fix wacht zelf tot app.js en receipt-reader-pro.js klaar zijn.
-     Door hem hier te injecteren krijgt ook een geïnstalleerde iOS-PWA de fix
-     zonder dat index.html handmatig hoeft te worden bijgewerkt. */
-  if(!/receipt-ocr-fix-8234\.js/i.test(rewritten)){
-    rewritten=rewritten.replace(/<\/body>/i,`<script src="/receipt-ocr-fix-8234.js?v=${BUILD_TOKEN}"></script>\n</body>`);
-  }
+  /* Bon-OCR wordt bewust NIET op Start geïnjecteerd. De bootstrap laadt hem
+     pas wanneer Kosten wordt geopend. */
   return rewritten;
 }
 
@@ -100,7 +87,7 @@ async function rewrittenHtmlResponse(response){
 
 async function cacheCore(cache,path){
   try{
-    const response=await fetchWithTimeout(path,{cache:'reload'},30000);
+    const response=await fetchWithTimeout(path,{cache:'reload'},20000);
     if(!response.ok)return;
     if(path==='/'||path==='/index.html'){
       const rewritten=await rewrittenHtmlResponse(response.clone());
@@ -181,8 +168,6 @@ async function navigationNetworkFirst(request){
 async function navigationCacheFirst(request){
   const cached=(await caches.match('/index.html'))||(await caches.match('/'));
   if(cached){
-    /* Toon de reeds geïnstalleerde app direct. Vernieuw dezelfde cache op de
-       achtergrond, zodat de volgende start actueel is zonder wachttijd. */
     fetchWithTimeout(request,{cache:'no-store'},10000).then(async response=>{
       if(!response.ok)return;
       const rewritten=await rewrittenHtmlResponse(response);
@@ -219,9 +204,6 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
 
-  /* De officiële Victron GUI-v2 is een zelfstandige WebAssembly-app. Laat al
-     haar HTML/JS/WASM/assets rechtstreeks door Netlify afhandelen. Anders zou
-     de gewone MijnSerenity navigatiefallback haar index.html vervangen. */
   if(url.pathname.startsWith('/victron-gui/'))return;
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
 
