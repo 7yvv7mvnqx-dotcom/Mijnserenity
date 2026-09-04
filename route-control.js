@@ -1044,3 +1044,14 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   },1000);
 });
+
+/* MijnSerenity 8.23.6 — tussenstop zoekmodule laden */
+(()=>{
+  if(window.__msPlannerStopSearchLoader8236)return;
+  window.__msPlannerStopSearchLoader8236=true;
+  const script=document.createElement('script');
+  script.src='/planner-stop-search-8236.js?v=823600';
+  script.async=false;
+  document.head.appendChild(script);
+})();
+
