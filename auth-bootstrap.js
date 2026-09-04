@@ -1,16 +1,16 @@
-/* MijnSerenity 8.23.4 — snelle uniforme stabiliteitsbootstrap
-   Eén runtime voor iPhone, iPad en Stage Manager. Legacy visuele lagen worden
-   vóór uitvoering uitgeschakeld; zware paginamodules blijven lazy geladen. */
+/* MijnSerenity 8.23.5 — snelle uniforme stabiliteitsbootstrap
+   Eén runtime voor iPhone, iPad en Stage Manager. Start en live kernwaarden
+   krijgen voorrang; zware paginamodules worden pas geladen wanneer nodig. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap823400)return;
-  window.__msBootstrap823400=true;
+  if(window.__msBootstrap823500)return;
+  window.__msBootstrap823500=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='8.23.4';
-  const VERSION='823400';
+  const BUILD='8.23.5';
+  const VERSION='823500';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
@@ -24,13 +24,18 @@
   const LEGACY_VRM_ENDPOINT='https://wufslczbtguvtgmfufid.supabase.co/functions/v1/vrm-ruuvi';
   const RWS_API_ORIGIN='https://ddapi20-waterwebservices.rijkswaterstaat.nl';
 
-  const ESSENTIAL_BACKGROUND=[
+  /* Deze modules voeden o.a. accu-, temperatuur- en technische live waarden.
+     Ze laden direct ná de zichtbare Start, maar blokkeren de Start niet. */
+  const LIVE_BACKGROUND=[
     `/runtime-performance-71700.js?v=${VERSION}`,
-    `/orientation-layout-71835.js?v=${VERSION}`,
     `/victron-diagnostics.js?v=${VERSION}`,
     `/ha-live-bridge.js?v=${VERSION}`,
+    `/technical-live-sync.js?v=${VERSION}`
+  ];
+
+  const IDLE_BACKGROUND=[
+    `/orientation-layout-71835.js?v=${VERSION}`,
     `/movement-presence.js?v=${VERSION}`,
-    `/technical-live-sync.js?v=${VERSION}`,
     `/waterkaarten-route-receiver-71870.js?v=${VERSION}`
   ];
 
@@ -51,6 +56,7 @@
       `/waterkaarten-route-enrichment-71811.js?v=${VERSION}`,`/marine-map-route-fit-71812.js?v=${VERSION}`
     ],
     logbook:[`/logbook-route-assist-71828.js?v=${VERSION}`],
+    costs:[`/receipt-reader-pro.js?v=${VERSION}`,`/receipt-ocr-fix-8234.js?v=${VERSION}`],
     weather:[`/weather-page.js?v=${VERSION}`,`/weather-radar.js?v=${VERSION}`,`/rws-nearby.js?v=${VERSION}`],
     rws:[`/weather-page.js?v=${VERSION}`,`/rws-nearby.js?v=${VERSION}`],
     ais:[`/ais-page.js?v=${VERSION}`],
@@ -153,7 +159,7 @@
       new MutationObserver(syncCover).observe(app,{attributes:true,attributeFilter:['class']});
     }
     clearTimeout(bootFailSafe);
-    bootFailSafe=setTimeout(()=>finishBoot('failsafe'),15000);
+    bootFailSafe=setTimeout(()=>finishBoot('failsafe'),10000);
   }
 
   function finishBoot(reason='ready'){
@@ -345,6 +351,14 @@
     },{passive:true});
   }
 
+  function runIdle(task,delay=1200){
+    if('requestIdleCallback' in window){
+      window.requestIdleCallback(()=>task(),{timeout:delay+1800});
+    }else{
+      setTimeout(task,delay);
+    }
+  }
+
   async function start(){
     try{
       installBootGate();
@@ -356,27 +370,18 @@
       ensureCss('map-next-level-8220.css','msMapNextLevel8220');
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
-      /* Een updatecontrole of cache-opruiming mag het openen van de app nooit
-         blokkeren. De service worker ruimt oude versies pas op nadat de nieuwe
-         cache volledig klaarstaat. */
+      /* Updatecontrole blokkeert de zichtbare app nooit. */
       ensureFreshServiceWorker();
       await ensureSupabase();
       await loadScript(CORE_SCRIPT,20000);
       if(typeof window.signIn!=='function')throw new Error('De inlogfunctie is niet beschikbaar.');
-      try{await loadScript(`/receipt-reader-pro.js?v=${VERSION}`,12000)}catch(error){
-        console.warn('Slimme bonscanner kon niet worden geladen:',error);
-      }
-      try{await loadScript(`/receipt-ocr-fix-8234.js?v=${VERSION}`,12000)}catch(error){
-        console.warn('Bon-OCR herstel kon niet worden geladen:',error);
-      }
       const button=document.getElementById('signInButton');
       if(button)button.disabled=false;
 
-      try{await loadScript(`/runtime-stability-8202.js?v=${VERSION}`,6000)}catch(error){
-        console.warn('Runtime health guard:',error);
-      }
       installLazyRouteHooks();
 
+      /* Bouw eerst de Start. OCR, kaart, entertainment en andere zware functies
+         worden pas geladen wanneer de gebruiker die pagina opent. */
       try{await loadScript(`/dashboard-unified-71919-loader.js?v=${VERSION}`,12000)}catch(error){
         console.warn('Uniforme dashboardloader:',error);
       }
@@ -384,22 +389,34 @@
       removeLegacyLayoutLayers();
       syncBuildVersion();
 
-      Promise.allSettled(ESSENTIAL_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{
+      loadScript(`/runtime-stability-8202.js?v=${VERSION}`,6000).catch(error=>{
+        console.warn('Runtime health guard:',error);
+      });
+
+      Promise.allSettled(LIVE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{
         removeLegacyLayoutLayers();
         syncBuildVersion();
+        window.dispatchEvent(new CustomEvent('mijnserenity:live-core-ready',{detail:{build:BUILD}}));
       });
-      setTimeout(()=>{
+
+      runIdle(()=>{
+        Promise.allSettled(IDLE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{
+          syncBuildVersion();
+        });
+      },1000);
+
+      runIdle(()=>{
         Promise.allSettled(SAFE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{
           syncBuildVersion();
           window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}));
         });
-      },1200);
+      },2200);
 
       const openRoute=new URLSearchParams(location.search).get('open');
       if(openRoute)loadRouteModules(openRoute).catch(()=>{});
       const target=document.getElementById('authMsg');
       if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
-      console.info(`MijnSerenity ${BUILD}: stabiele bootstrap gestart.`);
+      console.info(`MijnSerenity ${BUILD}: snelle bootstrap gestart; live kernwaarden blijven actief.`);
     }catch(error){
       console.error('MijnSerenity kon niet starten:',error);
       finishBoot('error');
