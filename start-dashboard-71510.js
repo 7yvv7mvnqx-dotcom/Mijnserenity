@@ -26,15 +26,16 @@
   const metric=value=>value&&typeof value==='object'&&'value' in value?value.value:value;
   const set=(id,value,missing=false)=>{
     const node=$(id);if(!node)return;
-    if(node.textContent!==String(value))node.textContent=String(value);
+    const next=String(value);
+    if(node.textContent!==next)node.textContent=next;
     node.classList.toggle('is-missing',Boolean(missing));
     node.closest('.ms8234-status')?.classList.toggle('is-missing',Boolean(missing));
   };
   const setSub=(id,value='')=>{
     const node=$(id);if(!node)return;
-    const text=clean(value);
-    node.textContent=text;
-    node.hidden=!text;
+    const text=clean(value),hide=!text;
+    if(node.textContent!==text)node.textContent=text;
+    if(node.hidden!==hide)node.hidden=hide;
   };
   const setRing=(id,value)=>{const node=$(id);if(node)node.style.setProperty('--pct',String(Math.max(0,Math.min(100,value||0))))};
 
@@ -53,8 +54,8 @@
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
     const meta=document.querySelector('meta[name="mijnserenity-build"]');if(meta)meta.content=BUILD;
-    const version=$('settingsAppVersion');if(version)version.textContent=BUILD;
-    document.querySelectorAll('[data-ms-build-version]').forEach(node=>node.textContent=BUILD);
+    const version=$('settingsAppVersion');if(version&&version.textContent!==BUILD)version.textContent=BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(node=>{if(node.textContent!==BUILD)node.textContent=BUILD});
   }
 
   function installCss(){
@@ -164,10 +165,11 @@
     const root=$('ms8210Start');if(!root)return;
     const greet=$('ms8234Greeting');
     if(greet){
-      greet.textContent=greeting();
+      const greetingText=greeting();
+      if(greet.textContent!==greetingText)greet.textContent=greetingText;
       let date=$('ms8245Date');
       if(!date){date=document.createElement('small');date.id='ms8245Date';date.className='ms8245-date';greet.insertAdjacentElement('afterend',date)}
-      date.textContent=dateText();
+      const today=dateText();if(date.textContent!==today)date.textContent=today;
     }
     const hero=root.querySelector('.ms8234-hero');
     const heading=hero?.querySelector('h2');
@@ -253,8 +255,10 @@
       const count=clean(summary.querySelector('.count')?.textContent)||'0';
       const strong=summary.querySelector('.ms8234-attention-copy strong');
       const small=summary.querySelector('.ms8234-attention-copy small');
-      if(strong&&Number(count)>0)strong.textContent=`${count} aandachtspunt${Number(count)===1?'':'en'}`;
-      if(small)small.textContent=Number(count)>0?'Tik om te bekijken':'Alles in orde';
+      const strongText=Number(count)>0?`${count} aandachtspunt${Number(count)===1?'':'en'}`:'Aandacht';
+      const smallText=Number(count)>0?'Tik om te bekijken':'Alles in orde';
+      if(strong&&strong.textContent!==strongText)strong.textContent=strongText;
+      if(small&&small.textContent!==smallText)small.textContent=smallText;
       summary.setAttribute('aria-label',Number(count)>0?`${count} aandachtspunten bekijken`:'Geen aandachtspunten');
     }
   }
