@@ -150,7 +150,14 @@
     setTimeout(()=>fitRoute(force),260);
   }
 
+  function loadPlannerLiveSearch(){
+    if(window.__msPlannerLiveSearch8237)return;
+    import('./planner-live-search-8237.js?v=20260904-8237')
+      .catch(error=>console.warn('Routeplanner live zoeken laden:',error));
+  }
+
   patchLeaflet();
+  loadPlannerLiveSearch();
   window.ms71812FitMarineRoute=()=>fitRoute(true);
   window.addEventListener('mijnserenity:waterkaarten-route-imported',()=>refitSoon(true),{passive:true});
   window.addEventListener('mijnserenity:waterkaarten-route-enriched',()=>refitSoon(true),{passive:true});
