@@ -1,8 +1,10 @@
-/* MijnSerenity 8.22.0 — rustige Start + duidelijke paginakop en Thuisknop */
+/* MijnSerenity 8.23.5 — rustige snelle Start + live waarden zonder DOM-loop */
 (()=>{
   'use strict';
+  if(window.__msSimpleStart8210)return;
+  window.__msSimpleStart8210=true;
 
-  const BUILD='8.22.0';
+  const BUILD='8.23.5';
   const ROOT_ID='ms8210Start';
   const PAGE_TITLE_CLASS='ms8219-page-title';
   const $=id=>document.getElementById(id);
@@ -217,22 +219,42 @@
   function watch(){
     const dashboard=$('dashboard');
     if(!dashboard||observer)return;
-    observer=new MutationObserver(()=>requestAnimationFrame(()=>{
-      forceStart();
-      syncPageChrome();
-    }));
-    observer.observe(dashboard,{childList:true,subtree:true});
+    let queued=false;
+    observer=new MutationObserver(()=>{
+      if(queued)return;
+      queued=true;
+      requestAnimationFrame(()=>{
+        queued=false;
+        /* Alleen directe dashboardstructuur bewaken. Live tekstupdates in de
+           Start mogen deze herstelroutine niet telkens opnieuw activeren. */
+        if(!$(ROOT_ID))forceStart();
+        else syncPageChrome();
+      });
+    });
+    observer.observe(dashboard,{childList:true});
   }
 
   function start(){
     forceStart();
     syncPageChrome();
     watch();
-    [50,150,350,700,1200,2200,4000,7000].forEach(ms=>setTimeout(()=>{forceStart();syncPageChrome();watch()},ms));
-    setInterval(()=>{if(!document.hidden){forceStart();syncPageChrome()}},5000);
-    ['mijnserenity:dashboard-ready','mijnserenity:routechange','mijnserenity:boot-complete','pageshow','online'].forEach(name=>window.addEventListener(name,refreshUi,{passive:true}));
+    [60,300,1000,2600].forEach(ms=>setTimeout(()=>{
+      if(!$(ROOT_ID))forceStart();
+      syncPageChrome();
+      watch();
+    },ms));
+
+    /* Zeer rustige failsafe. Normale live updates zijn volledig event-driven. */
+    setInterval(()=>{
+      if(document.hidden)return;
+      const root=$(ROOT_ID);
+      if(!root||root.hidden)forceStart();
+    },30000);
+
+    ['mijnserenity:dashboard-ready','mijnserenity:routechange','mijnserenity:boot-complete','pageshow','online']
+      .forEach(name=>window.addEventListener(name,refreshUi,{passive:true}));
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshUi()},{passive:true});
-    console.info(`MijnSerenity ${BUILD}: rustige Start, paginakoppen en Thuisknop actief.`);
+    console.info(`MijnSerenity ${BUILD}: snelle Start en Thuisknop actief zonder live DOM-loop.`);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
