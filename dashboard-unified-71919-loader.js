@@ -1,13 +1,12 @@
-/* MijnSerenity 8.22.0 — uniforme dashboardruntime met eenvoudige startpagina
-   Eén dashboard en één navigatie-eigenaar op iPhone, iPad en Stage Manager.
-   Start is het centrale menu; het oude Meer-paneel wordt niet meer opgebouwd. */
+/* MijnSerenity 8.23.5 — snelle uniforme dashboardruntime met live kernwaarden
+   Start krijgt voorrang; accu- en temperatuurbronnen blijven live doorlopen. */
 (()=>{
   'use strict';
   if(window.__msUnifiedDashboard8215)return;
   window.__msUnifiedDashboard8215=true;
 
-  const BUILD='8.22.0';
-  const VERSION='822000';
+  const BUILD='8.23.5';
+  const VERSION='823500';
   const $=id=>document.getElementById(id);
   const pathOf=value=>{try{return new URL(value,location.href).pathname}catch{return String(value||'')}};
 
@@ -230,18 +229,15 @@
   async function ensureSimpleStart(){
     if(startRootReady())return true;
 
-    let ok=await load(`/simple-start-8210.js?v=${VERSION}`,10000);
+    let ok=await load(`/simple-start-8210.js?v=${VERSION}`,8000);
     await new Promise(resolve=>setTimeout(resolve,0));
     if(startRootReady())return true;
 
-    /* Een al aanwezige maar niet uitgevoerde/verouderde script-tag kon in 8.21.4
-       als 'geladen' worden beschouwd. Als er nog geen Start-root is, één keer
-       geforceerd opnieuw laden en de moduleguard resetten. */
     document.querySelectorAll('script[src]').forEach(script=>{
       if(pathOf(script.src)==='/simple-start-8210.js')script.remove();
     });
     window.__msSimpleStart8210=false;
-    ok=await load(`/simple-start-8210.js?v=${VERSION}&retry=1`,10000);
+    ok=await load(`/simple-start-8210.js?v=${VERSION}&retry=1`,8000);
     await new Promise(resolve=>setTimeout(resolve,0));
     if(startRootReady())return true;
 
@@ -271,7 +267,6 @@
       requestAnimationFrame(()=>{queued=false;enforceUnifiedUi()});
     };
 
-    /* Alleen directe structuurwijzigingen bewaken; geen documentbrede subtree/class observer. */
     const bodyObserver=new MutationObserver(queue);
     bodyObserver.observe(document.body,{childList:true});
     const dashboard=$('dashboard');
@@ -280,7 +275,7 @@
       dashboardObserver.observe(dashboard,{childList:true});
     }
 
-    [100,350,900,1800,3500].forEach(ms=>setTimeout(queue,ms));
+    [120,500,1600].forEach(ms=>setTimeout(queue,ms));
     window.addEventListener('resize',queue,{passive:true});
     window.addEventListener('orientationchange',queue,{passive:true});
     window.addEventListener('pageshow',queue,{passive:true});
@@ -291,6 +286,12 @@
     },{passive:true});
   }
 
+  function loadCollisionRadarWhenIdle(){
+    const task=()=>load(`/dashboard-collision-radar-8201.js?v=${VERSION}`,7000);
+    if('requestIdleCallback' in window)window.requestIdleCallback(task,{timeout:3000});
+    else setTimeout(task,1600);
+  }
+
   async function start(){
     ensureStyle();
     removeConflicts();
@@ -299,27 +300,37 @@
     ensureCss('msStableShell71919','marine-glass-mobile-7184.css');
     ensureCss('msMarineGlassFixes71919','marine-glass-fixes-7193.css');
 
-    await load(`/mobile-viewport-guard-71911.js?v=${VERSION}`,6000);
-    const dashboardOk=await load(`/dashboard-pro-71700.js?v=${VERSION}`,10000);
+    await load(`/mobile-viewport-guard-71911.js?v=${VERSION}`,5000);
+    const dashboardOk=await load(`/dashboard-pro-71700.js?v=${VERSION}`,9000);
     if(!dashboardOk)console.warn('Marine Glass dashboard kon niet worden geladen.');
-    await load(`/dashboard-live-values-fix-71914.js?v=${VERSION}`,7000);
-    await load(`/dashboard-energy-bridge-8206.js?v=${VERSION}`,7000);
-    await load(`/dashboard-collision-radar-8201.js?v=${VERSION}`,7000);
+
+    /* De live scripts starten meteen, maar we wachten er niet op voordat Start zichtbaar wordt. */
+    const liveLoads=[
+      load(`/dashboard-live-values-fix-71914.js?v=${VERSION}`,7000),
+      load(`/dashboard-energy-bridge-8206.js?v=${VERSION}`,7000)
+    ];
 
     removeConflicts();
     syncVersion();
     const dashboard=$('dashboard');
     if(dashboard&&$('msMarineGlass'))dashboard.classList.add('mg-active');
+
     await ensureSimpleStart();
     rebuildNavigation();
     ensureMore();
     guardUnifiedUi();
+
     requestAnimationFrame(()=>{
       syncVersion();
       syncNav();
-      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,unified:true,simpleStart:true}}));
+      window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,unified:true,simpleStart:true,fastStart:true}}));
     });
-    console.info(`MijnSerenity ${BUILD}: uniforme runtime met eenvoudige startpagina actief.`);
+
+    Promise.all(liveLoads).then(()=>{
+      window.dispatchEvent(new CustomEvent('mijnserenity:live-values-ready',{detail:{build:BUILD}}));
+    }).catch(()=>{});
+    loadCollisionRadarWhenIdle();
+    console.info(`MijnSerenity ${BUILD}: snelle Start actief; live kernwaarden laden parallel.`);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
