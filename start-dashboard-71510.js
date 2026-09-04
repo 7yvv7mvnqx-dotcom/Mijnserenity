@@ -1,10 +1,10 @@
-/* MijnSerenity 8.23.5 — dashboard hotfix voor iPhone + live Cerbo-waarden */
+/* MijnSerenity 8.23.6 — dashboard hotfix voor iPhone + live Cerbo-waarden + aandachtspunten */
 (()=>{
   'use strict';
   if(window.__msDashboardHotfix8235)return;
   window.__msDashboardHotfix8235=true;
 
-  const BUILD='8.23.5';
+  const BUILD='8.23.6';
   const SOURCE='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@f63ec7e8acea22a105c69ca6de95b5be25371a7e/start-dashboard-71510.js';
   const $=id=>document.getElementById(id);
   const clean=value=>String(value??'').replace(/\s+/g,' ').trim();
@@ -135,4 +135,14 @@
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadDashboard,{once:true});
   else loadDashboard();
+})();
+
+(()=>{
+  if(window.__msAttentionScrollLoader8236)return;
+  window.__msAttentionScrollLoader8236=true;
+  const script=document.createElement('script');
+  script.src='attention-scroll-8236.js?v=823600';
+  script.async=false;
+  script.onerror=()=>console.warn('Aandachtspunt-navigatie kon niet worden geladen.');
+  document.head.appendChild(script);
 })();
