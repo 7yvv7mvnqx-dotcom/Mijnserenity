@@ -148,6 +148,9 @@
   const get=id=>document.getElementById(id);
   let oldCollect=null,oldSummary=null,oldMap=null,oldPoiRender=null,oldGpx=null;
 
+  function currentPlan(){
+    try{return typeof plannerCurrentPlan!=='undefined'?plannerCurrentPlan:null}catch{return null}
+  }
   function disabled(){return clean(get('plannerPoiRadius')?.value)===NONE}
   function raw(plan){return Array.isArray(plan?.routePois)?plan.routePois:[]}
   function selected(){return clean(get(FILTER_ID)?.value||'all')||'all'}
@@ -167,11 +170,13 @@
     return values.sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b,'nl'));
   }
 
-  function syncOptions(plan=window.plannerCurrentPlan){
+  function syncOptions(plan=currentPlan()){
     const select=get(FILTER_ID);if(!select)return;
-    const previous=select.value||load();
+    const previous=select.dataset.preferred||select.value||load();
     select.innerHTML='<option value="all">Alle POI’s</option>'+categories(plan).map(category=>`<option value="${esc(category)}">${esc(category)}</option>`).join('');
-    select.value=[...select.options].some(option=>option.value===previous)?previous:'all';
+    const exists=[...select.options].some(option=>option.value===previous);
+    select.value=exists?previous:'all';
+    if(exists)delete select.dataset.preferred;
   }
 
   function ensureUi(){
@@ -183,7 +188,7 @@
       radius.dataset.ms8240Bound='1';
       radius.removeAttribute('onchange');radius.onchange=null;
       radius.addEventListener('change',()=>{
-        if(disabled()&&window.plannerCurrentPlan){rerender();return}
+        if(disabled()&&currentPlan()){rerender();return}
         if(typeof window.plannerFormChanged==='function')window.plannerFormChanged();
       });
     }
@@ -193,7 +198,10 @@
       field.innerHTML=`<label for="${FILTER_ID}">Filter POI’s</label><select id="${FILTER_ID}"><option value="all">Alle POI’s</option></select><small class="ms8240-poi-filter-note">Filter de lijst en kaart op soort.</small>`;
       radius.closest('div')?.insertAdjacentElement('afterend',field);
       const select=get(FILTER_ID);
-      if(select){select.value=load();select.addEventListener('change',()=>{save(select.value);rerender()})}
+      if(select){
+        select.dataset.preferred=load();
+        select.addEventListener('change',()=>{delete select.dataset.preferred;save(select.value);rerender()});
+      }
       if(!get('ms8240PoiStyle')){
         const style=document.createElement('style');style.id='ms8240PoiStyle';style.textContent='.ms8240-poi-filter-field{min-width:0}.ms8240-poi-filter-note{display:block;margin-top:5px;font-size:.76rem;opacity:.66}#plannerPoiCategoryFilter{width:100%}.ms8240-filter-chip{display:inline-flex;margin:0 0 10px;padding:5px 9px;border-radius:999px;border:1px solid rgba(83,183,229,.25);background:rgba(65,172,225,.13);font-size:.75rem;font-weight:800}';document.head.appendChild(style);
       }
@@ -210,7 +218,7 @@
   }
 
   function rerender(){
-    const plan=window.plannerCurrentPlan;if(!plan)return;
+    const plan=currentPlan();if(!plan)return;
     syncOptions(plan);
     if(typeof window.renderPlannerSummary==='function')window.renderPlannerSummary(plan);
     requestAnimationFrame(()=>chip(plan));
