@@ -141,7 +141,7 @@
   if(window.__msAttentionScrollLoader8236)return;
   window.__msAttentionScrollLoader8236=true;
   const script=document.createElement('script');
-  script.src='attention-scroll-8236.js?v=823600';
+  script.src='attention-scroll-8236.js?v=824000';
   script.async=false;
   script.onerror=()=>console.warn('Aandachtspunt-navigatie kon niet worden geladen.');
   document.head.appendChild(script);
