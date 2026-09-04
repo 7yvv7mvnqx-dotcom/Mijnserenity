@@ -146,3 +146,13 @@
   script.onerror=()=>console.warn('Aandachtspunt-navigatie kon niet worden geladen.');
   document.head.appendChild(script);
 })();
+
+(()=>{
+  if(window.__msHarbourExperienceLoader8240)return;
+  window.__msHarbourExperienceLoader8240=true;
+  const script=document.createElement('script');
+  script.src='harbor-experience-8240.js?v=824001';
+  script.async=false;
+  script.onerror=()=>console.warn('Haven-details en Serenity loader konden niet worden geladen.');
+  document.head.appendChild(script);
+})();
