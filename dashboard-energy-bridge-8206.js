@@ -1,6 +1,5 @@
-/* MijnSerenity 8.20.8 — energiebronbrug voor Marine Glass.
-   Gebruikt bestaande VRM/SmartShunt/Home Assistant waarden als fallback voor het energiedashboard.
-   Er worden geen waarden verzonnen: alleen geldige live of reeds aanwezige metingen worden doorgezet. */
+/* MijnSerenity 8.23.5 — energiebronbrug voor Marine Glass.
+   Live accuwaarden blijven direct actief; zware Victron Remote Console laadt pas in Techniek. */
 (()=>{
   'use strict';
   if(window.__msEnergyBridge8206)return;
@@ -100,16 +99,15 @@
 
   let queued=false;
   function queue(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;publish()})}
-  ['mijnserenity:dashboard-ready','mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-vrm-diagnostics-updated','mijnserenity-ruuvi-vrm-updated','mijnserenity:modules-ready'].forEach(name=>window.addEventListener(name,queue,{passive:true}));
+  ['mijnserenity:dashboard-ready','mijnserenity:live-values-ready','mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-vrm-diagnostics-updated','mijnserenity-ruuvi-vrm-updated','mijnserenity:modules-ready'].forEach(name=>window.addEventListener(name,queue,{passive:true}));
   window.addEventListener('focus',queue,{passive:true});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()},{passive:true});
-  [250,800,1800,3500,7000].forEach(ms=>setTimeout(queue,ms));
-  setInterval(()=>{if(!document.hidden)queue()},15000);
+  [200,800,2200].forEach(ms=>setTimeout(queue,ms));
+  setInterval(()=>{if(!document.hidden)queue()},30000);
   window.msEnergyBridge8206Refresh=publish;
 })();
 
-/* 8.20.8: laad het eigen Cerbo-paneel met eigen DOM-ID's. Hierdoor kan de
-   oude Marine Glass energy()-loop de live waarden niet meer terugzetten naar streepjes. */
+/* Cerbo GX blijft direct laden: dit is de primaire bron voor live accuwaarden. */
 (()=>{
   'use strict';
   if(window.__msCerboLoader8208)return;
@@ -117,7 +115,7 @@
   function loadCerbo(){
     if(window.__msCerboLive8208||document.querySelector('script[data-ms-cerbo-live="8208"]'))return;
     const script=document.createElement('script');
-    script.src='/dashboard-cerbo-live-8208.js?v=820800';
+    script.src='/dashboard-cerbo-live-8208.js?v=823500';
     script.async=false;
     script.dataset.msCerboLive='8208';
     script.onerror=()=>console.warn('Cerbo GX live dashboard kon niet worden geladen.');
@@ -127,20 +125,38 @@
   else loadCerbo();
 })();
 
-/* 8.22.0: officiële Victron GUI-v2 Remote Console live ín Techniek, met tokeninvoer op het foutscherm. */
+/* De zware officiële Victron GUI-v2 Remote Console pas laden wanneer Techniek wordt geopend. */
 (()=>{
   'use strict';
   if(window.__msVictronConsoleLoader8216)return;
   window.__msVictronConsoleLoader8216=true;
+
   function loadConsole(){
     if(window.__msVictronRemoteConsole8216||document.querySelector('script[data-ms-victron-console="8216"]'))return;
     const script=document.createElement('script');
-    script.src='/victron-remote-console-8209.js?v=822000';
+    script.src='/victron-remote-console-8209.js?v=823500';
     script.async=false;
     script.dataset.msVictronConsole='8216';
     script.onerror=()=>console.warn('Victron Remote Console live kon niet worden geladen.');
     document.head.appendChild(script);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadConsole,{once:true});
-  else loadConsole();
+
+  function routeFromEvent(event){
+    const detail=event?.detail;
+    return String(typeof detail==='string'?detail:(detail?.route||detail?.id||detail?.target||'')).toLowerCase();
+  }
+
+  function maybeLoad(event){
+    const route=routeFromEvent(event);
+    if(route==='technical')loadConsole();
+  }
+
+  window.addEventListener('mijnserenity:routechange',maybeLoad,{passive:true});
+  document.addEventListener('click',event=>{
+    const node=event.target instanceof Element?event.target.closest('[data-target="technical"],[data-route="technical"],[data-go="technical"]'):null;
+    if(node)loadConsole();
+  },{capture:true,passive:true});
+
+  const technical=document.getElementById('technical');
+  if(technical&&!technical.classList.contains('hidden'))loadConsole();
 })();
