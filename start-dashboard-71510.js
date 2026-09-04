@@ -1,122 +1,138 @@
-/* MijnSerenity 8.23.4 — premium Serenity startdashboard */
+/* MijnSerenity 8.23.5 — dashboard hotfix voor iPhone + live Cerbo-waarden */
 (()=>{
   'use strict';
-  if(window.__msDashboardLoader8234)return;
-  window.__msDashboardLoader8234=true;
-  window.__msDashboardLoader8216=true;
-  window.__msSimpleStart8210=true;
+  if(window.__msDashboardHotfix8235)return;
+  window.__msDashboardHotfix8235=true;
 
-  const BUILD='8.23.4';
-  const TOKEN='823400';
-  const ROOT_ID='ms8210Start';
-  const STYLE_ID='ms8234PremiumStartStyle';
+  const BUILD='8.23.5';
+  const SOURCE='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@f63ec7e8acea22a105c69ca6de95b5be25371a7e/start-dashboard-71510.js';
   const $=id=>document.getElementById(id);
-  const num=value=>Number.isFinite(Number(value))?Number(value):0;
-  const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[ch]));
-
-  const NAV=[
-    {target:'live',label:'Live varen'},
-    {target:'map',label:'Kaart'},
-    {target:'planner',label:'Reisplanner',attention:'planner'},
-    {target:'ais',label:'AIS'},
-    {target:'weather',label:'Weer'},
-    {target:'rws',label:'Vaarwegberichten',attention:'rws'},
-    {target:'logbook',label:'Logboek'},
-    {target:'pois',label:"POI's"},
-    {target:'technical',label:'Techniek',attention:'technical'},
-    {target:'entertainment',label:'Home Assistant'},
-    {target:'costs',label:'Kosten'},
-    {target:'finance',label:'Financieel'},
-    {target:'settings',label:'Instellingen'},
-    {target:'boat',label:'Boot & delen',admin:true}
-  ];
-
-  const ICONS={
-    sail:`<svg viewBox="0 0 48 56" aria-hidden="true"><path d="M23 4v41"/><path d="M20 8 6 40h14Z" class="fill"/><path d="M27 11v29h15Z" class="fill fade"/><path d="M5 47c10 4 26 4 37 0-8 8-29 8-37 0Z" class="fill"/></svg>`,
-    pin:`<svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>`,
-    cloud:`<svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.4 8.2 4.5 4.5 0 0 0 7 18Z"/><path d="M8 3v2M3.8 5.2l1.4 1.4M12.2 5.2l-1.4 1.4"/></svg>`,
-    battery:`<svg viewBox="0 0 24 24"><rect x="3" y="6" width="16" height="12" rx="2"/><path d="M21 10v4M6 9h8v6H6z" class="fill"/></svg>`,
-    plug:`<svg viewBox="0 0 24 24"><path d="M8 3v5M16 3v5M6 8h12v2a6 6 0 0 1-6 6v5M9 21h6"/></svg>`,
-    wifi:`<svg viewBox="0 0 24 24"><path d="M4 9a12 12 0 0 1 16 0M7 12.5a7.5 7.5 0 0 1 10 0M10.2 16a2.8 2.8 0 0 1 3.6 0"/><circle cx="12" cy="19" r="1" class="fill"/></svg>`,
-    play:`<svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z" class="fill"/></svg>`,
-    speed:`<svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0M12 14l5-5"/><circle cx="12" cy="14" r="1.4" class="fill"/></svg>`,
-    depth:`<svg viewBox="0 0 24 24"><path d="M3 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0M12 4v9M9 10l3 3 3-3"/></svg>`,
-    compass:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5Z"/><path d="m13.5 13.5-5 2 2-5Z" class="fill"/></svg>`,
-    map:`<svg viewBox="0 0 24 24"><path d="m3 6 5-2 8 2 5-2v14l-5 2-8-2-5 2Z"/><path d="M8 4v14M16 6v14"/></svg>`,
-    route:`<svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h5a3 3 0 0 1 0 6h-2a3 3 0 0 0 0 6h5"/></svg>`,
-    radar:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 18 6M12 3v3M21 12h-3"/><circle cx="17" cy="8" r="1.5" class="fill"/></svg>`,
-    sun:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg>`,
-    book:`<svg viewBox="0 0 24 24"><path d="M4 5a3 3 0 0 1 3-1h5v16H7a3 3 0 0 0-3 1Zm16 0a3 3 0 0 0-3-1h-5v16h5a3 3 0 0 1 3 1Z"/></svg>`,
-    megaphone:`<svg viewBox="0 0 24 24"><path d="m4 10 13-5v14L4 14Z"/><path d="M4 10v4M8 15l1 5h4l-1-6M20 9v6"/></svg>`,
-    wrench:`<svg viewBox="0 0 24 24"><path d="M14.5 6.5a5 5 0 0 0-6.4 6.4L3 18l3 3 5.1-5.1a5 5 0 0 0 6.4-6.4l-3 3-3-3Z"/></svg>`,
-    home:`<svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9h-6v-6H9v6H3Z"/></svg>`,
-    receipt:`<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>`,
-    euro:`<svg viewBox="0 0 24 24"><path d="M19 6a7 7 0 1 0 0 12M4 10h10M4 14h9"/></svg>`,
-    gear:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L14.5 3h-5l-.4 3.1a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L5 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 3.1h5l.4-3.1a8 8 0 0 0 1.7-1l2.4 1 2-3.4L19 13a7 7 0 0 0 .1-1Z"/></svg>`,
-    people:`<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3 20a6 6 0 0 1 12 0M14 15a5 5 0 0 1 7 5"/></svg>`,
-    drop:`<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12Z"/></svg>`,
-    fuel:`<svg viewBox="0 0 24 24"><path d="M5 21V4h10v17M4 21h12M7 7h6v5H7zM15 8h2l3 3v7a2 2 0 0 1-4 0v-4"/></svg>`,
-    thermo:`<svg viewBox="0 0 24 24"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0Z"/><path d="M12 8v8"/></svg>`,
-    chevron:`<svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>`,
-    more:`<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" class="fill"/><circle cx="12" cy="12" r="1.5" class="fill"/><circle cx="19" cy="12" r="1.5" class="fill"/></svg>`
+  const clean=value=>String(value??'').replace(/\s+/g,' ').trim();
+  const numberFrom=value=>{
+    const match=clean(value).replace(',','.').match(/-?\d+(?:\.\d+)?/);
+    return match?Number(match[0]):null;
   };
-  const icon=name=>`<span class="ms8234-icon ms8234-icon-${name}">${ICONS[name]||ICONS.compass}</span>`;
+  const invalid=value=>{
+    const text=clean(value);
+    return !text||/^(?:undefined|null|–|-|—|–\s*(?:%|v|°c|bft|m)?|-\s*(?:%|v|°c|bft|m)?)$/i.test(text);
+  };
+  const first=ids=>{
+    for(const id of ids){const text=clean($(id)?.textContent);if(!invalid(text))return text}
+    return '';
+  };
+  const set=(id,value,missing=false)=>{
+    const node=$(id);if(!node)return;
+    if(node.textContent!==String(value))node.textContent=String(value);
+    node.classList.toggle('is-missing',Boolean(missing));
+    node.closest('.ms8234-status')?.classList.toggle('is-missing',Boolean(missing));
+  };
+  const setRing=(id,value)=>{const node=$(id);if(node)node.style.setProperty('--pct',String(Math.max(0,Math.min(100,value||0))))};
 
-  function syncBuild(){window.MIJSERENITY_BUILD=BUILD;const meta=document.querySelector('meta[name="mijnserenity-build"]');if(meta)meta.content=BUILD;const version=$('settingsAppVersion');if(version)version.textContent=BUILD;document.querySelectorAll('[data-ms-build-version]').forEach(node=>node.textContent=BUILD);}
+  function syncBuild(){
+    window.MIJSERENITY_BUILD=BUILD;
+    const meta=document.querySelector('meta[name="mijnserenity-build"]');if(meta)meta.content=BUILD;
+    const version=$('settingsAppVersion');if(version)version.textContent=BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(node=>node.textContent=BUILD);
+  }
 
-  function installStyle(){
-    if($(STYLE_ID))return;
-    const style=document.createElement('style');style.id=STYLE_ID;style.textContent=`
-#dashboard.ms8216-simple-start>*:not(#${ROOT_ID}){display:none!important}#${ROOT_ID}{--ink:#f6fbff;--muted:#9db2c2;--line:rgba(108,211,245,.22);display:block!important;box-sizing:border-box;width:100%;max-width:860px;margin:0 auto;padding:12px 14px max(108px,calc(env(safe-area-inset-bottom) + 94px));color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;background:radial-gradient(circle at 85% 5%,rgba(26,145,190,.11),transparent 28%),radial-gradient(circle at 12% 44%,rgba(45,94,173,.08),transparent 28%)}#${ROOT_ID} *{box-sizing:border-box}#${ROOT_ID} button{font:inherit;-webkit-tap-highlight-color:transparent}#${ROOT_ID} button:focus-visible{outline:2px solid #4ed8ff;outline-offset:3px}#${ROOT_ID} .ms8234-icon{display:inline-grid;place-items:center;flex:0 0 auto;color:currentColor}#${ROOT_ID} .ms8234-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}#${ROOT_ID} .ms8234-icon svg .fill{fill:currentColor;stroke:none}#${ROOT_ID} .ms8234-icon svg .fade{opacity:.72}
-.ms8234-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:6px 2px 14px}.ms8234-brand{min-width:0}.ms8234-brandline{display:flex;align-items:flex-end;gap:4px}.ms8234-sail{width:31px;height:39px;color:#fff}.ms8234-sail svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.ms8234-sail .fill{fill:currentColor;stroke:none}.ms8234-sail .fade{opacity:.72}.ms8234-brand h1{margin:0;color:#fff;font-family:Georgia,"Times New Roman",serif;font-size:clamp(39px,11vw,56px);font-weight:500;line-height:.9;letter-spacing:-.055em}.ms8234-greeting{margin:10px 0 0;color:#adbdca;font-size:14px;font-weight:650;letter-spacing:-.01em}.ms8234-attention{display:flex;align-items:center;gap:9px;min-width:145px;max-width:44%;padding:10px 12px;border:1px solid rgba(113,205,239,.24);border-radius:19px;background:linear-gradient(180deg,rgba(10,37,54,.95),rgba(6,28,43,.93));box-shadow:0 14px 34px rgba(0,0,0,.18);color:#f6fbff;text-align:left}.ms8234-attention .count{display:grid;place-items:center;width:31px;height:31px;flex:0 0 31px;border-radius:999px;background:#2aa9e7;font-size:14px;font-weight:900;box-shadow:0 0 0 5px rgba(42,169,231,.09)}.ms8234-attention.warning .count{background:#f1a527}.ms8234-attention.critical .count{background:#ef4b5a}.ms8234-attention-copy{min-width:0;display:grid;gap:2px}.ms8234-attention-copy strong{font-size:12px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ms8234-attention-copy small{color:#93a9b9;font-size:9.5px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ms8234-attention .ms8234-icon{width:17px;height:17px;margin-left:auto;color:#86a6b9}
-.ms8234-statusrail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(116px,1fr);gap:8px;overflow-x:auto;padding:0 1px 13px;scrollbar-width:none}.ms8234-statusrail::-webkit-scrollbar{display:none}.ms8234-status{display:flex;align-items:center;gap:8px;min-height:57px;padding:9px 10px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(180deg,rgba(10,38,55,.82),rgba(7,29,44,.78));color:#dcebf4}.ms8234-status .ms8234-icon{width:25px;height:25px;color:#45cfff}.ms8234-status-copy{min-width:0;display:grid;gap:2px}.ms8234-status-copy small{color:#8fa6b6;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.ms8234-status-copy strong{font-size:11.5px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ms8234-hero{position:relative;isolation:isolate;min-height:290px;padding:27px 25px 24px;margin-bottom:14px;overflow:hidden;border:1px solid rgba(78,201,240,.34);border-radius:23px;background:#061d2d url('/serenity-ivms-hero.png') center/cover no-repeat;box-shadow:0 20px 55px rgba(0,0,0,.3);color:#fff}.ms8234-hero::before{content:'';position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,rgba(2,18,30,.98) 0%,rgba(2,20,33,.88) 43%,rgba(2,21,34,.4) 72%,rgba(2,18,30,.18)),linear-gradient(0deg,rgba(2,18,30,.58),transparent 45%)}.ms8234-kicker{display:block;margin-bottom:15px;color:#3cd5ff;font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.ms8234-hero h2{max-width:440px;margin:0;color:#fff;font-size:clamp(31px,8vw,45px);line-height:1.03;font-weight:900;letter-spacing:-.045em}.ms8234-live-metrics{display:flex;align-items:stretch;gap:0;margin:25px 0 22px}.ms8234-live-metric{display:flex;align-items:center;gap:8px;min-width:0;padding:0 15px;border-right:1px solid rgba(255,255,255,.16)}.ms8234-live-metric:first-child{padding-left:0}.ms8234-live-metric:last-child{border-right:0}.ms8234-live-metric .ms8234-icon{width:23px;height:23px;color:#abc3d1}.ms8234-live-copy{display:grid;gap:2px;min-width:0}.ms8234-live-copy strong{font-size:15px;line-height:1;white-space:nowrap}.ms8234-live-copy small{color:#9bb1c0;font-size:9px}.ms8234-start{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 18px;border:1px solid rgba(104,233,255,.55);border-radius:14px;background:linear-gradient(135deg,#1db3da,#24c7ed);box-shadow:0 12px 30px rgba(20,183,223,.24);color:white;font-weight:900}.ms8234-start .ms8234-icon-play{width:24px;height:24px}.ms8234-start .ms8234-icon-chevron{width:18px;height:18px}.ms8234-start:active{transform:scale(.985)}
-.ms8234-primary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}.ms8234-feature{position:relative;display:flex;align-items:center;gap:14px;min-height:121px;padding:18px;border:1px solid rgba(97,204,239,.25);border-radius:20px;overflow:hidden;background:linear-gradient(135deg,rgba(7,42,62,.96),rgba(7,28,45,.94));box-shadow:0 14px 30px rgba(0,0,0,.17);color:#f5fbff;text-align:left}.ms8234-feature::after{content:'';position:absolute;right:-34px;bottom:-50px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,var(--glow,rgba(42,198,239,.24)),transparent 65%);pointer-events:none}.ms8234-feature[data-tone="purple"]{--accent:#bd67ff;--glow:rgba(164,83,239,.3);border-color:rgba(187,103,255,.28);background:linear-gradient(135deg,rgba(37,29,67,.95),rgba(17,25,49,.95))}.ms8234-feature[data-tone="green"]{--accent:#53e7aa;--glow:rgba(47,217,147,.28);border-color:rgba(83,231,170,.27);background:linear-gradient(135deg,rgba(12,55,53,.94),rgba(8,30,42,.95))}.ms8234-feature[data-tone="gold"]{--accent:#ffc854;--glow:rgba(255,190,67,.28);border-color:rgba(255,200,84,.28);background:linear-gradient(135deg,rgba(53,48,30,.92),rgba(16,31,44,.95))}.ms8234-feature>.ms8234-icon{width:49px;height:49px;color:var(--accent,#3fd8ff)}.ms8234-feature-copy{display:grid;gap:6px;min-width:0;position:relative;z-index:1}.ms8234-feature-copy strong{font-size:18px;line-height:1.02}.ms8234-feature-copy small{max-width:180px;color:#9fb4c3;font-size:10.5px;line-height:1.25}.ms8234-card-badge{display:none;position:absolute;top:10px;right:10px;z-index:2;min-width:23px;height:23px;padding:0 6px;border-radius:999px;background:#39aeea;color:#fff;font-size:10px;font-weight:900;place-items:center}.ms8234-card-badge.show{display:grid}.ms8234-card-badge.warning{background:#ef9f21}.ms8234-card-badge.critical{background:#e84656}
-.ms8234-boatstatus{margin-bottom:14px;padding:15px;border:1px solid var(--line);border-radius:21px;background:linear-gradient(180deg,rgba(9,35,52,.88),rgba(6,26,40,.88));box-shadow:0 18px 40px rgba(0,0,0,.18)}.ms8234-sectionhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 13px}.ms8234-sectionhead strong{color:#3ed3fb;font-size:10px;letter-spacing:.1em;text-transform:uppercase}.ms8234-sectionhead small{color:#829aaa;font-size:9px}.ms8234-gauges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.ms8234-gauge{display:flex;align-items:center;gap:9px;min-width:0;padding:7px 4px;border:0;background:transparent;color:#fff;text-align:left}.ms8234-ring{--pct:0;--ring:#49dfa5;display:grid;place-items:center;width:49px;height:49px;flex:0 0 49px;border-radius:50%;background:conic-gradient(var(--ring) calc(var(--pct)*1%),rgba(119,153,173,.22) 0);position:relative}.ms8234-ring::before{content:'';position:absolute;inset:4px;border-radius:50%;background:#092234}.ms8234-ring>.ms8234-icon{position:relative;z-index:1;width:23px;height:23px;color:var(--ring)}.ms8234-gauge:nth-child(2) .ms8234-ring{--ring:#39cffa}.ms8234-gauge:nth-child(3) .ms8234-ring{--ring:#ffbb45}.ms8234-gauge:nth-child(4) .ms8234-ring{--ring:#c469ff}.ms8234-gauge-copy{display:grid;gap:3px;min-width:0}.ms8234-gauge-copy strong{font-size:17px;line-height:1;white-space:nowrap}.ms8234-gauge-copy small{color:#91a8b8;font-size:9px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ms8234-gauge-copy em{color:#6f8b9e;font-size:8px;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ms8234-secondary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:17px}.ms8234-mini{position:relative;display:flex;align-items:center;gap:10px;min-height:88px;padding:13px;border:1px solid rgba(92,187,224,.22);border-radius:18px;background:linear-gradient(180deg,rgba(10,39,57,.86),rgba(7,28,43,.88));color:#eef8fd;text-align:left}.ms8234-mini>.ms8234-icon{width:31px;height:31px;color:#6bdcff}.ms8234-mini-copy{display:grid;gap:4px;min-width:0}.ms8234-mini-copy strong{font-size:12px;line-height:1.04}.ms8234-mini-copy small{color:#8ba3b4;font-size:8.5px;line-height:1.13}.ms8234-mini>.ms8234-icon-chevron{width:13px;height:13px;margin-left:auto;color:#708c9e}.ms8234-mini[hidden]{display:none!important}.ms8234-bottom{position:sticky;z-index:80;bottom:max(8px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;min-height:69px;padding:5px;margin:0;border:1px solid rgba(102,197,231,.22);border-radius:22px;background:rgba(4,24,38,.94);box-shadow:0 18px 48px rgba(0,0,0,.46);backdrop-filter:blur(20px) saturate(130%);-webkit-backdrop-filter:blur(20px) saturate(130%)}.ms8234-navbtn{display:grid;place-items:center;align-content:center;gap:4px;min-width:0;border:0;border-radius:17px;background:transparent;color:#7894a6}.ms8234-navbtn.active{background:linear-gradient(180deg,rgba(26,141,186,.28),rgba(9,62,88,.22));color:#35d1ff}.ms8234-navbtn.live{transform:translateY(-16px);width:64px;height:64px;justify-self:center;border:1px solid rgba(102,204,240,.23);border-radius:50%;background:linear-gradient(180deg,#153d5c,#0a2940);box-shadow:0 13px 27px rgba(0,0,0,.35);color:#d9edf6}.ms8234-navbtn>.ms8234-icon{width:24px;height:24px}.ms8234-navbtn.live>.ms8234-icon{width:28px;height:28px}.ms8234-navbtn span:last-child{max-width:100%;font-size:8.5px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:620px){#${ROOT_ID}{padding-left:12px;padding-right:12px}.ms8234-header{padding-top:3px}.ms8234-brand h1{font-size:42px}.ms8234-sail{width:25px;height:33px}.ms8234-attention{min-width:132px;padding:8px 9px}.ms8234-attention .count{width:28px;height:28px;flex-basis:28px}.ms8234-statusrail{grid-auto-columns:minmax(112px,38%)}.ms8234-hero{min-height:270px;padding:24px 20px}.ms8234-live-metric{padding:0 9px}.ms8234-live-metric .ms8234-icon{display:none}.ms8234-feature{min-height:111px;padding:15px}.ms8234-feature>.ms8234-icon{width:42px;height:42px}.ms8234-feature-copy strong{font-size:16px}.ms8234-gauges{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:8px}.ms8234-secondary{grid-template-columns:repeat(3,minmax(0,1fr))}.ms8234-mini{display:grid;grid-template-columns:1fr;justify-items:start;align-content:center;gap:5px;padding:11px}.ms8234-mini>.ms8234-icon{width:28px;height:28px}.ms8234-mini>.ms8234-icon-chevron{position:absolute;right:9px;top:50%;transform:translateY(-50%);width:11px;height:11px}.ms8234-mini-copy strong{font-size:10.5px}.ms8234-mini-copy small{display:none}}@media(max-width:390px){.ms8234-brand h1{font-size:39px}.ms8234-greeting{font-size:12px}.ms8234-attention{max-width:46%}.ms8234-attention-copy small{display:none}.ms8234-primary{gap:8px}.ms8234-feature{min-height:103px;padding:13px;gap:10px}.ms8234-feature>.ms8234-icon{width:37px;height:37px}.ms8234-feature-copy strong{font-size:14.5px}.ms8234-feature-copy small{font-size:9px}.ms8234-hero{min-height:255px}.ms8234-hero h2{font-size:30px}.ms8234-live-copy strong{font-size:13px}}@media(min-width:760px){.ms8234-statusrail{grid-auto-flow:initial;grid-template-columns:repeat(5,1fr);overflow:visible}.ms8234-secondary{grid-template-columns:repeat(3,1fr)}}`;
+  function installCss(){
+    if($('ms8235DashboardHotfixStyle'))return;
+    const style=document.createElement('style');
+    style.id='ms8235DashboardHotfixStyle';
+    style.textContent=`
+#ms8210Start .ms8234-attention{flex:0 0 166px!important;min-width:0!important;max-width:48%!important;gap:8px!important;padding:9px 10px!important}
+#ms8210Start .ms8234-attention-copy{min-width:0!important;flex:1!important}
+#ms8210Start .ms8234-attention-copy strong{font-size:11.5px!important;line-height:1.05!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+#ms8210Start .ms8234-status{min-height:61px!important}
+#ms8210Start .ms8234-status-copy strong{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.08!important}
+#ms8210Start .ms8234-status.is-missing strong,#ms8210Start .is-missing{color:#8fa6b6!important}
+#ms8210Start .ms8234-live-copy strong.is-missing{font-size:11px!important;color:#9bb1c0!important}
+#ms8210Start .ms8234-gauge-copy strong.is-missing{font-size:11px!important;color:#8fa6b6!important}
+@media(max-width:620px){#ms8210Start .ms8234-attention{flex-basis:158px!important}}
+@media(max-width:390px){#ms8210Start .ms8234-brand h1{font-size:38px!important}#ms8210Start .ms8234-attention{flex-basis:146px!important;gap:7px!important}#ms8210Start .ms8234-attention-copy small{display:none!important}#ms8210Start .ms8234-attention-copy strong{font-size:10.5px!important}#ms8210Start .ms8234-live-copy strong.is-missing{font-size:9.5px!important}}`;
     document.head.appendChild(style);
   }
 
-  function canShowAdmin(){const original=document.querySelector('.tabs [data-target="boat"],#boatManagementTab');if(!original)return true;if(original.hidden||original.classList.contains('hidden'))return false;try{return getComputedStyle(original).display!=='none'}catch{return true}}
-  function navigate(target){try{if(target==='rws'&&typeof window.ms795OpenRws==='function'){window.ms795OpenRws();return}if(target==='more'){if(typeof window.ms797OpenMore==='function'){window.ms797OpenMore();return}target='settings'}if(target==='dashboard')return;if(typeof window.captainNavigate==='function'){window.captainNavigate(target);return}document.querySelector(`.tabs [data-target="${target}"]`)?.click()}catch(error){console.warn(`Startnavigatie naar ${target} mislukte.`,error)}}
-  function greeting(){const hour=new Date().getHours();const word=hour<12?'Goedemorgen':hour<18?'Goedemiddag':'Goedenavond';const raw=window.currentProfile?.display_name||window.currentProfile?.name||window.currentUser?.user_metadata?.full_name||window.currentUser?.user_metadata?.name||'';const name=String(raw||'').trim().split(/\s+/)[0];return `${word}${name?` ${name}`:''} 👋`}
-  function statusChip(iconName,label,id){return `<div class="ms8234-status">${icon(iconName)}<span class="ms8234-status-copy"><small>${esc(label)}</small><strong id="${id}">–</strong></span></div>`}
-  function feature(target,iconName,label,subtitle,tone='blue'){return `<button type="button" class="ms8234-feature" data-ms8210-target="${target}" data-tone="${tone}"><span class="ms8234-card-badge" aria-hidden="true">0</span>${icon(iconName)}<span class="ms8234-feature-copy"><strong>${esc(label)}</strong><small>${esc(subtitle)}</small></span></button>`}
-  function mini(target,iconName,label,subtitle,admin=false){return `<button type="button" class="ms8234-mini" data-ms8210-target="${target}"${admin?' data-ms8210-admin="1"':''}>${icon(iconName)}<span class="ms8234-mini-copy"><strong>${esc(label)}</strong><small>${esc(subtitle)}</small></span>${icon('chevron')}<span class="ms8234-card-badge" aria-hidden="true">0</span></button>`}
-  function gauge(id,iconName,label,sub,target='technical'){return `<button type="button" class="ms8234-gauge" data-ms8210-target="${target}"><span class="ms8234-ring" id="${id}Ring">${icon(iconName)}</span><span class="ms8234-gauge-copy"><strong id="${id}">–</strong><small>${esc(label)}</small><em id="${id}Sub">${esc(sub)}</em></span></button>`}
-
-  function build(){
-    const dashboard=$('dashboard');if(!dashboard)return false;installStyle();dashboard.classList.add('ms8216-simple-start','ms8234-premium-start');let root=$(ROOT_ID);if(root&&!root.classList.contains('ms8234-premium'))root.remove();root=$(ROOT_ID);
-    if(!root){root=document.createElement('section');root.id=ROOT_ID;root.className='ms8234-premium';root.setAttribute('aria-label','Serenity dashboard');root.innerHTML=`
-<header class="ms8234-header"><div class="ms8234-brand"><div class="ms8234-brandline"><span class="ms8234-sail">${ICONS.sail}</span><h1>Serenity</h1></div><p id="ms8234Greeting" class="ms8234-greeting">Welkom aan boord 👋</p></div><button type="button" id="ms8210Summary" class="ms8234-attention" data-ms8210-target="technical"><span class="count">0</span><span class="ms8234-attention-copy"><strong>Aandacht</strong><small>Alles in orde</small></span>${icon('chevron')}</button></header>
-<div class="ms8234-statusrail" aria-label="Live bootstatus">${statusChip('pin','Ligplaats','ms8234Location')}${statusChip('cloud','Buiten','ms8234Outside')}${statusChip('battery','Accu','ms8234TopSoc')}${statusChip('plug','Walstroom','ms8234Shore')}${statusChip('wifi','Verbinding','ms8234Online')}</div>
-<section class="ms8234-hero" aria-label="Live varen"><span class="ms8234-kicker">Live varen</span><h2>Klaar voor nieuwe avonturen?</h2><div class="ms8234-live-metrics"><div class="ms8234-live-metric">${icon('speed')}<span class="ms8234-live-copy"><strong id="ms8234Speed">0,0 kn</strong><small>Snelheid</small></span></div><div class="ms8234-live-metric">${icon('depth')}<span class="ms8234-live-copy"><strong id="ms8234Depth">– m</strong><small>Diepte</small></span></div><div class="ms8234-live-metric">${icon('compass')}<span class="ms8234-live-copy"><strong id="ms8234Wind">– Bft</strong><small>Wind</small></span></div></div><button type="button" class="ms8234-start" data-ms8210-target="live">${icon('play')}<span>Start live varen</span>${icon('chevron')}</button></section>
-<div class="ms8234-primary">${feature('map','map','Kaart','Waterkaarten & navigatie','blue')}${feature('planner','route','Reisplanner','Plan je route & bekijk reistijd','purple')}${feature('ais','radar','AIS','Schepen in de omgeving','green')}${feature('weather','sun','Weer','Actuele weersinfo & voorspellingen','gold')}</div>
-<section class="ms8234-boatstatus"><div class="ms8234-sectionhead"><strong>Bootstatus</strong><small id="ms8234Updated">Live gegevens</small></div><div class="ms8234-gauges">${gauge('ms8234House','battery','Huishoudaccu','– V')}${gauge('ms8234Water','drop','Drinkwater','Beschikbare voorraad')}${gauge('ms8234Fuel','fuel','Diesel','Tankniveau')}${gauge('ms8234Cabin','thermo','Binnen','Salon','weather')}</div></section>
-<div class="ms8234-secondary">${mini('logbook','book','Logboek','Vaar- & logboek')}${mini('pois','pin',"POI's",'Favoriete plekken')}${mini('rws','megaphone','Vaarwegberichten','Berichten & updates')}${mini('technical','wrench','Techniek','Onderhoud & status')}${mini('entertainment','home','Home Assistant','Woning & systemen')}${mini('costs','receipt','Kosten','Overzicht & rapporten')}${mini('finance','euro','Financieel','Financieel overzicht')}${mini('settings','gear','Instellingen','App & koppelingen')}${mini('boat','people','Boot & delen','Beheer & toegang',true)}</div>
-<nav class="ms8234-bottom" aria-label="Snelle navigatie"><button type="button" class="ms8234-navbtn active" data-ms8210-target="dashboard">${icon('home')}<span>Dashboard</span></button><button type="button" class="ms8234-navbtn" data-ms8210-target="map">${icon('map')}<span>Kaart</span></button><button type="button" class="ms8234-navbtn live" data-ms8210-target="live">${icon('compass')}<span>Live varen</span></button><button type="button" class="ms8234-navbtn" data-ms8210-target="logbook">${icon('book')}<span>Logboek</span></button><button type="button" class="ms8234-navbtn" data-ms8210-target="more">${icon('more')}<span>Meer</span></button></nav>`;dashboard.prepend(root);root.querySelectorAll('[data-ms8210-target]').forEach(button=>button.addEventListener('click',()=>navigate(button.dataset.ms8210Target)))}const admin=root.querySelector('[data-ms8210-admin="1"]');if(admin)admin.hidden=!canShowAdmin();return true;
+  function battery(){
+    const live=window.MIJSERENITY_VRM_LIVE_ENERGY||{};
+    const diag=window.MIJSERENITY_VRM_DIAGNOSTICS||{};
+    const metric=value=>value&&typeof value==='object'&&'value' in value?value.value:value;
+    const soc=numberFrom(live.battery?.soc)??numberFrom(metric(diag.battery?.soc))??numberFrom(first(['msCerboSoc','ms71510HouseSoc','ivmsBatterySoc','ivmsBatteryRing','techHouseSoc','liveHouseSoc']));
+    const voltage=numberFrom(live.battery?.voltage)??numberFrom(metric(diag.battery?.voltage))??numberFrom(first(['msCerboVoltage','ms71510HouseVoltage','ivmsBatteryVoltage','techHouseVoltage','liveHouseVoltage']));
+    return {soc,voltage};
   }
 
-  function techAttention(){let warnings=[];try{if(typeof window.technicalWarnings==='function'){const v=window.technicalWarnings();if(Array.isArray(v))warnings=v.filter(Boolean)}}catch{}const critical=warnings.filter(item=>String(item.level||'').toLowerCase()==='critical').length;const normal=warnings.filter(item=>String(item.level||'').toLowerCase()==='warning').length;let overdue=0,dueSoon=0;try{const state=typeof technicalStateCache!=='undefined'?technicalStateCache:null;const tasks=Array.isArray(state?.maintenance)?state.maintenance:[];if(typeof technicalTaskStatus==='function')tasks.forEach(task=>{const s=technicalTaskStatus(task)||{};if(s.level==='critical')overdue++;else if(s.level==='warning')dueSoon++})}catch{}const count=critical+normal+overdue+dueSoon;const detail=[];if(critical)detail.push(`${critical} storing${critical===1?'':'en'}`);if(overdue)detail.push(`${overdue} achterstallig`);if(normal)detail.push(`${normal} waarschuwing${normal===1?'':'en'}`);if(dueSoon)detail.push(`${dueSoon} onderhoud binnenkort`);return {count,level:(critical||overdue)?'critical':count?'warning':'none',detail:detail.join(' · ')}}
-  function plannerAttention(){try{if(typeof readPlannerDrafts==='function'){const count=readPlannerDrafts().length;return {count,level:count?'info':'none',detail:count?`${count} conceptroute${count===1?'':'s'}`:''}}}catch{}return {count:0,level:'none',detail:''}}
-  function rwsAttention(){try{const notices=typeof window.ms710GetRwsNotices==='function'?window.ms710GetRwsNotices():[];const important=Array.isArray(notices)?notices.filter(item=>item&&item.severity!=='info'):[];const urgent=important.filter(item=>item.severity==='urgent').length;const count=important.length;return {count,level:urgent?'critical':count?'warning':'none',detail:count?`${count} vaarwegmelding${count===1?'':'en'} met aandacht`:''}}catch{return {count:0,level:'none',detail:''}}}
-  function attentionFor(target){if(target==='technical')return techAttention();if(target==='planner')return plannerAttention();if(target==='rws')return rwsAttention();return {count:0,level:'none',detail:''}}
-  function cleanText(value,fallback='–'){const text=String(value??'').replace(/\s+/g,' ').trim();if(!text||/^(?:undefined|null)$/i.test(text))return fallback;return text}
-  function readFirst(ids,fallback='–'){for(const id of ids){const node=$(id);if(!node)continue;const text=cleanText(node.textContent,'');if(text)return text}return fallback}
-  function setText(id,value){const node=$(id);if(node)node.textContent=value}
-  function pctFrom(value){const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);return match?Math.max(0,Math.min(100,Number(match[0]))):0}
-  function setRing(id,pct){const node=$(id);if(node)node.style.setProperty('--pct',String(Math.max(0,Math.min(100,pct||0))))}
-  function statusLocation(){const selectors=['#liveLocationName','#gpsLocationName','#currentLocationName','#routeCurrentLocation','[data-current-location]'];for(const selector of selectors){const node=document.querySelector(selector);const text=cleanText(node?.textContent,'');if(text&&text!=='–')return text}return 'GPS gereed'}
-  function normalizeShore(value){const text=cleanText(value,'Onbekend');if(/aan|verbonden|connected|active|230\s*v/i.test(text))return 'Aan';if(/uit|los|offline|niet aangesloten/i.test(text))return 'Uit';return text.replace(/^Walstroom\s*/i,'')||'Onbekend'}
-  function refreshLiveValues(){setText('ms8234Greeting',greeting());setText('ms8234Location',statusLocation());setText('ms8234Outside',readFirst(['ivmsOutsideTemp','weatherCurrentTemp','currentWeatherTemp'],'– °C'));const soc=readFirst(['ms71510HouseSoc','ivmsBatterySoc','techHouseBatterySoc','liveHouseSoc'],'–%');setText('ms8234TopSoc',soc);setText('ms8234Shore',normalizeShore(readFirst(['liveShorePower','techShorePowerStatus','ivmsShorePower'],'Onbekend')));setText('ms8234Online',navigator.onLine?'Online':'Offline');setText('ms8234Speed',readFirst(['ms71510SpeedKn','liveSpeedKn','liveSpeed'],'0,0 kn'));const depth=readFirst(['ms71510Depth','liveDepth'],'–');setText('ms8234Depth',/m\b/i.test(depth)?depth:`${depth} m`);setText('ms8234Wind',readFirst(['ms71510WindBft','liveWindBft'],'– Bft'));const houseSoc=cleanText(soc,'–%');const houseV=readFirst(['ms71510HouseVoltage','ivmsBatteryVoltage','liveHouseVoltage'],'– V');setText('ms8234House',houseSoc);setText('ms8234HouseSub',houseV);setRing('ms8234HouseRing',pctFrom(houseSoc));const water=readFirst(['techWaterLevel','liveWaterPct'],'–%');setText('ms8234Water',water);setText('ms8234WaterSub','Beschikbare voorraad');setRing('ms8234WaterRing',pctFrom(water));const fuel=readFirst(['techFuelLevel','ms71510Fuel','liveFuelPct'],'–%');setText('ms8234Fuel',fuel);setText('ms8234FuelSub',readFirst(['techFuelLiters'],'Tankniveau'));setRing('ms8234FuelRing',pctFrom(fuel));const cabin=readFirst(['ivmsCabinTemp','ms7148SalonTemp'],'– °C');setText('ms8234Cabin',cabin);setText('ms8234CabinSub','Salon');setRing('ms8234CabinRing',Math.max(0,Math.min(100,(pctFrom(cabin)/40)*100)));const now=new Date();setText('ms8234Updated',`Bijgewerkt ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`)}
-  function refresh(){syncBuild();if(!build())return false;const root=$(ROOT_ID);if(!root)return false;let total=0,highest='none';const rank={none:0,info:1,warning:2,critical:3};NAV.forEach(item=>{if(item.admin){const admin=root.querySelector('[data-ms8210-admin="1"]');if(admin)admin.hidden=!canShowAdmin()}const state=attentionFor(item.target);const count=Math.max(0,Math.round(num(state.count)));const level=['critical','warning','info'].includes(state.level)?state.level:'info';root.querySelectorAll(`[data-ms8210-target="${item.target}"] .ms8234-card-badge`).forEach(badge=>{badge.textContent=count>99?'99+':String(count);badge.className=`ms8234-card-badge${count?' show':''}${count?' '+level:''}`});total+=count;if(count&&rank[level]>rank[highest])highest=level});const summary=$('ms8210Summary');if(summary){summary.className=`ms8234-attention${highest==='critical'?' critical':highest==='warning'?' warning':''}`;const countNode=summary.querySelector('.count');if(countNode)countNode.textContent=String(total);const strong=summary.querySelector('.ms8234-attention-copy strong');if(strong)strong.textContent=total?`${total} aandachtspunt${total===1?'':'en'}`:'Alles in orde';const small=summary.querySelector('.ms8234-attention-copy small');if(small)small.textContent=total?(highest==='critical'?'Actie aanbevolen':'Even controleren'):'Serenity is rustig'}refreshLiveValues();return true}
+  function location(){
+    const label=first(['liveLocationName','gpsLocationName','currentLocationName','routeCurrentLocation']);
+    if(label)return {text:label,missing:false};
+    const direct=document.querySelector('[data-current-location]');
+    if(direct&&!invalid(direct.textContent))return {text:clean(direct.textContent),missing:false};
+    const state=window.liveNavState||{};
+    const lat=numberFrom(state.currentLat??state.lat),lon=numberFrom(state.currentLon??state.lon??state.lng);
+    return lat!==null&&lon!==null?{text:'GPS actief',missing:false}:{text:'GPS zoeken…',missing:true};
+  }
 
-  window.ms8210RefreshStart=refresh;window.ms8210RefreshAttention=refresh;
-  function load(src,key){if(document.querySelector(`script[data-ms-loader="${key}"]`))return;const script=document.createElement('script');script.src=src;script.async=false;script.dataset.msLoader=key;script.onerror=()=>console.warn(`MijnSerenity module kon niet worden geladen: ${src}`);document.head.appendChild(script)}
-  async function refreshServiceWorker(){if(!('serviceWorker' in navigator))return;try{const registration=await navigator.serviceWorker.register(`/sw.js?v=${TOKEN}`,{updateViaCache:'none'});await registration.update();if(registration.waiting)registration.waiting.postMessage({type:'SKIP_WAITING'})}catch(error){console.warn('MijnSerenity service worker vernieuwen mislukt:',error)}}
-  function start(){syncBuild();refresh();[100,350,800,1500,3000,6000].forEach(ms=>setTimeout(refresh,ms));setInterval(()=>{if(!document.hidden)refresh()},10000);['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated','mijnserenity-vrm-updated','mijnserenity:routechange','mijnserenity:dashboard-ready','online','offline','storage'].forEach(name=>window.addEventListener(name,refresh,{passive:true}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()},{passive:true});load(`start-dashboard-71900-bridge.js?v=${TOKEN}`,'dashboard-bridge-8234');load(`inventory-edit-8212.js?v=${TOKEN}`,'inventory-editor-8234');refreshServiceWorker();console.info(`MijnSerenity ${BUILD}: premium Serenity dashboard actief.`)}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  function apply(){
+    const root=$('ms8210Start');if(!root)return;
+    syncBuild();installCss();
+
+    const loc=location();set('ms8234Location',loc.text,loc.missing);
+    const outside=first(['ivmsOutsideTemp','weatherCurrentTemp','currentWeatherTemp','ms709WeatherTemp']);
+    set('ms8234Outside',outside||'Geen data',!outside);
+
+    const b=battery();
+    const soc=b.soc===null?'':`${Math.round(Math.max(0,Math.min(100,b.soc)))}%`;
+    const voltage=b.voltage===null?'':`${b.voltage.toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:2})} V`;
+    set('ms8234TopSoc',soc||'Niet verbonden',!soc);
+    set('ms8234House',soc||'Niet verbonden',!soc);
+    set('ms8234HouseSub',voltage||'Geen meting',!voltage);
+    setRing('ms8234HouseRing',b.soc??0);
+
+    const depth=first(['ms71510Depth','ivmsDepth','liveDepth']);
+    set('ms8234Depth',depth?(/m\b/i.test(depth)?depth:`${depth} m`):'Geen meting',!depth);
+    const wind=first(['ms71510WindBft','ivmsWindBft','weatherWindBft','liveWindBft']);
+    set('ms8234Wind',wind?(/bft\b/i.test(wind)?wind:`${wind} Bft`):'Geen meting',!wind);
+
+    const shore=first(['liveShorePower','techShorePowerStatus','ivmsShorePower']);
+    if(!shore)set('ms8234Shore','Geen data',true);
+
+    const summary=$('ms8210Summary');
+    if(summary){
+      const count=clean(summary.querySelector('.count')?.textContent)||'0';
+      const strong=summary.querySelector('.ms8234-attention-copy strong');
+      if(strong&&Number(count)>0)strong.textContent=`${count} aandachtspunt${Number(count)===1?'':'en'}`;
+    }
+  }
+
+  let applying=false;
+  function queue(){
+    if(applying)return;
+    applying=true;
+    requestAnimationFrame(()=>{try{apply()}finally{applying=false}});
+  }
+
+  function activate(){
+    installCss();queue();
+    const root=$('ms8210Start');
+    if(root){
+      const observer=new MutationObserver(queue);
+      observer.observe(root,{subtree:true,childList:true,characterData:true});
+    }
+    ['mijnserenity-vrm-updated','mijnserenity-ruuvi-vrm-updated','mijnserenity-ha-state-updated','mijnserenity:dashboard-ready','online','offline'].forEach(name=>window.addEventListener(name,queue,{passive:true}));
+    setInterval(()=>{if(!document.hidden)queue()},3000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()},{passive:true});
+    console.info(`MijnSerenity ${BUILD}: dashboard hotfix actief.`);
+  }
+
+  function loadDashboard(){
+    if(window.__msDashboardLoader8234){activate();return}
+    const script=document.createElement('script');
+    script.src=SOURCE;script.async=false;script.crossOrigin='anonymous';
+    script.onload=()=>{setTimeout(activate,0)};
+    script.onerror=()=>{console.error('Serenity dashboardbasis kon niet worden geladen.');syncBuild()};
+    document.head.appendChild(script);
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadDashboard,{once:true});
+  else loadDashboard();
 })();
-
-(()=>{'use strict';if(window.__msBootbeheerLoader8218)return;window.__msBootbeheerLoader8218=true;function loadCloud(){if(window.__msBootbeheerCloud8100||document.querySelector('script[data-ms-bootbeheer-cloud-loader]'))return;const cloud=document.createElement('script');cloud.src='bootbeheer-cloud-8100.js?v=823400';cloud.async=true;cloud.dataset.msBootbeheerCloudLoader='1';cloud.onerror=()=>console.warn('Bootbeheer cloudlaag kon niet worden geladen.');document.head.appendChild(cloud)}function loadBootbeheer(){if(window.__msBootbeheer8100){loadCloud();return}if(document.querySelector('script[data-ms-bootbeheer-loader]')){setTimeout(loadCloud,250);return}const script=document.createElement('script');script.src='bootbeheer-8100.js?v=823400';script.async=true;script.dataset.msBootbeheerLoader='1';script.onload=loadCloud;script.onerror=()=>console.warn('Bootbeheer kon niet worden geladen.');document.head.appendChild(script)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadBootbeheer,{once:true});else loadBootbeheer()})();
