@@ -1,10 +1,10 @@
-/* MijnSerenity 8.25.1 — automatische Dag/Nacht-modus met compacte handmatige keuze */
+/* MijnSerenity 8.25.2 — Dag/Nacht-keuze zonder dashboard update-loop */
 (()=>{
   'use strict';
-  if(window.__msDayNightChoice8251)return;
-  window.__msDayNightChoice8251=true;
+  if(window.__msDayNightChoice8252)return;
+  window.__msDayNightChoice8252=true;
 
-  const BUILD='8.25.1';
+  const BUILD='8.25.2';
   const BASE='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@47ebd68bcea993fe3780badb18f1e68a7182de10/start-dashboard-71510.js';
   const STYLE_ID='ms8251ThemeChoiceStyle';
   const CONTROL_ID='ms8251ThemeControl';
@@ -13,10 +13,10 @@
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
     const meta=document.querySelector('meta[name="mijnserenity-build"]');
-    if(meta)meta.content=BUILD;
+    if(meta&&meta.content!==BUILD)meta.content=BUILD;
     const settings=document.getElementById('settingsAppVersion');
-    if(settings)settings.textContent=BUILD;
-    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
+    if(settings&&settings.textContent!==BUILD)settings.textContent=BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(el=>{if(el.textContent!==BUILD)el.textContent=BUILD});
   }
 
   function mode(){
@@ -78,19 +78,21 @@ html[data-ms-daynight="day"] #${CONTROL_ID} .ms8251-theme-option .ms8251-check{c
     const currentTheme=theme();
     const icon=control.querySelector('.ms8251-theme-icon');
     const label=control.querySelector('.ms8251-theme-label');
-    if(icon)icon.textContent=iconForTheme(currentTheme);
-    if(label)label.textContent=labelForMode(currentMode);
+    const iconText=iconForTheme(currentTheme);
+    const labelText=labelForMode(currentMode);
+    if(icon&&icon.textContent!==iconText)icon.textContent=iconText;
+    if(label&&label.textContent!==labelText)label.textContent=labelText;
     control.querySelectorAll('.ms8251-theme-option').forEach(option=>{
-      const active=option.dataset.mode===currentMode;
-      option.setAttribute('aria-checked',String(active));
+      const state=String(option.dataset.mode===currentMode);
+      if(option.getAttribute('aria-checked')!==state)option.setAttribute('aria-checked',state);
     });
   }
 
   function closeMenu(){
     const menu=document.querySelector(`#${CONTROL_ID} .ms8251-theme-menu`);
     const button=document.querySelector(`#${CONTROL_ID} .ms8251-theme-button`);
-    if(menu)menu.hidden=true;
-    if(button)button.setAttribute('aria-expanded','false');
+    if(menu&&!menu.hidden)menu.hidden=true;
+    if(button&&button.getAttribute('aria-expanded')!=='false')button.setAttribute('aria-expanded','false');
   }
 
   function choose(next){
@@ -143,13 +145,20 @@ html[data-ms-daynight="day"] #${CONTROL_ID} .ms8251-theme-option .ms8251-check{c
     return true;
   }
 
+  function needsControlRepair(){
+    const root=document.getElementById('ms8210Start');
+    const header=root?.querySelector('.ms8234-header');
+    const control=document.getElementById(CONTROL_ID);
+    return Boolean(root&&header&&(!control||control.previousElementSibling!==header));
+  }
+
   function startChoice(){
     installStyle();
     syncBuild();
     ensureControl();
 
     if(!observer&&document.body){
-      observer=new MutationObserver(()=>ensureControl());
+      observer=new MutationObserver(()=>{if(needsControlRepair())ensureControl()});
       observer.observe(document.body,{subtree:true,childList:true});
     }
 
