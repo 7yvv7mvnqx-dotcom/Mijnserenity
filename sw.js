@@ -1,7 +1,7 @@
-/* MijnSerenity 8.25.3 — snelle app-cache; Start en live kernwaarden eerst */
-const CACHE_NAME='mijnserenity-8.25.3-fast';
-const BUILD='8.25.3';
-const BUILD_TOKEN='825300';
+/* MijnSerenity 8.25.4 — snelle app-cache; Start en live kernwaarden eerst */
+const CACHE_NAME='mijnserenity-8.25.4-fast';
+const BUILD='8.25.4';
+const BUILD_TOKEN='825400';
 const NETWORK_TIMEOUT_MS=8000;
 
 /* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
@@ -23,6 +23,7 @@ const CORE_ASSETS=[
   `/dashboard-energy-bridge-8206.js?v=${BUILD_TOKEN}`,
   `/dashboard-cerbo-live-8208.js?v=${BUILD_TOKEN}`,
   `/simple-start-8210.js?v=${BUILD_TOKEN}`,
+  `/start-dashboard-71510.js?v=${BUILD_TOKEN}`,
   `/rws-water-temp-8233.js?v=${BUILD_TOKEN}`,
   `/wind-direction-71512.js?v=${BUILD_TOKEN}`,
   `/runtime-performance-71700.js?v=${BUILD_TOKEN}`,
