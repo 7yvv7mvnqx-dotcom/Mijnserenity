@@ -1,7 +1,7 @@
-/* MijnSerenity 8.25.2 — snelle app-cache; Start en live kernwaarden eerst */
-const CACHE_NAME='mijnserenity-8.25.2-fast';
-const BUILD='8.25.2';
-const BUILD_TOKEN='825200';
+/* MijnSerenity 8.25.3 — snelle app-cache; Start en live kernwaarden eerst */
+const CACHE_NAME='mijnserenity-8.25.3-fast';
+const BUILD='8.25.3';
+const BUILD_TOKEN='825300';
 const NETWORK_TIMEOUT_MS=8000;
 
 /* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
