@@ -1,4 +1,4 @@
-/* MijnSerenity 7.5.5 — twee Home Assistant-camera's met play/pauze */
+/* MijnSerenity 8.25.9 — twee Home Assistant-camera's met play/pauze */
 (()=>{
   'use strict';
   const KEY='mijnserenity-live-camera-config-v733';
@@ -190,4 +190,67 @@
   document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseAll(false)});
   window.addEventListener('mijnserenity-ha-cameras-updated',()=>{localStorage.removeItem(KEY);pauseAll(false);runtime.clear();render()});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else queueMicrotask(init);
+})();
+
+/* MijnSerenity 8.25.9 — legacy radarbeugelcamera: livebeeld eerst, duidelijke meldingen */
+(()=>{
+  'use strict';
+  if(window.__msRadarCameraLiveFirst8259)return;
+  window.__msRadarCameraLiveFirst8259=true;
+
+  const OLD_ERROR='Reservebeeld kon niet worden geladen. Start livebeeld of controleer de snapshotinstellingen.';
+  const NEW_ERROR='Geen camerabeeld beschikbaar. Probeer Livebeeld opnieuw.';
+
+  function install(){
+    if(typeof window.setRadarCameraStatus!=='function')return false;
+
+    if(!window.setRadarCameraStatus.__ms8259Wrapped){
+      const originalStatus=window.setRadarCameraStatus;
+      const wrappedStatus=function(message,state=''){
+        const text=String(message||'');
+        if(text==='Reserve-momentopname laden…'){
+          return originalStatus.call(this,'Camera controleren…','warning');
+        }
+        if(text==='Reservebeeld geladen ✅'){
+          return originalStatus.call(this,'Camerabeeld geladen ✅','success');
+        }
+        if(text===OLD_ERROR){
+          let hasLive=false;
+          try{hasLive=typeof window.radarCameraLiveUrl==='function'&&Boolean(window.radarCameraLiveUrl())}catch{}
+          if(hasLive&&typeof window.startRadarLiveStream==='function'){
+            originalStatus.call(this,'Camera controleren…','warning');
+            Promise.resolve(window.startRadarLiveStream(true,true)).catch(()=>{
+              originalStatus.call(this,NEW_ERROR,'error');
+            });
+            return;
+          }
+          return originalStatus.call(this,NEW_ERROR,'error');
+        }
+        return originalStatus.call(this,message,state);
+      };
+      wrappedStatus.__ms8259Wrapped=true;
+      window.setRadarCameraStatus=wrappedStatus;
+    }
+
+    if(typeof window.refreshRadarCamera==='function'&&!window.refreshRadarCamera.__ms8259Wrapped){
+      const originalRefresh=window.refreshRadarCamera;
+      const wrappedRefresh=function(showMessage=false){
+        let hasLive=false;
+        try{hasLive=Boolean(showMessage)&&typeof window.radarCameraLiveUrl==='function'&&Boolean(window.radarCameraLiveUrl())}catch{}
+        if(hasLive&&typeof window.startRadarLiveStream==='function'){
+          window.setRadarCameraStatus?.('Camera controleren…','warning');
+          return window.startRadarLiveStream(true,true);
+        }
+        return originalRefresh.apply(this,arguments);
+      };
+      wrappedRefresh.__ms8259Wrapped=true;
+      window.refreshRadarCamera=wrappedRefresh;
+    }
+    return true;
+  }
+
+  if(!install()){
+    const timer=setInterval(()=>{if(install())clearInterval(timer)},250);
+    setTimeout(()=>clearInterval(timer),10000);
+  }
 })();
