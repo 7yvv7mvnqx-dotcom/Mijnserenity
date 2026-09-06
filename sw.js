@@ -1,7 +1,7 @@
-/* MijnSerenity 8.25.4 — snelle app-cache; Start en live kernwaarden eerst */
-const CACHE_NAME='mijnserenity-8.25.4-fast';
+/* MijnSerenity 8.25.4-rws1 — snelle app-cache; Vaarwegberichten altijd vers */
+const CACHE_NAME='mijnserenity-8.25.4-rws1';
 const BUILD='8.25.4';
-const BUILD_TOKEN='825400';
+const BUILD_TOKEN='825401';
 const NETWORK_TIMEOUT_MS=8000;
 
 /* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
@@ -212,10 +212,19 @@ self.addEventListener('fetch',event=>{
     event.respondWith(navigationCacheFirst(request));
     return;
   }
-  if(url.pathname==='/ais-gps-fix-8221.js'){
+
+  /* Deze drie modules moeten bij een hotfix nooit één sessie achterlopen.
+     Vooral Vaarwegberichten staat al zichtbaar op Live varen voordat de
+     bijbehorende lazy module wordt geladen. */
+  if(
+    url.pathname==='/ais-gps-fix-8221.js'||
+    url.pathname==='/live-split.js'||
+    url.pathname==='/rws-nearby.js'
+  ){
     event.respondWith(networkFirst(request));
     return;
   }
+
   if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){
     event.respondWith(staleWhileRevalidate(request));
     return;
