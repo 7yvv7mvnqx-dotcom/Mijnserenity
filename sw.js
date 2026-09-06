@@ -1,7 +1,7 @@
-/* MijnSerenity 8.25.6 — snelle app-cache; vaste Startknop en mobiele polish */
-const CACHE_NAME='mijnserenity-8.25.6-start1';
-const BUILD='8.25.6';
-const BUILD_TOKEN='825600';
+/* MijnSerenity 8.25.7 — live GPS/route betrouwbaarheid + snelle app-cache */
+const CACHE_NAME='mijnserenity-8.25.7-gps1';
+const BUILD='8.25.7';
+const BUILD_TOKEN='825700';
 const NETWORK_TIMEOUT_MS=8000;
 
 /* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
@@ -222,6 +222,7 @@ self.addEventListener('fetch',event=>{
 
   /* Hotfixmodules moeten nooit één sessie achterlopen op iPhone/PWA. */
   if(
+    url.pathname==='/runtime-stability-8202.js'||
     url.pathname==='/ais-gps-fix-8221.js'||
     url.pathname==='/live-split.js'||
     url.pathname==='/rws-nearby.js'||
