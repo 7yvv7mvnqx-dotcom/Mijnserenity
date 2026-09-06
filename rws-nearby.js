@@ -1,13 +1,14 @@
-/* MijnSerenity 8.25.5 — herstel zwart scherm bij openen Vaarwegberichten */
+/* MijnSerenity 8.26.1 — RWS meldingen + globale VriJon wachtboot */
 (()=>{
   'use strict';
-  if(window.__msRwsBlackScreenFix8255)return;
-  window.__msRwsBlackScreenFix8255=true;
+  if(window.__msRwsFix8261)return;
+  window.__msRwsFix8261=true;
 
-  /* Bewaar de bestaande, werkende RWS/EuRIS-functionaliteit exact zoals die was
-     en herstel alleen de navigatie-race-condition. */
   const BASE='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@e342e98287b2dffa6e153191b8deaf1972603ed0/rws-nearby.js';
+  const WAIT_BOAT='/global-wait-boat-8260.js?v=826100';
   let repairTimer=0;
+  let waitBoatPromise=null;
+  let rwsObserver=null;
 
   function appIsVisible(){
     const app=document.getElementById('appView');
@@ -19,6 +20,58 @@
     if(!app)return [];
     return [...app.querySelectorAll(':scope > section[id]')]
       .filter(section=>!section.classList.contains('hidden')&&section.getAttribute('aria-hidden')!=='true');
+  }
+
+  function ensureWaitBoat(){
+    if(window.MijnSerenityWait)return Promise.resolve(true);
+    if(waitBoatPromise)return waitBoatPromise;
+    waitBoatPromise=new Promise(resolve=>{
+      const finish=()=>resolve(Boolean(window.MijnSerenityWait));
+      const existing=[...document.scripts].find(script=>/global-wait-boat-8260\.js(?:\?|$)/.test(script.src||''));
+      if(existing){
+        if(window.MijnSerenityWait){finish();return}
+        existing.addEventListener('load',finish,{once:true});
+        existing.addEventListener('error',()=>resolve(false),{once:true});
+        setTimeout(finish,3500);
+        return;
+      }
+      const script=document.createElement('script');
+      script.src=WAIT_BOAT;
+      script.async=false;
+      script.onload=finish;
+      script.onerror=()=>{console.warn('VriJon wachtboot kon niet worden geladen.');resolve(false)};
+      document.head.appendChild(script);
+    });
+    return waitBoatPromise;
+  }
+
+  function syncNotificationButton(){
+    const button=document.getElementById('rwsNotificationButton');
+    const label=document.getElementById('rwsNotificationLabel');
+    if(!button)return;
+    const supported='Notification' in window;
+    const permission=supported?Notification.permission:'unsupported';
+    if(permission==='granted'){
+      if(label)label.textContent='Meldingen toegestaan';
+      button.textContent='Meldingen aan ✓';
+      button.disabled=false;
+      button.removeAttribute('aria-disabled');
+      button.title='Vaarwegmeldingen zijn actief';
+    }
+  }
+
+  function watchRwsUx(){
+    const page=document.getElementById('rws');
+    if(!page)return;
+    syncNotificationButton();
+    if(rwsObserver)return;
+    rwsObserver=new MutationObserver(()=>syncNotificationButton());
+    rwsObserver.observe(page,{
+      subtree:true,
+      childList:true,
+      attributes:true,
+      attributeFilter:['disabled','aria-disabled']
+    });
   }
 
   function syncNavState(){
@@ -37,9 +90,7 @@
     const page=document.getElementById('rws');
     if(!app||!page)return false;
 
-    app.querySelectorAll(':scope > section[id]').forEach(section=>{
-      section.classList.add('hidden');
-    });
+    app.querySelectorAll(':scope > section[id]').forEach(section=>section.classList.add('hidden'));
     page.classList.remove('hidden');
     page.removeAttribute('aria-hidden');
     syncNavState();
@@ -47,6 +98,8 @@
     try{window.initRwsPage?.()}catch(error){
       console.warn('Vaarwegberichten initialiseren na navigatieherstel:',error);
     }
+    watchRwsUx();
+    window.MijnSerenityWait?.refresh?.();
 
     requestAnimationFrame(()=>{
       window.scrollTo({top:0,left:0,behavior:'auto'});
@@ -56,7 +109,7 @@
 
     try{
       window.dispatchEvent(new CustomEvent('mijnserenity:routechange',{
-        detail:{route:'rws',source:'rws-black-screen-fix'}
+        detail:{route:'rws',source:'rws-8261'}
       }));
     }catch{}
     return true;
@@ -66,12 +119,7 @@
     if(!appIsVisible())return false;
     const page=document.getElementById('rws');
     if(!page)return false;
-
-    /* Dit is precies de fouttoestand: captainNavigate('rws') heeft alle
-       bestaande pagina's al verborgen terwijl de lazy RWS-pagina pas daarna
-       is opgebouwd. Op Weer of Live varen is er wél een zichtbare pagina en
-       grijpen we dus bewust niet in. */
-    if(visibleAppSections().length!==0)return false;
+    if(visibleAppSections().length!==0){watchRwsUx();return false}
 
     console.info('MijnSerenity: lege RWS-navigatie hersteld.');
     const tab=document.querySelector('.tab[data-target="rws"]');
@@ -90,24 +138,25 @@
     setTimeout(()=>{
       try{window.initRwsPage?.()}catch{}
       try{window.ms710RefreshRws?.()}catch{}
+      watchRwsUx();
     },60);
     return true;
   }
 
   function strengthenOpenButton(){
     const original=window.ms795OpenRws;
-    if(typeof original!=='function'||original.__ms8255Wrapped)return;
+    if(typeof original!=='function'||original.__ms8261Wrapped)return;
 
     const wrapped=function(...args){
       try{
-        /* initRwsPage bouwt de sectie eerst op. Daardoor kan captainNavigate
-           nooit meer naar een nog niet bestaande #rws-sectie navigeren. */
         window.initRwsPage?.();
         const result=original.apply(this,args);
         clearTimeout(repairTimer);
         repairTimer=setTimeout(()=>{
           const page=document.getElementById('rws');
           if(page?.classList.contains('hidden'))showRwsDirect();
+          watchRwsUx();
+          window.MijnSerenityWait?.refresh?.();
         },90);
         return result;
       }catch(error){
@@ -115,42 +164,54 @@
         showRwsDirect();
       }
     };
-    wrapped.__ms8255Wrapped=true;
+    wrapped.__ms8261Wrapped=true;
     window.ms795OpenRws=wrapped;
   }
 
   function installRepair(){
     strengthenOpenButton();
-
-    /* De lazy route kan de zwarte toestand al hebben veroorzaakt vóórdat dit
-       bestand klaar is. Controleer daarom direct én een paar frames later. */
     [0,40,120,320,800].forEach(delay=>setTimeout(()=>{
       strengthenOpenButton();
       recoverBlankNavigation();
+      watchRwsUx();
+      window.MijnSerenityWait?.refresh?.();
     },delay));
 
-    window.addEventListener('mijnserenity:routechange',event=>{
-      const detail=event?.detail;
-      const route=String(typeof detail==='string'?detail:(detail?.route||detail?.id||detail?.target)||'').toLowerCase();
-      if(route==='rws')setTimeout(()=>{
-        strengthenOpenButton();
-        const page=document.getElementById('rws');
-        if(page?.classList.contains('hidden'))showRwsDirect();
-      },40);
-    },{passive:true});
+    if(!window.__msRws8261Events){
+      window.__msRws8261Events=true;
 
-    document.addEventListener('visibilitychange',()=>{
-      if(!document.hidden){
-        strengthenOpenButton();
-        recoverBlankNavigation();
-      }
-    },{passive:true});
+      window.addEventListener('mijnserenity:routechange',event=>{
+        const detail=event?.detail;
+        const route=String(typeof detail==='string'?detail:(detail?.route||detail?.id||detail?.target)||'').toLowerCase();
+        if(route==='rws')setTimeout(()=>{
+          strengthenOpenButton();
+          const page=document.getElementById('rws');
+          if(page?.classList.contains('hidden'))showRwsDirect();
+          watchRwsUx();
+          window.MijnSerenityWait?.refresh?.();
+        },40);
+      },{passive:true});
+
+      document.addEventListener('click',event=>{
+        if(event.target instanceof Element&&event.target.closest('#rwsNotificationButton')){
+          setTimeout(()=>{syncNotificationButton();window.MijnSerenityWait?.refresh?.()},0);
+          setTimeout(syncNotificationButton,400);
+        }
+      },{capture:true,passive:true});
+
+      document.addEventListener('visibilitychange',()=>{
+        if(!document.hidden){
+          strengthenOpenButton();
+          recoverBlankNavigation();
+          watchRwsUx();
+        }
+      },{passive:true});
+    }
   }
 
-  /* De basisversie staat bewust vastgepind. Pas alleen de twee radiusplekken aan,
-     zodat 100 km volledig meedoet met opslaan, filteren en vernieuwen. */
-  function patchRadius100(source){
+  function patchBase(source){
     let patched=String(source||'');
+
     const radiusNeedle='[5,10,20,30,50].includes(saved)';
     const radiusReplacement='[5,10,20,30,50,100].includes(saved)';
     const optionNeedle='<option value="50">50 km</option></select>';
@@ -164,6 +225,30 @@
       if(!patched.includes(optionNeedle))throw new Error('Straalkeuzes in RWS-module niet gevonden.');
       patched=patched.replace(optionNeedle,optionReplacement);
     }
+
+    const buttonNeedle=`button.textContent=permission==='granted'?'Meldingen aan':'Meldingen inschakelen';
+    button.disabled=permission==='granted'||permission==='denied'||!supported;`;
+    const buttonReplacement=`button.textContent=permission==='granted'?'Meldingen aan ✓':'Meldingen inschakelen';
+    button.disabled=permission==='denied'||!supported;`;
+    if(patched.includes(buttonNeedle))patched=patched.replace(buttonNeedle,buttonReplacement);
+
+    const permissionNeedle=`    try{
+      const result=await Notification.requestPermission();
+      renderNotificationState();
+      if(result==='granted')window.showAppToast?.('Vaarwegmeldingen zijn ingeschakeld zolang MijnSerenity actief is.');
+    }catch{window.showAppToast?.('Meldingstoestemming kon niet worden aangevraagd.')}
+`;
+    const permissionReplacement=`    const waitKey='rws-notifications';
+    window.MijnSerenityWait?.show('Meldingen controleren…',waitKey);
+    try{
+      const result=await Notification.requestPermission();
+      renderNotificationState();
+      if(result==='granted')window.showAppToast?.('Vaarwegmeldingen staan aan.');
+    }catch{window.showAppToast?.('Meldingstoestemming kon niet worden aangevraagd.')}
+    finally{window.MijnSerenityWait?.hide(waitKey)}
+`;
+    if(patched.includes(permissionNeedle))patched=patched.replace(permissionNeedle,permissionReplacement);
+
     return patched;
   }
 
@@ -172,26 +257,28 @@
     script.src=BASE;
     script.async=false;
     script.crossOrigin='anonymous';
-    script.onload=installRepair;
+    script.onload=()=>{installRepair();watchRwsUx()};
     script.onerror=()=>{
       console.error('Bestaande Vaarwegberichten-module kon niet worden geladen.');
       window.showAppToast?.('Vaarwegberichten konden niet worden geladen.');
-      /* Voorkom in ieder geval dat de gebruiker op een zwart scherm blijft. */
       if(visibleAppSections().length===0)window.captainNavigate?.('dashboard');
     };
     document.head.appendChild(script);
   }
 
   async function loadBase(){
+    await ensureWaitBoat();
+
     if(typeof window.initRwsPage==='function'&&typeof window.ms795OpenRws==='function'){
       installRepair();
+      watchRwsUx();
       return;
     }
 
     try{
       const response=await fetch(BASE,{cache:'no-store'});
       if(!response.ok)throw new Error(`RWS-basis antwoordde met ${response.status}`);
-      const source=patchRadius100(await response.text());
+      const source=patchBase(await response.text());
       const script=document.createElement('script');
       script.textContent=`${source}\n//# sourceURL=mijnserenity-rws-nearby-base.js`;
       document.head.appendChild(script);
@@ -200,8 +287,9 @@
         throw new Error('Gepatchte RWS-module is niet gestart.');
       }
       installRepair();
+      watchRwsUx();
     }catch(error){
-      console.warn('100 km-uitbreiding kon niet dynamisch worden geladen; basisversie wordt gebruikt.',error);
+      console.warn('RWS-uitbreiding kon niet dynamisch worden geladen; basisversie wordt gebruikt.',error);
       loadBaseFallback();
     }
   }
