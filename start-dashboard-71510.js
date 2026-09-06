@@ -158,6 +158,22 @@
     return null;
   }
 
+  function mirrorOutsideSource(value){
+    if(value===null||value===undefined)return;
+    const text=fmtOutside(value);
+    const existing=$('ivmsOutsideTemp');
+    if(existing&&existing.textContent!==text)existing.textContent=text;
+    let source=$('weatherCurrentTemp');
+    if(!source){
+      source=document.createElement('span');
+      source.id='weatherCurrentTemp';
+      source.hidden=true;
+      source.dataset.ms8264WeatherSource='1';
+      (document.body||document.documentElement).appendChild(source);
+    }
+    if(source.textContent!==text)source.textContent=text;
+  }
+
   function outsideDescription(){
     const ids=['ms709WeatherDescription','weatherCurrentDescription','currentWeatherDescription','ms709WeatherCondition','weatherCondition'];
     for(const id of ids){
@@ -181,6 +197,7 @@
     }
 
     lastOutsideTemperature=value;
+    mirrorOutsideSource(value);
     const text=fmtOutside(value);
     if(node.textContent!==text)node.textContent=text;
     node.classList.remove('is-missing');
@@ -284,11 +301,25 @@
     return null;
   }
 
+  function mirrorShoreSource(state){
+    const text=state===true?'Aangesloten':'Niet aangesloten';
+    let source=$('ivmsShorePower');
+    if(!source){
+      source=document.createElement('span');
+      source.id='ivmsShorePower';
+      source.hidden=true;
+      source.dataset.ms8264ShoreSource='1';
+      (document.body||document.documentElement).appendChild(source);
+    }
+    if(source.textContent!==text)source.textContent=text;
+  }
+
   function renderShore(){
     const node=$('ms8234Shore');
     if(!node)return;
     const state=shoreState();
     const connected=state===true;
+    mirrorShoreSource(state);
     const text=connected?'Aangesloten':'Niet aangesloten';
     if(node.textContent!==text)node.textContent=text;
     node.classList.toggle('is-missing',state===null);
@@ -305,9 +336,22 @@
     renderShore();
   }
 
+  function protectBaseRefresh(){
+    const original=window.ms8210RefreshStart;
+    if(typeof original!=='function'||original.__ms8264Wrapped)return;
+    const wrapped=function(...args){
+      const result=original.apply(this,args);
+      requestAnimationFrame(()=>sync());
+      return result;
+    };
+    wrapped.__ms8264Wrapped=true;
+    window.ms8210RefreshStart=wrapped;
+  }
+
   function startFix(){
     syncBuild();
     installStyle();
+    protectBaseRefresh();
     sync();
 
     [0,180,500,1100,2200,4500].forEach(ms=>setTimeout(()=>sync(),ms));
@@ -329,6 +373,7 @@
     if(syncTimer)clearInterval(syncTimer);
     syncTimer=setInterval(()=>{
       if(document.hidden)return;
+      protectBaseRefresh();
       sync();
       refreshOutside(false);
     },5000);
