@@ -209,7 +209,3 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
 
 # MijnSerenity 7.18.19 — live dieselstand direct vernieuwen
-[[headers]]
-  for = "/cerbo-tank-sync-71819.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
