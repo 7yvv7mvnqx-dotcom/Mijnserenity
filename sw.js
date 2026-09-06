@@ -1,7 +1,7 @@
-/* MijnSerenity 8.25.4-rws1 — snelle app-cache; Vaarwegberichten altijd vers */
-const CACHE_NAME='mijnserenity-8.25.4-rws1';
-const BUILD='8.25.4';
-const BUILD_TOKEN='825401';
+/* MijnSerenity 8.25.5 — snelle app-cache; VriJon-stijl Start-motorjacht */
+const CACHE_NAME='mijnserenity-8.25.5-yacht1';
+const BUILD='8.25.5';
+const BUILD_TOKEN='825500';
 const NETWORK_TIMEOUT_MS=8000;
 
 /* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
@@ -24,6 +24,7 @@ const CORE_ASSETS=[
   `/dashboard-cerbo-live-8208.js?v=${BUILD_TOKEN}`,
   `/simple-start-8210.js?v=${BUILD_TOKEN}`,
   `/start-dashboard-71510.js?v=${BUILD_TOKEN}`,
+  `/start-yacht-nav-8255.js?v=${BUILD_TOKEN}`,
   `/rws-water-temp-8233.js?v=${BUILD_TOKEN}`,
   `/wind-direction-71512.js?v=${BUILD_TOKEN}`,
   `/runtime-performance-71700.js?v=${BUILD_TOKEN}`,
@@ -50,6 +51,7 @@ function rewriteIndexHtml(html){
     .replace(/ais-gps-fix-8221\.js\?v=\d+/g,`ais-gps-fix-8221.js?v=${BUILD_TOKEN}`)
     .replace(/start-cockpit-7144\.js\?v=\d+/g,`start-cockpit-7144.js?v=${BUILD_TOKEN}`)
     .replace(/start-dashboard-71510\.js\?v=\d+/g,`start-dashboard-71510.js?v=${BUILD_TOKEN}`)
+    .replace(/start-yacht-nav-8255\.js\?v=\d+/g,`start-yacht-nav-8255.js?v=${BUILD_TOKEN}`)
     .replace(/wind-direction-71512\.js\?v=\d+/g,`wind-direction-71512.js?v=${BUILD_TOKEN}`)
     .replace(/ruuvi-climate\.js\?v=\d+/g,`ruuvi-climate.js?v=${BUILD_TOKEN}`)
     .replace(/rws-water-temp-8233\.js\?v=\d+/g,`rws-water-temp-8233.js?v=${BUILD_TOKEN}`)
@@ -65,6 +67,11 @@ function rewriteIndexHtml(html){
   /* AIS-herstel blijft als kleine navigatie-failsafe beschikbaar. */
   if(!/ais-gps-fix-8221\.js/i.test(rewritten)){
     rewritten=rewritten.replace(/<\/body>/i,`<script src="/ais-gps-fix-8221.js?v=${BUILD_TOKEN}"></script>\n</body>`);
+  }
+
+  /* Start krijgt altijd het geanimeerde motorjacht, ook na een PWA-cache-update. */
+  if(!/start-yacht-nav-8255\.js/i.test(rewritten)){
+    rewritten=rewritten.replace(/<\/body>/i,`<script src="/start-yacht-nav-8255.js?v=${BUILD_TOKEN}"></script>\n</body>`);
   }
 
   /* Bon-OCR wordt bewust NIET op Start geïnjecteerd. De bootstrap laadt hem
@@ -213,13 +220,12 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  /* Deze drie modules moeten bij een hotfix nooit één sessie achterlopen.
-     Vooral Vaarwegberichten staat al zichtbaar op Live varen voordat de
-     bijbehorende lazy module wordt geladen. */
+  /* Hotfixmodules moeten nooit één sessie achterlopen op iPhone/PWA. */
   if(
     url.pathname==='/ais-gps-fix-8221.js'||
     url.pathname==='/live-split.js'||
-    url.pathname==='/rws-nearby.js'
+    url.pathname==='/rws-nearby.js'||
+    url.pathname==='/start-yacht-nav-8255.js'
   ){
     event.respondWith(networkFirst(request));
     return;
