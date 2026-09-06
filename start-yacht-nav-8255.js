@@ -1,11 +1,12 @@
-/* MijnSerenity 8.25.6 — schommelend motorjacht als Start-icoon, met gerichte observers */
+/* MijnSerenity 8.25.8 — VriJon motorjacht als betrouwbare Start-navigatie op alle subpagina's */
 (()=>{
   'use strict';
   if(window.__msStartYacht8255)return;
   window.__msStartYacht8255=true;
 
-  const BUILD='8.25.6';
+  const BUILD='8.25.8';
   const STYLE_ID='ms8255StartYachtStyle';
+  const FALLBACK_ID='ms8258StartFallback';
   const YACHT=`<svg class="ms8255-yacht-svg" viewBox="0 0 170 76" aria-hidden="true" focusable="false">
     <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
       <path class="ms8255-yacht-rail" d="M31 38h101M43 38V31m20 7V29m25 9V27m24 11V30m19 8v-6"/>
@@ -20,6 +21,7 @@
 
   let navObserver=null;
   let dashboardObserver=null;
+  let appObserver=null;
 
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -28,6 +30,8 @@
     const version=document.getElementById('settingsAppVersion');
     if(version)version.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(node=>node.textContent=BUILD);
+    const badge=document.querySelector('#msMarineGlass .mg-brand sup');
+    if(badge)badge.textContent=BUILD;
   }
 
   function installStyle(){
@@ -55,6 +59,16 @@
       body.ms8219-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo img,
       body.ms8256-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo img{display:none!important}
 
+      #${FALLBACK_ID}{position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:2147483600!important;display:none!important;align-items:stretch!important;justify-content:center!important;width:100%!important;height:calc(72px + env(safe-area-inset-bottom))!important;padding:0 0 env(safe-area-inset-bottom)!important;margin:0!important;background:rgba(2,11,19,.98)!important;border-top:1px solid rgba(113,220,255,.24)!important;box-shadow:0 -10px 30px rgba(0,0,0,.38)!important;backdrop-filter:blur(18px) saturate(130%);-webkit-backdrop-filter:blur(18px) saturate(130%)}
+      #${FALLBACK_ID}.is-visible{display:flex!important}
+      #${FALLBACK_ID} .ms8258-start-button{display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;width:100%!important;height:72px!important;padding:7px max(18px,env(safe-area-inset-right)) 7px max(18px,env(safe-area-inset-left))!important;margin:0!important;border:0!important;border-radius:0!important;background:linear-gradient(90deg,rgba(7,35,52,.99),rgba(9,53,76,.99),rgba(7,35,52,.99))!important;color:#fff!important;font:inherit!important;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
+      #${FALLBACK_ID} .ms8258-start-button:active{transform:scale(.99)}
+      #${FALLBACK_ID} .ms8255-yacht-icon{width:62px!important;height:39px!important;color:#f8fcff!important}
+      #${FALLBACK_ID} .ms8258-start-copy{display:grid!important;gap:2px!important;text-align:left!important;line-height:1!important}
+      #${FALLBACK_ID} .ms8258-start-copy strong{display:block!important;color:#fff!important;font-size:18px!important;line-height:1.05!important;font-weight:900!important;letter-spacing:-.02em!important}
+      #${FALLBACK_ID} .ms8258-start-copy small{display:block!important;color:#87dfff!important;font-size:10px!important;line-height:1.1!important;font-weight:800!important;letter-spacing:.04em!important}
+      #${FALLBACK_ID} .ms8258-start-chevron{display:block!important;margin-left:2px!important;color:#b6efff!important;font-size:25px!important;line-height:1!important}
+
       @keyframes ms8255YachtRock{
         0%,100%{transform:translateY(0) rotate(-1.7deg)}
         25%{transform:translateY(-1.5px) rotate(.9deg)}
@@ -64,6 +78,11 @@
       @keyframes ms8255Wave{
         0%,100%{transform:translateX(-1.5px);opacity:.72}
         50%{transform:translateX(1.5px);opacity:1}
+      }
+      @media(max-width:620px){
+        #${FALLBACK_ID}{height:calc(68px + env(safe-area-inset-bottom))!important}
+        #${FALLBACK_ID} .ms8258-start-button{height:68px!important}
+        #${FALLBACK_ID} .ms8255-yacht-icon{width:58px!important;height:36px!important}
       }
       @media(prefers-reduced-motion:reduce){
         .ms8255-yacht-icon .ms8255-yacht-svg,.ms8255-yacht-wave{animation:none!important}
@@ -78,6 +97,96 @@
     wrap.setAttribute('aria-hidden','true');
     wrap.innerHTML=YACHT;
     return wrap;
+  }
+
+  function appIsVisible(){
+    const app=document.getElementById('appView');
+    return Boolean(app&&!app.classList.contains('hidden')&&getComputedStyle(app).display!=='none');
+  }
+
+  function activeRouteFromDom(){
+    const app=document.getElementById('appView');
+    if(!app)return 'dashboard';
+    const sections=[...app.querySelectorAll(':scope > section[id]')];
+    const visible=sections.find(section=>{
+      if(section.classList.contains('hidden')||section.hidden||section.getAttribute('aria-hidden')==='true')return false;
+      const style=getComputedStyle(section);
+      return style.display!=='none'&&style.visibility!=='hidden';
+    });
+    return String(visible?.id||'dashboard').toLowerCase();
+  }
+
+  function elementVisible(node){
+    if(!node||!node.isConnected)return false;
+    const style=getComputedStyle(node);
+    if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;
+    const rect=node.getBoundingClientRect();
+    return rect.width>24&&rect.height>24&&rect.bottom>0&&rect.top<window.innerHeight;
+  }
+
+  function regularStartVisible(){
+    const home=document.querySelector('.bottom-nav .bottom-nav-item[data-target="dashboard"]');
+    const nav=home?.closest('.bottom-nav');
+    return Boolean(home&&nav&&elementVisible(nav)&&elementVisible(home));
+  }
+
+  function goStart(event){
+    event?.preventDefault?.();
+    const normalHome=document.querySelector('.bottom-nav .bottom-nav-item[data-target="dashboard"]');
+    try{
+      if(typeof window.captainNavigate==='function'){
+        window.captainNavigate('dashboard',normalHome||undefined);
+        return;
+      }
+    }catch(error){console.warn('Startnavigatie via captainNavigate mislukt:',error)}
+    try{
+      if(normalHome){normalHome.click();return}
+    }catch{}
+    const app=document.getElementById('appView');
+    const dashboard=document.getElementById('dashboard');
+    if(app&&dashboard){
+      [...app.querySelectorAll(':scope > section[id]')].forEach(section=>{
+        const active=section===dashboard;
+        section.classList.toggle('hidden',!active);
+        section.setAttribute('aria-hidden',active?'false':'true');
+      });
+      window.dispatchEvent(new CustomEvent('mijnserenity:routechange',{detail:{route:'dashboard',source:'vriJon-start-fallback'}}));
+    }
+  }
+
+  function ensureFallback(){
+    let shell=document.getElementById(FALLBACK_ID);
+    if(shell)return shell;
+    shell=document.createElement('div');
+    shell.id=FALLBACK_ID;
+    shell.setAttribute('aria-hidden','true');
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='ms8258-start-button';
+    button.setAttribute('aria-label','Terug naar Start met VriJon');
+    button.setAttribute('title','Terug naar Start');
+    button.appendChild(yachtIcon());
+    const copy=document.createElement('span');
+    copy.className='ms8258-start-copy';
+    copy.innerHTML='<strong>Start</strong><small>VriJon · terug naar MijnSerenity</small>';
+    button.appendChild(copy);
+    const chevron=document.createElement('span');
+    chevron.className='ms8258-start-chevron';
+    chevron.setAttribute('aria-hidden','true');
+    chevron.textContent='⌂';
+    button.appendChild(chevron);
+    button.addEventListener('click',goStart);
+    shell.appendChild(button);
+    document.body.appendChild(shell);
+    return shell;
+  }
+
+  function syncFallback(){
+    const shell=ensureFallback();
+    const route=activeRouteFromDom();
+    const show=appIsVisible()&&route!=='dashboard'&&!regularStartVisible();
+    shell.classList.toggle('is-visible',show);
+    shell.setAttribute('aria-hidden',show?'false':'true');
   }
 
   function patchPremiumStart(){
@@ -96,7 +205,7 @@
 
   function patchLegacyBottomNav(){
     document.querySelectorAll('.bottom-nav .bottom-nav-item[data-target="dashboard"]').forEach(home=>{
-      home.setAttribute('aria-label','Start');
+      home.setAttribute('aria-label','Start met VriJon');
       home.setAttribute('title','Start');
 
       const specialLogo=home.querySelector('.ms8219-home-logo');
@@ -122,6 +231,7 @@
     installStyle();
     patchPremiumStart();
     patchLegacyBottomNav();
+    syncFallback();
   }
 
   let queued=false;
@@ -135,14 +245,23 @@
     const nav=document.querySelector('.bottom-nav');
     if(nav&&!navObserver){
       navObserver=new MutationObserver(queuePatch);
-      navObserver.observe(nav,{subtree:true,childList:true});
+      navObserver.observe(nav,{subtree:true,childList:true,attributes:true,attributeFilter:['class','aria-hidden']});
     }
     const dashboard=document.getElementById('dashboard');
     if(dashboard&&!dashboardObserver){
       dashboardObserver=new MutationObserver(queuePatch);
-      /* Alleen vervanging van directe dashboardblokken volgen. Live tekstwaarden
-         binnen Start veroorzaken hierdoor geen voortdurende yacht-reparaties. */
       dashboardObserver.observe(dashboard,{childList:true});
+    }
+    const app=document.getElementById('appView');
+    if(app&&!appObserver){
+      appObserver=new MutationObserver(mutations=>{
+        const routeChanged=mutations.some(mutation=>{
+          const node=mutation.target;
+          return node===app||(node instanceof Element&&node.matches('section[id]')&&node.parentElement===app);
+        });
+        if(routeChanged)queuePatch();
+      });
+      appObserver.observe(app,{subtree:true,attributes:true,attributeFilter:['class','hidden','aria-hidden'],childList:true});
     }
   }
 
@@ -152,10 +271,15 @@
     ['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:routechange','mijnserenity:theme-changed','mijnserenity:start-requested','pageshow'].forEach(type=>{
       window.addEventListener(type,queuePatch,{passive:true});
     });
+    document.addEventListener('click',event=>{
+      if(event.target instanceof Element&&event.target.closest('[data-target],[data-route],[data-go]'))setTimeout(queuePatch,40);
+    },{capture:true,passive:true});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)queuePatch()},{passive:true});
-    setTimeout(queuePatch,250);
+    setTimeout(queuePatch,100);
+    setTimeout(queuePatch,350);
     setTimeout(queuePatch,900);
     setTimeout(queuePatch,1800);
+    setInterval(()=>{if(!document.hidden)queuePatch()},15000);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
