@@ -8,6 +8,18 @@
   const BASE='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@8c1e3094f221de00245cad65e7c962a19d7dd3c7/start-dashboard-71510.js';
   const SPEED_ID='ms8234Speed';
 
+  /* Het oude Marine Glass-dashboard blijft technisch aanwezig als databron/fallback,
+     maar mag tijdens het opstarten nooit meer zichtbaar worden. Zo blijven bestaande
+     GPS-, AIS-, energie- en navigatiekoppelingen intact zonder de oude Start-flits. */
+  function hideLegacyMarineGlassStart(){
+    if(document.getElementById('ms8261LegacyStartGuard'))return;
+    const style=document.createElement('style');
+    style.id='ms8261LegacyStartGuard';
+    style.textContent='#dashboard>#msMarineGlass{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}';
+    document.head.appendChild(style);
+  }
+  hideLegacyMarineGlassStart();
+
   let speedObserver=null;
   let speedObserverNode=null;
   let passiveWatchId=null;
