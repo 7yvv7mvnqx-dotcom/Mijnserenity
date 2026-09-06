@@ -39,10 +39,10 @@
   force = true
 
 
-# MijnSerenity 7.10.2 — EuRIS Notice to Skippers voor vaarwegberichten
+# MijnSerenity 8.25.6 — EuRIS Notice to Skippers met locatieverrijking voor vaarwegberichten
 [[redirects]]
   from = "/api/euris-nts"
-  to = "https://www.eurisportal.eu/api/v3/nts"
+  to = "/.netlify/functions/euris-nts"
   status = 200
   force = true
 
@@ -200,6 +200,11 @@
 # MijnSerenity 7.18.18 — Cerbo waarheidspatch direct vernieuwen
 [[headers]]
   for = "/cerbo-truth-71818.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/cerbo-tank-sync-71819.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
