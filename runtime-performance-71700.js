@@ -81,3 +81,18 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
+
+/* MijnSerenity 8.26.0 — laad één globale wachtindicator voor alle pagina's. */
+(()=>{
+  'use strict';
+  if(window.__msWaitBoatBootstrap8260)return;
+  window.__msWaitBoatBootstrap8260=true;
+  const existing=[...document.scripts].find(script=>String(script.src||'').includes('/global-wait-boat-8260.js'));
+  if(existing)return;
+  const script=document.createElement('script');
+  script.src='/global-wait-boat-8260.js?v=826000';
+  script.async=false;
+  script.dataset.msWaitBoat='8260';
+  script.onerror=()=>console.warn('Globale wachtboot kon niet worden geladen.');
+  document.head.appendChild(script);
+})();
