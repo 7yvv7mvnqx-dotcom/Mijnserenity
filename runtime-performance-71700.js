@@ -82,17 +82,17 @@
   else start();
 })();
 
-/* MijnSerenity 8.26.0 — laad één globale wachtindicator voor alle pagina's. */
+/* MijnSerenity 8.26.7 — laad de anti-vastloop wachtindicator. */
 (()=>{
   'use strict';
-  if(window.__msWaitBoatBootstrap8260)return;
-  window.__msWaitBoatBootstrap8260=true;
-  const existing=[...document.scripts].find(script=>String(script.src||'').includes('/global-wait-boat-8260.js'));
+  if(window.__msWaitBoatBootstrap8267)return;
+  window.__msWaitBoatBootstrap8267=true;
+  const existing=[...document.scripts].find(script=>String(script.src||'').includes('/global-wait-boat-8260.js?v=826700'));
   if(existing)return;
   const script=document.createElement('script');
-  script.src='/global-wait-boat-8260.js?v=826000';
+  script.src='/global-wait-boat-8260.js?v=826700';
   script.async=false;
-  script.dataset.msWaitBoat='8260';
+  script.dataset.msWaitBoat='8267';
   script.onerror=()=>console.warn('Globale wachtboot kon niet worden geladen.');
   document.head.appendChild(script);
 })();
