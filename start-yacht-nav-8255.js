@@ -1,10 +1,10 @@
-/* MijnSerenity 8.25.5 — schommelend motorjacht als Start-icoon */
+/* MijnSerenity 8.25.6 — schommelend motorjacht als Start-icoon, met gerichte observers */
 (()=>{
   'use strict';
   if(window.__msStartYacht8255)return;
   window.__msStartYacht8255=true;
 
-  const BUILD='8.25.5';
+  const BUILD='8.25.6';
   const STYLE_ID='ms8255StartYachtStyle';
   const YACHT=`<svg class="ms8255-yacht-svg" viewBox="0 0 170 76" aria-hidden="true" focusable="false">
     <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -17,6 +17,9 @@
       <path class="ms8255-yacht-wave" d="M8 67c15-5 29-5 43 0 14 5 29 5 43 0 14-5 29-5 44 0"/>
     </g>
   </svg>`;
+
+  let navObserver=null;
+  let dashboardObserver=null;
 
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -45,9 +48,12 @@
       #ms8210Start .ms8234-navbtn[data-ms8210-target="dashboard"] .ms8234-icon-home{display:none!important}
 
       .bottom-nav .bottom-nav-item[data-target="dashboard"]>.ms8255-yacht-icon{width:50px!important;height:31px!important;margin:0 auto 2px!important}
-      body.ms8219-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo{width:58px!important;height:42px!important;border-radius:14px!important;overflow:visible!important}
-      body.ms8219-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo .ms8255-yacht-icon{width:51px!important;height:31px!important}
-      body.ms8219-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo img{display:none!important}
+      body.ms8219-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo,
+      body.ms8256-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo{width:58px!important;height:42px!important;border-radius:14px!important;overflow:visible!important}
+      body.ms8219-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo .ms8255-yacht-icon,
+      body.ms8256-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo .ms8255-yacht-icon{width:51px!important;height:31px!important}
+      body.ms8219-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo img,
+      body.ms8256-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo img{display:none!important}
 
       @keyframes ms8255YachtRock{
         0%,100%{transform:translateY(0) rotate(-1.7deg)}
@@ -122,20 +128,34 @@
   function queuePatch(){
     if(queued)return;
     queued=true;
-    requestAnimationFrame(()=>{queued=false;patch()});
+    requestAnimationFrame(()=>{queued=false;patch();watchTargets()});
+  }
+
+  function watchTargets(){
+    const nav=document.querySelector('.bottom-nav');
+    if(nav&&!navObserver){
+      navObserver=new MutationObserver(queuePatch);
+      navObserver.observe(nav,{subtree:true,childList:true});
+    }
+    const dashboard=document.getElementById('dashboard');
+    if(dashboard&&!dashboardObserver){
+      dashboardObserver=new MutationObserver(queuePatch);
+      /* Alleen vervanging van directe dashboardblokken volgen. Live tekstwaarden
+         binnen Start veroorzaken hierdoor geen voortdurende yacht-reparaties. */
+      dashboardObserver.observe(dashboard,{childList:true});
+    }
   }
 
   function start(){
     patch();
-    const observer=new MutationObserver(queuePatch);
-    observer.observe(document.body,{subtree:true,childList:true});
-    ['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:routechange','mijnserenity:theme-changed'].forEach(type=>{
+    watchTargets();
+    ['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:routechange','mijnserenity:theme-changed','mijnserenity:start-requested','pageshow'].forEach(type=>{
       window.addEventListener(type,queuePatch,{passive:true});
     });
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)queuePatch()},{passive:true});
-    setTimeout(patch,250);
-    setTimeout(patch,900);
-    setTimeout(patch,1800);
+    setTimeout(queuePatch,250);
+    setTimeout(queuePatch,900);
+    setTimeout(queuePatch,1800);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
