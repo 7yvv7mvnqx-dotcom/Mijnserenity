@@ -166,7 +166,7 @@
       section.prepend(title);
     }
     const label=routeLabel(route,section);
-    const safeLabel=label.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
+    const safeLabel=label.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     title.setAttribute('aria-label',`Je bent nu bij ${label}`);
     title.innerHTML=`<img src="/favicon-64.png" alt="" aria-hidden="true"><span class="ms8219-page-title-copy"><small>MijnSerenity</small><h1>${safeLabel}</h1></span>`;
   }
