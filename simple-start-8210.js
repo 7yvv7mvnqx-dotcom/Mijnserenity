@@ -78,6 +78,13 @@
         body.ms8219-sub-page .bottom-nav.ms8214-nav,body.ms8219-sub-page .bottom-nav{height:calc(68px + env(safe-area-inset-bottom))!important;min-height:calc(68px + env(safe-area-inset-bottom))!important}
         body.ms8219-sub-page .bottom-nav .bottom-nav-item[data-target="dashboard"]{height:68px!important;min-height:68px!important}
       }
+
+      /* Op lage iPhone-landscape schermen gebruikt de aandachtspuntenknop
+         dezelfde ruimte als de decoratieve EXPLORE/NAVIGATE/ENJOY-slogan. */
+      @media(orientation:landscape) and (max-height:430px){
+        #${ROOT_ID} .ms8261-compact-slogan{display:none!important}
+        #${ROOT_ID} #ms8210Summary{background:rgba(6,30,44,.98)!important}
+      }
     `;
     document.head.appendChild(style);
   }
@@ -96,6 +103,24 @@
     heading.classList.add('ms8218-serenity-brand');
     heading.setAttribute('aria-label','Serenity');
     heading.innerHTML=`<span class="ms8218-brand-lockup"><svg class="ms8218-brand-sail" viewBox="0 0 44 58" aria-hidden="true" focusable="false"><path d="M21 4v43" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M18.2 8.5 5.3 42.7h12.9Z" fill="currentColor"/><path d="M24.2 11.4v31.3h14.4Z" fill="currentColor" opacity=".82"/><path d="M4.5 48.8c8.6 3.6 24.7 4.6 35.4.1-7.2 7-26.2 7.5-35.4-.1Z" fill="currentColor"/></svg><span class="ms8218-brand-word">Serenity</span></span>`;
+    return true;
+  }
+
+  function markCompactHeroSlogan(root){
+    if(!root)return false;
+    const slogan=[...root.querySelectorAll('*')].find(el=>{
+      const text=String(el.textContent||'')
+        .replace(/[·•]/g,' ')
+        .replace(/\s+/g,' ')
+        .trim()
+        .toUpperCase();
+      return text.length<=48&&
+        text.includes('EXPLORE')&&
+        text.includes('NAVIGATE')&&
+        text.includes('ENJOY');
+    });
+    if(!slogan)return false;
+    slogan.classList.add('ms8261-compact-slogan');
     return true;
   }
 
@@ -141,7 +166,7 @@
       section.prepend(title);
     }
     const label=routeLabel(route,section);
-    const safeLabel=label.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const safeLabel=label.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
     title.setAttribute('aria-label',`Je bent nu bij ${label}`);
     title.innerHTML=`<img src="/favicon-64.png" alt="" aria-hidden="true"><span class="ms8219-page-title-copy"><small>MijnSerenity</small><h1>${safeLabel}</h1></span>`;
   }
@@ -198,6 +223,7 @@
       root.style.setProperty('position','relative','important');
       root.style.setProperty('z-index','20','important');
       root.style.setProperty('min-height','calc(100dvh - 82px)','important');
+      markCompactHeroSlogan(root);
       brandSerenity(root);
       [...dashboard.children].forEach(child=>{
         if(child===root)return;
