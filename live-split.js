@@ -1,10 +1,13 @@
-
 /* ============================================================
-   MijnSerenity Cloud 7.4.6 — OpenStreetMap + camera split view
+   MijnSerenity Cloud 8.25.4-rws1 — OpenStreetMap + camera split view
+   + betrouwbare Vaarwegberichten-loader voor Live varen
    ============================================================ */
 
 let ms702CameraStartBusy=false;
 let ms702LayoutTimer=null;
+let ms702RwsLoadPromise=null;
+
+const MS702_RWS_SRC='/rws-nearby.js?v=825401';
 
 function ms702StorageKey(){
   return `mijnserenity-live-split-${currentBoat?.id||'serenity'}`;
@@ -93,6 +96,67 @@ function ms702EqualisePanels(){
   }catch{}
 }
 
+function ms702RunRwsRefresh(){
+  try{window.initRwsPage?.()}catch(error){
+    console.warn('Vaarwegberichten initialiseren mislukt:',error);
+  }
+  setTimeout(()=>{
+    try{window.ms710RefreshRws?.()}catch(error){
+      console.warn('Vaarwegberichten vernieuwen mislukt:',error);
+    }
+  },80);
+}
+
+function ms702EnsureRwsLoaded(){
+  if(typeof window.ms710RefreshRws==='function'){
+    ms702RunRwsRefresh();
+    return Promise.resolve(true);
+  }
+
+  if(ms702RwsLoadPromise)return ms702RwsLoadPromise;
+
+  const existing=[...document.scripts].find(script=>{
+    if(!script.src)return false;
+    try{return new URL(script.src,location.href).pathname==='/rws-nearby.js'}catch{return false}
+  });
+
+  ms702RwsLoadPromise=new Promise((resolve,reject)=>{
+    const ready=()=>{
+      ms702RunRwsRefresh();
+      resolve(true);
+    };
+    const failed=error=>{
+      ms702RwsLoadPromise=null;
+      const status=document.getElementById('rwsLiveStatus');
+      if(status)status.textContent='Vaarwegberichten konden niet worden geladen. Tik op vernieuwen om opnieuw te proberen.';
+      reject(error instanceof Error?error:new Error('Vaarwegberichten laden mislukt'));
+    };
+
+    if(existing){
+      if(typeof window.ms710RefreshRws==='function'){
+        ready();
+        return;
+      }
+      existing.addEventListener('load',ready,{once:true});
+      existing.addEventListener('error',failed,{once:true});
+      setTimeout(()=>{
+        if(typeof window.ms710RefreshRws==='function')ready();
+      },1200);
+      return;
+    }
+
+    const script=document.createElement('script');
+    script.src=MS702_RWS_SRC;
+    script.async=false;
+    script.dataset.msVaarberichtenLoader='1';
+    script.addEventListener('load',ready,{once:true});
+    script.addEventListener('error',failed,{once:true});
+    document.head.appendChild(script);
+  });
+
+  return ms702RwsLoadPromise;
+}
+
 async function ms702EnsureCameraStarted(){
   if(
     ms702CameraStartBusy||
@@ -155,6 +219,7 @@ function ms702ShowSplitView(){
       centerLiveMap();
     }catch{}
     ms702EnsureCameraStarted();
+    ms702EnsureRwsLoaded().catch(()=>{});
   },320);
 }
 
@@ -178,6 +243,7 @@ initLiveMode=async function(){
     ms702EnsureCameraStarted,
     250
   );
+  ms702EnsureRwsLoaded().catch(()=>{});
 
   return result;
 };
@@ -229,6 +295,9 @@ document.addEventListener(
     if(!document.hidden){
       ms702RestoreSplitView();
       ms702EnsureCameraStarted();
+      if(!document.getElementById('live')?.classList.contains('hidden')){
+        ms702EnsureRwsLoaded().catch(()=>{});
+      }
     }
   }
 );
@@ -252,3 +321,7 @@ document.addEventListener(
     },5000);
   }
 );
+
+/* De Live-route toont de Vaarwegberichtenkaart al in de HTML. Zorg daarom
+   direct bij het laden van deze Live-module dat de logica erachter ook actief is. */
+setTimeout(()=>ms702EnsureRwsLoaded().catch(()=>{}),0);
