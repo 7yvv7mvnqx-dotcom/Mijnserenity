@@ -226,6 +226,31 @@
       patched=patched.replace(optionNeedle,optionReplacement);
     }
 
+    const refreshStartNeedle=`    busy=true;
+    const button=$('rwsRefreshButton');`;
+    const refreshStartReplacement=`    busy=true;
+    const waitKey='rws-refresh';
+    window.MijnSerenityWait?.show(forcePosition?'Nieuwe GPS bepalen…':'Vaarwegberichten vernieuwen…',waitKey);
+    const button=$('rwsRefreshButton');`;
+    if(patched.includes(refreshStartNeedle))patched=patched.replace(refreshStartNeedle,refreshStartReplacement);
+
+    const refreshEndNeedle=`      if(button)button.disabled=false;
+      if(liveButton)liveButton.disabled=false;
+      render();
+    }
+  }
+
+  async function requestNotifications(){`;
+    const refreshEndReplacement=`      if(button)button.disabled=false;
+      if(liveButton)liveButton.disabled=false;
+      render();
+      window.MijnSerenityWait?.hide(waitKey);
+    }
+  }
+
+  async function requestNotifications(){`;
+    if(patched.includes(refreshEndNeedle))patched=patched.replace(refreshEndNeedle,refreshEndReplacement);
+
     const buttonNeedle=`button.textContent=permission==='granted'?'Meldingen aan':'Meldingen inschakelen';
     button.disabled=permission==='granted'||permission==='denied'||!supported;`;
     const buttonReplacement=`button.textContent=permission==='granted'?'Meldingen aan ✓':'Meldingen inschakelen';
