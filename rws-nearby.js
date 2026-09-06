@@ -147,12 +147,27 @@
     },{passive:true});
   }
 
-  function loadBase(){
-    if(typeof window.initRwsPage==='function'&&typeof window.ms795OpenRws==='function'){
-      installRepair();
-      return;
-    }
+  /* De basisversie staat bewust vastgepind. Pas alleen de twee radiusplekken aan,
+     zodat 100 km volledig meedoet met opslaan, filteren en vernieuwen. */
+  function patchRadius100(source){
+    let patched=String(source||'');
+    const radiusNeedle='[5,10,20,30,50].includes(saved)';
+    const radiusReplacement='[5,10,20,30,50,100].includes(saved)';
+    const optionNeedle='<option value="50">50 km</option></select>';
+    const optionReplacement='<option value="50">50 km</option><option value="100">100 km</option></select>';
 
+    if(!patched.includes(radiusReplacement)){
+      if(!patched.includes(radiusNeedle))throw new Error('Straalvalidatie in RWS-module niet gevonden.');
+      patched=patched.replace(radiusNeedle,radiusReplacement);
+    }
+    if(!patched.includes('option value="100"')){
+      if(!patched.includes(optionNeedle))throw new Error('Straalkeuzes in RWS-module niet gevonden.');
+      patched=patched.replace(optionNeedle,optionReplacement);
+    }
+    return patched;
+  }
+
+  function loadBaseFallback(){
     const script=document.createElement('script');
     script.src=BASE;
     script.async=false;
@@ -165,6 +180,30 @@
       if(visibleAppSections().length===0)window.captainNavigate?.('dashboard');
     };
     document.head.appendChild(script);
+  }
+
+  async function loadBase(){
+    if(typeof window.initRwsPage==='function'&&typeof window.ms795OpenRws==='function'){
+      installRepair();
+      return;
+    }
+
+    try{
+      const response=await fetch(BASE,{cache:'no-store'});
+      if(!response.ok)throw new Error(`RWS-basis antwoordde met ${response.status}`);
+      const source=patchRadius100(await response.text());
+      const script=document.createElement('script');
+      script.textContent=`${source}\n//# sourceURL=mijnserenity-rws-nearby-base.js`;
+      document.head.appendChild(script);
+      script.remove();
+      if(typeof window.initRwsPage!=='function'||typeof window.ms795OpenRws!=='function'){
+        throw new Error('Gepatchte RWS-module is niet gestart.');
+      }
+      installRepair();
+    }catch(error){
+      console.warn('100 km-uitbreiding kon niet dynamisch worden geladen; basisversie wordt gebruikt.',error);
+      loadBaseFallback();
+    }
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadBase,{once:true});
