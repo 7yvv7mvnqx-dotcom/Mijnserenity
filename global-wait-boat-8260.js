@@ -1,14 +1,19 @@
-/* MijnSerenity 8.26.0 — globale wacht-/laadindicator met deinende VriJon motorboot */
+/* MijnSerenity 8.26.7 — globale wacht-/laadindicator met anti-vastloopbeveiliging */
 (()=>{
   'use strict';
-  if(window.__msGlobalWaitBoat8260)return;
+  const VERSION=8267;
+  if(Number(window.__msGlobalWaitBoatVersion||0)>=VERSION)return;
+  window.__msGlobalWaitBoatVersion=VERSION;
   window.__msGlobalWaitBoat8260=true;
 
   const STYLE_ID='ms8260WaitBoatStyle';
   const ROOT_ID='ms8260WaitBoat';
+  const HARD_TTL_MS=10000;
+  const DOM_TTL_MS=7000;
   const ACTIVE_TEXT=/(?:\b(?:wordt|worden)\s+(?:geladen|gecontroleerd|bepaald|opgehaald|verwerkt|bijgewerkt|gesynchroniseerd|voorbereid)\b)|(?:\b(?:even\s+wachten|wachten\s+op|bezig\s+met)\b)|(?:\b(?:laden|controleren|zoeken|ophalen|verbinden|bijwerken|verwerken|bepalen|synchroniseren|voorbereiden)\s*(?:…|\.{2,})\s*$)/i;
   const ACTION_TEXT=/\b(controleren|zoeken|ophalen|vernieuwen|bijwerken|verbinden|opslaan|berekenen|analyseren|scannen|laden|start\s+varen)\b/i;
   const EXPLICIT_BUSY='[aria-busy="true"],[data-loading="true"],[data-waiting="true"],.is-loading,.is-waiting';
+  const NON_BLOCKING_SELECTOR='.ms710-radar-card,.ms709-weather-card,[data-ms-wait-scope="local"]';
 
   const sources=new Map();
   let lastInteractionAt=0;
@@ -18,6 +23,8 @@
   let observer=null;
   let domSignature='';
   let domTextExpiry=0;
+  let explicitSignature='';
+  let explicitExpiry=0;
   let expiryTimer=0;
 
   const YACHT=`<svg class="ms8260-yacht" viewBox="0 0 210 100" aria-hidden="true" focusable="false">
@@ -94,14 +101,16 @@
     let next=Infinity;
     const now=Date.now();
     for(const item of sources.values()){
-      if(item.expiresAt&&item.expiresAt>now)next=Math.min(next,item.expiresAt);
+      if(item.expiresAt>now)next=Math.min(next,item.expiresAt);
     }
     if(Number.isFinite(next))expiryTimer=setTimeout(render,Math.max(40,next-now+20));
   }
 
   function render(){
     const now=Date.now();
-    for(const [key,item] of sources){if(item.expiresAt&&item.expiresAt<=now)sources.delete(key)}
+    for(const [key,item] of sources){
+      if(!item?.expiresAt||item.expiresAt<=now)sources.delete(key);
+    }
     const root=ensureRoot();
     const items=[...sources.values()];
     const active=items.length>0;
@@ -116,15 +125,31 @@
     scheduleExpiry();
   }
 
-  function show(key,message,ttl=0){
+  function show(key,message,ttl=HARD_TTL_MS){
     const id=String(key||'manual');
-    sources.set(id,{message:cleanMessage(message)||'MijnSerenity is bezig.',expiresAt:ttl>0?Date.now()+ttl:0});
+    const text=cleanMessage(message)||'MijnSerenity is bezig.';
+    const now=Date.now();
+    const previous=sources.get(id);
+    const same=previous?.message===text;
+    const startedAt=same?Number(previous.startedAt||now):now;
+    const requested=Math.max(250,Number(ttl)||HARD_TTL_MS);
+    const expiresAt=Math.min(now+requested,startedAt+HARD_TTL_MS);
+    sources.set(id,{message:text,startedAt,expiresAt});
     render();
     return id;
   }
 
   function hide(key){
     sources.delete(String(key||'manual'));
+    render();
+  }
+
+  function clearAll(){
+    sources.clear();
+    domSignature='';
+    domTextExpiry=0;
+    explicitSignature='';
+    explicitExpiry=0;
     render();
   }
 
@@ -135,15 +160,19 @@
     return style.display!=='none'&&style.visibility!=='hidden'&&Number(style.opacity)!==0;
   }
 
+  function nonBlocking(node){
+    return Boolean(node instanceof Element&&node.closest(NON_BLOCKING_SELECTOR));
+  }
+
   function findBusyStatus(){
     const roots=[document.getElementById('appView'),document.getElementById('authView')].filter(Boolean);
     let explicit=null;
     let textNode=null;
     for(const root of roots){
-      explicit=[...root.querySelectorAll(EXPLICIT_BUSY)].find(visible)||explicit;
+      explicit=[...root.querySelectorAll(EXPLICIT_BUSY)].find(node=>visible(node)&&!nonBlocking(node))||explicit;
       const candidates=root.querySelectorAll('.status,.small,[role="status"],[aria-live],button,[data-status]');
       for(const node of candidates){
-        if(!visible(node))continue;
+        if(!visible(node)||nonBlocking(node))continue;
         const text=cleanMessage(node.textContent);
         if(text&&ACTIVE_TEXT.test(text)){textNode=node;break}
       }
@@ -154,11 +183,21 @@
 
   function scanBusyStatus(){
     scanQueued=false;
+    const now=Date.now();
     const {explicit,textNode}=findBusyStatus();
+
     if(explicit){
       const msg=cleanMessage(explicit.getAttribute('data-loading-text')||explicit.getAttribute('aria-label')||explicit.textContent)||'MijnSerenity is bezig.';
-      show('dom-explicit',msg,0);
+      const signature=`${explicit.id||explicit.className||explicit.tagName}|${msg}`;
+      if(signature!==explicitSignature){
+        explicitSignature=signature;
+        explicitExpiry=now+DOM_TTL_MS;
+      }
+      if(now<explicitExpiry)show('dom-explicit',msg,Math.max(250,explicitExpiry-now));
+      else sources.delete('dom-explicit');
     }else{
+      explicitSignature='';
+      explicitExpiry=0;
       sources.delete('dom-explicit');
     }
 
@@ -167,9 +206,9 @@
       const signature=`${textNode.id||textNode.className||textNode.tagName}|${text}`;
       if(signature!==domSignature){
         domSignature=signature;
-        domTextExpiry=Date.now()+12000;
+        domTextExpiry=now+DOM_TTL_MS;
       }
-      if(Date.now()<domTextExpiry)show('dom-text',text,Math.max(250,domTextExpiry-Date.now()));
+      if(now<domTextExpiry)show('dom-text',text,Math.max(250,domTextExpiry-now));
       else sources.delete('dom-text');
     }else{
       domSignature='';
@@ -220,15 +259,15 @@
   }
 
   function installFetchTracking(){
-    if(window.__msWaitFetch8260||typeof window.fetch!=='function')return;
-    window.__msWaitFetch8260=true;
+    if(window.__msWaitFetch8267||typeof window.fetch!=='function')return;
+    window.__msWaitFetch8267=true;
     const previousFetch=window.fetch.bind(window);
     window.fetch=function(...args){
       const userInitiated=Date.now()-lastInteractionAt<1500;
       const key=`fetch-${++fetchSerial}`;
       let timer=0;
       if(userInitiated){
-        timer=setTimeout(()=>show(key,lastAction||'Gegevens laden…',0),260);
+        timer=setTimeout(()=>show(key,lastAction||'Gegevens laden…',HARD_TTL_MS),260);
       }
       let result;
       try{result=previousFetch(...args)}catch(error){clearTimeout(timer);hide(key);throw error}
@@ -242,11 +281,12 @@
 
   function installApi(){
     window.MijnSerenityWait={
-      show(message='MijnSerenity is bezig.',key='manual'){return show(key,message,0)},
+      show(message='MijnSerenity is bezig.',key='manual'){return show(key,message,HARD_TTL_MS)},
       hide(key='manual'){hide(key)},
+      hideAll(){clearAll()},
       wrap(promise,message='MijnSerenity is bezig.'){
         const key=`manual-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
-        show(key,message,0);
+        show(key,message,HARD_TTL_MS);
         return Promise.resolve(promise).finally(()=>hide(key));
       },
       refresh(){queueScan()}
@@ -254,13 +294,23 @@
   }
 
   function start(){
+    document.getElementById(ROOT_ID)?.remove();
+    document.getElementById(STYLE_ID)?.remove();
     ensureRoot();
     installApi();
     installInteractionTracking();
     installFetchTracking();
     observeBusyStatus();
-    ['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:routechange','pageshow'].forEach(type=>window.addEventListener(type,()=>setTimeout(()=>{observeBusyStatus();queueScan()},20),{passive:true}));
-    document.addEventListener('visibilitychange',()=>{if(document.hidden){sources.clear();render()}else{observeBusyStatus();queueScan()}},{passive:true});
+
+    ['mijnserenity:dashboard-ready','mijnserenity:boot-complete'].forEach(type=>{
+      window.addEventListener(type,()=>setTimeout(()=>{clearAll();observeBusyStatus();queueScan()},20),{passive:true});
+    });
+    window.addEventListener('mijnserenity:routechange',()=>setTimeout(()=>{clearAll();observeBusyStatus();queueScan()},20),{passive:true});
+    window.addEventListener('pageshow',()=>setTimeout(()=>{clearAll();observeBusyStatus();queueScan()},20),{passive:true});
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden)clearAll();
+      else setTimeout(()=>{clearAll();observeBusyStatus();queueScan()},20);
+    },{passive:true});
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
