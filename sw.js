@@ -1,7 +1,7 @@
-/* MijnSerenity 8.25.7 — live GPS/route betrouwbaarheid + snelle app-cache */
-const CACHE_NAME='mijnserenity-8.25.7-gps1';
-const BUILD='8.25.7';
-const BUILD_TOKEN='825700';
+/* MijnSerenity 8.25.8 — VriJon Start-navigatie + snelle app-cache */
+const CACHE_NAME='mijnserenity-8.25.8-vrijon-start1';
+const BUILD='8.25.8';
+const BUILD_TOKEN='825800';
 const NETWORK_TIMEOUT_MS=8000;
 
 /* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
@@ -69,7 +69,7 @@ function rewriteIndexHtml(html){
     rewritten=rewritten.replace(/<\/body>/i,`<script src="/ais-gps-fix-8221.js?v=${BUILD_TOKEN}"></script>\n</body>`);
   }
 
-  /* Start krijgt altijd het geanimeerde motorjacht, ook na een PWA-cache-update. */
+  /* Start krijgt altijd het geanimeerde VriJon-motorjacht, ook na een PWA-cache-update. */
   if(!/start-yacht-nav-8255\.js/i.test(rewritten)){
     rewritten=rewritten.replace(/<\/body>/i,`<script src="/start-yacht-nav-8255.js?v=${BUILD_TOKEN}"></script>\n</body>`);
   }
