@@ -1,11 +1,13 @@
-/* MijnSerenity 7.18.26 — duidelijke alarmmeldingen op telefoon */
+/* MijnSerenity 7.18.27 — alarmmeldingen met 1 uur sluimeren */
 (()=>{
   'use strict';
 
-  const BUILD='7.18.26';
+  const BUILD='7.18.27';
   const STORAGE_KEY='mijnserenity-alarm-notifications-v71826';
   const SEEN_KEY='mijnserenity-alarm-notification-seen-v71826';
+  const SNOOZE_KEY='mijnserenity-alarm-snoozed-v71827';
   const DEDUPE_MS=30*60*1000;
+  const SNOOZE_MS=60*60*1000;
   const POLL_MS=5000;
   const SETUP_ID='msSerenityNotificationSetup';
   const ALARM_ID='msSerenityAlarmBanner';
@@ -98,6 +100,37 @@
     return item?`${item.level}|${item.title}|${item.text}`:'';
   }
 
+  function snoozeState(){
+    return loadJson(SNOOZE_KEY,{});
+  }
+
+  function pruneSnoozes(warnings=[]){
+    const state=snoozeState();
+    const active=new Set(warnings.map(fingerprint).filter(Boolean));
+    const t=now();
+    let changed=false;
+    for(const key of Object.keys(state)){
+      const until=Number(state[key]||0);
+      if(!until||until<=t||!active.has(key)){
+        delete state[key];
+        changed=true;
+      }
+    }
+    if(changed)saveJson(SNOOZE_KEY,state);
+    return state;
+  }
+
+  function isSnoozed(fp,state=snoozeState()){
+    return Boolean(fp&&Number(state[fp]||0)>now());
+  }
+
+  function snoozeAlarm(fp){
+    if(!fp)return;
+    const state=snoozeState();
+    state[fp]=now()+SNOOZE_MS;
+    saveJson(SNOOZE_KEY,state);
+  }
+
   function ensureStyles(){
     if($('msSerenityAlarmStyles'))return;
     const style=document.createElement('style');
@@ -169,7 +202,11 @@
       banner.classList.remove('show');
       navigateToDetails();
     });
-    banner.querySelector('.ms-alarm-close')?.addEventListener('click',()=>banner.classList.remove('show'));
+    banner.querySelector('.ms-alarm-close')?.addEventListener('click',()=>{
+      const fp=String(banner.dataset.fingerprint||activeFingerprint||'');
+      snoozeAlarm(fp);
+      banner.classList.remove('show');
+    });
     document.body.appendChild(banner);
     return banner;
   }
@@ -177,6 +214,8 @@
   function showAlarmBanner(item){
     if(!item)return;
     const banner=ensureAlarmBanner();
+    const fp=fingerprint(item);
+    banner.dataset.fingerprint=fp;
     banner.className=`show ${item.level}`;
     const icon=banner.querySelector('.ms-alarm-icon');
     const title=banner.querySelector('strong');
@@ -327,10 +366,10 @@
 
   async function sync({forceNotification=false}={}){
     const warnings=collectWarnings();
-    const item=warnings[0]||null;
-    const fp=fingerprint(item);
+    const primary=warnings[0]||null;
+    const snoozes=pruneSnoozes(warnings);
 
-    if(!item){
+    if(!primary){
       lastHadWarning=false;
       activeFingerprint='';
       lastFingerprint='';
@@ -338,6 +377,15 @@
       return {level:'ok',warnings:[]};
     }
 
+    const item=warnings.find(warning=>!isSnoozed(fingerprint(warning),snoozes))||null;
+    if(!item){
+      lastHadWarning=false;
+      activeFingerprint='';
+      hideAlarmBanner();
+      return {level:primary.level,warnings,snoozed:true};
+    }
+
+    const fp=fingerprint(item);
     showAlarmBanner(item);
     const newOccurrence=!lastHadWarning||fp!==activeFingerprint;
     lastHadWarning=true;
@@ -349,7 +397,7 @@
       if(sent)markSent(fp);
     }
     lastFingerprint=fp;
-    return {level:item.level,warnings};
+    return {level:primary.level,warnings};
   }
 
   function handleServiceWorkerMessage(event){
@@ -397,7 +445,14 @@
       test,
       sync,
       showSetup:()=>ensureSetupCard(true),
-      status:()=>({permission:permission(),supported:notificationSupported(),standalone:isStandalone(),activeFingerprint,lastFingerprint})
+      status:()=>({
+        permission:permission(),
+        supported:notificationSupported(),
+        standalone:isStandalone(),
+        activeFingerprint,
+        lastFingerprint,
+        snoozes:snoozeState()
+      })
     };
     window.dispatchEvent(new CustomEvent('mijnserenity-alarm-notifications-ready',{detail:{build:BUILD}}));
   }
