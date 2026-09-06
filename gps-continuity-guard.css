@@ -24,3 +24,24 @@
   0%,100%{opacity:1}
   50%{opacity:.58}
 }
+
+/* iPad/tablet: gebruik de volledige app-breedte in plaats van de 980px desktoplimiet. */
+@media (min-width:768px) and (max-width:1366px) and (any-pointer:coarse){
+  html,body{
+    width:100%;
+    min-height:100%;
+    margin:0;
+  }
+  body{
+    min-height:100vh;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  body>main{
+    width:100%!important;
+    max-width:none!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    box-sizing:border-box!important;
+  }
+}
