@@ -1,7 +1,7 @@
-/* MijnSerenity 8.25.5 — snelle app-cache; VriJon-stijl Start-motorjacht */
-const CACHE_NAME='mijnserenity-8.25.5-yacht1';
-const BUILD='8.25.5';
-const BUILD_TOKEN='825500';
+/* MijnSerenity 8.25.6 — snelle app-cache; vaste Startknop en mobiele polish */
+const CACHE_NAME='mijnserenity-8.25.6-start1';
+const BUILD='8.25.6';
+const BUILD_TOKEN='825600';
 const NETWORK_TIMEOUT_MS=8000;
 
 /* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
@@ -225,6 +225,7 @@ self.addEventListener('fetch',event=>{
     url.pathname==='/ais-gps-fix-8221.js'||
     url.pathname==='/live-split.js'||
     url.pathname==='/rws-nearby.js'||
+    url.pathname==='/start-dashboard-71510.js'||
     url.pathname==='/start-yacht-nav-8255.js'
   ){
     event.respondWith(networkFirst(request));
