@@ -1,12 +1,15 @@
-/* MijnSerenity 8.25.7 — live snelheid op Start in km/u */
+/* MijnSerenity 8.25.8 — live snelheid, buitentemperatuur en windkracht op Start */
 (()=>{
   'use strict';
-  if(window.__msSpeedKmh8257)return;
-  window.__msSpeedKmh8257=true;
+  if(window.__msStartLive8258)return;
+  window.__msStartLive8258=true;
 
-  const BUILD='8.25.7';
+  const BUILD='8.25.8';
   const BASE='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@8c1e3094f221de00245cad65e7c962a19d7dd3c7/start-dashboard-71510.js';
   const SPEED_ID='ms8234Speed';
+  const OUTSIDE_ID='ms8234Outside';
+  const WIND_ID='ms8234Wind';
+  const WEATHER_REFRESH_MS=5*60*1000;
 
   /* Het oude Marine Glass-dashboard blijft technisch aanwezig als databron/fallback,
      maar mag tijdens het opstarten nooit meer zichtbaar worden. Zo blijven bestaande
@@ -27,11 +30,18 @@
   let passiveSpeedKmh=0;
   let lastPassiveAt=0;
   let syncTimer=null;
+  let weatherBusy=false;
+  let lastWeatherRefresh=0;
 
   const finite=value=>{
     if(value===null||value===undefined||value===''||typeof value==='boolean')return null;
     const n=Number(String(value).replace(',','.'));
     return Number.isFinite(n)?n:null;
+  };
+
+  const numberFromText=value=>{
+    const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
+    return match?Number(match[0]):null;
   };
 
   function syncBuild(){
@@ -64,6 +74,16 @@
     const text=formatKmh(value);
     if(node.textContent!==text)node.textContent=text;
     node.classList.remove('is-missing');
+    return true;
+  }
+
+  function renderLiveMetric(id,value){
+    const node=document.getElementById(id);
+    if(!node||!value)return false;
+    const next=String(value);
+    if(node.textContent!==next)node.textContent=next;
+    node.classList.remove('is-missing');
+    node.closest('.ms8234-status')?.classList.remove('is-missing');
     return true;
   }
 
@@ -177,46 +197,171 @@
     renderSpeed(fresh?passiveSpeedKmh:0);
   }
 
+  function beaufortFromKmh(value){
+    const speed=finite(value);
+    if(speed===null)return null;
+    try{
+      if(typeof window.windKmhToBeaufort==='function'){
+        const result=finite(window.windKmhToBeaufort(speed));
+        if(result!==null)return Math.max(0,Math.min(12,Math.round(result)));
+      }
+    }catch(_){}
+    const limits=[1,6,12,20,29,39,50,62,75,89,103,118];
+    const index=limits.findIndex(limit=>speed<limit);
+    return index<0?12:index;
+  }
+
+  function bftFromText(value){
+    const text=String(value??'');
+    const match=text.replace(',','.').match(/(\d+(?:\.\d+)?)\s*Bft\b/i);
+    return match?Math.max(0,Math.min(12,Math.round(Number(match[1])))):null;
+  }
+
+  function sourceText(ids){
+    for(const id of ids){
+      const value=String(document.getElementById(id)?.textContent||'').trim();
+      if(value&&!/^(?:–|-|—|geen data|geen meting|onbekend)$/i.test(value))return value;
+    }
+    return '';
+  }
+
+  function keepWindSource(value){
+    if(value===null)return;
+    const text=`${value} Bft`;
+    let source=document.getElementById('weatherWindBft');
+    if(!source){
+      source=document.createElement('span');
+      source.id='weatherWindBft';
+      source.hidden=true;
+      source.dataset.msStartWeatherSource='8258';
+      (document.body||document.documentElement).appendChild(source);
+    }
+    if(source.textContent!==text)source.textContent=text;
+  }
+
+  function readLiveWeather(){
+    const weather=window.liveNavState?.weather||{};
+    let temperature=finite(weather.temperature);
+    let windKmh=finite(weather.windSpeed);
+
+    if(temperature===null){
+      temperature=numberFromText(sourceText([
+        'ms709WeatherTemp','weatherCurrentTemp','ivmsOutsideTemp','currentWeatherTemp'
+      ]));
+    }
+
+    let windBft=windKmh!==null?beaufortFromKmh(windKmh):null;
+    if(windBft===null){
+      const windText=sourceText([
+        'ms709WeatherWind','ms71510WindBft','weatherWindBft','ivmsWindBft','liveWindBft'
+      ]);
+      windBft=bftFromText(windText);
+      if(windBft===null){
+        const raw=numberFromText(windText);
+        if(raw!==null&&raw>=0&&raw<=12)windBft=Math.round(raw);
+      }
+    }
+
+    const description=sourceText([
+      'ms709WeatherDescription','weatherCurrentDescription','currentWeatherDescription','ms709WeatherCondition'
+    ]);
+    return {temperature,windKmh,windBft,description};
+  }
+
+  function syncWeather(){
+    const weather=readLiveWeather();
+
+    if(weather.temperature!==null){
+      const value=`${weather.temperature.toLocaleString('nl-NL',{minimumFractionDigits:0,maximumFractionDigits:1})}°`;
+      renderLiveMetric(OUTSIDE_ID,value);
+      const sub=document.getElementById('ms8245OutsideSub');
+      if(sub&&weather.description){
+        if(sub.textContent!==weather.description)sub.textContent=weather.description;
+        sub.hidden=false;
+      }
+    }
+
+    if(weather.windBft!==null){
+      keepWindSource(weather.windBft);
+      renderLiveMetric(WIND_ID,`${weather.windBft} Bft`);
+      const node=document.getElementById(WIND_ID);
+      if(node&&weather.windKmh!==null){
+        node.title=`${weather.windKmh.toLocaleString('nl-NL',{minimumFractionDigits:0,maximumFractionDigits:1})} km/u`;
+      }
+    }
+  }
+
+  async function refreshLiveWeather(force=false){
+    if(weatherBusy||!dashboardVisible())return;
+    const now=Date.now();
+    if(!force&&now-lastWeatherRefresh<WEATHER_REFRESH_MS)return;
+    const refresh=window.ms709RefreshWeather;
+    if(typeof refresh!=='function')return;
+
+    weatherBusy=true;
+    lastWeatherRefresh=now;
+    try{
+      /* Live weerschatting op de actuele GPS-positie van Serenity. */
+      await refresh(true,true);
+    }catch(error){
+      console.debug('Startweer verversen:',error);
+    }finally{
+      weatherBusy=false;
+      syncWeather();
+    }
+  }
+
+  function syncLiveValues(){
+    syncSpeed();
+    syncWeather();
+    refreshLiveWeather(false);
+  }
+
   function protectBaseRefresh(){
     const original=window.ms8210RefreshStart;
-    if(typeof original!=='function'||original.__ms8257Wrapped)return;
+    if(typeof original!=='function'||original.__ms8258Wrapped)return;
     const wrapped=function(...args){
       const result=original.apply(this,args);
-      requestAnimationFrame(syncSpeed);
+      requestAnimationFrame(syncLiveValues);
       return result;
     };
-    wrapped.__ms8257Wrapped=true;
+    wrapped.__ms8258Wrapped=true;
     window.ms8210RefreshStart=wrapped;
   }
 
   function startFix(){
     syncBuild();
     protectBaseRefresh();
-    syncSpeed();
+    syncLiveValues();
+    setTimeout(()=>refreshLiveWeather(true),700);
 
     ['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:routechange','mijnserenity:start-requested','pageshow','online']
       .forEach(type=>window.addEventListener(type,()=>{
         protectBaseRefresh();
-        requestAnimationFrame(syncSpeed);
+        requestAnimationFrame(syncLiveValues);
+        if(type==='online')setTimeout(()=>refreshLiveWeather(true),150);
       },{passive:true}));
 
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden)stopPassiveWatch();
-      else syncSpeed();
+      else{
+        syncLiveValues();
+        refreshLiveWeather(false);
+      }
     },{passive:true});
 
     if(syncTimer)clearInterval(syncTimer);
     syncTimer=setInterval(()=>{
       protectBaseRefresh();
-      syncSpeed();
+      syncLiveValues();
     },1000);
 
     [0,200,600,1300,2600,5000].forEach(ms=>setTimeout(()=>{
       protectBaseRefresh();
-      syncSpeed();
+      syncLiveValues();
     },ms));
 
-    console.info(`MijnSerenity ${BUILD}: snelheid op Start actief in km/u.`);
+    console.info(`MijnSerenity ${BUILD}: snelheid, temperatuur en windkracht live op Start.`);
   }
 
   function loadBase(){
