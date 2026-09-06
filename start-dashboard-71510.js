@@ -1,15 +1,15 @@
-/* MijnSerenity 8.26.6 — Serenity-foto veilig bovenop 8.26.5 publiceren.
-   De volledige live Start/statuslaag van commit de78ddf blijft ongewijzigd;
-   deze wrapper voegt alleen de nieuwe startfoto toe. */
+/* MijnSerenity 8.26.8 — originele Serenity-foto als volledige Start-header. */
 (()=>{
   'use strict';
-  if(window.__ms8266HomeHero)return;
-  window.__ms8266HomeHero=true;
+  if(window.__ms8268OriginalHero)return;
+  window.__ms8268OriginalHero=true;
 
-  const BUILD='8.26.6';
+  const BUILD='8.26.8';
   const PRIOR='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@de78ddf4fba781d312d7aa109c0f06f3e358e49d/start-dashboard-71510.js?v=826500';
-  const HERO='/assets/serenity-home-hero-8266.jpg?v=826600';
-  const STYLE_ID='ms8266HomeHeroStyle';
+  const PARTS=Array.from({length:7},(_,i)=>`/assets/serenity-original-8268-0${i+1}.txt?v=826800`);
+  const STYLE_ID='ms8268OriginalHeroStyle';
+  let heroDataUrl='';
+  let heroPromise=null;
 
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -23,7 +23,7 @@
   function loadPrior(){
     return new Promise(resolve=>{
       if(window.__msStartStatus8265){resolve();return;}
-      const existing=document.querySelector('script[data-ms8266-prior]');
+      const existing=document.querySelector('script[data-ms8268-prior]');
       if(existing){
         existing.addEventListener('load',resolve,{once:true});
         setTimeout(resolve,4000);
@@ -33,7 +33,7 @@
       script.src=PRIOR;
       script.async=false;
       script.crossOrigin='anonymous';
-      script.dataset.ms8266Prior='1';
+      script.dataset.ms8268Prior='1';
       script.onload=resolve;
       script.onerror=()=>{
         console.error('MijnSerenity 8.26.5 basis kon niet worden geladen.');
@@ -44,69 +44,129 @@
     });
   }
 
+  async function loadOriginalPhoto(){
+    if(heroDataUrl)return heroDataUrl;
+    if(heroPromise)return heroPromise;
+    heroPromise=(async()=>{
+      const chunks=await Promise.all(PARTS.map(async url=>{
+        const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});
+        if(!response.ok)throw new Error(`Serenity-fotodeel ${response.status}`);
+        return (await response.text()).trim();
+      }));
+      const base64=chunks.join('').replace(/\s+/g,'');
+      if(!base64.startsWith('/9j/')||!base64.endsWith('/9Q=='))throw new Error('Ongeldige Serenity JPEG');
+      heroDataUrl=`data:image/jpeg;base64,${base64}`;
+      return heroDataUrl;
+    })().catch(error=>{
+      console.error('Originele Serenity-foto kon niet worden opgebouwd.',error);
+      heroPromise=null;
+      return '';
+    });
+    return heroPromise;
+  }
+
   function installStyle(){
     if(document.getElementById(STYLE_ID))return;
     const style=document.createElement('style');
     style.id=STYLE_ID;
     style.textContent=`
-      #dashboard .ms71514-hero.ms8266-home-hero,
-      #ms8210Start .ms8266-home-hero{
-        background-image:linear-gradient(90deg,rgba(2,14,22,.66) 0%,rgba(2,14,22,.38) 38%,rgba(2,14,22,.08) 72%,rgba(2,14,22,.18) 100%),url("${HERO}")!important;
+      html #dashboard .ms71514-hero.ms8268-home-hero,
+      html #ms8210Start .ms8234-header.ms8268-home-hero{
+        position:relative!important;
+        overflow:hidden!important;
+        isolation:isolate!important;
+        background-image:
+          linear-gradient(90deg,rgba(2,14,22,.72) 0%,rgba(2,14,22,.44) 35%,rgba(2,14,22,.08) 68%,rgba(2,14,22,.18) 100%),
+          linear-gradient(0deg,rgba(1,10,18,.55) 0%,rgba(1,10,18,0) 58%),
+          var(--ms8268-hero-image)!important;
         background-size:cover!important;
         background-position:center 52%!important;
         background-repeat:no-repeat!important;
-        color:#fff!important;
-        text-shadow:0 2px 12px rgba(0,0,0,.42)!important;
+        color:#f4fbff!important;
+        border-color:rgba(57,201,244,.34)!important;
+        text-shadow:0 2px 12px rgba(0,0,0,.52)!important;
       }
-      #dashboard .ms71514-hero.ms8266-home-hero::after{
-        background:linear-gradient(180deg,rgba(2,12,20,.02),rgba(2,13,20,.46))!important;
+      html #dashboard .ms71514-hero.ms8268-home-hero::after{
+        background:linear-gradient(180deg,rgba(2,12,20,.02),rgba(2,13,20,.50))!important;
       }
-      #ms8210Start .ms8266-home-hero h1,
-      #ms8210Start .ms8266-home-hero h2,
-      #ms8210Start .ms8266-home-hero h3,
-      #ms8210Start .ms8266-home-hero p,
-      #ms8210Start .ms8266-home-hero [class*="title"],
-      #ms8210Start .ms8266-home-hero [class*="brand"]{
+      html #ms8210Start .ms8234-header.ms8268-home-hero::before,
+      html #ms8210Start .ms8234-header.ms8268-home-hero::after{
+        opacity:0!important;
+        background:none!important;
+      }
+      html #ms8210Start .ms8263-vrijon-hero,
+      html #ms8210Start .ms8263-vrijon-lockup,
+      html #ms8210Start .ms8263-vrijon-svg{
+        display:none!important;
+      }
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8234-brand{
+        position:relative!important;
+        z-index:2!important;
+        color:#39c9f4!important;
+      }
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8234-brand h1,
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8218-serenity-brand,
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8218-brand-lockup{
+        color:#39c9f4!important;
+        font-family:Georgia,"Times New Roman",serif!important;
+        text-shadow:0 3px 18px rgba(0,0,0,.60)!important;
+      }
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8254-tagline{
+        color:#f5fbff!important;
+        text-shadow:0 2px 10px rgba(0,0,0,.70)!important;
+      }
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8234-greeting{
         color:#fff!important;
-        text-shadow:0 2px 12px rgba(0,0,0,.45)!important;
+        text-shadow:0 2px 12px rgba(0,0,0,.72)!important;
+      }
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8245-date{
+        color:#b9ccda!important;
+        text-shadow:0 2px 10px rgba(0,0,0,.68)!important;
+      }
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8234-attention{
+        background:rgba(3,31,49,.88)!important;
+        border-color:rgba(57,201,244,.30)!important;
+        color:#f4fbff!important;
+        box-shadow:0 16px 38px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.04)!important;
+        backdrop-filter:blur(16px) saturate(120%)!important;
+        -webkit-backdrop-filter:blur(16px) saturate(120%)!important;
+      }
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8234-attention-copy strong{color:#fff!important}
+      html #ms8210Start .ms8234-header.ms8268-home-hero .ms8234-attention-copy small{color:#adc1cf!important}
+      html #dashboard .ms71514-hero.ms8268-home-hero>img{opacity:0!important}
+      @media(max-width:620px){
+        html #dashboard .ms71514-hero.ms8268-home-hero,
+        html #ms8210Start .ms8234-header.ms8268-home-hero{
+          background-position:center 50%!important;
+        }
       }
     `;
     (document.head||document.documentElement).appendChild(style);
   }
 
-  function findModernHero(root){
-    if(!root)return null;
-    const direct=root.querySelector('.ms8234-hero,.ms8210-hero,[class*="hero"],[class*="welcome"],[class*="intro"]');
-    if(direct)return direct;
-    const labels=[...root.querySelectorAll('h1,h2,h3,[class*="brand"],[class*="title"],strong')];
-    const hit=labels.find(el=>/serenity|welkom aan boord|klaar om te gaan varen/i.test(String(el.textContent||'')));
-    if(!hit)return null;
-    let node=hit;
-    while(node.parentElement&&node.parentElement!==root){
-      const rect=node.getBoundingClientRect();
-      if(rect.width>240&&rect.height>90)return node;
-      node=node.parentElement;
-    }
-    return hit.parentElement&&hit.parentElement!==root?hit.parentElement:null;
+  function applyPhoto(target,url){
+    if(!target||!url)return;
+    target.classList.add('ms8268-home-hero');
+    target.style.setProperty('--ms8268-hero-image',`url("${url}")`);
+    target.dataset.msHeroBuild='8268';
   }
 
-  function applyHero(){
+  function modernHeader(){
+    const root=document.getElementById('ms8210Start');
+    return root?.querySelector('.ms8234-header')||root?.querySelector('.ms8210-header')||null;
+  }
+
+  async function applyHero(){
     installStyle();
-    const targets=[];
-    const legacy=document.querySelector('#dashboard .ms71514-hero');
-    if(legacy)targets.push(legacy);
-    const modernRoot=document.getElementById('ms8210Start');
-    const modern=findModernHero(modernRoot);
-    if(modern)targets.push(modern);
-    targets.forEach(target=>{
-      target.classList.add('ms8266-home-hero');
-      target.dataset.msHeroBuild='8266';
-    });
+    const url=await loadOriginalPhoto();
+    if(!url)return;
+    applyPhoto(document.querySelector('#dashboard .ms71514-hero'),url);
+    applyPhoto(modernHeader(),url);
   }
 
   function refresh(){
     syncBuild();
-    applyHero();
+    void applyHero();
   }
 
   function watch(){

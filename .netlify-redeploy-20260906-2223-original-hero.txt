@@ -1,0 +1,2 @@
+MijnSerenity 8.26.8
+Originele Serenity-bootfoto als volledige Start-header; getekende VriJon-boot verwijderd en hero-target gecorrigeerd.
