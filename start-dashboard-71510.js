@@ -1,4 +1,4 @@
-/* MijnSerenity 8.27.7 — harde live fix: echte hero-foto, één header, nette iPad-layout. */
+/* MijnSerenity 8.27.7 — harde live fix voor de Serenity startheader. */
 (()=>{
   'use strict';
   if(window.__ms8277HardHero)return;
@@ -9,7 +9,7 @@
   const PHOTO='/assets/serenity-hero-8275.jpg?v=827700';
   const STYLE_ID='ms8277HardHeroStyle';
   let corePromise=null;
-  let queued=false;
+  let patchQueued=false;
 
   const norm=v=>String(v||'').replace(/\s+/g,' ').trim();
 
@@ -23,46 +23,58 @@
   }
 
   function loadCore(){
-    if(window.__ms8276SolidHeader || document.getElementById('ms8276Hero')) return Promise.resolve();
+    if(window.__ms8276SolidHeader)return Promise.resolve();
     if(corePromise)return corePromise;
     corePromise=new Promise(resolve=>{
-      const done=()=>resolve();
       let s=document.querySelector('script[data-ms8277-core]');
       if(s){
         if(window.__ms8276SolidHeader)resolve();
-        else s.addEventListener('load',done,{once:true});
+        else{
+          s.addEventListener('load',resolve,{once:true});
+          setTimeout(resolve,5000);
+        }
         return;
       }
       s=document.createElement('script');
       s.src=CORE;
       s.async=false;
+      s.crossOrigin='anonymous';
       s.dataset.ms8277Core='1';
-      s.addEventListener('load',done,{once:true});
-      s.addEventListener('error',done,{once:true});
-      document.head.appendChild(s);
+      s.onload=resolve;
+      s.onerror=()=>{
+        console.error('MijnSerenity 8.27.7: startkern kon niet worden geladen.');
+        resolve();
+      };
+      (document.head||document.documentElement).appendChild(s);
+      setTimeout(resolve,5000);
     });
     return corePromise;
   }
 
-  function installCss(){
+  function installStyle(){
     let style=document.getElementById(STYLE_ID);
     if(!style){
       style=document.createElement('style');
       style.id=STYLE_ID;
-      document.head.appendChild(style);
+      (document.head||document.documentElement).appendChild(style);
     }
     style.textContent=`
-      #ms8276Hero.ms8277-hard-hero{
+      html body #ms8210Start .ms8234-header.ms8276-solid.ms8277-hard-hero{
         position:relative!important;
         isolation:isolate!important;
         overflow:hidden!important;
-        min-height:clamp(590px,64vh,740px)!important;
-        height:auto!important;
-        background:#021722!important;
+        width:100%!important;
+        max-width:none!important;
+        min-height:clamp(640px,68vh,720px)!important;
+        margin:0!important;
+        padding:0!important;
+        border:1px solid rgba(55,201,244,.34)!important;
+        border-radius:30px!important;
+        background:#041725!important;
         background-image:none!important;
-        border-radius:0 0 32px 32px!important;
+        box-shadow:inset 0 0 0 1px rgba(79,218,255,.05),0 18px 48px rgba(0,0,0,.28)!important;
       }
-      #ms8276Hero .ms8277-photo{
+      html body #ms8210Start .ms8277-hard-hero>.ms8277-photo{
         display:block!important;
         visibility:visible!important;
         opacity:1!important;
@@ -73,177 +85,126 @@
         height:100%!important;
         max-width:none!important;
         max-height:none!important;
+        margin:0!important;
+        padding:0!important;
+        border:0!important;
         object-fit:cover!important;
         object-position:62% 53%!important;
         pointer-events:none!important;
+        user-select:none!important;
       }
-      #ms8276Hero .ms8277-shade{
+      html body #ms8210Start .ms8277-hard-hero>.ms8277-overlay{
+        display:block!important;
         position:absolute!important;
         inset:0!important;
         z-index:1!important;
         pointer-events:none!important;
         background:
-          linear-gradient(90deg,rgba(1,18,29,.94) 0%,rgba(1,18,29,.80) 28%,rgba(1,18,29,.38) 53%,rgba(1,18,29,.10) 75%,rgba(1,18,29,.04) 100%),
-          linear-gradient(0deg,rgba(1,18,29,.82) 0%,rgba(1,18,29,.20) 43%,rgba(1,18,29,.24) 100%)!important;
+          linear-gradient(90deg,rgba(0,13,23,.92) 0%,rgba(0,13,23,.76) 28%,rgba(0,13,23,.36) 51%,rgba(0,13,23,.10) 73%,rgba(0,13,23,.04) 100%),
+          linear-gradient(0deg,rgba(1,12,20,.72) 0%,rgba(1,12,20,.15) 42%,rgba(1,12,20,.06) 72%)!important;
       }
-      #ms8276Hero .ms8276-inner{
-        position:relative!important;
-        z-index:2!important;
-        min-height:inherit!important;
-        height:100%!important;
-        max-width:100%!important;
-        width:100%!important;
+      html body #ms8210Start .ms8277-hard-hero>.ms8234-brand,
+      html body #ms8210Start .ms8277-hard-hero>.ms8234-hero,
+      html body #ms8210Start .ms8277-hard-hero>.ms8234-status-grid,
+      html body #ms8210Start .ms8277-hard-hero>.ms8276-night{
+        z-index:20!important;
       }
-      #ms8276Hero .ms8276-brand{
-        position:absolute!important;
-        z-index:3!important;
-        left:clamp(30px,4.2vw,68px)!important;
-        top:clamp(24px,3vw,46px)!important;
-        margin:0!important;
+      html body #ms8210Start .ms8277-hard-hero>.ms8234-brand{
+        left:clamp(28px,4vw,58px)!important;
+        top:clamp(26px,3.2vw,38px)!important;
       }
-      #ms8276Hero .ms8276-wordmark{
-        font-size:clamp(56px,5.1vw,80px)!important;
-        line-height:.9!important;
-        text-shadow:0 3px 22px rgba(0,0,0,.25)!important;
+      html body #ms8210Start .ms8277-hard-hero>.ms8234-hero{
+        left:clamp(28px,4vw,58px)!important;
+        top:clamp(176px,20vh,204px)!important;
+        width:min(650px,50vw)!important;
+        max-width:650px!important;
       }
-      #ms8276Hero .ms8276-brandline{
-        margin-top:12px!important;
-        letter-spacing:.30em!important;
-        white-space:nowrap!important;
-      }
-      #ms8276Hero .ms8276-panel{
-        position:absolute!important;
-        z-index:3!important;
-        left:clamp(30px,4.2vw,68px)!important;
-        bottom:clamp(28px,4vw,58px)!important;
-        width:min(690px,62vw)!important;
-        max-width:690px!important;
-        margin:0!important;
-        padding:24px 26px 22px!important;
-        background:linear-gradient(135deg,rgba(0,18,30,.70),rgba(0,18,30,.38))!important;
-        border:1px solid rgba(75,209,239,.14)!important;
-        border-radius:24px!important;
-        box-shadow:0 20px 46px rgba(0,0,0,.24)!important;
-        -webkit-backdrop-filter:blur(8px)!important;
-        backdrop-filter:blur(8px)!important;
-      }
-      #ms8276Hero .ms8276-panel h1{
-        margin:8px 0 10px!important;
-        font-size:clamp(45px,4.3vw,66px)!important;
+      html body #ms8210Start .ms8277-hard-hero .ms8276-title{
+        font-size:clamp(54px,4.45vw,66px)!important;
         line-height:.96!important;
-        letter-spacing:-.045em!important;
       }
-      #ms8276Hero .ms8276-copy{
-        margin:0 0 18px!important;
-        font-size:clamp(14px,1.25vw,18px)!important;
-        line-height:1.35!important;
+      html body #ms8210Start .ms8277-hard-hero .ms8276-subtitle{
+        max-width:620px!important;
+        margin-bottom:18px!important;
       }
-      #ms8276Hero .ms8276-status-placement,
-      #ms8276Hero .ms8234-status-grid,
-      #ms8276Hero #ms8234StatusGrid,
-      #ms8276Hero [class*="status-grid"]{
-        width:100%!important;
-        max-width:none!important;
-        margin:0 0 16px!important;
+      html body #ms8210Start .ms8277-hard-hero .ms8234-live-metrics{
+        max-width:620px!important;
+        background:rgba(2,25,41,.68)!important;
+        backdrop-filter:blur(16px) saturate(120%)!important;
+        -webkit-backdrop-filter:blur(16px) saturate(120%)!important;
       }
-      #ms8276Hero .ms8276-live-button,
-      #ms8276Hero #ms8276LiveButton{
-        width:min(520px,100%)!important;
-        min-height:62px!important;
-        margin:0!important;
+      html body #ms8210Start .ms8277-hard-hero .ms8276-live-button{
+        width:min(510px,100%)!important;
+        min-height:66px!important;
+      }
+      html body #ms8210Start .ms8277-hard-hero>.ms8234-status-grid{
+        left:clamp(24px,3.5vw,52px)!important;
+        right:clamp(24px,3.5vw,52px)!important;
+        bottom:24px!important;
+      }
+      html body #ms8210Start .ms8277-hard-hero.ms8277-has-attention>.ms8276-night{
+        top:88px!important;
       }
       .ms8277-hide-duplicate{
         display:none!important;
         visibility:hidden!important;
         width:0!important;
         height:0!important;
+        min-width:0!important;
+        min-height:0!important;
+        margin:0!important;
+        padding:0!important;
         overflow:hidden!important;
         pointer-events:none!important;
       }
-      @media (min-width:768px){
-        .ms8277-attention-control{
-          position:fixed!important;
-          right:max(22px,env(safe-area-inset-right))!important;
-          top:calc(env(safe-area-inset-top) + 14px)!important;
-          z-index:10060!important;
-          margin:0!important;
-        }
-        .ms8277-theme-control{
-          position:fixed!important;
-          right:max(22px,env(safe-area-inset-right))!important;
-          top:calc(env(safe-area-inset-top) + 76px)!important;
-          z-index:10059!important;
-          margin:0!important;
-        }
+      @media(max-width:1100px){
+        html body #ms8210Start .ms8234-header.ms8276-solid.ms8277-hard-hero{min-height:680px!important;}
+        html body #ms8210Start .ms8277-hard-hero>.ms8277-photo{object-position:68% 52%!important;}
+        html body #ms8210Start .ms8277-hard-hero>.ms8234-hero{width:min(610px,56vw)!important;}
       }
-      @media (max-width:1180px){
-        #ms8276Hero.ms8277-hard-hero{min-height:clamp(560px,62vh,690px)!important;}
-        #ms8276Hero .ms8277-photo{object-position:68% 52%!important;}
-        #ms8276Hero .ms8276-panel{width:min(650px,70vw)!important;}
-      }
-      @media (max-width:720px){
-        #ms8276Hero.ms8277-hard-hero{min-height:620px!important;border-radius:0 0 24px 24px!important;}
-        #ms8276Hero .ms8277-photo{object-position:68% 48%!important;}
-        #ms8276Hero .ms8277-shade{
-          background:linear-gradient(90deg,rgba(1,18,29,.91),rgba(1,18,29,.45)),linear-gradient(0deg,rgba(1,18,29,.92) 0%,rgba(1,18,29,.24) 58%)!important;
+      @media(max-width:760px){
+        html body #ms8210Start .ms8234-header.ms8276-solid.ms8277-hard-hero{min-height:820px!important;border-radius:24px!important;}
+        html body #ms8210Start .ms8277-hard-hero>.ms8277-photo{object-position:66% 48%!important;}
+        html body #ms8210Start .ms8277-hard-hero>.ms8277-overlay{
+          background:linear-gradient(90deg,rgba(0,13,23,.90),rgba(0,13,23,.43)),linear-gradient(0deg,rgba(1,12,20,.88),rgba(1,12,20,.10) 62%)!important;
         }
-        #ms8276Hero .ms8276-brand{left:20px!important;top:24px!important;}
-        #ms8276Hero .ms8276-wordmark{font-size:54px!important;}
-        #ms8276Hero .ms8276-brandline{font-size:9px!important;letter-spacing:.22em!important;}
-        #ms8276Hero .ms8276-panel{
-          left:16px!important;
-          right:16px!important;
-          bottom:18px!important;
-          width:auto!important;
-          max-width:none!important;
-          padding:20px 18px 18px!important;
-          border-radius:20px!important;
-        }
-        #ms8276Hero .ms8276-panel h1{font-size:43px!important;}
+        html body #ms8210Start .ms8277-hard-hero>.ms8234-brand{left:20px!important;top:22px!important;max-width:65%!important;}
+        html body #ms8210Start .ms8277-hard-hero>.ms8234-hero{left:20px!important;right:20px!important;top:160px!important;width:auto!important;max-width:none!important;}
+        html body #ms8210Start .ms8277-hard-hero .ms8276-title{font-size:44px!important;max-width:94%!important;}
+        html body #ms8210Start .ms8277-hard-hero>.ms8234-status-grid{left:12px!important;right:12px!important;bottom:14px!important;}
+        html body #ms8210Start .ms8277-hard-hero.ms8277-has-attention>.ms8276-night{top:78px!important;}
       }
     `;
   }
 
-  function hideDuplicateTaglines(hero){
+  function hideDuplicateTaglines(header){
     const wanted=new Set([
       'explore · navigate · enjoy',
       'explore • navigate • enjoy',
       'explore - navigate - enjoy'
     ]);
     document.querySelectorAll('body *').forEach(el=>{
-      if(hero && hero.contains(el))return;
-      if(el.children.length>2)return;
-      let text=norm(el.textContent).toLowerCase().replace(/[›>]+$/,'').trim();
+      if(header?.querySelector(':scope > .ms8234-brand')?.contains(el))return;
+      if(el.children.length>1)return;
+      const text=norm(el.textContent).toLowerCase().replace(/[›>]+$/,'').trim();
       if(wanted.has(text))el.classList.add('ms8277-hide-duplicate');
     });
   }
 
-  function markTopControls(hero){
-    const candidates=document.querySelectorAll('button,[role="button"],a');
-    candidates.forEach(el=>{
-      if(hero && hero.contains(el))return;
+  function detectAttention(header){
+    if(!header)return;
+    let hasAttention=false;
+    document.querySelectorAll('button,[role="button"],a').forEach(el=>{
+      if(header.contains(el))return;
       const text=norm(el.textContent).toLowerCase();
-      if(text && text.length<90 && text.includes('aandachtspunt')){
-        el.classList.add('ms8277-attention-control');
-      }else if(/^(🌙\s*)?(nacht|dag|auto)(\s*[⌄⌄∨v›>]*)?$/i.test(norm(el.textContent))){
-        el.classList.add('ms8277-theme-control');
-      }
+      if(text && text.length<100 && text.includes('aandachtspunt'))hasAttention=true;
     });
+    header.classList.toggle('ms8277-has-attention',hasAttention);
   }
 
-  function patchHero(){
-    syncBuild();
-    installCss();
-    const hero=document.getElementById('ms8276Hero');
-    if(!hero){
-      hideDuplicateTaglines(null);
-      return false;
-    }
-
-    hero.classList.add('ms8277-hard-hero');
-    hero.setAttribute('data-ms-build',BUILD);
-
-    let photo=hero.querySelector(':scope > .ms8277-photo');
+  function ensurePhoto(header){
+    if(!header)return;
+    let photo=header.querySelector(':scope > .ms8277-photo');
     if(!photo){
       photo=document.createElement('img');
       photo.className='ms8277-photo';
@@ -251,52 +212,66 @@
       photo.setAttribute('aria-hidden','true');
       photo.decoding='async';
       photo.loading='eager';
+      photo.fetchPriority='high';
       photo.src=PHOTO;
-      hero.prepend(photo);
-    }else if(!photo.src.includes('827700')){
+      header.prepend(photo);
+    }else if(!String(photo.getAttribute('src')||'').includes('827700')){
       photo.src=PHOTO;
     }
 
-    let shade=hero.querySelector(':scope > .ms8277-shade');
-    if(!shade){
-      shade=document.createElement('div');
-      shade.className='ms8277-shade';
-      shade.setAttribute('aria-hidden','true');
-      photo.insertAdjacentElement('afterend',shade);
+    let overlay=header.querySelector(':scope > .ms8277-overlay');
+    if(!overlay){
+      overlay=document.createElement('div');
+      overlay.className='ms8277-overlay';
+      overlay.setAttribute('aria-hidden','true');
+      photo.insertAdjacentElement('afterend',overlay);
     }
+  }
 
-    hideDuplicateTaglines(hero);
-    markTopControls(hero);
+  function patch(){
+    syncBuild();
+    installStyle();
+    const root=document.getElementById('ms8210Start');
+    const header=root?.querySelector('.ms8234-header.ms8276-solid')||root?.querySelector('.ms8234-header');
+    if(!root||!header){
+      hideDuplicateTaglines(null);
+      return false;
+    }
+    header.classList.add('ms8277-hard-hero');
+    header.dataset.msHeroBuild='8277';
+    ensurePhoto(header);
+    hideDuplicateTaglines(header);
+    detectAttention(header);
     return true;
   }
 
-  function schedulePatch(){
-    if(queued)return;
-    queued=true;
+  function queuePatch(){
+    if(patchQueued)return;
+    patchQueued=true;
     requestAnimationFrame(()=>{
-      queued=false;
-      patchHero();
+      patchQueued=false;
+      patch();
     });
   }
 
   async function boot(){
     syncBuild();
-    installCss();
     await loadCore();
-    let tries=0;
-    const timer=setInterval(()=>{
-      tries++;
-      if(patchHero() || tries>30)clearInterval(timer);
-    },100);
-    schedulePatch();
+    installStyle();
+    patch();
 
-    const observer=new MutationObserver(schedulePatch);
-    observer.observe(document.documentElement,{childList:true,subtree:true});
+    [100,250,500,900,1500,2600,4500,7500,11500].forEach(ms=>setTimeout(patch,ms));
+    ['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:start-requested','mijnserenity:routechange','mijnserenity:theme-changed','pageshow','online']
+      .forEach(type=>window.addEventListener(type,queuePatch,{passive:true}));
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)queuePatch()},{passive:true});
+    window.addEventListener('resize',queuePatch,{passive:true});
 
-    window.addEventListener('pageshow',schedulePatch,{passive:true});
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedulePatch();},{passive:true});
-    setTimeout(schedulePatch,800);
-    setTimeout(schedulePatch,2500);
+    const root=document.getElementById('ms8210Start');
+    if(root){
+      const observer=new MutationObserver(queuePatch);
+      observer.observe(root,{childList:true,subtree:true});
+    }
+    console.info(`MijnSerenity ${BUILD}: harde live hero-fix actief.`);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
