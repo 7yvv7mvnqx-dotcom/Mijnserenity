@@ -1,17 +1,17 @@
-/* MijnSerenity 8.27.7 — harde live fix voor de Serenity startheader. */
+/* MijnSerenity 8.27.8 — robuuste iPad/desktop hero-fix: foto zichtbaar, één tagline, nette controls. */
 (()=>{
   'use strict';
-  if(window.__ms8277HardHero)return;
-  window.__ms8277HardHero=true;
+  if(window.__ms8278HeroFix)return;
+  window.__ms8278HeroFix=true;
 
-  const BUILD='8.27.7';
+  const BUILD='8.27.8';
   const CORE='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@30cb7aa9bb709e5d8371c83622883f87ca83c486/start-dashboard-71510.js?v=827600';
-  const PHOTO='/assets/serenity-hero-8275.jpg?v=827700';
-  const STYLE_ID='ms8277HardHeroStyle';
+  const PHOTO='/assets/serenity-hero-8275.jpg?v=827800';
+  const STYLE_ID='ms8278HeroFixStyle';
   let corePromise=null;
-  let patchQueued=false;
+  let queued=false;
 
-  const norm=v=>String(v||'').replace(/\s+/g,' ').trim();
+  const norm=value=>String(value||'').replace(/\s+/g,' ').trim();
 
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -19,33 +19,33 @@
     if(meta)meta.content=BUILD;
     const version=document.getElementById('settingsAppVersion');
     if(version)version.textContent=BUILD;
-    document.querySelectorAll('[data-ms-build-version]').forEach(n=>n.textContent=BUILD);
+    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
   }
 
   function loadCore(){
     if(window.__ms8276SolidHeader)return Promise.resolve();
     if(corePromise)return corePromise;
     corePromise=new Promise(resolve=>{
-      let s=document.querySelector('script[data-ms8277-core]');
-      if(s){
+      let script=document.querySelector('script[data-ms8278-core]');
+      if(script){
         if(window.__ms8276SolidHeader)resolve();
         else{
-          s.addEventListener('load',resolve,{once:true});
+          script.addEventListener('load',resolve,{once:true});
           setTimeout(resolve,5000);
         }
         return;
       }
-      s=document.createElement('script');
-      s.src=CORE;
-      s.async=false;
-      s.crossOrigin='anonymous';
-      s.dataset.ms8277Core='1';
-      s.onload=resolve;
-      s.onerror=()=>{
-        console.error('MijnSerenity 8.27.7: startkern kon niet worden geladen.');
+      script=document.createElement('script');
+      script.src=CORE;
+      script.async=false;
+      script.crossOrigin='anonymous';
+      script.dataset.ms8278Core='1';
+      script.onload=resolve;
+      script.onerror=()=>{
+        console.error('MijnSerenity 8.27.8: startkern kon niet worden geladen.');
         resolve();
       };
-      (document.head||document.documentElement).appendChild(s);
+      (document.head||document.documentElement).appendChild(script);
       setTimeout(resolve,5000);
     });
     return corePromise;
@@ -59,22 +59,46 @@
       (document.head||document.documentElement).appendChild(style);
     }
     style.textContent=`
-      html body #ms8210Start .ms8234-header.ms8276-solid.ms8277-hard-hero{
+      html body #ms8210Start,
+      html body #ms8210Start .ms8210-shell{
+        width:100%!important;
+        max-width:none!important;
+        margin:0!important;
+        padding:0!important;
+      }
+
+      html body #ms8210Start .ms8234-header.ms8278-fixed{
         position:relative!important;
         isolation:isolate!important;
+        box-sizing:border-box!important;
         overflow:hidden!important;
         width:100%!important;
         max-width:none!important;
-        min-height:clamp(640px,68vh,720px)!important;
+        min-height:650px!important;
+        height:auto!important;
         margin:0!important;
         padding:0!important;
         border:1px solid rgba(55,201,244,.34)!important;
         border-radius:30px!important;
-        background:#041725!important;
-        background-image:none!important;
+        background-color:#041725!important;
+        background-image:url("${PHOTO}")!important;
+        background-size:cover!important;
+        background-repeat:no-repeat!important;
+        background-position:64% 52%!important;
         box-shadow:inset 0 0 0 1px rgba(79,218,255,.05),0 18px 48px rgba(0,0,0,.28)!important;
       }
-      html body #ms8210Start .ms8277-hard-hero>.ms8277-photo{
+
+      html body #ms8210Start .ms8234-header.ms8278-fixed::before,
+      html body #ms8210Start .ms8234-header.ms8278-fixed::after,
+      html body #ms8210Start .ms8234-header.ms8278-fixed>.ms8234-brand::before,
+      html body #ms8210Start .ms8234-header.ms8278-fixed>.ms8234-brand::after,
+      html body #ms8210Start .ms8234-header.ms8278-fixed>.ms8234-hero::before,
+      html body #ms8210Start .ms8234-header.ms8278-fixed>.ms8234-hero::after{
+        display:none!important;
+        content:none!important;
+      }
+
+      html body #ms8210Start .ms8278-fixed>.ms8278-photo{
         display:block!important;
         visibility:visible!important;
         opacity:1!important;
@@ -89,63 +113,124 @@
         padding:0!important;
         border:0!important;
         object-fit:cover!important;
-        object-position:62% 53%!important;
+        object-position:64% 52%!important;
         pointer-events:none!important;
         user-select:none!important;
       }
-      html body #ms8210Start .ms8277-hard-hero>.ms8277-overlay{
+
+      html body #ms8210Start .ms8278-fixed>.ms8278-overlay{
         display:block!important;
         position:absolute!important;
         inset:0!important;
         z-index:1!important;
         pointer-events:none!important;
         background:
-          linear-gradient(90deg,rgba(0,13,23,.92) 0%,rgba(0,13,23,.76) 28%,rgba(0,13,23,.36) 51%,rgba(0,13,23,.10) 73%,rgba(0,13,23,.04) 100%),
-          linear-gradient(0deg,rgba(1,12,20,.72) 0%,rgba(1,12,20,.15) 42%,rgba(1,12,20,.06) 72%)!important;
+          linear-gradient(90deg,rgba(1,16,27,.91) 0%,rgba(1,16,27,.76) 27%,rgba(1,16,27,.36) 51%,rgba(1,16,27,.09) 73%,rgba(1,16,27,.03) 100%),
+          linear-gradient(0deg,rgba(1,12,20,.73) 0%,rgba(1,12,20,.18) 39%,rgba(1,12,20,.03) 68%)!important;
       }
-      html body #ms8210Start .ms8277-hard-hero>.ms8234-brand,
-      html body #ms8210Start .ms8277-hard-hero>.ms8234-hero,
-      html body #ms8210Start .ms8277-hard-hero>.ms8234-status-grid,
-      html body #ms8210Start .ms8277-hard-hero>.ms8276-night{
+
+      html body #ms8210Start .ms8278-fixed>.ms8234-brand,
+      html body #ms8210Start .ms8278-fixed>.ms8234-hero,
+      html body #ms8210Start .ms8278-fixed>.ms8234-status-grid,
+      html body #ms8210Start .ms8278-fixed>.ms8276-night,
+      html body #ms8210Start .ms8278-fixed>.ms8278-attention{
+        position:absolute!important;
         z-index:20!important;
       }
-      html body #ms8210Start .ms8277-hard-hero>.ms8234-brand{
+
+      html body #ms8210Start .ms8278-fixed>.ms8234-brand{
         left:clamp(28px,4vw,58px)!important;
-        top:clamp(26px,3.2vw,38px)!important;
+        top:30px!important;
+        width:auto!important;
+        max-width:430px!important;
       }
-      html body #ms8210Start .ms8277-hard-hero>.ms8234-hero{
+      html body #ms8210Start .ms8278-fixed .ms8276-brand-title{
+        font-size:clamp(58px,5vw,72px)!important;
+        line-height:.9!important;
+      }
+      html body #ms8210Start .ms8278-fixed .ms8276-brand-tagline{
+        margin-top:10px!important;
+        white-space:nowrap!important;
+      }
+
+      html body #ms8210Start .ms8278-fixed>.ms8234-hero{
         left:clamp(28px,4vw,58px)!important;
-        top:clamp(176px,20vh,204px)!important;
-        width:min(650px,50vw)!important;
-        max-width:650px!important;
+        top:162px!important;
+        width:min(610px,48vw)!important;
+        max-width:610px!important;
+        margin:0!important;
+        padding:0!important;
+        background:transparent!important;
+        border:0!important;
+        box-shadow:none!important;
       }
-      html body #ms8210Start .ms8277-hard-hero .ms8276-title{
-        font-size:clamp(54px,4.45vw,66px)!important;
+      html body #ms8210Start .ms8278-fixed .ms8276-eyebrow{
+        margin-bottom:12px!important;
+      }
+      html body #ms8210Start .ms8278-fixed .ms8276-title{
+        max-width:590px!important;
+        margin-bottom:8px!important;
+        font-size:clamp(52px,4.25vw,62px)!important;
         line-height:.96!important;
       }
-      html body #ms8210Start .ms8277-hard-hero .ms8276-subtitle{
-        max-width:620px!important;
-        margin-bottom:18px!important;
+      html body #ms8210Start .ms8278-fixed .ms8276-subtitle{
+        max-width:590px!important;
+        margin-bottom:15px!important;
+        font-size:16px!important;
       }
-      html body #ms8210Start .ms8277-hard-hero .ms8234-live-metrics{
-        max-width:620px!important;
-        background:rgba(2,25,41,.68)!important;
-        backdrop-filter:blur(16px) saturate(120%)!important;
-        -webkit-backdrop-filter:blur(16px) saturate(120%)!important;
+      html body #ms8210Start .ms8278-fixed .ms8234-live-metrics{
+        width:100%!important;
+        max-width:590px!important;
+        margin:13px 0 14px!important;
+        padding:10px 8px!important;
+        background:rgba(2,25,41,.70)!important;
+        backdrop-filter:blur(15px) saturate(120%)!important;
+        -webkit-backdrop-filter:blur(15px) saturate(120%)!important;
       }
-      html body #ms8210Start .ms8277-hard-hero .ms8276-live-button{
-        width:min(510px,100%)!important;
-        min-height:66px!important;
+      html body #ms8210Start .ms8278-fixed .ms8234-live-metric{
+        padding:0 13px!important;
       }
-      html body #ms8210Start .ms8277-hard-hero>.ms8234-status-grid{
-        left:clamp(24px,3.5vw,52px)!important;
-        right:clamp(24px,3.5vw,52px)!important;
-        bottom:24px!important;
+      html body #ms8210Start .ms8278-fixed .ms8276-live-button{
+        width:min(500px,100%)!important;
+        min-height:62px!important;
+        margin:0!important;
       }
-      html body #ms8210Start .ms8277-hard-hero.ms8277-has-attention>.ms8276-night{
-        top:88px!important;
+
+      html body #ms8210Start .ms8278-fixed>.ms8234-status-grid{
+        left:clamp(20px,3.5vw,52px)!important;
+        right:clamp(20px,3.5vw,52px)!important;
+        bottom:18px!important;
+        display:grid!important;
+        grid-template-columns:repeat(5,minmax(0,1fr))!important;
+        gap:10px!important;
+        width:auto!important;
+        margin:0!important;
+        padding:0!important;
       }
-      .ms8277-hide-duplicate{
+      html body #ms8210Start .ms8278-fixed .ms8234-status{
+        min-height:88px!important;
+        padding:12px 14px!important;
+      }
+
+      html body #ms8210Start .ms8278-fixed>.ms8278-attention{
+        right:26px!important;
+        top:20px!important;
+        min-height:48px!important;
+        max-width:210px!important;
+        margin:0!important;
+      }
+      html body #ms8210Start .ms8278-fixed>.ms8276-night{
+        right:26px!important;
+        top:78px!important;
+        min-width:138px!important;
+        height:50px!important;
+        margin:0!important;
+      }
+      html body #ms8210Start .ms8278-fixed:not(.ms8278-has-attention)>.ms8276-night{
+        top:26px!important;
+      }
+
+      .ms8278-hide-duplicate{
         display:none!important;
         visibility:hidden!important;
         width:0!important;
@@ -154,77 +239,119 @@
         min-height:0!important;
         margin:0!important;
         padding:0!important;
+        border:0!important;
         overflow:hidden!important;
         pointer-events:none!important;
       }
+
       @media(max-width:1100px){
-        html body #ms8210Start .ms8234-header.ms8276-solid.ms8277-hard-hero{min-height:680px!important;}
-        html body #ms8210Start .ms8277-hard-hero>.ms8277-photo{object-position:68% 52%!important;}
-        html body #ms8210Start .ms8277-hard-hero>.ms8234-hero{width:min(610px,56vw)!important;}
+        html body #ms8210Start .ms8234-header.ms8278-fixed{min-height:660px!important;background-position:67% 52%!important;}
+        html body #ms8210Start .ms8278-fixed>.ms8278-photo{object-position:67% 52%!important;}
+        html body #ms8210Start .ms8278-fixed>.ms8234-hero{left:38px!important;top:158px!important;width:min(575px,55vw)!important;}
+        html body #ms8210Start .ms8278-fixed .ms8276-title{font-size:56px!important;}
       }
+
       @media(max-width:760px){
-        html body #ms8210Start .ms8234-header.ms8276-solid.ms8277-hard-hero{min-height:820px!important;border-radius:24px!important;}
-        html body #ms8210Start .ms8277-hard-hero>.ms8277-photo{object-position:66% 48%!important;}
-        html body #ms8210Start .ms8277-hard-hero>.ms8277-overlay{
-          background:linear-gradient(90deg,rgba(0,13,23,.90),rgba(0,13,23,.43)),linear-gradient(0deg,rgba(1,12,20,.88),rgba(1,12,20,.10) 62%)!important;
+        html body #ms8210Start .ms8234-header.ms8278-fixed{min-height:860px!important;border-radius:24px!important;background-position:66% 48%!important;}
+        html body #ms8210Start .ms8278-fixed>.ms8278-photo{object-position:66% 48%!important;}
+        html body #ms8210Start .ms8278-fixed>.ms8278-overlay{
+          background:linear-gradient(90deg,rgba(0,13,23,.91),rgba(0,13,23,.43)),linear-gradient(0deg,rgba(1,12,20,.88),rgba(1,12,20,.10) 62%)!important;
         }
-        html body #ms8210Start .ms8277-hard-hero>.ms8234-brand{left:20px!important;top:22px!important;max-width:65%!important;}
-        html body #ms8210Start .ms8277-hard-hero>.ms8234-hero{left:20px!important;right:20px!important;top:160px!important;width:auto!important;max-width:none!important;}
-        html body #ms8210Start .ms8277-hard-hero .ms8276-title{font-size:44px!important;max-width:94%!important;}
-        html body #ms8210Start .ms8277-hard-hero>.ms8234-status-grid{left:12px!important;right:12px!important;bottom:14px!important;}
-        html body #ms8210Start .ms8277-hard-hero.ms8277-has-attention>.ms8276-night{top:78px!important;}
+        html body #ms8210Start .ms8278-fixed>.ms8234-brand{left:20px!important;top:20px!important;max-width:58%!important;}
+        html body #ms8210Start .ms8278-fixed .ms8276-brand-title{font-size:48px!important;}
+        html body #ms8210Start .ms8278-fixed .ms8276-brand-tagline{font-size:8px!important;letter-spacing:.18em!important;}
+        html body #ms8210Start .ms8278-fixed>.ms8278-attention{right:12px!important;top:14px!important;max-width:145px!important;min-height:42px!important;font-size:12px!important;}
+        html body #ms8210Start .ms8278-fixed>.ms8276-night{right:12px!important;top:66px!important;min-width:108px!important;height:42px!important;font-size:13px!important;}
+        html body #ms8210Start .ms8278-fixed:not(.ms8278-has-attention)>.ms8276-night{top:16px!important;}
+        html body #ms8210Start .ms8278-fixed>.ms8234-hero{left:20px!important;right:20px!important;top:145px!important;width:auto!important;max-width:none!important;}
+        html body #ms8210Start .ms8278-fixed .ms8276-title{font-size:43px!important;max-width:94%!important;}
+        html body #ms8210Start .ms8278-fixed .ms8276-subtitle{font-size:14px!important;max-width:94%!important;}
+        html body #ms8210Start .ms8278-fixed .ms8276-live-button{width:100%!important;min-height:58px!important;font-size:17px!important;}
+        html body #ms8210Start .ms8278-fixed>.ms8234-status-grid{left:12px!important;right:12px!important;bottom:12px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;}
+        html body #ms8210Start .ms8278-fixed .ms8234-status{min-height:82px!important;padding:10px!important;border-radius:17px!important;}
+        html body #ms8210Start .ms8278-fixed .ms8234-status:last-child:nth-child(odd){grid-column:1/-1!important;}
       }
     `;
   }
 
+  function findHeader(root){
+    return root?.querySelector('.ms8234-header.ms8276-solid')||root?.querySelector('.ms8234-header')||root?.querySelector('.ms8210-header')||null;
+  }
+
+  function ensurePhoto(header){
+    if(!header)return;
+    header.querySelectorAll(':scope > .ms8273-backdrop,:scope > .ms8273-photo-overlay,:scope > .ms8274-photo,:scope > .ms8274-overlay,:scope > .ms8275-photo,:scope > .ms8275-overlay,:scope > .ms8277-photo,:scope > .ms8277-overlay').forEach(node=>node.remove());
+
+    let photo=header.querySelector(':scope > .ms8278-photo');
+    if(!photo){
+      photo=document.createElement('img');
+      photo.className='ms8278-photo';
+      photo.alt='';
+      photo.setAttribute('aria-hidden','true');
+      photo.decoding='async';
+      photo.loading='eager';
+      photo.fetchPriority='high';
+      header.prepend(photo);
+    }
+    if(photo.getAttribute('src')!==PHOTO)photo.src=PHOTO;
+
+    let overlay=header.querySelector(':scope > .ms8278-overlay');
+    if(!overlay){
+      overlay=document.createElement('div');
+      overlay.className='ms8278-overlay';
+      overlay.setAttribute('aria-hidden','true');
+      photo.insertAdjacentElement('afterend',overlay);
+    }
+  }
+
   function hideDuplicateTaglines(header){
+    const brand=header?.querySelector(':scope > .ms8234-brand');
     const wanted=new Set([
       'explore · navigate · enjoy',
       'explore • navigate • enjoy',
       'explore - navigate - enjoy'
     ]);
     document.querySelectorAll('body *').forEach(el=>{
-      if(header?.querySelector(':scope > .ms8234-brand')?.contains(el))return;
-      if(el.children.length>1)return;
+      if(brand?.contains(el))return;
       const text=norm(el.textContent).toLowerCase().replace(/[›>]+$/,'').trim();
-      if(wanted.has(text))el.classList.add('ms8277-hide-duplicate');
+      if(wanted.has(text))el.classList.add('ms8278-hide-duplicate');
     });
   }
 
-  function detectAttention(header){
+  function ensureStatus(root,header){
+    const grid=root?.querySelector('.ms8234-status-grid');
+    if(grid&&grid.parentElement!==header)header.appendChild(grid);
+  }
+
+  function ensureAttention(header){
     if(!header)return;
-    let hasAttention=false;
-    document.querySelectorAll('button,[role="button"],a').forEach(el=>{
-      if(header.contains(el))return;
+    const candidates=[...document.querySelectorAll('button,[role="button"],a')];
+    const attention=candidates.find(el=>{
       const text=norm(el.textContent).toLowerCase();
-      if(text && text.length<100 && text.includes('aandachtspunt'))hasAttention=true;
+      return text.length<120&&text.includes('aandachtspunt');
     });
-    header.classList.toggle('ms8277-has-attention',hasAttention);
+    header.querySelectorAll(':scope > .ms8278-attention').forEach(el=>{
+      if(el!==attention)el.classList.remove('ms8278-attention');
+    });
+    if(attention){
+      attention.classList.add('ms8278-attention');
+      if(attention.parentElement!==header)header.appendChild(attention);
+      header.classList.add('ms8278-has-attention');
+    }else{
+      header.classList.remove('ms8278-has-attention');
+    }
   }
 
-  function ensurePhoto(header){
-    if(!header)return;
-    let photo=header.querySelector(':scope > .ms8277-photo');
-    if(!photo){
-      photo=document.createElement('img');
-      photo.className='ms8277-photo';
-      photo.alt='';
-      photo.setAttribute('aria-hidden','true');
-      photo.decoding='async';
-      photo.loading='eager';
-      photo.fetchPriority='high';
-      photo.src=PHOTO;
-      header.prepend(photo);
-    }else if(!String(photo.getAttribute('src')||'').includes('827700')){
-      photo.src=PHOTO;
-    }
-
-    let overlay=header.querySelector(':scope > .ms8277-overlay');
-    if(!overlay){
-      overlay=document.createElement('div');
-      overlay.className='ms8277-overlay';
-      overlay.setAttribute('aria-hidden','true');
-      photo.insertAdjacentElement('afterend',overlay);
+  function ensureNight(root,header){
+    if(!root||!header)return;
+    const candidates=[...root.querySelectorAll('button,[role="button"]')];
+    const night=candidates.find(el=>{
+      const text=norm(el.textContent).toLowerCase();
+      return text==='nacht'||text.startsWith('nacht ')||text.includes(' nacht');
+    });
+    if(night){
+      night.classList.add('ms8276-night');
+      if(night.parentElement!==header)header.appendChild(night);
     }
   }
 
@@ -232,24 +359,27 @@
     syncBuild();
     installStyle();
     const root=document.getElementById('ms8210Start');
-    const header=root?.querySelector('.ms8234-header.ms8276-solid')||root?.querySelector('.ms8234-header');
+    const header=findHeader(root);
     if(!root||!header){
       hideDuplicateTaglines(null);
       return false;
     }
-    header.classList.add('ms8277-hard-hero');
-    header.dataset.msHeroBuild='8277';
+
+    header.classList.add('ms8276-solid','ms8278-fixed');
+    header.dataset.msHeroBuild='8278';
     ensurePhoto(header);
+    ensureStatus(root,header);
+    ensureNight(root,header);
+    ensureAttention(header);
     hideDuplicateTaglines(header);
-    detectAttention(header);
     return true;
   }
 
   function queuePatch(){
-    if(patchQueued)return;
-    patchQueued=true;
+    if(queued)return;
+    queued=true;
     requestAnimationFrame(()=>{
-      patchQueued=false;
+      queued=false;
       patch();
     });
   }
@@ -260,7 +390,7 @@
     installStyle();
     patch();
 
-    [100,250,500,900,1500,2600,4500,7500,11500].forEach(ms=>setTimeout(patch,ms));
+    [80,180,350,700,1200,2200,4000,7000,11000].forEach(ms=>setTimeout(patch,ms));
     ['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:start-requested','mijnserenity:routechange','mijnserenity:theme-changed','pageshow','online']
       .forEach(type=>window.addEventListener(type,queuePatch,{passive:true}));
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)queuePatch()},{passive:true});
@@ -271,7 +401,7 @@
       const observer=new MutationObserver(queuePatch);
       observer.observe(root,{childList:true,subtree:true});
     }
-    console.info(`MijnSerenity ${BUILD}: harde live hero-fix actief.`);
+    console.info(`MijnSerenity ${BUILD}: Serenity hero-fix actief.`);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
