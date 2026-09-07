@@ -1,20 +1,22 @@
-/* MijnSerenity 8.27.1 — samengevoegde beeldvullende Serenity-header */
+/* MijnSerenity 8.27.2 — exact gepolijste Serenity startheader. */
 (()=>{
   'use strict';
-  if(window.__ms8271UnifiedHero)return;
-  window.__ms8271UnifiedHero=true;
+  if(window.__ms8272ExactSerenityHero)return;
+  window.__ms8272ExactSerenityHero=true;
 
-  const BUILD='8.27.1';
-  const BASE='/start-dashboard-8270-base.js?v=827101';
+  const BUILD='8.27.2';
+  const BASE='/start-dashboard-8270-base.js?v=827202';
   const PARTS=[
-    '/assets/serenity-header-8270-01.txt?v=827101',
-    '/assets/serenity-header-8270-02.txt?v=827101'
+    '/assets/serenity-header-8270-01.txt?v=827202',
+    '/assets/serenity-header-8270-02.txt?v=827202'
   ];
-  const STYLE_ID='ms8271UnifiedHeroStyle';
+  const STYLE_ID='ms8272ExactSerenityHeroStyle';
   let photoUrl='';
   let photoPromise=null;
   let observer=null;
-  let refreshQueued=false;
+  let queued=false;
+
+  const norm=value=>String(value||'').replace(/\s+/g,' ').trim();
 
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -28,7 +30,7 @@
   function loadBase(){
     return new Promise(resolve=>{
       if(window.__ms8270LiveSerenityHeader){resolve();return;}
-      let script=document.querySelector('script[data-ms8271-base]');
+      let script=document.querySelector('script[data-ms8272-base]');
       if(script){
         script.addEventListener('load',resolve,{once:true});
         setTimeout(resolve,5000);
@@ -37,9 +39,9 @@
       script=document.createElement('script');
       script.src=BASE;
       script.async=false;
-      script.dataset.ms8271Base='1';
+      script.dataset.ms8272Base='1';
       script.onload=resolve;
-      script.onerror=()=>{console.error('MijnSerenity 8.27.0 basis kon niet worden geladen.');resolve();};
+      script.onerror=()=>{console.error('MijnSerenity basis kon niet worden geladen.');resolve();};
       (document.head||document.documentElement).appendChild(script);
       setTimeout(resolve,5000);
     });
@@ -56,11 +58,11 @@
         chunks.push((await response.text()).trim());
       }
       const base64=chunks.join('').replace(/\s+/g,'');
-      if(!base64.startsWith('/9j/'))throw new Error('Nieuwe Serenity-header is geen geldige JPEG');
+      if(!base64.startsWith('/9j/'))throw new Error('Serenity-header is geen geldige JPEG');
       photoUrl=`data:image/jpeg;base64,${base64}`;
       return photoUrl;
     })().catch(error=>{
-      console.error('Nieuwe Serenity-headerfoto kon niet worden opgebouwd.',error);
+      console.error('Serenity-headerfoto kon niet worden opgebouwd.',error);
       photoPromise=null;
       return '';
     });
@@ -72,71 +74,279 @@
     const style=document.createElement('style');
     style.id=STYLE_ID;
     style.textContent=`
-      #ms8210Start{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;background:#031421!important}
+      #ms8210Start{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;background:#031421!important;color:#fff!important}
       #ms8210Start .ms8210-shell{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
-      html #ms8210Start .ms8234-header.ms8271-unified{position:relative!important;isolation:isolate!important;width:100%!important;max-width:none!important;min-height:clamp(720px,calc(100dvh - 12px),980px)!important;margin:0!important;padding:clamp(24px,3vw,48px)!important;padding-bottom:clamp(178px,18vh,225px)!important;overflow:hidden!important;border:1px solid rgba(57,201,244,.40)!important;border-radius:clamp(20px,2.2vw,34px)!important;background-color:#041725!important;background-image:linear-gradient(90deg,rgba(1,12,20,.84) 0%,rgba(1,12,20,.61) 29%,rgba(1,12,20,.22) 52%,rgba(1,12,20,.05) 72%,rgba(1,12,20,.18) 100%),linear-gradient(0deg,rgba(1,10,18,.80) 0%,rgba(1,10,18,.26) 26%,rgba(1,10,18,.02) 62%),var(--ms8271-photo,var(--ms8270-real-photo))!important;background-size:cover!important;background-position:center center!important;background-repeat:no-repeat!important;box-shadow:inset 0 0 0 1px rgba(54,203,246,.07),0 20px 48px rgba(0,0,0,.30)!important}
-      html #ms8210Start .ms8234-header.ms8271-unified::before,html #ms8210Start .ms8234-header.ms8271-unified::after{opacity:0!important;background:none!important;pointer-events:none!important}
-      #ms8210Start .ms8271-unified .ms8234-brand{position:absolute!important;z-index:5!important;left:clamp(26px,4vw,70px)!important;top:clamp(24px,4vh,54px)!important;width:auto!important;max-width:min(44%,500px)!important}
-      #ms8210Start .ms8271-unified .ms8234-brand h1,#ms8210Start .ms8271-unified .ms8218-serenity-brand,#ms8210Start .ms8271-unified .ms8218-brand-lockup{color:#35c9f4!important;text-shadow:0 3px 18px rgba(0,0,0,.72)!important}
-      #ms8210Start .ms8271-unified .ms8254-tagline{color:#f8fcff!important;text-shadow:0 2px 12px rgba(0,0,0,.82)!important}
-      #ms8210Start .ms8271-unified .ms8234-greeting{position:absolute!important;z-index:5!important;left:clamp(26px,4vw,70px)!important;top:clamp(142px,18vh,196px)!important;color:#fff!important;text-shadow:0 3px 16px rgba(0,0,0,.82)!important}
-      #ms8210Start .ms8271-unified .ms8245-date{color:#d0e2ee!important;text-shadow:0 2px 12px rgba(0,0,0,.80)!important}
-      #ms8210Start .ms8271-unified .ms8234-attention{position:absolute!important;z-index:8!important;left:auto!important;right:clamp(22px,3vw,54px)!important;top:clamp(22px,3vh,46px)!important;width:min(360px,31vw)!important;max-width:360px!important;min-width:250px!important;padding:16px 18px!important;border:1px solid rgba(67,205,246,.34)!important;border-radius:24px!important;background:rgba(3,29,47,.88)!important;color:#fff!important;box-shadow:0 16px 38px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.05)!important;backdrop-filter:blur(18px) saturate(125%)!important;-webkit-backdrop-filter:blur(18px) saturate(125%)!important}
-      #ms8210Start .ms8271-unified .ms8234-attention-copy strong{color:#fff!important}#ms8210Start .ms8271-unified .ms8234-attention-copy small{color:#b4cad9!important}
-      #ms8210Start .ms8271-unified .ms8271-night-control{position:absolute!important;z-index:9!important;right:clamp(22px,3vw,54px)!important;top:clamp(128px,15vh,156px)!important;width:auto!important;min-width:0!important;margin:0!important;padding:10px 16px!important;border:1px solid rgba(70,208,248,.28)!important;border-radius:999px!important;background:rgba(3,27,44,.86)!important;color:#fff!important;box-shadow:0 10px 28px rgba(0,0,0,.28)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important}
-      #ms8210Start .ms8271-unified .ms8234-hero{position:absolute!important;z-index:6!important;left:clamp(26px,4vw,70px)!important;top:clamp(245px,33vh,330px)!important;width:min(690px,47vw)!important;max-width:690px!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;color:#fff!important;text-shadow:0 3px 16px rgba(0,0,0,.78)!important}
-      #ms8210Start .ms8271-unified .ms8234-hero::before,#ms8210Start .ms8271-unified .ms8234-hero::after{display:none!important}
-      #ms8210Start .ms8271-eyebrow{display:block!important;margin:0 0 12px!important;color:#35d0f6!important;font-size:clamp(11px,1.1vw,15px)!important;line-height:1!important;font-weight:900!important;letter-spacing:.19em!important;text-transform:uppercase!important}
-      #ms8210Start .ms8271-unified .ms8234-hero h2{max-width:620px!important;margin:0 0 10px!important;color:#fff!important;font-size:clamp(38px,4.6vw,74px)!important;line-height:.98!important;font-weight:900!important;letter-spacing:-.045em!important;text-wrap:balance!important}
-      #ms8210Start .ms8271-subtitle{max-width:690px!important;margin:0 0 18px!important;color:#eef8ff!important;font-size:clamp(14px,1.35vw,20px)!important;line-height:1.35!important;font-weight:600!important;text-shadow:0 2px 12px rgba(0,0,0,.86)!important}
-      #ms8210Start .ms8271-unified .ms8234-live-metrics{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;width:100%!important;max-width:680px!important;margin:18px 0 16px!important;padding:13px 10px!important;border:1px solid rgba(54,203,246,.34)!important;border-radius:22px!important;background:rgba(2,22,36,.70)!important;box-shadow:0 12px 32px rgba(0,0,0,.22)!important;backdrop-filter:blur(16px) saturate(125%)!important;-webkit-backdrop-filter:blur(16px) saturate(125%)!important;text-shadow:none!important}
-      #ms8210Start .ms8271-unified .ms8234-live-metric{min-width:0!important;padding:0 14px!important;border-right:1px solid rgba(148,211,235,.24)!important}#ms8210Start .ms8271-unified .ms8234-live-metric:last-child{border-right:0!important}#ms8210Start .ms8271-unified .ms8234-live-copy strong{color:#fff!important;font-size:clamp(15px,1.4vw,20px)!important}#ms8210Start .ms8271-unified .ms8234-live-copy small{color:#b5cad8!important}
-      #ms8210Start .ms8271-live-button{display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;width:min(100%,520px)!important;min-height:64px!important;margin:14px 0 0!important;padding:14px 24px!important;border:1px solid rgba(130,237,255,.65)!important;border-radius:22px!important;background:linear-gradient(105deg,#0daed8,#27c9e8)!important;color:#fff!important;font:800 clamp(17px,1.5vw,22px)/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;box-shadow:0 14px 34px rgba(0,171,218,.30),inset 0 1px 0 rgba(255,255,255,.22)!important;text-shadow:none!important;-webkit-tap-highlight-color:transparent!important}
-      #ms8210Start .ms8271-live-button:active{transform:scale(.99)!important}#ms8210Start .ms8271-live-button .ms8271-play{font-size:22px!important}#ms8210Start .ms8271-live-button .ms8271-chevron{margin-left:4px!important;font-size:25px!important;opacity:.9!important}
-      #ms8210Start .ms8271-unified .ms8234-status-grid{position:absolute!important;z-index:7!important;left:clamp(18px,3vw,52px)!important;right:clamp(18px,3vw,52px)!important;bottom:clamp(18px,2.8vh,36px)!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:12px!important;width:auto!important;margin:0!important;padding:0!important}
-      #ms8210Start .ms8271-unified .ms8234-status{min-width:0!important;min-height:112px!important;margin:0!important;padding:15px 16px!important;border:1px solid rgba(58,202,244,.36)!important;border-radius:22px!important;background:rgba(3,27,44,.78)!important;color:#fff!important;box-shadow:0 12px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.04)!important;backdrop-filter:blur(17px) saturate(125%)!important;-webkit-backdrop-filter:blur(17px) saturate(125%)!important;text-shadow:none!important}
-      #ms8210Start .ms8271-unified .ms8234-status-copy strong{color:#fff!important;font-size:clamp(13px,1.2vw,18px)!important}#ms8210Start .ms8271-unified .ms8234-status-copy small,#ms8210Start .ms8271-unified .ms8245-status-sub{color:#aac4d5!important}
-      @media(max-width:900px){#ms8210Start .ms8271-unified .ms8234-hero{width:min(620px,58vw)!important}#ms8210Start .ms8271-unified .ms8234-attention{width:34vw!important;min-width:220px!important}#ms8210Start .ms8271-unified .ms8234-status-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}#ms8210Start .ms8271-unified .ms8234-status{min-height:94px!important}html #ms8210Start .ms8234-header.ms8271-unified{padding-bottom:330px!important;min-height:920px!important}}
-      @media(max-width:620px) and (orientation:portrait){html #ms8210Start .ms8234-header.ms8271-unified{min-height:1020px!important;padding:18px 14px 340px!important;border-radius:24px!important;background-position:55% center!important}#ms8210Start .ms8271-unified .ms8234-brand{left:18px!important;top:20px!important;width:51%!important;max-width:51%!important}#ms8210Start .ms8271-unified .ms8234-attention{right:10px!important;top:16px!important;width:43%!important;max-width:170px!important;min-width:0!important;padding:9px 10px!important;border-radius:18px!important}#ms8210Start .ms8271-unified .ms8271-night-control{right:12px!important;top:116px!important;padding:8px 12px!important;font-size:12px!important}#ms8210Start .ms8271-unified .ms8234-greeting{left:18px!important;top:145px!important;max-width:62%!important}#ms8210Start .ms8271-unified .ms8234-hero{left:18px!important;right:18px!important;top:260px!important;width:auto!important;max-width:none!important}#ms8210Start .ms8271-unified .ms8234-hero h2{font-size:clamp(34px,10vw,49px)!important;max-width:92%!important}#ms8210Start .ms8271-subtitle{font-size:14px!important;max-width:94%!important}#ms8210Start .ms8271-unified .ms8234-live-metrics{margin-top:14px!important;padding:10px 6px!important;border-radius:18px!important}#ms8210Start .ms8271-unified .ms8234-live-metric{padding:0 7px!important}#ms8210Start .ms8271-unified .ms8234-live-copy strong{font-size:13px!important}#ms8210Start .ms8271-unified .ms8234-live-copy small{font-size:9px!important}#ms8210Start .ms8271-live-button{min-height:56px!important;width:100%!important;border-radius:18px!important;font-size:17px!important}#ms8210Start .ms8271-unified .ms8234-status-grid{left:12px!important;right:12px!important;bottom:14px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}#ms8210Start .ms8271-unified .ms8234-status{min-height:92px!important;padding:12px 11px!important;border-radius:18px!important}#ms8210Start .ms8271-unified .ms8234-status:last-child:nth-child(odd){grid-column:1/-1!important}}
+
+      html #ms8210Start .ms8234-header.ms8272-exact{
+        position:relative!important;isolation:isolate!important;box-sizing:border-box!important;
+        width:100%!important;max-width:none!important;min-height:740px!important;margin:0!important;
+        padding:0!important;overflow:hidden!important;border:1px solid rgba(55,201,244,.36)!important;
+        border-radius:30px!important;background-color:#041725!important;
+        background-image:
+          linear-gradient(90deg,rgba(0,13,23,.82) 0%,rgba(0,13,23,.58) 29%,rgba(0,13,23,.18) 51%,rgba(0,13,23,.02) 70%,rgba(0,13,23,.10) 100%),
+          linear-gradient(0deg,rgba(1,12,20,.64) 0%,rgba(1,12,20,.12) 38%,rgba(1,12,20,0) 65%),
+          var(--ms8272-photo,var(--ms8270-real-photo))!important;
+        background-size:cover!important;background-position:center center!important;background-repeat:no-repeat!important;
+        box-shadow:inset 0 0 0 1px rgba(79,218,255,.06),0 18px 48px rgba(0,0,0,.30)!important;
+      }
+      html #ms8210Start .ms8234-header.ms8272-exact::before,
+      html #ms8210Start .ms8234-header.ms8272-exact::after{display:none!important;content:none!important}
+
+      #ms8210Start .ms8272-exact .ms8234-brand{
+        position:absolute!important;z-index:20!important;left:58px!important;top:32px!important;
+        width:auto!important;max-width:430px!important;margin:0!important;padding:0!important;background:none!important;border:0!important;
+      }
+      #ms8210Start .ms8272-exact .ms8234-brand h1,
+      #ms8210Start .ms8272-exact .ms8218-serenity-brand,
+      #ms8210Start .ms8272-exact .ms8218-brand-lockup{
+        display:block!important;margin:0!important;padding:0!important;color:#20cef6!important;
+        font-family:Georgia,"Times New Roman",serif!important;font-size:72px!important;font-weight:500!important;
+        line-height:.90!important;letter-spacing:-.055em!important;text-shadow:0 3px 18px rgba(0,0,0,.56)!important;
+      }
+      #ms8210Start .ms8272-exact .ms8218-brand-sail{display:none!important}
+      #ms8210Start .ms8272-exact .ms8254-tagline,
+      #ms8210Start .ms8272-brand-tagline{
+        display:block!important;margin:11px 0 0 4px!important;color:#f7fbff!important;
+        font:800 11px/1.1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+        letter-spacing:.26em!important;text-transform:uppercase!important;text-shadow:0 2px 10px rgba(0,0,0,.78)!important;
+      }
+
+      #ms8210Start .ms8272-exact .ms8234-greeting,
+      #ms8210Start .ms8272-exact .ms8245-date,
+      #ms8210Start .ms8272-exact .ms8234-attention,
+      #ms8210Start .ms8272-exact .ms8234-gauges,
+      #ms8210Start .ms8272-exact .ms8234-summary,
+      #ms8210Start .ms8272-exact .ms8263-vrijon-hero,
+      #ms8210Start .ms8272-exact .ms8263-vrijon-lockup,
+      #ms8210Start .ms8272-exact .ms8263-vrijon-svg,
+      #ms8210Start .ms8272-exact .ms8234-sail{display:none!important}
+
+      #ms8210Start .ms8272-night{
+        position:absolute!important;z-index:30!important;right:48px!important;top:31px!important;
+        display:flex!important;align-items:center!important;justify-content:center!important;gap:11px!important;
+        min-width:146px!important;height:54px!important;margin:0!important;padding:0 20px!important;
+        border:1px solid rgba(71,206,247,.27)!important;border-radius:999px!important;
+        background:rgba(2,32,51,.90)!important;color:#fff!important;
+        font:800 17px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+        box-shadow:0 10px 28px rgba(0,0,0,.24)!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;
+      }
+      #ms8210Start .ms8272-night .ms8272-moon{color:#32d7fb!important;font-size:25px!important;line-height:1!important}
+      #ms8210Start .ms8272-night .ms8272-down{font-size:18px!important;opacity:.9!important}
+
+      #ms8210Start .ms8272-exact .ms8234-hero{
+        position:absolute!important;z-index:18!important;left:58px!important;top:196px!important;
+        width:min(650px,48vw)!important;max-width:650px!important;margin:0!important;padding:0!important;
+        border:0!important;background:transparent!important;box-shadow:none!important;color:#fff!important;text-shadow:none!important;
+      }
+      #ms8210Start .ms8272-exact .ms8234-hero::before,
+      #ms8210Start .ms8272-exact .ms8234-hero::after{display:none!important}
+      #ms8210Start .ms8272-eyebrow{
+        display:block!important;margin:0 0 15px!important;color:#32d8fb!important;
+        font:900 14px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+        letter-spacing:.21em!important;text-transform:uppercase!important;text-shadow:0 2px 10px rgba(0,0,0,.72)!important;
+      }
+      #ms8210Start .ms8272-exact .ms8234-hero h2{
+        max-width:620px!important;margin:0 0 10px!important;color:#fff!important;
+        font:900 66px/.96 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+        letter-spacing:-.052em!important;text-wrap:balance!important;text-shadow:0 3px 16px rgba(0,0,0,.68)!important;
+      }
+      #ms8210Start .ms8272-subtitle{
+        max-width:650px!important;margin:0 0 20px!important;color:#f1f8fc!important;
+        font:600 17px/1.35 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+        text-shadow:0 2px 12px rgba(0,0,0,.82)!important;
+      }
+
+      #ms8210Start .ms8272-exact .ms8234-live-metrics{
+        display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;
+        width:100%!important;max-width:620px!important;margin:18px 0 17px!important;padding:12px 10px!important;
+        border:1px solid rgba(61,211,251,.34)!important;border-radius:22px!important;
+        background:rgba(2,25,41,.73)!important;box-shadow:0 12px 30px rgba(0,0,0,.22)!important;
+        backdrop-filter:blur(18px) saturate(125%)!important;-webkit-backdrop-filter:blur(18px) saturate(125%)!important;text-shadow:none!important;
+      }
+      #ms8210Start .ms8272-exact .ms8234-live-metric{min-width:0!important;padding:0 16px!important;border-right:1px solid rgba(160,220,240,.24)!important}
+      #ms8210Start .ms8272-exact .ms8234-live-metric:last-child{border-right:0!important}
+      #ms8210Start .ms8272-exact .ms8234-live-copy strong{color:#fff!important;font-size:20px!important;line-height:1.05!important;font-weight:850!important}
+      #ms8210Start .ms8272-exact .ms8234-live-copy small{color:#b8cad7!important;font-size:12px!important}
+
+      #ms8210Start .ms8272-live-button{
+        display:flex!important;align-items:center!important;justify-content:center!important;gap:14px!important;
+        width:510px!important;max-width:100%!important;min-height:70px!important;margin:0!important;padding:14px 24px!important;
+        border:1px solid rgba(143,240,255,.68)!important;border-radius:22px!important;
+        background:linear-gradient(105deg,#13b7dd,#26d0eb)!important;color:#fff!important;
+        font:850 20px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+        box-shadow:0 15px 36px rgba(0,174,218,.31),inset 0 1px 0 rgba(255,255,255,.24)!important;text-shadow:none!important;
+      }
+      #ms8210Start .ms8272-live-button:active{transform:scale(.99)!important}
+      #ms8210Start .ms8272-live-button .ms8272-play{font-size:21px!important}
+      #ms8210Start .ms8272-live-button .ms8272-chevron{margin-left:5px!important;font-size:28px!important;opacity:.92!important}
+
+      #ms8210Start .ms8272-exact .ms8234-status-grid{
+        position:absolute!important;z-index:22!important;left:52px!important;right:52px!important;bottom:28px!important;
+        display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:12px!important;
+        width:auto!important;margin:0!important;padding:0!important;
+      }
+      #ms8210Start .ms8272-exact .ms8234-status{
+        min-width:0!important;min-height:97px!important;margin:0!important;padding:15px 16px!important;
+        border:1px solid rgba(58,204,246,.40)!important;border-radius:22px!important;
+        background:rgba(2,30,48,.78)!important;color:#fff!important;
+        box-shadow:0 12px 28px rgba(0,0,0,.23),inset 0 1px 0 rgba(255,255,255,.04)!important;
+        backdrop-filter:blur(18px) saturate(126%)!important;-webkit-backdrop-filter:blur(18px) saturate(126%)!important;text-shadow:none!important;
+      }
+      #ms8210Start .ms8272-exact .ms8234-status-copy strong{color:#fff!important;font-size:17px!important;font-weight:850!important}
+      #ms8210Start .ms8272-exact .ms8234-status-copy small,
+      #ms8210Start .ms8272-exact .ms8245-status-sub{color:#aec4d3!important;font-size:11px!important}
+
+      #ms8210Start .ms8272-duplicate{display:none!important}
+
+      @media(max-width:1100px){
+        html #ms8210Start .ms8234-header.ms8272-exact{min-height:720px!important}
+        #ms8210Start .ms8272-exact .ms8234-brand{left:40px!important;top:30px!important}
+        #ms8210Start .ms8272-exact .ms8234-brand h1,#ms8210Start .ms8272-exact .ms8218-brand-lockup{font-size:62px!important}
+        #ms8210Start .ms8272-exact .ms8234-hero{left:40px!important;top:185px!important;width:min(610px,55vw)!important}
+        #ms8210Start .ms8272-exact .ms8234-hero h2{font-size:58px!important}
+        #ms8210Start .ms8272-night{right:38px!important}
+        #ms8210Start .ms8272-exact .ms8234-status-grid{left:32px!important;right:32px!important;gap:9px!important}
+      }
+      @media(max-width:760px){
+        html #ms8210Start .ms8234-header.ms8272-exact{min-height:900px!important;border-radius:24px!important;background-position:57% center!important}
+        #ms8210Start .ms8272-exact .ms8234-brand{left:20px!important;top:22px!important;max-width:55%!important}
+        #ms8210Start .ms8272-exact .ms8234-brand h1,#ms8210Start .ms8272-exact .ms8218-brand-lockup{font-size:48px!important}
+        #ms8210Start .ms8272-exact .ms8254-tagline,#ms8210Start .ms8272-brand-tagline{font-size:8px!important;letter-spacing:.18em!important}
+        #ms8210Start .ms8272-night{right:14px!important;top:18px!important;min-width:112px!important;height:44px!important;padding:0 13px!important;font-size:14px!important}
+        #ms8210Start .ms8272-exact .ms8234-hero{left:20px!important;right:20px!important;top:155px!important;width:auto!important;max-width:none!important}
+        #ms8210Start .ms8272-exact .ms8234-hero h2{font-size:44px!important;max-width:92%!important}
+        #ms8210Start .ms8272-subtitle{font-size:14px!important;max-width:94%!important}
+        #ms8210Start .ms8272-live-button{width:100%!important;min-height:58px!important;font-size:17px!important}
+        #ms8210Start .ms8272-exact .ms8234-status-grid{left:12px!important;right:12px!important;bottom:14px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+        #ms8210Start .ms8272-exact .ms8234-status{min-height:86px!important;padding:11px 10px!important;border-radius:18px!important}
+        #ms8210Start .ms8272-exact .ms8234-status:last-child:nth-child(odd){grid-column:1/-1!important}
+      }
     `;
     (document.head||document.documentElement).appendChild(style);
   }
 
-  function findNightControl(root){
-    return [...root.querySelectorAll('button,select,[role="button"]')].find(node=>{
-      const text=String(node.textContent||node.value||'').replace(/\s+/g,' ').trim().toLowerCase();
-      return text.length>0&&text.length<28&&(text==='nacht'||text.startsWith('nacht ')||text.includes(' nacht'));
-    })||null;
+  function ensureBrand(header){
+    let brand=header.querySelector('.ms8234-brand');
+    if(!brand){brand=document.createElement('div');brand.className='ms8234-brand';header.prepend(brand)}
+    brand.innerHTML='<h1 class="ms8218-serenity-brand">Serenity</h1><div class="ms8254-tagline ms8272-brand-tagline">EXPLORE · NAVIGATE · ENJOY</div>';
   }
 
-  function ensureVoyageContent(root,header){
+  function navigate(route){
+    try{
+      if(typeof window.captainNavigate==='function'){
+        window.captainNavigate(route,document.querySelector(`.bottom-nav .bottom-nav-item[data-target="${route}"]`)||null);
+        return;
+      }
+      document.querySelector(`.bottom-nav .bottom-nav-item[data-target="${route}"] ,.tabs [data-target="${route}"] ,[data-ms8210-target="${route}"]`)?.click();
+    }catch(error){console.warn(`Navigatie naar ${route} mislukt:`,error)}
+  }
+
+  function ensureNight(root,header){
+    let night=[...root.querySelectorAll('button,[role="button"]')].find(node=>{
+      const text=norm(node.textContent).toLowerCase();
+      return text==='nacht'||text.startsWith('nacht ')||text.includes(' nacht');
+    });
+    if(!night){
+      night=document.createElement('button');
+      night.type='button';
+      night.innerHTML='<span class="ms8272-moon" aria-hidden="true">☾</span><span>Nacht</span><span class="ms8272-down" aria-hidden="true">⌄</span>';
+      night.addEventListener('click',()=>{
+        const candidates=[...document.querySelectorAll('button,select,[role="button"]')].filter(node=>node!==night);
+        const target=candidates.find(node=>/nacht|donker|dark/i.test(norm(node.textContent)||String(node.value||'')));
+        if(target){try{target.click();return}catch{}}
+        document.documentElement.classList.toggle('dark');
+        document.body?.classList.toggle('dark');
+        window.dispatchEvent(new CustomEvent('mijnserenity:theme-changed'));
+      });
+    }
+    night.classList.add('ms8272-night');
+    if(!night.querySelector('.ms8272-moon'))night.innerHTML='<span class="ms8272-moon" aria-hidden="true">☾</span><span>Nacht</span><span class="ms8272-down" aria-hidden="true">⌄</span>';
+    if(night.parentElement!==header)header.appendChild(night);
+  }
+
+  function ensureHero(root,header){
     let hero=root.querySelector('.ms8234-hero');
-    if(hero&&hero.parentElement!==header)header.appendChild(hero);
-    if(!hero)return;
-    let eyebrow=hero.querySelector('.ms8271-eyebrow');
-    if(!eyebrow){eyebrow=document.createElement('span');eyebrow.className='ms8271-eyebrow';eyebrow.textContent='WELKOM TERUG';hero.prepend(eyebrow)}
-    const heading=hero.querySelector('h2');
-    if(heading&&heading.textContent.trim()!=='Klaar om te gaan varen?')heading.textContent='Klaar om te gaan varen?';
-    let subtitle=hero.querySelector('.ms8271-subtitle');
-    if(!subtitle){subtitle=document.createElement('p');subtitle.className='ms8271-subtitle';subtitle.textContent='De Serenity ligt klaar. Waar brengt de volgende reis je naartoe?';if(heading)heading.insertAdjacentElement('afterend',subtitle);else hero.prepend(subtitle)}
-    let button=hero.querySelector('.ms8271-live-button');
-    if(!button){button=document.createElement('button');button.type='button';button.className='ms8271-live-button';button.innerHTML='<span class="ms8271-play" aria-hidden="true">▶</span><span>Start live varen</span><span class="ms8271-chevron" aria-hidden="true">›</span>';button.addEventListener('click',event=>{event.preventDefault();try{if(typeof window.captainNavigate==='function'){window.captainNavigate('live',document.querySelector('.bottom-nav .bottom-nav-item[data-target="live"]')||null);return}document.querySelector('.bottom-nav .bottom-nav-item[data-target="live"],.tabs [data-target="live"],[data-ms8210-target="live"]')?.click()}catch(error){console.warn('Live varen openen mislukt:',error)}});hero.appendChild(button)}
+    if(!hero){hero=document.createElement('section');hero.className='ms8234-hero'}
+    if(hero.parentElement!==header)header.appendChild(hero);
+
+    [...hero.children].forEach(node=>{
+      const text=norm(node.textContent);
+      if(text==='WELKOM TERUG'||text==='De Serenity ligt klaar. Waar brengt de volgende reis je naartoe?'||text==='Start live varen')node.classList.add('ms8272-duplicate');
+    });
+
+    let eyebrow=hero.querySelector('.ms8272-eyebrow');
+    if(!eyebrow){eyebrow=document.createElement('span');eyebrow.className='ms8272-eyebrow';hero.prepend(eyebrow)}
+    eyebrow.textContent='WELKOM TERUG';
+
+    let heading=hero.querySelector('h2');
+    if(!heading){heading=document.createElement('h2');eyebrow.insertAdjacentElement('afterend',heading)}
+    heading.textContent='Klaar om te gaan varen?';
+
+    let subtitle=hero.querySelector('.ms8272-subtitle');
+    if(!subtitle){subtitle=document.createElement('p');subtitle.className='ms8272-subtitle';heading.insertAdjacentElement('afterend',subtitle)}
+    subtitle.textContent='De Serenity ligt klaar. Waar brengt de volgende reis je naartoe?';
+
+    let metrics=hero.querySelector('.ms8234-live-metrics');
+    if(metrics&&metrics.parentElement!==hero)hero.appendChild(metrics);
+
+    let button=hero.querySelector('.ms8272-live-button');
+    if(!button){
+      button=document.createElement('button');button.type='button';button.className='ms8272-live-button';
+      button.innerHTML='<span class="ms8272-play" aria-hidden="true">▶</span><span>Start live varen</span><span class="ms8272-chevron" aria-hidden="true">›</span>';
+      button.addEventListener('click',event=>{event.preventDefault();navigate('live')});
+      hero.appendChild(button);
+    }
+
+    [...root.querySelectorAll('button,a')].forEach(node=>{
+      if(node!==button&&norm(node.textContent)==='Start live varen')node.classList.add('ms8272-duplicate');
+    });
+    [...root.querySelectorAll('p,div,span')].forEach(node=>{
+      if(node!==subtitle&&node!==eyebrow&&node.children.length===0){
+        const text=norm(node.textContent);
+        if(text==='De Serenity ligt klaar. Waar brengt de volgende reis je naartoe?'||text==='WELKOM TERUG')node.classList.add('ms8272-duplicate');
+      }
+    });
   }
 
-  function integrateLayout(url=''){
+  function integrate(url=''){
     syncBuild();installStyle();
     const root=document.getElementById('ms8210Start');if(!root)return false;
     const header=root.querySelector('.ms8234-header')||root.querySelector('.ms8210-header');if(!header)return false;
-    header.classList.add('ms8271-unified');header.dataset.msHeroBuild='8271';if(url)header.style.setProperty('--ms8271-photo',`url("${url}")`);
-    ensureVoyageContent(root,header);
-    const statusGrid=root.querySelector('.ms8234-status-grid');if(statusGrid&&statusGrid.parentElement!==header)header.appendChild(statusGrid);
-    const night=findNightControl(root);if(night){night.classList.add('ms8271-night-control');if(night.parentElement!==header)header.appendChild(night)}
+    header.classList.remove('ms8271-unified');
+    header.classList.add('ms8272-exact');
+    header.dataset.msHeroBuild='8272';
+    if(url)header.style.setProperty('--ms8272-photo',`url("${url}")`);
+    ensureBrand(header);
+    ensureHero(root,header);
+    const statusGrid=root.querySelector('.ms8234-status-grid');
+    if(statusGrid&&statusGrid.parentElement!==header)header.appendChild(statusGrid);
+    ensureNight(root,header);
     return true;
   }
 
-  function queueRefresh(){if(refreshQueued)return;refreshQueued=true;requestAnimationFrame(async()=>{refreshQueued=false;const url=await loadPhoto();integrateLayout(url)})}
-  function watch(){const root=document.getElementById('ms8210Start');if(!root||observer)return;observer=new MutationObserver(queueRefresh);observer.observe(root,{childList:true,subtree:true});setTimeout(()=>{observer?.disconnect();observer=null},20000)}
-  function start(){syncBuild();installStyle();void loadPhoto().then(url=>integrateLayout(url));[80,240,600,1200,2400,4800,8000].forEach(ms=>setTimeout(()=>{void loadPhoto().then(url=>integrateLayout(url));watch()},ms));['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:start-requested','mijnserenity:routechange','mijnserenity:theme-changed','pageshow','online'].forEach(type=>window.addEventListener(type,queueRefresh,{passive:true}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)queueRefresh()},{passive:true});window.addEventListener('resize',queueRefresh,{passive:true});console.info(`MijnSerenity ${BUILD}: beeldvullende samengevoegde Serenity-header actief.`)}
+  function queue(){
+    if(queued)return;queued=true;
+    requestAnimationFrame(async()=>{queued=false;integrate(await loadPhoto())});
+  }
+
+  function watch(){
+    const root=document.getElementById('ms8210Start');
+    if(!root||observer)return;
+    observer=new MutationObserver(queue);
+    observer.observe(root,{childList:true,subtree:true});
+    setTimeout(()=>{observer?.disconnect();observer=null},25000);
+  }
+
+  function start(){
+    syncBuild();installStyle();
+    void loadPhoto().then(integrate);
+    [80,220,500,1000,1800,3200,5200,8000].forEach(ms=>setTimeout(()=>{void loadPhoto().then(integrate);watch()},ms));
+    ['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:start-requested','mijnserenity:routechange','mijnserenity:theme-changed','pageshow','online']
+      .forEach(type=>window.addEventListener(type,queue,{passive:true}));
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()},{passive:true});
+    window.addEventListener('resize',queue,{passive:true});
+    console.info(`MijnSerenity ${BUILD}: exacte Serenity startheader actief.`);
+  }
 
   loadBase().finally(start);
 })();
