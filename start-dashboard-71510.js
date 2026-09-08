@@ -39,19 +39,16 @@
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
     const meta=document.querySelector('meta[name="mijnserenity-build"]');
-    if(meta)meta.content=BUILD;
+    if(meta&&meta.content!==BUILD)meta.content=BUILD;
     const settings=document.getElementById('settingsAppVersion');
-    if(settings)settings.textContent=BUILD;
-    document.querySelectorAll('[data-ms-build-version]').forEach(node=>node.textContent=BUILD);
+    if(settings&&settings.textContent!==BUILD)settings.textContent=BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(node=>{if(node.textContent!==BUILD)node.textContent=BUILD;});
   }
 
   function installStyle(){
-    let style=document.getElementById(STYLE_ID);
-    if(!style){
-      style=document.createElement('style');
-      style.id=STYLE_ID;
-      (document.head||document.documentElement).appendChild(style);
-    }
+    if(document.getElementById(STYLE_ID))return;
+    const style=document.createElement('style');
+    style.id=STYLE_ID;
     style.textContent=`
       /* De bestaande header blijft staan; alleen beeld, positionering en rechter bediening worden gecorrigeerd. */
       #ms8210Start .ms8300-photo{
@@ -92,6 +89,7 @@
         #ms8210Start #ms8300Theme{min-width:118px!important;height:44px!important;min-height:44px!important;padding:0 14px!important;font-size:14px!important}
       }
     `;
+    (document.head||document.documentElement).appendChild(style);
   }
 
   function cachedHero(){
@@ -189,8 +187,11 @@
         polish();
       });
     };
-    const observer=new MutationObserver(queue);
-    observer.observe(document.documentElement,{childList:true,subtree:true});
+    const dashboard=document.getElementById('dashboard');
+    if(dashboard){
+      const observer=new MutationObserver(queue);
+      observer.observe(dashboard,{childList:true,subtree:true});
+    }
     window.addEventListener('pageshow',queue,{passive:true});
     window.addEventListener('mijnserenity:routechange',queue,{passive:true});
     setTimeout(queue,300);
