@@ -1,0 +1,1 @@
+MijnSerenity 8.28.4 — herstel Meer-knop op Start en toon actieve versie linksboven. Publicatie-trigger 2026-09-08 08:14 Europe/Amsterdam.
