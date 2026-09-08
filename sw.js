@@ -1,6 +1,6 @@
-/* MijnSerenity 8.30.1 — compacte PWA-runtime voor één canonieke Start. */
-const BUILD='8.30.1';
-const BUILD_TOKEN='830100';
+/* MijnSerenity 8.30.2 — compacte PWA-runtime voor één canonieke Start. */
+const BUILD='8.30.2';
+const BUILD_TOKEN='830200';
 const CACHE_NAME=`mijnserenity-${BUILD}-core`;
 const NETWORK_TIMEOUT_MS=9000;
 
