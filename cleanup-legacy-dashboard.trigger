@@ -1,1 +1,1 @@
-Run full static legacy dashboard source cleanup v2.
+Run full static legacy dashboard source cleanup v3.
