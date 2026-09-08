@@ -1,16 +1,16 @@
-/* MijnSerenity 8.23.5 — snelle uniforme stabiliteitsbootstrap
+/* MijnSerenity 8.30.3 — snelle uniforme stabiliteitsbootstrap
    Eén runtime voor iPhone, iPad en Stage Manager. Start en live kernwaarden
    krijgen voorrang; zware paginamodules worden pas geladen wanneer nodig. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap823500)return;
-  window.__msBootstrap823500=true;
+  if(window.__msBootstrap830300)return;
+  window.__msBootstrap830300=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='8.23.5';
-  const VERSION='823500';
+  const BUILD='8.30.3';
+  const VERSION='830300';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
@@ -370,7 +370,8 @@
       ensureCss('map-next-level-8220.css','msMapNextLevel8220');
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
-      /* Updatecontrole blokkeert de zichtbare app nooit. */
+      /* Oude PWA-caches eerst opruimen; daarna de actuele worker registreren. */
+      await purgeStaleRuntimeCaches();
       ensureFreshServiceWorker();
       await ensureSupabase();
       await loadScript(CORE_SCRIPT,20000);
