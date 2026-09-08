@@ -1,7 +1,7 @@
-/* MijnSerenity 8.25.8 — VriJon Start-navigatie + snelle app-cache */
-const CACHE_NAME='mijnserenity-8.25.8-vrijon-start1';
-const BUILD='8.25.8';
-const BUILD_TOKEN='825800';
+/* MijnSerenity 8.28.3 — harde iOS/PWA release-refresh + actuele Serenity Start. */
+const CACHE_NAME='mijnserenity-8.28.3-release1';
+const BUILD='8.28.3';
+const BUILD_TOKEN='828300';
 const NETWORK_TIMEOUT_MS=8000;
 
 /* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
@@ -46,6 +46,7 @@ function rewriteIndexHtml(html){
     .replace(/(<meta\s+name=["']mijnserenity-build["']\s+content=["'])[^"']+(["']\s*\/?>)/i,`$1${BUILD}$2`)
     .replace(/window\.MIJSERENITY_BUILD\s*=\s*['"][^'"]+['"]\s*;/g,`window.MIJSERENITY_BUILD='${BUILD}';`)
     .replace(/auth-bootstrap\.js\?v=\d+/g,`auth-bootstrap.js?v=${BUILD_TOKEN}`)
+    .replace(/app\.js\?v=\d+/g,`app.js?v=${BUILD_TOKEN}`)
     .replace(/dashboard-unified-71919-loader\.js\?v=\d+/g,`dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`)
     .replace(/simple-start-8210\.js\?v=\d+/g,`simple-start-8210.js?v=${BUILD_TOKEN}`)
     .replace(/ais-gps-fix-8221\.js\?v=\d+/g,`ais-gps-fix-8221.js?v=${BUILD_TOKEN}`)
@@ -55,9 +56,18 @@ function rewriteIndexHtml(html){
     .replace(/wind-direction-71512\.js\?v=\d+/g,`wind-direction-71512.js?v=${BUILD_TOKEN}`)
     .replace(/ruuvi-climate\.js\?v=\d+/g,`ruuvi-climate.js?v=${BUILD_TOKEN}`)
     .replace(/rws-water-temp-8233\.js\?v=\d+/g,`rws-water-temp-8233.js?v=${BUILD_TOKEN}`)
+    .replace(/update-prompt\.js\?v=\d+/g,`update-prompt.js?v=${BUILD_TOKEN}`)
     .replace(/<script[^>]+src=["'][^"']*receipt-ocr-fix-8234\.js[^"']*["'][^>]*><\/script>\s*/gi,'')
     .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`)
     .replace(/\\n(?=\s*<\/body>)/gi,'\n');
+
+  /* Ook wanneer het bron-indexbestand nog een oude versie bevat, wint deze release. */
+  if(!/name=["']mijnserenity-build["']/i.test(rewritten)){
+    rewritten=rewritten.replace(/<head([^>]*)>/i,`<head$1>\n<meta name="mijnserenity-build" content="${BUILD}">`);
+  }
+  if(!/window\.MIJSERENITY_BUILD\s*=/.test(rewritten)){
+    rewritten=rewritten.replace(/<\/head>/i,`<script>window.MIJSERENITY_BUILD='${BUILD}';</script>\n</head>`);
+  }
 
   /* Fail-safe voor iOS/PWA: de lichte Startmodule is klein en mag direct mee. */
   if(!/simple-start-8210\.js/i.test(rewritten)){
@@ -86,7 +96,8 @@ async function rewrittenHtmlResponse(response){
     if(!type.includes('text/html'))return response;
     const html=rewriteIndexHtml(await response.text());
     const headers=new Headers(response.headers);
-    headers.set('cache-control','no-store, max-age=0');
+    headers.set('cache-control','no-store, max-age=0, must-revalidate');
+    headers.set('x-mijnserenity-build',BUILD);
     return new Response(html,{status:response.status,statusText:response.statusText,headers});
   }catch{
     return response;
@@ -123,6 +134,20 @@ self.addEventListener('activate',event=>{
       keys.filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME).map(key=>caches.delete(key))
     );
     await self.clients.claim();
+
+    /* iOS kan een oude standalone-PWA open laten terwijl de nieuwe worker al
+       actief is. Navigeer elk open venster één keer opnieuw met een unieke
+       releaseparameter; zo blijft 8.25.x niet op het scherm hangen. */
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    await Promise.all(windows.map(async client=>{
+      try{
+        const url=new URL(client.url);
+        if(url.origin!==self.location.origin)return;
+        if(url.searchParams.get('ms-release')===BUILD_TOKEN)return;
+        url.searchParams.set('ms-release',BUILD_TOKEN);
+        await client.navigate(url.href);
+      }catch{}
+    }));
   })());
 });
 
@@ -157,6 +182,7 @@ async function navigationNetworkFirst(request){
       if(rewritten){
         const cache=await caches.open(CACHE_NAME);
         cache.put('/index.html',rewritten.clone()).catch(()=>{});
+        cache.put('/',rewritten.clone()).catch(()=>{});
         return rewritten;
       }
     }
@@ -171,22 +197,6 @@ async function navigationNetworkFirst(request){
     status:503,
     headers:{'content-type':'text/plain; charset=utf-8'}
   });
-}
-
-async function navigationCacheFirst(request){
-  const cached=(await caches.match('/index.html'))||(await caches.match('/'));
-  if(cached){
-    fetchWithTimeout(request,{cache:'no-store'},10000).then(async response=>{
-      if(!response.ok)return;
-      const rewritten=await rewrittenHtmlResponse(response);
-      if(!rewritten)return;
-      const cache=await caches.open(CACHE_NAME);
-      await cache.put('/index.html',rewritten.clone());
-      await cache.put('/',rewritten.clone());
-    }).catch(()=>{});
-    return (await rewrittenHtmlResponse(cached))||cached;
-  }
-  return navigationNetworkFirst(request);
 }
 
 async function staleWhileRevalidate(request){
@@ -215,14 +225,19 @@ self.addEventListener('fetch',event=>{
   if(url.pathname.startsWith('/victron-gui/'))return;
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
 
+  /* Vanaf 8.28.3 krijgt navigatie altijd eerst de live index. Alleen offline
+     vallen we terug op cache. Dit voorkomt dat iPhone/PWA een oude release
+     blijft tonen terwijl GitHub/Netlify al verder is. */
   if(request.mode==='navigate'){
-    event.respondWith(navigationCacheFirst(request));
+    event.respondWith(navigationNetworkFirst(request));
     return;
   }
 
   /* Hotfixmodules moeten nooit één sessie achterlopen op iPhone/PWA. */
   if(
     url.pathname==='/runtime-stability-8202.js'||
+    url.pathname==='/auth-bootstrap.js'||
+    url.pathname==='/update-prompt.js'||
     url.pathname==='/ais-gps-fix-8221.js'||
     url.pathname==='/live-split.js'||
     url.pathname==='/rws-nearby.js'||
