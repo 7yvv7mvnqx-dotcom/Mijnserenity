@@ -1,5 +1,0 @@
-MijnSerenity 8.24.0 redeploy
-- Interactieve havenresultaten
-- Haveninformatie + beoordelingen/reviewlinks
-- Haven als routepunt toevoegen
-- Serenity boot-loader voor zoeken, laden en routeberekening

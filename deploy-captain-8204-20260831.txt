@@ -1,1 +1,0 @@
-Captain AI 8.20.4 deploy trigger — OpenAI conversation + voice input + spoken replies.

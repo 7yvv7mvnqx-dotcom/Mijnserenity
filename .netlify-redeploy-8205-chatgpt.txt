@@ -1,1 +1,0 @@
-MijnSerenity 8.20.5: Captain UI removed. Integrated ChatGPT with MijnSerenity context, OpenAI transcription and OpenAI text-to-speech. Deploy requested 2026-08-31.
