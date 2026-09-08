@@ -13,7 +13,8 @@ const LEGACY_SCRIPTS=[
 const LEGACY_STYLES=[
   'dashboard-analog-7141.css',
   'dashboard-premium-7143.css',
-  'start-cockpit-7144.css'
+  'start-cockpit-7144.css',
+  'serenity-ivms.css'
 ];
 const LEGACY_DEPLOY_FILES=[...LEGACY_SCRIPTS,...LEGACY_STYLES];
 const RWS_COMPAT='/rws-compat-8233.js?v=823300';
@@ -35,6 +36,7 @@ function extractBalancedSection(html,rootId){
   const match=startRe.exec(html);
   if(!match)return null;
   const start=match.index;
+  const openEnd=start+match[0].length;
   const tokenRe=/<section\b[^>]*>|<\/section\s*>/gi;
   tokenRe.lastIndex=start;
   let depth=0;
@@ -44,27 +46,36 @@ function extractBalancedSection(html,rootId){
     else depth-=1;
     if(depth===0){
       const end=tokenRe.lastIndex;
-      return {start,end,html:html.slice(start,end)};
+      const closeStart=token.index;
+      return {start,openEnd,closeStart,end,openTag:match[0],html:html.slice(start,end),inner:html.slice(openEnd,closeStart)};
     }
   }
   throw new Error(`Ongebalanceerde sectie: ${rootId}`);
 }
 
-function telemetryBridgeFrom(legacyHtml){
+function telemetryBridgeFrom(sourceHtml){
   const entries=[];
   const seen=new Set();
   const tagRe=/<([a-z][a-z0-9-]*)\b[^>]*\bid=["']([^"']+)["'][^>]*>/gi;
   let match;
-  while((match=tagRe.exec(legacyHtml))){
+  while((match=tagRe.exec(sourceHtml))){
     const tag=match[1].toLowerCase();
     const id=match[2];
-    if(id==='ms71510Dashboard'||seen.has(id))continue;
+    if(id==='dashboard'||id==='msLegacyTelemetryBridge'||id==='ms8210Start'||seen.has(id))continue;
     seen.add(id);
     entries.push({tag,id});
   }
   const voidTags=new Set(['img','input','br','hr','meta','link','source','area','base','col','embed','param','track','wbr']);
   const nodes=entries.map(({tag,id})=>voidTags.has(tag)?`<${tag} id="${id}">`:`<${tag} id="${id}"></${tag}>`).join('');
   return `<div id="msLegacyTelemetryBridge" hidden aria-hidden="true" data-purpose="telemetry-compat">${nodes}</div>`;
+}
+
+function compactDashboard(html){
+  const dashboard=extractBalancedSection(html,'dashboard');
+  if(!dashboard)return html;
+  const bridge=telemetryBridgeFrom(dashboard.inner);
+  const replacement=`${dashboard.openTag}\n${bridge}\n</section>`;
+  return html.slice(0,dashboard.start)+replacement+html.slice(dashboard.end);
 }
 
 function ensureRwsCompat(html){
@@ -78,16 +89,14 @@ const beforeBytes=Buffer.byteLength(html);
 
 for(const file of LEGACY_SCRIPTS)html=stripTagByFile(html,file,'script');
 for(const file of LEGACY_STYLES)html=stripTagByFile(html,file,'style');
-
-const legacy=extractBalancedSection(html,'ms71510Dashboard');
-if(legacy){
-  const bridge=telemetryBridgeFrom(legacy.html);
-  html=html.slice(0,legacy.start)+bridge+html.slice(legacy.end);
-}
-
+html=compactDashboard(html);
 html=ensureRwsCompat(html);
 
-if(/id=["']ms71510Dashboard["']/i.test(html))throw new Error('Legacy dashboard staat nog in index.html');
+const dashboard=extractBalancedSection(html,'dashboard');
+if(!dashboard)throw new Error('Dashboardcontainer ontbreekt na cleanup');
+if(/id=["']ms71510Dashboard["']/i.test(dashboard.inner))throw new Error('Legacy ms71510-dashboard staat nog in dashboard');
+if(/id=["']serenityIvms["']/i.test(dashboard.inner))throw new Error('Legacy IVMS-dashboard staat nog in dashboard');
+if(!/id=["']msLegacyTelemetryBridge["']/i.test(dashboard.inner))throw new Error('Telemetrybrug ontbreekt na dashboard-cleanup');
 for(const file of LEGACY_SCRIPTS){
   if(new RegExp(escapeRe(file),'i').test(html))throw new Error(`Legacy scriptreferentie staat nog in index.html: ${file}`);
 }
@@ -102,4 +111,4 @@ for(const file of LEGACY_DEPLOY_FILES){
 }
 
 const afterBytes=Buffer.byteLength(html);
-console.log(`Legacy dashboards verwijderd uit deploy: ${legacy?'dashboard + telemetrybrug':'dashboard was al weg'}; ${beforeBytes-afterBytes} bytes HTML opgeschoond.`);
+console.log(`Alle statische legacy dashboards verwijderd uit actieve shell; telemetrybrug behouden; ${beforeBytes-afterBytes} bytes HTML opgeschoond.`);
