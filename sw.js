@@ -1,8 +1,8 @@
-/* MijnSerenity 8.30.3 — compacte PWA-runtime voor één lokale canonieke Start. */
-const BUILD='8.30.3';
-const BUILD_TOKEN='830300';
+/* MijnSerenity 8.30.4 — compacte PWA-runtime voor één lokale canonieke Start. */
+const BUILD='8.30.4';
+const BUILD_TOKEN='830400';
 const CACHE_NAME=`mijnserenity-${BUILD}-core`;
-const NETWORK_TIMEOUT_MS=6000;
+const NETWORK_TIMEOUT_MS=5000;
 
 const CORE_ASSETS=[
   '/',
@@ -21,12 +21,7 @@ const CORE_ASSETS=[
   '/icon-192.png','/icon-512.png','/favicon-64.png'
 ];
 
-const LEGACY_VISUAL_FILES=[
-  'futuristic-analog-7140',
-  'dashboard-analog-7141',
-  'dashboard-premium-7143',
-  'start-cockpit-7144'
-];
+const LEGACY_VISUAL_FILES=['futuristic-analog-7140','dashboard-analog-7141','dashboard-premium-7143','start-cockpit-7144'];
 
 function fetchWithTimeout(input,init={},timeoutMs=NETWORK_TIMEOUT_MS){
   const controller=new AbortController();
@@ -48,7 +43,6 @@ function ensureScript(html,src,needle){
   if(new RegExp(needle,'i').test(html))return html;
   return html.replace(/<\/body>/i,`<script src="${src}"></script>\n</body>`);
 }
-
 function ensureStyle(html,href,needle){
   if(new RegExp(needle,'i').test(html))return html;
   return html.replace(/<\/head>/i,`<link rel="stylesheet" href="${href}">\n</head>`);
@@ -65,12 +59,10 @@ function rewriteIndexHtml(html){
     .replace(/dashboard-unified-71919-loader\.js\?v=\d+/g,`dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`)
     .replace(/runtime-stability-8202\.js\?v=\d+/g,`runtime-stability-8202.js?v=${BUILD_TOKEN}`);
 
-  if(!/name=["']mijnserenity-build["']/i.test(out)){
-    out=out.replace(/<head([^>]*)>/i,`<head$1>\n<meta name="mijnserenity-build" content="${BUILD}">`);
-  }
+  if(!/name=["']mijnserenity-build["']/i.test(out))out=out.replace(/<head([^>]*)>/i,`<head$1>\n<meta name="mijnserenity-build" content="${BUILD}">`);
 
-  if(!/id=["']ms8300InitialGuard["']/i.test(out)){
-    out=out.replace(/<\/head>/i,`<style id="ms8300InitialGuard">#dashboard>:not(#ms8210Start){display:none!important;visibility:hidden!important;pointer-events:none!important}</style>\n</head>`);
+  if(!/id=["']ms8304InitialGuard["']/i.test(out)){
+    out=out.replace(/<\/head>/i,`<style id="ms8304InitialGuard">#dashboard>:not(#ms8210Start){display:none!important;visibility:hidden!important;pointer-events:none!important}body:not(.ms8300-start-page):not(.ms8300-sub-page) .bottom-nav{display:none!important;visibility:hidden!important;pointer-events:none!important}</style>\n</head>`);
   }
 
   out=ensureStyle(out,`/iphone-landscape-8301.css?v=${BUILD_TOKEN}`,'iphone-landscape-8301\\.css');
@@ -94,7 +86,7 @@ async function asRewrittenHtml(response){
 
 async function cacheAsset(cache,path){
   try{
-    const response=await fetchWithTimeout(path,{cache:'reload'},12000);
+    const response=await fetchWithTimeout(path,{cache:'reload'},10000);
     if(!response.ok)return;
     const stored=(path==='/'||path==='/index.html')?(await asRewrittenHtml(response.clone())):response;
     if(stored)await cache.put(path,stored);
@@ -114,7 +106,6 @@ self.addEventListener('activate',event=>{
     const keys=await caches.keys();
     await Promise.all(keys.filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME).map(key=>caches.delete(key)));
     await self.clients.claim();
-
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     await Promise.all(clients.map(async client=>{
       try{
@@ -131,7 +122,7 @@ self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')sel
 
 async function navigationNetworkFirst(request){
   try{
-    const network=await fetchWithTimeout(request,{cache:'no-store'},4500);
+    const network=await fetchWithTimeout(request,{cache:'no-store'},4000);
     if(network.ok){
       const rewritten=await asRewrittenHtml(network);
       if(rewritten){
@@ -174,14 +165,8 @@ self.addEventListener('fetch',event=>{
   if(request.method!=='GET')return;
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
-
   if(request.mode==='navigate'){event.respondWith(navigationNetworkFirst(request));return;}
   if(url.pathname.startsWith('/.netlify/functions/')||url.pathname.startsWith('/api/'))return;
-
-  if(/\.(?:js|css|json)$/i.test(url.pathname)){
-    event.respondWith(networkFirst(request));return;
-  }
-  if(/\.(?:png|jpg|jpeg|webp|svg|gif|ico)$/i.test(url.pathname)){
-    event.respondWith(staleWhileRevalidate(request));return;
-  }
+  if(/\.(?:js|css|json)$/i.test(url.pathname)){event.respondWith(networkFirst(request));return;}
+  if(/\.(?:png|jpg|jpeg|webp|svg|gif|ico)$/i.test(url.pathname)){event.respondWith(staleWhileRevalidate(request));return;}
 });
