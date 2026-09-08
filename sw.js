@@ -1,7 +1,7 @@
-/* MijnSerenity 8.30.4 — PWA-runtime met één canonieke Start en schone cache. */
+/* MijnSerenity 8.30.4 — PWA-runtime met één canonieke Start en Serenity Glass. */
 const BUILD='8.30.4';
 const BUILD_TOKEN='830400';
-const CACHE_NAME=`mijnserenity-${BUILD}-clean2-core`;
+const CACHE_NAME=`mijnserenity-${BUILD}-serenity8310-core`;
 const NETWORK_TIMEOUT_MS=5000;
 
 const CORE_ASSETS=[
@@ -16,6 +16,8 @@ const CORE_ASSETS=[
   `/start-dashboard-71510.js?v=${BUILD_TOKEN}`,
   `/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,
   `/runtime-stability-8202.js?v=${BUILD_TOKEN}`,
+  `/serenity-theme-8310.js?v=831000`,
+  `/serenity-theme-8310.css?v=831000`,
   `/rws-compat-8233.js?v=823300`,
   `/assets/serenity-hero-8274.jpg?v=${BUILD_TOKEN}`,
   `/assets/serenity-home-hero-8266.jpg?v=${BUILD_TOKEN}`,
@@ -106,6 +108,7 @@ function rewriteIndexHtml(html){
     out=out.replace(/<\/head>/i,`<style id="ms8304InitialGuard">#dashboard>:not(#ms8210Start):not(#msLegacyTelemetryBridge){display:none!important;visibility:hidden!important;pointer-events:none!important}#msLegacyTelemetryBridge{display:none!important}body:not(.ms8300-start-page):not(.ms8300-sub-page) .bottom-nav{display:none!important;visibility:hidden!important;pointer-events:none!important}</style>\n</head>`);
   }
   out=ensureStyle(out,`/iphone-landscape-8301.css?v=${BUILD_TOKEN}`,'iphone-landscape-8301\\.css');
+  out=ensureScript(out,`/serenity-theme-8310.js?v=831000`,'serenity-theme-8310\\.js');
   out=ensureScript(out,`/rws-compat-8233.js?v=823300`,'rws-compat-8233\\.js');
   out=ensureScript(out,`/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,'dashboard-unified-71919-loader\\.js');
   out=out.replace(/<script[^>]+src=["'][^"']*release-guard-8290\.js[^"']*["'][^>]*><\/script>\s*/gi,'');
