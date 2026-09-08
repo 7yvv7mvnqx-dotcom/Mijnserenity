@@ -7,6 +7,7 @@
 
   const BUILD='8.30.4';
   const TOKEN='830400';
+  const THEME='/serenity-theme-8310.js?v=831000';
   const $=id=>document.getElementById(id);
   const pathOf=value=>{try{return new URL(value,location.href).pathname}catch{return String(value||'')}};
   const loads=new Map();
@@ -87,6 +88,7 @@
 
   function repair(){
     syncBuild();removeLegacy();
+    if(!window.__msSerenityTheme8310)void load(THEME,3200);
     if(window.__msStart8300)window.ms8300RefreshStart?.();
     else void ensureStart();
   }
@@ -101,6 +103,7 @@
 
   async function start(){
     syncBuild();removeLegacy();
+    await load(THEME,3200);
     const ready=await ensureStart();
     removeLegacy();
 
@@ -121,7 +124,7 @@
       .forEach(type=>window.addEventListener(type,()=>requestAnimationFrame(repair),{passive:true}));
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)requestAnimationFrame(repair)},{passive:true});
 
-    console.info(`MijnSerenity ${BUILD}: lokale dashboardbootstrap actief.`);
+    console.info(`MijnSerenity ${BUILD}: lokale dashboardbootstrap + Serenity Glass actief.`);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>start().catch(console.warn),{once:true});
