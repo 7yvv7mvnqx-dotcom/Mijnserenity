@@ -8,6 +8,7 @@
   const BUILD='8.30.4';
   const TOKEN='830400';
   const THEME='/serenity-theme-8310.js?v=831000';
+  const LANDSCAPE_CSS='/iphone-landscape-8301.css?v=831100';
   const $=id=>document.getElementById(id);
   const pathOf=value=>{try{return new URL(value,location.href).pathname}catch{return String(value||'')}};
   const loads=new Map();
@@ -18,6 +19,19 @@
     if(meta)meta.content=BUILD;
     const settings=$('settingsAppVersion');if(settings)settings.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(node=>node.textContent=BUILD);
+  }
+
+  function ensureCss(src,id){
+    let link=$(id);
+    if(!link){
+      link=document.createElement('link');
+      link.id=id;
+      link.rel='stylesheet';
+      (document.head||document.documentElement).appendChild(link);
+    }
+    const wanted=new URL(src,location.href).href;
+    if(link.href!==wanted)link.href=src;
+    return link;
   }
 
   function load(src,timeoutMs=5000){
@@ -88,6 +102,7 @@
 
   function repair(){
     syncBuild();removeLegacy();
+    ensureCss(LANDSCAPE_CSS,'msIphoneLandscape8301');
     if(!window.__msSerenityTheme8310)void load(THEME,3200);
     if(window.__msStart8300)window.ms8300RefreshStart?.();
     else void ensureStart();
@@ -103,6 +118,7 @@
 
   async function start(){
     syncBuild();removeLegacy();
+    ensureCss(LANDSCAPE_CSS,'msIphoneLandscape8301');
     await load(THEME,3200);
     const ready=await ensureStart();
     removeLegacy();
