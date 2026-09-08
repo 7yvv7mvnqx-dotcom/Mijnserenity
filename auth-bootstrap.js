@@ -1,21 +1,34 @@
-/* MijnSerenity 8.30.3 — snelle uniforme stabiliteitsbootstrap
-   Eén runtime voor iPhone, iPad en Stage Manager. Start en live kernwaarden
-   krijgen voorrang; zware paginamodules worden pas geladen wanneer nodig. */
+/* MijnSerenity 8.30.4 — snelle uniforme stabiliteitsbootstrap
+   Cold boot toont nooit het historische dashboard en kan niet meer op laden blijven hangen. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap830300)return;
-  window.__msBootstrap830300=true;
+  if(window.__msBootstrap830400)return;
+  window.__msBootstrap830400=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='8.30.3';
-  const VERSION='830300';
+  const BUILD='8.30.4';
+  const VERSION='830400';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
   let bootFinished=false;
   let bootFailSafe=0;
+  let bootStartObserver=null;
+
+  function installImmediateColdBootGuard(){
+    if(document.getElementById('ms8304ColdBootGuard'))return;
+    const style=document.createElement('style');
+    style.id='ms8304ColdBootGuard';
+    style.textContent=`
+      #dashboard> :not(#ms8210Start){display:none!important;visibility:hidden!important;pointer-events:none!important}
+      body:not(.ms8300-start-page):not(.ms8300-sub-page) .bottom-nav{display:none!important;visibility:hidden!important;pointer-events:none!important}
+      html[data-ms-booting="true"] #dashboard> :not(#ms8210Start){display:none!important}
+    `;
+    (document.head||document.documentElement).appendChild(style);
+  }
+  installImmediateColdBootGuard();
 
   const SUPABASE_SOURCES=[
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
@@ -24,8 +37,6 @@
   const LEGACY_VRM_ENDPOINT='https://wufslczbtguvtgmfufid.supabase.co/functions/v1/vrm-ruuvi';
   const RWS_API_ORIGIN='https://ddapi20-waterwebservices.rijkswaterstaat.nl';
 
-  /* Deze modules voeden o.a. accu-, temperatuur- en technische live waarden.
-     Ze laden direct ná de zichtbare Start, maar blokkeren de Start niet. */
   const LIVE_BACKGROUND=[
     `/runtime-performance-71700.js?v=${VERSION}`,
     `/victron-diagnostics.js?v=${VERSION}`,
@@ -122,6 +133,20 @@
     target.classList.toggle('error',Boolean(isError));
   }
 
+  function finishBoot(reason='ready'){
+    if(bootFinished)return;
+    bootFinished=true;
+    clearTimeout(bootFailSafe);
+    bootStartObserver?.disconnect();
+    bootStartObserver=null;
+    document.documentElement.removeAttribute('data-ms-booting');
+    document.getElementById('msBootCover8202')?.remove();
+    document.getElementById('msBootCover71919')?.remove();
+    requestAnimationFrame(()=>{
+      window.dispatchEvent(new CustomEvent('mijnserenity:boot-complete',{detail:{build:BUILD,reason}}));
+    });
+  }
+
   function installBootGate(){
     document.documentElement.dataset.msBooting='true';
     if(!document.getElementById('msBootGate8202')){
@@ -151,6 +176,7 @@
       const app=document.getElementById('appView');
       const cover=document.getElementById('msBootCover8202');
       cover?.classList.toggle('is-visible',Boolean(app&&!app.classList.contains('hidden')));
+      if(document.getElementById('ms8210Start'))finishBoot('start-present');
     };
     syncCover();
     const app=document.getElementById('appView');
@@ -158,20 +184,14 @@
       app.dataset.ms8202BootObserved='1';
       new MutationObserver(syncCover).observe(app,{attributes:true,attributeFilter:['class']});
     }
+    const dashboard=document.getElementById('dashboard');
+    if(dashboard){
+      bootStartObserver=new MutationObserver(syncCover);
+      bootStartObserver.observe(dashboard,{childList:true});
+    }
     clearTimeout(bootFailSafe);
-    bootFailSafe=setTimeout(()=>finishBoot('failsafe'),10000);
-  }
-
-  function finishBoot(reason='ready'){
-    if(bootFinished)return;
-    bootFinished=true;
-    clearTimeout(bootFailSafe);
-    document.documentElement.removeAttribute('data-ms-booting');
-    document.getElementById('msBootCover8202')?.remove();
-    document.getElementById('msBootCover71919')?.remove();
-    requestAnimationFrame(()=>{
-      window.dispatchEvent(new CustomEvent('mijnserenity:boot-complete',{detail:{build:BUILD,reason}}));
-    });
+    /* Nooit meer een permanent laadscherm: na 2,5 s wordt de app altijd vrijgegeven. */
+    bootFailSafe=setTimeout(()=>finishBoot('short-failsafe'),2500);
   }
 
   function syncBuildVersion(){
@@ -261,6 +281,32 @@
     });
   }
 
+  function forceCanonicalStart(){
+    if(window.__msStart8300&&document.getElementById('ms8210Start')){
+      window.ms8300RefreshStart?.();
+      return Promise.resolve(true);
+    }
+    return new Promise(resolve=>{
+      const script=document.createElement('script');
+      let done=false;
+      const finish=()=>{
+        if(done)return;
+        done=true;
+        clearTimeout(timer);
+        requestAnimationFrame(()=>{
+          try{window.ms8300RefreshStart?.()}catch{}
+          resolve(Boolean(document.getElementById('ms8210Start')));
+        });
+      };
+      const timer=setTimeout(finish,2200);
+      script.src=`/start-dashboard-core-8300.js?v=${VERSION}&boot=1`;
+      script.async=false;
+      script.onload=finish;
+      script.onerror=finish;
+      document.head.appendChild(script);
+    });
+  }
+
   async function ensureFreshServiceWorker(){
     if(!('serviceWorker' in navigator))return;
     try{
@@ -279,13 +325,9 @@
     try{
       if('caches' in window){
         const names=await caches.keys();
-        await Promise.all(
-          names.filter(name=>name.startsWith('mijnserenity-')).map(name=>caches.delete(name))
-        );
+        await Promise.all(names.filter(name=>name.startsWith('mijnserenity-')).map(name=>caches.delete(name)));
       }
-    }catch(error){
-      console.warn('Oude MijnSerenity-cache kon niet volledig worden verwijderd:',error);
-    }
+    }catch(error){console.warn('Oude MijnSerenity-cache kon niet volledig worden verwijderd:',error);}
     try{localStorage.setItem('mijnserenity-runtime-build',BUILD)}catch{}
   }
 
@@ -338,9 +380,7 @@
   function installLazyRouteHooks(){
     wrapNavigation();
     document.addEventListener('click',event=>{
-      const node=event.target instanceof Element
-        ?event.target.closest('[data-target],[data-go],[data-route]')
-        :null;
+      const node=event.target instanceof Element?event.target.closest('[data-target],[data-go],[data-route]'):null;
       const route=node?.dataset?.target||node?.dataset?.go||node?.dataset?.route;
       if(route&&route!=='more')loadRouteModules(route).catch(()=>{});
     },{capture:true,passive:true});
@@ -352,11 +392,8 @@
   }
 
   function runIdle(task,delay=1200){
-    if('requestIdleCallback' in window){
-      window.requestIdleCallback(()=>task(),{timeout:delay+1800});
-    }else{
-      setTimeout(task,delay);
-    }
+    if('requestIdleCallback' in window)window.requestIdleCallback(()=>task(),{timeout:delay+1800});
+    else setTimeout(task,delay);
   }
 
   async function start(){
@@ -370,7 +407,8 @@
       ensureCss('map-next-level-8220.css','msMapNextLevel8220');
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
-      /* Oude PWA-caches eerst opruimen; daarna de actuele worker registreren. */
+      /* De Start wordt meteen opgebouwd en wacht niet op Supabase, VRM of andere netwerkkoppelingen. */
+      const startTask=forceCanonicalStart().catch(()=>false);
       await purgeStaleRuntimeCaches();
       ensureFreshServiceWorker();
       await ensureSupabase();
@@ -380,19 +418,14 @@
       if(button)button.disabled=false;
 
       installLazyRouteHooks();
-
-      /* Bouw eerst de Start. OCR, kaart, entertainment en andere zware functies
-         worden pas geladen wanneer de gebruiker die pagina opent. */
-      try{await loadScript(`/dashboard-unified-71919-loader.js?v=${VERSION}`,12000)}catch(error){
-        console.warn('Uniforme dashboardloader:',error);
-      }
+      try{await loadScript(`/dashboard-unified-71919-loader.js?v=${VERSION}`,5000)}catch(error){console.warn('Uniforme dashboardloader:',error);}
+      await startTask;
+      forceCanonicalStart().catch(()=>{});
       wrapNavigation();
       removeLegacyLayoutLayers();
       syncBuildVersion();
 
-      loadScript(`/runtime-stability-8202.js?v=${VERSION}`,6000).catch(error=>{
-        console.warn('Runtime health guard:',error);
-      });
+      loadScript(`/runtime-stability-8202.js?v=${VERSION}`,6000).catch(error=>console.warn('Runtime health guard:',error));
 
       Promise.allSettled(LIVE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{
         removeLegacyLayoutLayers();
@@ -400,44 +433,32 @@
         window.dispatchEvent(new CustomEvent('mijnserenity:live-core-ready',{detail:{build:BUILD}}));
       });
 
-      runIdle(()=>{
-        Promise.allSettled(IDLE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{
-          syncBuildVersion();
-        });
-      },1000);
-
-      runIdle(()=>{
-        Promise.allSettled(SAFE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{
-          syncBuildVersion();
-          window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}));
-        });
-      },2200);
+      runIdle(()=>Promise.allSettled(IDLE_BACKGROUND.map(src=>loadScript(src,9000))).then(syncBuildVersion),1000);
+      runIdle(()=>Promise.allSettled(SAFE_BACKGROUND.map(src=>loadScript(src,9000))).then(()=>{
+        syncBuildVersion();
+        window.dispatchEvent(new CustomEvent('mijnserenity:modules-ready',{detail:{build:BUILD}}));
+      }),2200);
 
       const openRoute=new URLSearchParams(location.search).get('open');
       if(openRoute)loadRouteModules(openRoute).catch(()=>{});
       const target=document.getElementById('authMsg');
       if(target&&/geladen|beveiligde inlog/i.test(target.textContent||''))target.textContent='Nog niet ingelogd.';
-      console.info(`MijnSerenity ${BUILD}: snelle bootstrap gestart; live kernwaarden blijven actief.`);
+      if(document.getElementById('ms8210Start'))finishBoot('canonical-start-ready');
+      console.info(`MijnSerenity ${BUILD}: cold-boot beveiliging en lokale Start actief.`);
     }catch(error){
       console.error('MijnSerenity kon niet starten:',error);
-      finishBoot('error');
-      setAuthStatus('De beveiligde inlog kon niet worden geladen. Probeer de app opnieuw te openen.',true);
+      forceCanonicalStart().finally(()=>finishBoot('error-fallback'));
+      setAuthStatus('De beveiligde inlog kon niet volledig worden geladen. Probeer de app opnieuw te openen.',true);
       const button=document.getElementById('signInButton');
       if(button)button.disabled=true;
     }
   }
 
   window.addEventListener('mijnserenity:dashboard-ready',()=>{
-    removeLegacyLayoutLayers();
-    syncBuildVersion();
-    wrapNavigation();
-    finishBoot('dashboard-ready');
+    removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation();finishBoot('dashboard-ready');
   },{passive:true});
-  window.addEventListener('pageshow',()=>{
-    removeLegacyLayoutLayers();
-    syncBuildVersion();
-    wrapNavigation();
-  },{passive:true});
+  window.addEventListener('mijnserenity:start-runtime-ready',()=>finishBoot('start-runtime-ready'),{passive:true});
+  window.addEventListener('pageshow',()=>{removeLegacyLayoutLayers();syncBuildVersion();wrapNavigation();}, {passive:true});
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
