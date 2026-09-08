@@ -1,0 +1,1 @@
+MijnSerenity 8.28.3 — forceer productiepublicatie. Service worker vernieuwd naar network-first voor navigatie, oude 8.25.x PWA-caches worden verwijderd en open iOS-PWA vensters worden éénmalig herladen naar release 828300. Publicatie 2026-09-08 08:09 Europe/Amsterdam.
