@@ -1,38 +1,34 @@
-/* MijnSerenity 8.28.3 — harde iOS/PWA release-refresh + actuele Serenity Start. */
-const CACHE_NAME='mijnserenity-8.28.3-release1';
-const BUILD='8.28.3';
-const BUILD_TOKEN='828300';
-const NETWORK_TIMEOUT_MS=8000;
+/* MijnSerenity 8.29.0 — opgeschoonde PWA-runtime zonder legacy dashboardinjecties. */
+const BUILD='8.29.0';
+const BUILD_TOKEN='829000';
+const CACHE_NAME=`mijnserenity-${BUILD}-core1`;
+const NETWORK_TIMEOUT_MS=9000;
 
-/* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
-   worden vooraf gecachet. Zware paginafuncties cachen vanzelf bij eerste gebruik. */
+/* Alleen de echte startkern vooraf opslaan. Zware pagina's laden pas bij gebruik. */
 const CORE_ASSETS=[
   '/',
   '/index.html',
   '/manifest.json',
   `/auth-bootstrap.js?v=${BUILD_TOKEN}`,
   `/app.js?v=${BUILD_TOKEN}`,
+  `/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,
+  `/simple-start-8210.js?v=${BUILD_TOKEN}`,
+  `/start-dashboard-71510.js?v=${BUILD_TOKEN}`,
+  `/release-guard-8290.js?v=${BUILD_TOKEN}`,
   `/runtime-stability-8202.js?v=${BUILD_TOKEN}`,
   `/professional-ui-71700.css?v=${BUILD_TOKEN}`,
   `/marine-glass-mobile-7184.css?v=${BUILD_TOKEN}`,
   `/marine-glass-fixes-7193.css?v=${BUILD_TOKEN}`,
-  `/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,
-  `/dashboard-pro-71700.js?v=${BUILD_TOKEN}`,
-  `/mobile-viewport-guard-71911.js?v=${BUILD_TOKEN}`,
-  `/dashboard-live-values-fix-71914.js?v=${BUILD_TOKEN}`,
-  `/dashboard-energy-bridge-8206.js?v=${BUILD_TOKEN}`,
-  `/dashboard-cerbo-live-8208.js?v=${BUILD_TOKEN}`,
-  `/simple-start-8210.js?v=${BUILD_TOKEN}`,
-  `/start-dashboard-71510.js?v=${BUILD_TOKEN}`,
-  `/start-yacht-nav-8255.js?v=${BUILD_TOKEN}`,
-  `/rws-water-temp-8233.js?v=${BUILD_TOKEN}`,
-  `/wind-direction-71512.js?v=${BUILD_TOKEN}`,
-  `/runtime-performance-71700.js?v=${BUILD_TOKEN}`,
-  `/victron-diagnostics.js?v=${BUILD_TOKEN}`,
-  `/ha-live-bridge.js?v=${BUILD_TOKEN}`,
-  `/technical-live-sync.js?v=${BUILD_TOKEN}`,
+  `/start-dashboard-71510.css?v=${BUILD_TOKEN}`,
   '/icon-192.png',
   '/icon-512.png'
+];
+
+const LEGACY_VISUAL_FILES=[
+  'futuristic-analog-7140',
+  'dashboard-analog-7141',
+  'dashboard-premium-7143',
+  'start-cockpit-7144'
 ];
 
 function fetchWithTimeout(input,init={},timeoutMs=NETWORK_TIMEOUT_MS){
@@ -41,64 +37,52 @@ function fetchWithTimeout(input,init={},timeoutMs=NETWORK_TIMEOUT_MS){
   return fetch(input,{...init,signal:controller.signal}).finally(()=>clearTimeout(timer));
 }
 
+function stripLegacyVisualTags(html){
+  let result=html;
+  for(const base of LEGACY_VISUAL_FILES){
+    result=result
+      .replace(new RegExp(`<link[^>]+href=["'][^"']*${base}\\.css[^"']*["'][^>]*>\\s*`,'gi'),'')
+      .replace(new RegExp(`<script[^>]+src=["'][^"']*${base}\\.js[^"']*["'][^>]*><\\/script>\\s*`,'gi'),'');
+  }
+  return result;
+}
+
 function rewriteIndexHtml(html){
-  let rewritten=String(html||'')
+  let out=stripLegacyVisualTags(String(html||''))
     .replace(/(<meta\s+name=["']mijnserenity-build["']\s+content=["'])[^"']+(["']\s*\/?>)/i,`$1${BUILD}$2`)
     .replace(/window\.MIJSERENITY_BUILD\s*=\s*['"][^'"]+['"]\s*;/g,`window.MIJSERENITY_BUILD='${BUILD}';`)
     .replace(/auth-bootstrap\.js\?v=\d+/g,`auth-bootstrap.js?v=${BUILD_TOKEN}`)
     .replace(/app\.js\?v=\d+/g,`app.js?v=${BUILD_TOKEN}`)
     .replace(/dashboard-unified-71919-loader\.js\?v=\d+/g,`dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`)
     .replace(/simple-start-8210\.js\?v=\d+/g,`simple-start-8210.js?v=${BUILD_TOKEN}`)
-    .replace(/ais-gps-fix-8221\.js\?v=\d+/g,`ais-gps-fix-8221.js?v=${BUILD_TOKEN}`)
-    .replace(/start-cockpit-7144\.js\?v=\d+/g,`start-cockpit-7144.js?v=${BUILD_TOKEN}`)
     .replace(/start-dashboard-71510\.js\?v=\d+/g,`start-dashboard-71510.js?v=${BUILD_TOKEN}`)
-    .replace(/start-yacht-nav-8255\.js\?v=\d+/g,`start-yacht-nav-8255.js?v=${BUILD_TOKEN}`)
-    .replace(/wind-direction-71512\.js\?v=\d+/g,`wind-direction-71512.js?v=${BUILD_TOKEN}`)
-    .replace(/ruuvi-climate\.js\?v=\d+/g,`ruuvi-climate.js?v=${BUILD_TOKEN}`)
-    .replace(/rws-water-temp-8233\.js\?v=\d+/g,`rws-water-temp-8233.js?v=${BUILD_TOKEN}`)
-    .replace(/update-prompt\.js\?v=\d+/g,`update-prompt.js?v=${BUILD_TOKEN}`)
-    .replace(/<script[^>]+src=["'][^"']*receipt-ocr-fix-8234\.js[^"']*["'][^>]*><\/script>\s*/gi,'')
-    .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`)
-    .replace(/\\n(?=\s*<\/body>)/gi,'\n');
+    .replace(/runtime-stability-8202\.js\?v=\d+/g,`runtime-stability-8202.js?v=${BUILD_TOKEN}`)
+    .replace(/start-dashboard-71510\.css\?v=\d+/g,`start-dashboard-71510.css?v=${BUILD_TOKEN}`);
 
-  /* Ook wanneer het bron-indexbestand nog een oude versie bevat, wint deze release. */
-  if(!/name=["']mijnserenity-build["']/i.test(rewritten)){
-    rewritten=rewritten.replace(/<head([^>]*)>/i,`<head$1>\n<meta name="mijnserenity-build" content="${BUILD}">`);
-  }
-  if(!/window\.MIJSERENITY_BUILD\s*=/.test(rewritten)){
-    rewritten=rewritten.replace(/<\/head>/i,`<script>window.MIJSERENITY_BUILD='${BUILD}';</script>\n</head>`);
+  if(!/name=["']mijnserenity-build["']/i.test(out)){
+    out=out.replace(/<head([^>]*)>/i,`<head$1>\n<meta name="mijnserenity-build" content="${BUILD}">`);
   }
 
-  /* Fail-safe voor iOS/PWA: de lichte Startmodule is klein en mag direct mee. */
-  if(!/simple-start-8210\.js/i.test(rewritten)){
-    rewritten=rewritten.replace(/<\/body>/i,`<script src="/simple-start-8210.js?v=${BUILD_TOKEN}"></script>\n</body>`);
+  if(!/id=["']ms8290InitialGuard["']/i.test(out)){
+    out=out.replace(/<\/head>/i,`<style id="ms8290InitialGuard">#dashboard>#msMarineGlass,#dashboard>#msDashboardPremium7143,#dashboard>#msStartCockpit7144,#dashboard>#serenityIvms{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}</style>\n</head>`);
   }
 
-  /* AIS-herstel blijft als kleine navigatie-failsafe beschikbaar. */
-  if(!/ais-gps-fix-8221\.js/i.test(rewritten)){
-    rewritten=rewritten.replace(/<\/body>/i,`<script src="/ais-gps-fix-8221.js?v=${BUILD_TOKEN}"></script>\n</body>`);
+  if(!/release-guard-8290\.js/i.test(out)){
+    out=out.replace(/<\/body>/i,`<script src="/release-guard-8290.js?v=${BUILD_TOKEN}"></script>\n</body>`);
   }
-
-  /* Start krijgt altijd het geanimeerde VriJon-motorjacht, ook na een PWA-cache-update. */
-  if(!/start-yacht-nav-8255\.js/i.test(rewritten)){
-    rewritten=rewritten.replace(/<\/body>/i,`<script src="/start-yacht-nav-8255.js?v=${BUILD_TOKEN}"></script>\n</body>`);
-  }
-
-  /* Bon-OCR wordt bewust NIET op Start geïnjecteerd. De bootstrap laadt hem
-     pas wanneer Kosten wordt geopend. */
-  return rewritten;
+  return out;
 }
 
-async function rewrittenHtmlResponse(response){
+async function htmlResponse(response){
   if(!response)return null;
   try{
     const type=String(response.headers.get('content-type')||'');
     if(!type.includes('text/html'))return response;
-    const html=rewriteIndexHtml(await response.text());
+    const body=rewriteIndexHtml(await response.text());
     const headers=new Headers(response.headers);
     headers.set('cache-control','no-store, max-age=0, must-revalidate');
     headers.set('x-mijnserenity-build',BUILD);
-    return new Response(html,{status:response.status,statusText:response.statusText,headers});
+    return new Response(body,{status:response.status,statusText:response.statusText,headers});
   }catch{
     return response;
   }
@@ -106,16 +90,16 @@ async function rewrittenHtmlResponse(response){
 
 async function cacheCore(cache,path){
   try{
-    const response=await fetchWithTimeout(path,{cache:'reload'},20000);
+    const response=await fetchWithTimeout(path,{cache:'reload'},18000);
     if(!response.ok)return;
     if(path==='/'||path==='/index.html'){
-      const rewritten=await rewrittenHtmlResponse(response.clone());
+      const rewritten=await htmlResponse(response.clone());
       if(rewritten)await cache.put(path,rewritten);
-      return;
+    }else{
+      await cache.put(path,response);
     }
-    await cache.put(path,response);
   }catch(error){
-    console.warn('Core asset niet vooraf opgeslagen:',path,error);
+    console.warn('MijnSerenity core-asset overgeslagen:',path,error);
   }
 }
 
@@ -130,16 +114,13 @@ self.addEventListener('install',event=>{
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     const keys=await caches.keys();
-    await Promise.all(
-      keys.filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME).map(key=>caches.delete(key))
-    );
+    await Promise.all(keys.filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME).map(key=>caches.delete(key)));
     await self.clients.claim();
 
-    /* iOS kan een oude standalone-PWA open laten terwijl de nieuwe worker al
-       actief is. Navigeer elk open venster één keer opnieuw met een unieke
-       releaseparameter; zo blijft 8.25.x niet op het scherm hangen. */
-    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    await Promise.all(windows.map(async client=>{
+    /* Eén geforceerde navigatie bij deze release voorkomt dat iOS een oude
+       standalone-PWA-snapshot (zoals 8.25.8 Marine Glass) blijft tonen. */
+    const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    await Promise.all(clients.map(async client=>{
       try{
         const url=new URL(client.url);
         if(url.origin!==self.location.origin)return;
@@ -155,30 +136,11 @@ self.addEventListener('message',event=>{
   if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });
 
-async function networkFirst(request,fallbackPath=null){
-  let networkResponse=null;
-  try{
-    networkResponse=await fetchWithTimeout(request,{cache:'no-store'});
-    if(networkResponse.ok){
-      const cache=await caches.open(CACHE_NAME);
-      cache.put(request,networkResponse.clone()).catch(()=>{});
-      if(fallbackPath)cache.put(fallbackPath,networkResponse.clone()).catch(()=>{});
-      return networkResponse;
-    }
-  }catch{}
-
-  const cached=(await caches.match(request,{ignoreSearch:false}))
-    ||(fallbackPath?await caches.match(fallbackPath):null);
-  if(cached)return cached;
-  if(networkResponse)return networkResponse;
-  return new Response('',{status:503});
-}
-
 async function navigationNetworkFirst(request){
   try{
-    const network=await fetchWithTimeout(request,{cache:'no-store'},10000);
+    const network=await fetchWithTimeout(request,{cache:'no-store'},11000);
     if(network.ok){
-      const rewritten=await rewrittenHtmlResponse(network);
+      const rewritten=await htmlResponse(network);
       if(rewritten){
         const cache=await caches.open(CACHE_NAME);
         cache.put('/index.html',rewritten.clone()).catch(()=>{});
@@ -187,16 +149,23 @@ async function navigationNetworkFirst(request){
       }
     }
   }catch{}
-
   const cached=(await caches.match('/index.html'))||(await caches.match('/'));
-  if(cached){
-    const rewritten=await rewrittenHtmlResponse(cached);
-    if(rewritten)return rewritten;
-  }
-  return new Response('MijnSerenity kon niet worden geladen.',{
-    status:503,
-    headers:{'content-type':'text/plain; charset=utf-8'}
-  });
+  if(cached)return (await htmlResponse(cached))||cached;
+  return new Response('MijnSerenity kon niet worden geladen.',{status:503,headers:{'content-type':'text/plain; charset=utf-8'}});
+}
+
+async function networkFirst(request){
+  let network=null;
+  try{
+    network=await fetchWithTimeout(request,{cache:'no-store'});
+    if(network.ok){
+      const cache=await caches.open(CACHE_NAME);
+      cache.put(request,network.clone()).catch(()=>{});
+      return network;
+    }
+  }catch{}
+  const cached=await caches.match(request,{ignoreSearch:false});
+  return cached||network||new Response('',{status:503});
 }
 
 async function staleWhileRevalidate(request){
@@ -208,11 +177,7 @@ async function staleWhileRevalidate(request){
     }
     return response;
   }).catch(()=>null);
-
-  if(cached){
-    network.catch(()=>{});
-    return cached;
-  }
+  if(cached){network.catch(()=>{});return cached}
   return (await network)||new Response('',{status:503});
 }
 
@@ -221,37 +186,23 @@ self.addEventListener('fetch',event=>{
   if(request.method!=='GET')return;
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
+  if(url.pathname.startsWith('/victron-gui/')||url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
 
-  if(url.pathname.startsWith('/victron-gui/'))return;
-  if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/'))return;
-
-  /* Vanaf 8.28.3 krijgt navigatie altijd eerst de live index. Alleen offline
-     vallen we terug op cache. Dit voorkomt dat iPhone/PWA een oude release
-     blijft tonen terwijl GitHub/Netlify al verder is. */
   if(request.mode==='navigate'){
     event.respondWith(navigationNetworkFirst(request));
     return;
   }
 
-  /* Hotfixmodules moeten nooit één sessie achterlopen op iPhone/PWA. */
-  if(
-    url.pathname==='/runtime-stability-8202.js'||
-    url.pathname==='/auth-bootstrap.js'||
-    url.pathname==='/update-prompt.js'||
-    url.pathname==='/ais-gps-fix-8221.js'||
-    url.pathname==='/live-split.js'||
-    url.pathname==='/rws-nearby.js'||
-    url.pathname==='/start-dashboard-71510.js'||
-    url.pathname==='/start-yacht-nav-8255.js'
-  ){
+  const critical=new Set([
+    '/auth-bootstrap.js','/dashboard-unified-71919-loader.js','/simple-start-8210.js',
+    '/start-dashboard-71510.js','/release-guard-8290.js','/runtime-stability-8202.js',
+    '/dashboard-pro-71700.js'
+  ]);
+  if(critical.has(url.pathname)){
     event.respondWith(networkFirst(request));
     return;
   }
 
-  if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){
-    event.respondWith(staleWhileRevalidate(request));
-    return;
-  }
   event.respondWith(staleWhileRevalidate(request));
 });
 
