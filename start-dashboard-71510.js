@@ -1,383 +1,490 @@
-/* MijnSerenity 8.28.7 — iPad/Safari hero-, navigatie- en layoutfix. */
+/* MijnSerenity 8.30.0 — één canonieke Start-runtime, zonder historische patchketen. */
 (()=>{
   'use strict';
-  if(window.__ms8287StartFix)return;
-  window.__ms8287StartFix=true;
+  if(window.__msStart8300)return;
+  window.__msStart8300=true;
 
-  const BUILD='8.28.7';
-  const PRIOR='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@0261da95450099f9fef74f16b8ba20acd0f9e507/start-dashboard-71510.js?v=828700';
-  const PHOTO='/assets/serenity-hero-8275.jpg?v=828700';
-  const PHOTO_FALLBACK='/assets/serenity-hero-8274.jpg?v=828700';
-  const STYLE_ID='ms8287StartFixStyle';
-  const CONTROLS_ID='ms8287ReleaseControls';
-  const HIDDEN_ATTR='data-ms8287-hidden';
+  /* Compatibiliteitsguards: oude loaders hoeven niets meer over deze Start heen te leggen. */
+  window.__msSimpleStart8210=true;
+  window.__msDashboardLoader8234=true;
+  window.__ms8280Header=true;
+  window.__msStartStatus8265=true;
+  window.__msStartIphone8262=true;
+  window.__msStartLive8258=true;
+  window.__msPolish8256=true;
+  window.__msReferenceDashboard8254=true;
+  window.__msPersonalWelcome8253=true;
+  window.__msDayNightChoice8252=true;
+  window.__msDayNight8250=true;
 
-  let appObserver=null;
+  const BUILD='8.30.0';
+  const TOKEN='830000';
+  const ROOT_ID='ms8210Start';
+  const THEME_KEY='mijnserenity-daynight-v1';
+  const $=id=>document.getElementById(id);
+  let refreshTimer=0;
+  let weatherAt=0;
+  let weatherBusy=false;
   let dashboardObserver=null;
-  let rootObserver=null;
-  let initialising=false;
-  let initialised=false;
-  let scheduled=false;
+  let refreshQueued=false;
 
-  const norm=value=>String(value||'').replace(/\s+/g,' ').trim();
-
-  function appVisible(){
-    const app=document.getElementById('appView');
-    return !!(app&&!app.classList.contains('hidden')&&app.getAttribute('aria-hidden')!=='true');
-  }
-
-  function dashboardVisible(){
-    if(!appVisible())return false;
-    const dashboard=document.getElementById('dashboard');
-    if(!dashboard||dashboard.classList.contains('hidden')||dashboard.getAttribute('aria-hidden')==='true')return false;
-    try{
-      const style=getComputedStyle(dashboard);
-      return style.display!=='none'&&style.visibility!=='hidden';
-    }catch{return true;}
-  }
+  const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+  const finite=value=>{
+    if(value===null||value===undefined||value===''||typeof value==='boolean')return null;
+    const n=Number(String(value).replace(',','.'));
+    return Number.isFinite(n)?n:null;
+  };
+  const numberFrom=value=>{
+    const match=String(value??'').replace(',','.').match(/-?\d+(?:\.\d+)?/);
+    return match?Number(match[0]):null;
+  };
+  const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+  const text=id=>String($(id)?.textContent||'').trim();
+  const validText=value=>{
+    const v=String(value??'').replace(/\s+/g,' ').trim();
+    return v&&!/^(?:undefined|null|–|-|—|geen data|onbekend)$/i.test(v)?v:'';
+  };
+  const firstText=(ids,fallback='')=>{
+    for(const id of ids){const v=validText(text(id));if(v)return v;}
+    return fallback;
+  };
+  const setText=(id,value)=>{const node=$(id);if(node&&node.textContent!==String(value))node.textContent=String(value)};
+  const fmt=(value,digits=1)=>Number(value).toLocaleString('nl-NL',{minimumFractionDigits:digits,maximumFractionDigits:digits});
 
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
     const meta=document.querySelector('meta[name="mijnserenity-build"]');
     if(meta)meta.content=BUILD;
-    const settings=document.getElementById('settingsAppVersion');
+    const settings=$('settingsAppVersion');
     if(settings)settings.textContent=BUILD;
     document.querySelectorAll('[data-ms-build-version]').forEach(node=>node.textContent=BUILD);
+    document.querySelectorAll('.ms8287-version,.ms8286-version,.ms8285-version').forEach(node=>node.textContent=`v${BUILD}`);
+  }
 
-    document.querySelectorAll('span,small,strong,em,b').forEach(node=>{
-      const text=norm(node.textContent);
-      if(text==='7.18.13'||text==='8.28.6'){
-        const cls=String(node.className||'').toLowerCase();
-        if(text==='7.18.13'||cls.includes('version')||cls.includes('build'))node.textContent=BUILD;
+  function profileFirstName(){
+    const raw=window.currentProfile?.display_name||window.currentProfile?.name||window.currentUser?.user_metadata?.full_name||window.currentUser?.user_metadata?.name||'';
+    return String(raw||'').trim().split(/\s+/)[0]||'';
+  }
+
+  function greeting(){
+    const hour=new Date().getHours();
+    const word=hour<12?'Goedemorgen':hour<18?'Goedemiddag':'Goedenavond';
+    const name=profileFirstName();
+    return name?`${word} ${name}`:word;
+  }
+
+  function navigate(route){
+    if(!route)return;
+    if(route==='more'){openMore();return;}
+    if(route==='dashboard'){
+      const home=document.querySelector('.bottom-nav .bottom-nav-item[data-target="dashboard"]');
+      try{
+        if(typeof window.captainNavigate==='function'){window.captainNavigate('dashboard',home||null);return;}
+        if(home){home.click();return;}
+      }catch{}
+      const app=$('appView');
+      const dashboard=$('dashboard');
+      if(app&&dashboard){
+        [...app.querySelectorAll(':scope > section[id]')].forEach(section=>{
+          const active=section===dashboard;
+          section.classList.toggle('hidden',!active);
+          section.setAttribute('aria-hidden',active?'false':'true');
+        });
       }
-    });
+      syncRouteChrome('dashboard');
+      return;
+    }
+    try{
+      if(route==='rws'&&typeof window.ms795OpenRws==='function'){window.ms795OpenRws();return;}
+      const button=document.querySelector(`.bottom-nav .bottom-nav-item[data-target="${CSS.escape(route)}"]`);
+      if(typeof window.captainNavigate==='function'){window.captainNavigate(route,button||null);return;}
+      if(typeof window.ms708GoToPage==='function'){window.ms708GoToPage(route,true);return;}
+      document.querySelector(`.tabs [data-target="${CSS.escape(route)}"]`)?.click();
+    }catch(error){console.warn(`MijnSerenity: openen van ${route} mislukt.`,error);}
   }
 
   function openMore(){
     try{
-      if(typeof window.ms797OpenMore==='function')return window.ms797OpenMore();
-      const more=document.querySelector('#ms71510Dashboard .ms71510-more,.ms71510-more,[data-ms-more]');
-      if(more)return more.click();
-    }catch(error){console.warn('MijnSerenity: Meer openen mislukt.',error);}
+      if(typeof window.ms797OpenMore==='function'){window.ms797OpenMore();return;}
+      const existing=$('ms8202More')||$('mgMore')||$('msIpadMore71917')||$('ms71919More');
+      if(existing){existing.classList.remove('hidden');return;}
+    }catch{}
+    navigate('settings');
   }
 
-  function ensureControls(){
-    document.getElementById('ms8286ReleaseControls')?.remove();
-    document.getElementById('ms8285ReleaseControls')?.remove();
-    let controls=document.getElementById(CONTROLS_ID);
-    if(!controls){
-      controls=document.createElement('div');
-      controls.id=CONTROLS_ID;
-      controls.setAttribute('aria-label','MijnSerenity versie en menu');
-      controls.innerHTML=`<span class="ms8287-version">v${BUILD}</span><button type="button" class="ms8287-more" aria-label="Meer opties openen"><span aria-hidden="true">☰</span><strong>Meer</strong></button>`;
-      document.body.appendChild(controls);
-      controls.querySelector('.ms8287-more')?.addEventListener('click',openMore);
+  function ensureBottomNav(){
+    let nav=document.querySelector('.bottom-nav');
+    if(!nav){
+      nav=document.createElement('nav');
+      nav.className='bottom-nav';
+      document.body.appendChild(nav);
     }
-    syncControls();
-    return controls;
-  }
-
-  function syncControls(){
-    const controls=document.getElementById(CONTROLS_ID);
-    if(!controls)return;
-    const show=dashboardVisible();
-    controls.classList.toggle('is-visible',show);
-    controls.setAttribute('aria-hidden',show?'false':'true');
-  }
-
-  function installStyle(){
-    document.getElementById('ms8286StartFixStyle')?.remove();
-    document.getElementById('ms8285StartFixStyle')?.remove();
-    let style=document.getElementById(STYLE_ID);
-    if(!style){
-      style=document.createElement('style');
-      style.id=STYLE_ID;
-    }
-    style.textContent=`
-      [${HIDDEN_ATTR}]{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;pointer-events:none!important}
-
-      #ms8210Start .ms8280-header{
-        position:relative!important;
-        isolation:isolate!important;
-        display:flex!important;
-        visibility:visible!important;
-        opacity:1!important;
-        overflow:hidden!important;
-        min-height:clamp(420px,48vw,610px)!important;
-        padding:clamp(22px,2.8vw,34px)!important;
-        background:#031522!important;
-      }
-      #ms8210Start .ms8280-photo{
-        position:absolute!important;
-        inset:0!important;
-        z-index:0!important;
-        display:block!important;
-        visibility:visible!important;
-        opacity:1!important;
-        width:100%!important;
-        height:100%!important;
-        object-fit:cover!important;
-        object-position:58% 52%!important;
-        filter:none!important;
-      }
-      #ms8210Start .ms8280-overlay{
-        position:absolute!important;
-        inset:0!important;
-        z-index:1!important;
-        display:block!important;
-        visibility:visible!important;
-        opacity:1!important;
-        background:
-          linear-gradient(90deg,rgba(1,14,24,.86) 0%,rgba(1,14,24,.66) 31%,rgba(1,14,24,.28) 58%,rgba(1,14,24,.07) 82%,rgba(1,14,24,.02) 100%),
-          linear-gradient(0deg,rgba(1,12,20,.64) 0%,rgba(1,12,20,.10) 50%,rgba(1,12,20,.02) 75%)!important;
-      }
-      #ms8210Start .ms8280-topbar,
-      #ms8210Start .ms8280-content{position:relative!important;z-index:3!important}
-      #ms8210Start .ms8280-topbar{display:grid!important;visibility:visible!important;opacity:1!important;min-height:86px!important}
-      #ms8210Start .ms8280-brand{display:block!important;visibility:visible!important;opacity:1!important;min-width:0!important}
-      #ms8210Start .ms8280-brand-title{
-        display:block!important;visibility:visible!important;opacity:1!important;
-        color:#2bcdf4!important;font-size:clamp(48px,5.4vw,72px)!important;
-        text-shadow:0 3px 18px rgba(0,0,0,.55)!important
-      }
-      #ms8210Start .ms8280-brand-tagline{display:block!important;visibility:visible!important;opacity:1!important;color:#fff!important}
-      #ms8210Start .ms8280-content{width:min(650px,64%)!important;margin-top:clamp(34px,4.2vw,60px)!important}
-      #ms8210Start .ms8280-title{font-size:clamp(44px,4.8vw,62px)!important}
-      #ms8210Start .ms8280-subtitle{margin:12px 0 16px!important}
-      #ms8210Start .ms8280-live-button{min-height:58px!important}
-      #ms8210Start .ms8280-status-grid{margin-top:12px!important}
-
-      body.ms8287-dashboard-active nav.bottom-nav,
-      body.ms8287-dashboard-active .bottom-nav.ms8214-nav{display:none!important;visibility:hidden!important;pointer-events:none!important}
-
-      body.ms8287-subpage-active nav.bottom-nav,
-      body.ms8287-subpage-active .bottom-nav.ms8214-nav{
-        height:calc(54px + env(safe-area-inset-bottom))!important;
-        min-height:calc(54px + env(safe-area-inset-bottom))!important;
-        padding-bottom:env(safe-area-inset-bottom)!important;
-      }
-      body.ms8287-subpage-active .bottom-nav .bottom-nav-item[data-target="dashboard"]{
-        height:54px!important;min-height:54px!important;padding-top:5px!important;padding-bottom:5px!important
-      }
-      body.ms8287-subpage-active .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-logo{width:34px!important;height:34px!important;flex-basis:34px!important}
-      body.ms8287-subpage-active .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-copy strong{font-size:14px!important}
-      body.ms8287-subpage-active .bottom-nav .bottom-nav-item[data-target="dashboard"] .ms8219-home-copy small{display:none!important}
-      body.ms8287-subpage-active #appView{padding-bottom:calc(62px + env(safe-area-inset-bottom))!important}
-
-      #${CONTROLS_ID}{
-        position:fixed!important;z-index:2147483200!important;
-        top:calc(env(safe-area-inset-top,0px) + 10px)!important;
-        right:max(12px,env(safe-area-inset-right,0px))!important;
-        left:auto!important;display:none!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;
-        pointer-events:none!important;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif!important
-      }
-      #${CONTROLS_ID}.is-visible{display:flex!important}
-      #${CONTROLS_ID} .ms8287-version{pointer-events:auto!important;display:inline-flex!important;align-items:center!important;min-height:30px!important;padding:6px 10px!important;border:1px solid rgba(102,220,255,.28)!important;border-radius:999px!important;background:rgba(2,22,35,.84)!important;color:#98e7ff!important;box-shadow:0 6px 18px rgba(0,0,0,.24)!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;font-size:11px!important;line-height:1!important;font-weight:850!important}
-      #${CONTROLS_ID} .ms8287-more{pointer-events:auto!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:40px!important;padding:8px 12px!important;margin:0!important;border:1px solid rgba(102,220,255,.30)!important;border-radius:14px!important;background:rgba(2,27,43,.92)!important;color:#fff!important;box-shadow:0 7px 20px rgba(0,0,0,.28)!important;font-size:13px!important;line-height:1!important;font-weight:850!important}
-      #${CONTROLS_ID} .ms8287-more span{font-size:16px!important}
-
-      @media(max-width:760px){
-        #ms8210Start .ms8280-header{min-height:430px!important}
-        #ms8210Start .ms8280-photo{object-position:64% 52%!important}
-        #ms8210Start .ms8280-content{width:72%!important}
-      }
-      @media(max-width:620px) and (orientation:portrait){
-        #ms8210Start .ms8280-header{min-height:470px!important;padding:18px 16px 20px!important}
-        #ms8210Start .ms8280-photo{object-position:68% 52%!important}
-        #ms8210Start .ms8280-topbar{min-height:78px!important}
-        #ms8210Start .ms8280-brand-title{font-size:46px!important}
-        #ms8210Start .ms8280-content{width:100%!important;margin-top:clamp(48px,14vw,78px)!important}
-        #ms8210Start .ms8280-title{font-size:clamp(39px,11vw,49px)!important}
-        #${CONTROLS_ID} .ms8287-version{display:none!important}
-      }
-    `;
-
-    if(style.parentNode)style.parentNode.removeChild(style);
-    (document.head||document.documentElement).appendChild(style);
-  }
-
-  function loadPrior(){
-    if(window.__ms8280Header)return Promise.resolve();
-    return new Promise(resolve=>{
-      let script=document.querySelector('script[data-ms8287-prior]');
-      if(script){
-        if(window.__ms8280Header)return resolve();
-        script.addEventListener('load',resolve,{once:true});
-        script.addEventListener('error',resolve,{once:true});
-        setTimeout(resolve,7000);
-        return;
-      }
-      script=document.createElement('script');
-      script.src=PRIOR;
-      script.async=false;
-      script.crossOrigin='anonymous';
-      script.dataset.ms8287Prior='1';
-      script.onload=resolve;
-      script.onerror=()=>{console.error('MijnSerenity 8.28.7: basisheader kon niet laden.');resolve();};
-      (document.head||document.documentElement).appendChild(script);
-      setTimeout(resolve,7000);
-    });
-  }
-
-  function hideNode(node){
-    if(!node||node.id==='dashboard'||node.id==='ms8210Start')return false;
-    node.setAttribute(HIDDEN_ATTR,'1');
-    node.hidden=true;
-    node.setAttribute('aria-hidden','true');
-    return true;
-  }
-
-  function looksLikeStartHero(node){
-    if(!node)return false;
-    const text=norm(node.textContent).toLowerCase();
-    return text.includes('klaar om te gaan varen')||text.includes('start live varen');
-  }
-
-  function suppressDuplicateHeroes(){
-    const dashboard=document.getElementById('dashboard');
-    const root=document.getElementById('ms8210Start');
-    if(!dashboard||!root)return false;
-
-    const moderns=[...root.querySelectorAll('.ms8280-header')];
-    const keep=moderns[0]||null;
-    if(!keep)return false;
-
-    moderns.slice(1).forEach(hideNode);
-
-    const candidates=[...dashboard.querySelectorAll('.ms8234-header,.ms8210-header,.ms71514-hero,.ms71510-hero,.ms71510-start-hero,.dashboard-hero,.start-hero')];
-    candidates.forEach(node=>{
-      if(node===keep||node.contains(keep)||keep.contains(node))return;
-      hideNode(node);
-    });
-
-    [...dashboard.querySelectorAll('h1,h2,h3,[role="heading"]')].forEach(heading=>{
-      if(keep.contains(heading))return;
-      const text=norm(heading.textContent).toLowerCase();
-      if(!text.includes('klaar om te gaan varen'))return;
-      let node=heading.closest('header,.hero,[class*="hero"],.card');
-      if(!node||node===dashboard||node===root)node=heading.parentElement;
-      if(node&&node!==dashboard&&node!==root&&looksLikeStartHero(node))hideNode(node);
-    });
-
-    return true;
-  }
-
-  function ensureHeroPhoto(){
-    const hero=document.querySelector('#ms8210Start .ms8280-header');
-    if(!hero)return false;
-    let photo=hero.querySelector('.ms8280-photo');
-    if(!photo){
-      photo=document.createElement('img');
-      photo.className='ms8280-photo';
-      photo.alt='';
-      photo.setAttribute('aria-hidden','true');
-      hero.prepend(photo);
-    }
-    if(!photo.getAttribute('src')||!photo.getAttribute('src').includes('serenity-hero-8275.jpg'))photo.src=PHOTO;
-    photo.hidden=false;
-    photo.removeAttribute('hidden');
-    photo.setAttribute('aria-hidden','true');
-    photo.onerror=()=>{
-      if(!photo.src.includes('serenity-hero-8274.jpg'))photo.src=PHOTO_FALLBACK;
+    const needed=['dashboard','live','map','planner','technical'];
+    const existing=[...nav.querySelectorAll(':scope > .bottom-nav-item')].map(node=>node.dataset.target);
+    if(needed.every(item=>existing.includes(item)))return nav;
+    nav.innerHTML=`
+      <button type="button" class="bottom-nav-item" data-target="dashboard"><span>⌂</span><small>Start</small></button>
+      <button type="button" class="bottom-nav-item" data-target="live"><span>▶</span><small>Varen</small></button>
+      <button type="button" class="bottom-nav-item" data-target="map"><span>⌖</span><small>Kaart</small></button>
+      <button type="button" class="bottom-nav-item" data-target="planner"><span>◇</span><small>Route</small></button>
+      <button type="button" class="bottom-nav-item" data-target="technical"><span>⚙</span><small>Techniek</small></button>`;
+    nav.onclick=event=>{
+      const button=event.target.closest('.bottom-nav-item[data-target]');
+      if(button)navigate(button.dataset.target);
     };
-    hero.dataset.msHeroBuild='8287';
-    return true;
+    return nav;
   }
 
-  function syncLayoutState(){
+  function activeRoute(){
+    const app=$('appView');
+    if(!app||app.classList.contains('hidden')||app.getAttribute('aria-hidden')==='true')return '';
+    const sections=[...app.querySelectorAll(':scope > section[id]')];
+    const visible=sections.find(section=>!section.classList.contains('hidden')&&section.getAttribute('aria-hidden')!=='true');
+    return String(visible?.id||'dashboard').toLowerCase();
+  }
+
+  function syncRouteChrome(preferred=''){
     const body=document.body;
     if(!body)return;
-    const onStart=dashboardVisible();
-    body.classList.toggle('ms8287-dashboard-active',onStart);
-    body.classList.toggle('ms8287-subpage-active',appVisible()&&!onStart);
-    if(onStart){
-      body.classList.add('ms8219-start-page');
-      body.classList.remove('ms8219-sub-page');
-    }
-  }
-
-  function applyFixes(){
-    if(!appVisible())return false;
-    syncBuild();
-    syncLayoutState();
-    installStyle();
-    ensureControls();
-    const photoOk=ensureHeroPhoto();
-    suppressDuplicateHeroes();
-    syncControls();
-    return photoOk;
-  }
-
-  function scheduleApply(){
-    if(scheduled)return;
-    scheduled=true;
-    requestAnimationFrame(()=>{
-      scheduled=false;
-      applyFixes();
+    const route=String(preferred||activeRoute()||'dashboard').toLowerCase();
+    const onStart=route==='dashboard';
+    body.classList.toggle('ms8300-start-page',onStart);
+    body.classList.toggle('ms8300-sub-page',!onStart&&Boolean(route));
+    ensureBottomNav();
+    document.querySelectorAll('.bottom-nav .bottom-nav-item').forEach(button=>{
+      const isActive=button.dataset.target===route;
+      button.classList.toggle('active',isActive);
+      if(isActive)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
     });
   }
 
-  function observe(){
-    const root=document.getElementById('ms8210Start');
-    if(root&&!rootObserver){
-      rootObserver=new MutationObserver(scheduleApply);
-      rootObserver.observe(root,{childList:true,subtree:true});
-    }
-    const dashboard=document.getElementById('dashboard');
-    if(dashboard&&!dashboardObserver){
-      dashboardObserver=new MutationObserver(scheduleApply);
-      dashboardObserver.observe(dashboard,{childList:true,subtree:true,attributes:true,attributeFilter:['class','aria-hidden']});
-    }
-    const app=document.getElementById('appView');
-    if(app&&!appObserver){
-      appObserver=new MutationObserver(()=>{
-        syncLayoutState();
-        syncControls();
-        if(appVisible()){
-          void initialise();
-          scheduleApply();
-        }
-      });
-      appObserver.observe(app,{attributes:true,attributeFilter:['class','aria-hidden']});
-    }
-  }
-
-  async function initialise(){
-    if(initialised||initialising||!appVisible())return;
-    initialising=true;
+  function readTheme(){
     try{
-      ensureControls();
-      await loadPrior();
-      installStyle();
-      for(let i=0;i<80;i++){
-        if(applyFixes())break;
-        await new Promise(resolve=>setTimeout(resolve,100));
-      }
-      observe();
-      [250,700,1500,3000,6000].forEach(ms=>setTimeout(scheduleApply,ms));
-      initialised=true;
-      console.info('MijnSerenity 8.28.7: Serenity-foto, enkele hero en nette navigatie actief.');
-    }finally{
-      initialising=false;
+      const own=localStorage.getItem(THEME_KEY);
+      if(own==='day'||own==='night')return own;
+      const mode=window.serenityDayNight?.mode?.();
+      if(mode==='day'||mode==='night')return mode;
+    }catch{}
+    return 'night';
+  }
+
+  function applyTheme(mode,save=false){
+    const next=mode==='day'?'day':'night';
+    document.documentElement.dataset.msDaynight=next;
+    if(save){try{localStorage.setItem(THEME_KEY,next)}catch{}}
+    const button=$('ms8300Theme');
+    if(button){
+      button.innerHTML=next==='night'?'<span aria-hidden="true">☾</span><strong>Nacht</strong>':'<span aria-hidden="true">☀</span><strong>Dag</strong>';
+      button.setAttribute('aria-label',next==='night'?'Schakel naar dagweergave':'Schakel naar nachtweergave');
     }
+    window.dispatchEvent(new CustomEvent('mijnserenity:theme-changed',{detail:{mode:next,build:BUILD}}));
   }
 
-  function boot(){
+  function toggleTheme(){applyTheme(readTheme()==='night'?'day':'night',true);}
+
+  function card(id,icon,label,sub=''){
+    return `<div class="ms8300-status" id="${id}Card"><span class="ms8300-status-icon" aria-hidden="true">${icon}</span><span class="ms8300-status-copy"><small>${esc(label)}</small><strong id="${id}">–</strong><em id="${id}Sub">${esc(sub)}</em></span></div>`;
+  }
+  function ringCard(id,icon,label,sub=''){
+    return `<div class="ms8300-status" id="${id}Card"><span class="ms8300-ring" id="${id}Ring"><span aria-hidden="true">${icon}</span></span><span class="ms8300-status-copy"><small>${esc(label)}</small><strong id="${id}">–</strong><em id="${id}Sub">${esc(sub)}</em></span></div>`;
+  }
+  function feature(route,icon,label,sub,badge=false){
+    return `<button type="button" class="ms8300-feature" data-route="${route}">${badge?`<span class="ms8300-feature-badge" id="ms8300Badge-${route}">0</span>`:''}<span class="ms8300-feature-icon" aria-hidden="true">${icon}</span><span class="ms8300-feature-copy"><strong>${esc(label)}</strong><small>${esc(sub)}</small></span></button>`;
+  }
+
+  function build(){
     syncBuild();
-    syncLayoutState();
-    installStyle();
-    observe();
-    if(appVisible())void initialise();
-    ['mijnserenity:dashboard-ready','mijnserenity:boot-complete','mijnserenity:start-requested','mijnserenity:routechange','pageshow','focus','orientationchange']
-      .forEach(type=>window.addEventListener(type,()=>{
-        syncLayoutState();
-        if(appVisible()){
-          void initialise();
-          scheduleApply();
-        }
-      },{passive:true}));
+    const dashboard=$('dashboard');
+    if(!dashboard)return false;
+    let root=$(ROOT_ID);
+    if(!root){
+      root=document.createElement('section');
+      root.id=ROOT_ID;
+      root.className='ms8300-start';
+      root.setAttribute('aria-label','MijnSerenity Start');
+      root.innerHTML=`
+        <header class="ms8300-hero">
+          <img class="ms8300-photo" src="/assets/serenity-hero-8275.jpg?v=${TOKEN}" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
+          <div class="ms8300-overlay" aria-hidden="true"></div>
+          <div class="ms8300-top">
+            <div class="ms8300-brand"><strong>Serenity</strong><small>EXPLORE · NAVIGATE · ENJOY</small></div>
+            <div class="ms8300-actions">
+              <button type="button" id="ms8210Summary" class="ms8300-action" data-route="technical"><span class="count">0</span><strong>Aandacht</strong></button>
+              <button type="button" id="ms8300Theme" class="ms8300-action" aria-label="Weergave wisselen"><span aria-hidden="true">☾</span><strong>Nacht</strong></button>
+              <button type="button" class="ms8300-action" data-route="more"><span aria-hidden="true">☰</span><strong>Meer</strong></button>
+              <span class="ms8300-action ms8300-version" data-ms-build-version>${BUILD}</span>
+            </div>
+          </div>
+          <div class="ms8300-copy">
+            <span class="ms8300-eyebrow" id="ms8300Greeting">${esc(greeting())}</span>
+            <h1>Klaar om te gaan varen?</h1>
+            <p>Ontdek, vaar en geniet. De Serenity ligt klaar. Waar brengt de volgende reis je naartoe?</p>
+            <div class="ms8300-live-metrics" aria-label="Live vaarwaarden">
+              <div class="ms8300-live-metric"><span class="ms8300-live-icon" aria-hidden="true">⌁</span><span class="ms8300-live-copy"><strong id="ms8234Speed">0,0 km/u</strong><small>Snelheid</small></span></div>
+              <div class="ms8300-live-metric"><span class="ms8300-live-icon" aria-hidden="true">⌄</span><span class="ms8300-live-copy"><strong id="ms8234Depth">Geen meting</strong><small>Diepte</small></span></div>
+              <div class="ms8300-live-metric"><span class="ms8300-live-icon" aria-hidden="true">≋</span><span class="ms8300-live-copy"><strong id="ms8234Wind">Geen meting</strong><small>Wind</small></span></div>
+            </div>
+            <button type="button" class="ms8300-start-live" data-route="live"><span aria-hidden="true">▶</span><span>Start live varen</span><span aria-hidden="true">›</span></button>
+          </div>
+        </header>
+        <div class="ms8300-status-grid" aria-label="Bootstatus">
+          ${ringCard('ms8234House','▰','Huishoudaccu','Live via Victron')}
+          ${ringCard('ms8265StartMotor','⚡','Startaccu Motor','Live meting')}
+          ${ringCard('ms8265StartHeck','↯','Startaccu Heckschroef','Live meting')}
+          ${card('ms8234Shore','⌁','Walstroom','Aansluitstatus')}
+          ${ringCard('ms8234Cabin','°','Salon','Ruuvi')}
+          ${ringCard('ms8264EngineTemp','°','Motorruimte','Ruuvi')}
+          ${ringCard('ms8234Water','◒','Drinkwater','Tankniveau')}
+          ${ringCard('ms8234Fuel','◆','Diesel','Tankniveau')}
+        </div>
+        <div class="ms8300-features" aria-label="Onderdelen">
+          ${feature('map','⌖','Kaart','Navigatie & actuele positie')}
+          ${feature('planner','◇','Reisplanner','Plan route & reistijd',true)}
+          ${feature('ais','⌁','AIS','Schepen in de omgeving')}
+          ${feature('weather','☀','Weer','Actueel weer & voorspelling')}
+          ${feature('technical','⚙','Techniek','Energie, tanks & systemen',true)}
+          ${feature('logbook','▤','Logboek','Vaartochten & herinneringen')}
+          ${feature('rws','⚠','Vaarwegberichten','Bruggen, sluizen & meldingen',true)}
+          ${feature('entertainment','⌂','Home Assistant','Boordsystemen bedienen')}
+          ${feature('costs','€','Kosten','Bonnen & uitgaven')}
+          ${feature('finance','▦','Financieel','Overzicht & rapportage')}
+          ${feature('pois','★',"POI's",'Havens & favoriete plekken')}
+          ${feature('settings','⚙','Instellingen','App, koppelingen & beheer')}
+        </div>`;
+      dashboard.prepend(root);
+      root.addEventListener('click',event=>{
+        const button=event.target.closest('[data-route]');
+        if(button)navigate(button.dataset.route);
+      });
+      $('ms8300Theme')?.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();toggleTheme();});
+      const img=root.querySelector('.ms8300-photo');
+      if(img)img.onerror=()=>{if(!img.src.includes('serenity-hero-8274.jpg'))img.src=`/assets/serenity-hero-8274.jpg?v=${TOKEN}`;};
+    }
+    root.hidden=false;
+    root.removeAttribute('aria-hidden');
+    dashboard.classList.add('ms8300-ready');
+    return true;
   }
 
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
-  else boot();
+  function setMissing(id,missing){const card=$(id+'Card');if(card)card.classList.toggle('is-missing',Boolean(missing));}
+  function setRing(id,pct){const ring=$(id+'Ring');if(ring)ring.style.setProperty('--pct',String(clamp(finite(pct)??0,0,100)));}
+
+  function liveSpeedKmh(){
+    const state=window.liveNavState||{};
+    const direct=[state.speedKmh,state.speed_kmh,state.live?.speedKmh,finite($('liveSpeedKmh')?.value),numberFrom(text('liveSpeedKmh'))];
+    for(const value of direct){const n=finite(value);if(n!==null&&n>=0&&n<120)return n;}
+    const textSources=[text('ms71510SpeedKn'),text('liveSpeedKn'),text('liveSpeed'),text('ivmsSpeed')];
+    for(const raw of textSources){
+      const n=numberFrom(raw);if(n===null||n<0||n>100)continue;
+      if(/\bkn\b|knot/i.test(raw))return n*1.852;
+      if(/km\/?u|km\/?h/i.test(raw))return n;
+    }
+    return 0;
+  }
+
+  function liveDepth(){
+    const state=window.liveNavState||{};
+    const candidates=[state.depthM,state.depth,state.live?.depthM,numberFrom(firstText(['liveDepth','ivmsDepth','ms71510Depth']))];
+    for(const value of candidates){const n=finite(value);if(n!==null&&n>=0&&n<500)return n;}
+    return null;
+  }
+
+  function beaufortFromKmh(kmh){
+    const n=finite(kmh);if(n===null)return null;
+    const limits=[1,6,12,20,29,39,50,62,75,89,103,118];
+    const index=limits.findIndex(limit=>n<limit);return index<0?12:index;
+  }
+
+  function liveWindBft(){
+    const direct=[firstText(['ms71510WindBft','weatherWindBft','liveWindBft']),window.liveNavState?.weather?.beaufort,window.weatherState?.beaufort];
+    for(const value of direct){const n=numberFrom(value);if(n!==null&&n>=0&&n<=12)return Math.round(n);}
+    const w=window.liveNavState?.weather||window.weatherState||{};
+    const raw=finite(w.windSpeed??w.wind_speed??w.windSpeedKmh);if(raw===null)return null;
+    const unit=String(w.windSpeedUnit||w.windUnit||w.units?.windSpeed||'').toLowerCase();
+    const kmh=unit.includes('m/s')?raw*3.6:unit.includes('kn')||unit.includes('knot')||!unit?raw*1.852:raw;
+    return beaufortFromKmh(kmh);
+  }
+
+  function outsideTemp(){
+    const w=window.weatherState||{},live=window.liveNavState?.weather||{},vrm=window.MIJSERENITY_VRM_DATA||{};
+    const candidates=[w.temperature,w.temperature_2m,w.current?.temperature_2m,live.temperature,live.temperature_2m,vrm.outside?.temperature,numberFrom(firstText(['weatherCurrentTemp','currentWeatherTemp','ivmsOutsideTemp','ms709WeatherTemp']))];
+    for(const value of candidates){const n=finite(value);if(n!==null&&n>-80&&n<65)return n;}
+    return null;
+  }
+
+  function energy(){return window.MIJSERENITY_VRM_LIVE_ENERGY||{};}
+  function metric(value){return finite(value?.value)??finite(value?.valueFloat)??finite(value?.rawValue)??finite(value);}
+
+  function houseBattery(){
+    const e=energy(),b=e.battery||{};
+    let soc=metric(b.soc)??metric(e.soc)??numberFrom(firstText(['ms71510HouseSoc','ivmsBatterySoc','techHouseSoc','techHouseBatterySoc','liveHouseSoc']));
+    let voltage=metric(b.voltage)??metric(e.batteryVoltage)??numberFrom(firstText(['ms71510HouseVoltage','ivmsBatteryVoltage','techHouseVoltage','liveHouseVoltage']));
+    if(soc!==null)soc=clamp(soc,0,100);
+    return {soc,voltage};
+  }
+
+  function starterVoltage(kind){
+    const e=energy(),d=window.MIJSERENITY_VRM_DIAGNOSTICS||{};
+    if(kind==='motor'){
+      const candidates=[e.battery?.starterVoltage,e.starterVoltage,d.battery?.starterVoltage,d.starterVoltage,numberFrom(firstText(['ms71510StartVoltage','techStartVoltage','liveStartVoltage']))];
+      for(const item of candidates){const n=metric(item);if(n!==null&&n>=8&&n<=16.8)return n;}
+    }
+    const exact=kind==='heck'?['techHeckVoltage','liveHeckVoltage','heckBatteryVoltage','msStartHeckVoltage']:['techMotorStartVoltage'];
+    const source=numberFrom(firstText(exact));if(source!==null&&source>=8&&source<=16.8)return source;
+    try{
+      const states=typeof window.ms730GetStateSnapshot==='function'?window.ms730GetStateSnapshot():[];
+      const patterns=kind==='heck'?/heckschroef|hekschroef|stern\s*thruster|heckaccu|hekaccu/:/startaccu|starter\s*battery|engine\s*battery|motor\s*startaccu/;
+      for(const entity of states){
+        const label=`${entity?.entity_id||''} ${entity?.name||''}`.toLowerCase().replace(/[_-]+/g,' ');
+        const unit=String(entity?.attributes?.unit_of_measurement||'').toLowerCase();
+        const n=finite(entity?.state);
+        if(patterns.test(label)&&(unit==='v'||/voltage|spanning|volt/.test(label))&&n!==null&&n>=8&&n<=16.8)return n;
+      }
+    }catch{}
+    return null;
+  }
+
+  function estimatedSoc(voltage){
+    const v=finite(voltage);if(v===null||v<8||v>16.8)return null;
+    if(v>=12.75)return 100;if(v<=11.5)return 0;
+    return clamp(Math.round(((v-11.5)/(12.75-11.5))*100),0,100);
+  }
+
+  function climate(){
+    let c=null;try{if(typeof window.ms7102GetRuuviClimate==='function')c=window.ms7102GetRuuviClimate();}catch{}
+    const vrm=window.MIJSERENITY_VRM_DATA||{};
+    const salon=c?.salon||{},machine=c?.forward||c?.machinekamer||{};
+    const salonT=finite(salon.temperature)??finite(vrm.salon?.temperature)??numberFrom(firstText(['ivmsCabinTemp','ms7148SalonTemp']));
+    const machineT=finite(machine.temperature)??finite(vrm.machinekamer?.temperature)??finite(vrm.forward?.temperature)??numberFrom(firstText(['ivmsForwardTemp','mgMachineTemp']));
+    return {salon:salonT,machine:machineT};
+  }
+
+  function shoreState(){
+    const e=energy(),ac=e.ac||{};
+    if(typeof ac.shoreConnected==='boolean')return ac.shoreConnected;
+    const voltage=finite(ac.inputVoltage);if(voltage!==null){if(voltage>=180&&voltage<=280)return true;if(voltage<80)return false;}
+    const raw=firstText(['liveShorePower','techShorePowerStatus','ivmsShorePower']).toLowerCase();
+    if(/niet aangesloten|niet verbonden|disconnected|offline|\buit\b|\boff\b/.test(raw))return false;
+    if(/aangesloten|verbonden|connected|active|\baan\b|\bon\b|230\s*v/.test(raw))return true;
+    return false;
+  }
+
+  function tankLevel(kind){
+    const ids=kind==='water'?['techWaterLevel','liveWaterPct','ms71510Water','mg-water']:['techFuelLevel','ms71510Fuel','liveFuelPct','mg-fuel'];
+    const raw=firstText(ids);const n=numberFrom(raw);return n===null?null:clamp(n,0,100);
+  }
+
+  function refreshAttention(){
+    let total=0,critical=0;
+    try{
+      const warnings=typeof window.technicalWarnings==='function'?window.technicalWarnings():[];
+      if(Array.isArray(warnings)){total+=warnings.filter(Boolean).length;critical+=warnings.filter(item=>String(item?.level||'').toLowerCase()==='critical').length;}
+    }catch{}
+    let planner=0;try{if(typeof window.readPlannerDrafts==='function')planner=window.readPlannerDrafts().length||0;}catch{}
+    let rws=0;try{const notices=typeof window.ms710GetRwsNotices==='function'?window.ms710GetRwsNotices():[];rws=Array.isArray(notices)?notices.filter(item=>item&&item.severity!=='info').length:0;}catch{}
+    total+=planner+rws;
+    const summary=$('ms8210Summary');
+    if(summary){summary.classList.toggle('warning',total>0&&!critical);summary.classList.toggle('critical',critical>0);const count=summary.querySelector('.count');if(count)count.textContent=String(Math.min(99,total));const strong=summary.querySelector('strong');if(strong)strong.textContent=total?`${total} aandachtspunt${total===1?'':'en'}`:'Alles in orde';}
+    [['planner',planner],['rws',rws],['technical',Math.max(0,total-planner-rws)]].forEach(([route,count])=>{
+      const badge=$(`ms8300Badge-${route}`);if(!badge)return;badge.textContent=String(Math.min(99,count));badge.classList.toggle('show',count>0);badge.classList.toggle('critical',route==='technical'&&critical>0);
+    });
+  }
+
+  function renderStatus(){
+    setText('ms8300Greeting',greeting().toUpperCase());
+    const speed=liveSpeedKmh();setText('ms8234Speed',`${fmt(speed,1)} km/u`);
+    const depth=liveDepth();setText('ms8234Depth',depth===null?'Geen meting':`${fmt(depth,1)} m`);
+    const bft=liveWindBft();setText('ms8234Wind',bft===null?'Geen meting':`${bft} Bft`);
+
+    const house=houseBattery();
+    setText('ms8234House',house.soc===null?'Geen meting':`${Math.round(house.soc)}%`);
+    setText('ms8234HouseSub',house.voltage===null?'Victron live':`${fmt(house.voltage,2)} V`);
+    setRing('ms8234House',house.soc??0);setMissing('ms8234House',house.soc===null&&house.voltage===null);
+
+    const motor=starterVoltage('motor'),motorSoc=estimatedSoc(motor);
+    setText('ms8265StartMotor',motor===null?'Geen meting':`${fmt(motor,2)} V`);setText('ms8265StartMotorSub',motor===null?'Geen live meting':motor>=13.2?'Wordt geladen':'Startaccu motor');setRing('ms8265StartMotor',motorSoc??0);setMissing('ms8265StartMotor',motor===null);
+    const heck=starterVoltage('heck'),heckSoc=estimatedSoc(heck);
+    setText('ms8265StartHeck',heck===null?'Geen meting':`${fmt(heck,2)} V`);setText('ms8265StartHeckSub',heck===null?'Geen live meting':heck>=13.2?'Wordt geladen':'Startaccu heckschroef');setRing('ms8265StartHeck',heckSoc??0);setMissing('ms8265StartHeck',heck===null);
+
+    const shore=shoreState();setText('ms8234Shore',shore?'Aangesloten':'Niet aangesloten');setText('ms8234ShoreSub',shore?'Walstroom actief':'Geen walstroom');setMissing('ms8234Shore',false);
+
+    const c=climate();
+    setText('ms8234Cabin',c.salon===null?'Geen meting':`${fmt(c.salon,1)} °C`);setText('ms8234CabinSub','Ruuvi · Salon');setRing('ms8234Cabin',c.salon===null?0:clamp((c.salon/40)*100,0,100));setMissing('ms8234Cabin',c.salon===null);
+    setText('ms8264EngineTemp',c.machine===null?'Geen meting':`${fmt(c.machine,1)} °C`);setText('ms8264EngineTempSub','Ruuvi · Machinekamer');setRing('ms8264EngineTemp',c.machine===null?0:clamp((c.machine/40)*100,0,100));setMissing('ms8264EngineTemp',c.machine===null);
+
+    const water=tankLevel('water');setText('ms8234Water',water===null?'Geen meting':`${Math.round(water)}%`);setText('ms8234WaterSub','Drinkwatertank');setRing('ms8234Water',water??0);setMissing('ms8234Water',water===null);
+    const fuel=tankLevel('fuel');setText('ms8234Fuel',fuel===null?'Geen meting':`${Math.round(fuel)}%`);setText('ms8234FuelSub','Dieseltank');setRing('ms8234Fuel',fuel??0);setMissing('ms8234Fuel',fuel===null);
+
+    const outside=outsideTemp();
+    let hidden=$('weatherCurrentTemp');if(!hidden){hidden=document.createElement('span');hidden.id='weatherCurrentTemp';hidden.hidden=true;document.body?.appendChild(hidden);}if(outside!==null)hidden.textContent=`${fmt(outside,1)}°`;
+    refreshAttention();
+  }
+
+  async function refreshWeather(force=false){
+    renderStatus();
+    if(weatherBusy||typeof window.ms709RefreshWeather!=='function')return;
+    const now=Date.now();if(!force&&now-weatherAt<5*60*1000)return;
+    weatherAt=now;weatherBusy=true;
+    try{await window.ms709RefreshWeather(Boolean(force),true);}catch(error){console.debug('Startweer verversen:',error);}finally{weatherBusy=false;renderStatus();}
+  }
+
+  function refresh(){
+    syncBuild();
+    if(!build())return false;
+    applyTheme(readTheme(),false);
+    renderStatus();
+    syncRouteChrome();
+    return true;
+  }
+
+  function queueRefresh(){
+    if(refreshQueued)return;refreshQueued=true;
+    requestAnimationFrame(()=>{refreshQueued=false;refresh();});
+  }
+
+  function watchDashboard(){
+    const dashboard=$('dashboard');
+    if(!dashboard||dashboardObserver)return;
+    dashboardObserver=new MutationObserver(()=>{if(!$(ROOT_ID))queueRefresh();});
+    dashboardObserver.observe(dashboard,{childList:true});
+  }
+
+  function start(){
+    syncBuild();
+    build();
+    applyTheme(readTheme(),false);
+    renderStatus();
+    ensureBottomNav();
+    syncRouteChrome();
+    watchDashboard();
+
+    [120,500,1400].forEach(ms=>setTimeout(queueRefresh,ms));
+    if(refreshTimer)clearInterval(refreshTimer);
+    refreshTimer=setInterval(()=>{if(!document.hidden)renderStatus();},5000);
+
+    const events=[
+      'mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated','mijnserenity-vrm-updated',
+      'mijnserenity:vrm-energy-updated','mijnserenity:live-values-ready','mijnserenity:dashboard-ready','mijnserenity:boot-complete',
+      'weather:update','weather:updated','mijnserenity:weather-updated','online','offline','pageshow'
+    ];
+    events.forEach(name=>window.addEventListener(name,queueRefresh,{passive:true}));
+    window.addEventListener('mijnserenity:routechange',event=>{
+      const detail=event?.detail;const route=typeof detail==='string'?detail:(detail?.route||detail?.id||detail?.target||'');
+      requestAnimationFrame(()=>syncRouteChrome(route));
+    },{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden){queueRefresh();refreshWeather(false);}},{passive:true});
+    window.addEventListener('online',()=>setTimeout(()=>refreshWeather(true),150),{passive:true});
+    setTimeout(()=>refreshWeather(false),800);
+
+    window.ms8210RefreshStart=refresh;
+    window.ms8210RefreshAttention=refreshAttention;
+    window.ms8300RefreshStart=refresh;
+    window.ms8300Navigate=navigate;
+
+    window.dispatchEvent(new CustomEvent('mijnserenity:start-runtime-ready',{detail:{build:BUILD,canonical:true}}));
+    console.info(`MijnSerenity ${BUILD}: één canonieke Start-runtime actief.`);
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
 })();
