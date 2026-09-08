@@ -7,7 +7,7 @@ const OUT=path.join(ROOT,'victron-gui');
 const RELEASE='v1.3.17';
 const ZIP_URL=`https://github.com/victronenergy/gui-v2/releases/download/${RELEASE}/venus-webassembly.zip`;
 
-const response=await fetch(ZIP_URL,{headers:{'user-agent':'MijnSerenity/8.21.1'}});
+const response=await fetch(ZIP_URL,{headers:{'user-agent':'MijnSerenity/8.31.1'}});
 if(!response.ok)throw new Error(`Victron GUI download mislukt: HTTP ${response.status}`);
 const zip=await JSZip.loadAsync(await response.arrayBuffer());
 
@@ -75,6 +75,5 @@ await fs.writeFile(indexPath,html,'utf8');
 await fs.writeFile(path.join(OUT,'mijnserenity-release.txt'),`${RELEASE}\n`,'utf8');
 console.log(`Victron GUI ${RELEASE} klaargezet in ${OUT}`);
 
-/* Maak de gepubliceerde site deterministisch: oude dashboards worden uit de
-   deploy verwijderd in plaats van alleen met CSS verstopt. */
-await import('./clean-legacy-dashboard.mjs');
+/* 8.31.1: de bronboom wordt hier bewust niet meer gewijzigd. De aparte
+   productie-build maakt een schone dist/ en verwijdert legacy uitsluitend daar. */
