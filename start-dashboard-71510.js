@@ -1,60 +1,60 @@
-/* MijnSerenity 8.30.2 — behoud canonieke 8.30 Start en herstel de scherpe Serenity-headerfoto. */
+/* MijnSerenity 8.30.3 — lokale canonieke Start, zonder externe runtime of hero-chunks. */
 (()=>{
   'use strict';
-  if(window.__msStart8302HeroFix)return;
-  window.__msStart8302HeroFix=true;
+  if(window.__msStart8303HeroFix)return;
+  window.__msStart8303HeroFix=true;
 
-  const BUILD='8.30.2';
-  const TOKEN='830200';
-  const BASE_RUNTIME='https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@4cbe8b1c08205475a8f59e470f5eb193a0ba808c/start-dashboard-71510.js?v=830200-base';
-  const HERO_COMMIT='b348a16f729e4e330038d57955aff82e4ed1e88c';
-  const HERO_CACHE='mijnserenity.hero.8281.reference.v1';
-  const HERO_CHUNKS=13;
-  const STYLE_ID='ms8302HeroReferenceStyle';
-  let heroBusy=false;
-  let heroReady=false;
-
-  function loadBaseRuntime(){
-    return new Promise(resolve=>{
-      if(window.__msStart8300){resolve();return;}
-      let script=document.querySelector('script[data-ms8302-base]');
-      if(script){
-        script.addEventListener('load',()=>resolve(),{once:true});
-        script.addEventListener('error',()=>resolve(),{once:true});
-        setTimeout(resolve,6500);
-        return;
-      }
-      script=document.createElement('script');
-      script.src=BASE_RUNTIME;
-      script.async=false;
-      script.crossOrigin='anonymous';
-      script.dataset.ms8302Base='1';
-      script.onload=resolve;
-      script.onerror=()=>{console.error('MijnSerenity: canonieke Start-runtime kon niet worden geladen.');resolve();};
-      (document.head||document.documentElement).appendChild(script);
-      setTimeout(resolve,6500);
-    });
-  }
+  const BUILD='8.30.3';
+  const TOKEN='830300';
+  const CORE=`/start-dashboard-core-8300.js?v=${TOKEN}`;
+  const HERO=`/assets/serenity-hero-8274.jpg?v=${TOKEN}`;
+  const HERO_FALLBACK=`/assets/serenity-home-hero-8266.jpg?v=${TOKEN}`;
+  const STYLE_ID='ms8303HeroStyle';
+  let corePromise=null;
 
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
     const meta=document.querySelector('meta[name="mijnserenity-build"]');
-    if(meta&&meta.content!==BUILD)meta.content=BUILD;
+    if(meta)meta.content=BUILD;
     const settings=document.getElementById('settingsAppVersion');
-    if(settings&&settings.textContent!==BUILD)settings.textContent=BUILD;
-    document.querySelectorAll('[data-ms-build-version]').forEach(node=>{if(node.textContent!==BUILD)node.textContent=BUILD;});
+    if(settings)settings.textContent=BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(node=>node.textContent=BUILD);
+  }
+
+  function preloadHero(){
+    if(document.querySelector('link[data-ms8303-hero-preload]'))return;
+    const link=document.createElement('link');
+    link.rel='preload';
+    link.as='image';
+    link.href=HERO;
+    link.fetchPriority='high';
+    link.dataset.ms8303HeroPreload='1';
+    (document.head||document.documentElement).appendChild(link);
   }
 
   function installStyle(){
-    if(document.getElementById(STYLE_ID))return;
-    const style=document.createElement('style');
-    style.id=STYLE_ID;
+    let style=document.getElementById(STYLE_ID);
+    if(!style){
+      style=document.createElement('style');
+      style.id=STYLE_ID;
+      (document.head||document.documentElement).appendChild(style);
+    }
     style.textContent=`
-      /* De bestaande header blijft staan; alleen beeld, positionering en rechter bediening worden gecorrigeerd. */
+      #ms8210Start .ms8300-hero{
+        background-image:
+          linear-gradient(90deg,rgba(1,14,24,.76) 0%,rgba(1,14,24,.54) 34%,rgba(1,14,24,.20) 62%,rgba(1,14,24,.04) 100%),
+          url('${HERO}'),
+          url('${HERO_FALLBACK}') !important;
+        background-size:cover,cover,cover !important;
+        background-position:center,center center,center center !important;
+        background-repeat:no-repeat !important;
+      }
       #ms8210Start .ms8300-photo{
         display:block!important;
         visibility:visible!important;
         opacity:1!important;
+        width:100%!important;
+        height:100%!important;
         object-fit:cover!important;
         object-position:center center!important;
         image-rendering:auto!important;
@@ -81,100 +81,58 @@
         font-weight:850!important;
       }
       #ms8210Start .ms8300-eyebrow{letter-spacing:.20em!important}
-      @media(min-width:900px) and (orientation:landscape){
-        #ms8210Start .ms8300-photo{object-position:center center!important}
-        #ms8210Start .ms8300-copy{width:min(700px,50%)!important}
-      }
       @media(max-width:620px){
         #ms8210Start #ms8300Theme{min-width:118px!important;height:44px!important;min-height:44px!important;padding:0 14px!important;font-size:14px!important}
       }
     `;
-    (document.head||document.documentElement).appendChild(style);
   }
 
-  function cachedHero(){
-    try{
-      const value=localStorage.getItem(HERO_CACHE)||'';
-      return value.startsWith('/9j/')&&value.length>60000?value:'';
-    }catch{return '';}
-  }
-
-  function saveHero(value){
-    try{if(value&&value.length<1500000)localStorage.setItem(HERO_CACHE,value)}catch{}
-  }
-
-  async function fetchHeroChunk(index){
-    const part=String(index).padStart(2,'0');
-    const path=`assets/serenity-hero-8281-${part}.txt`;
-    const urls=[
-      `https://cdn.jsdelivr.net/gh/7yvv7mvnqx-dotcom/Mijnserenity@${HERO_COMMIT}/${path}`,
-      `https://raw.githubusercontent.com/7yvv7mvnqx-dotcom/Mijnserenity/${HERO_COMMIT}/${path}`
-    ];
-    let lastError=null;
-    for(const url of urls){
-      try{
-        const response=await fetch(url,{mode:'cors',cache:'force-cache'});
-        if(!response.ok)throw new Error(`HTTP ${response.status}`);
-        const text=(await response.text()).replace(/\s+/g,'');
-        if(!text)throw new Error('leeg beelddeel');
-        return text;
-      }catch(error){lastError=error;}
-    }
-    throw lastError||new Error(`Serenity beelddeel ${part} ontbreekt`);
-  }
-
-  async function heroBase64(){
-    const cached=cachedHero();
-    if(cached)return cached;
-    const parts=await Promise.all(Array.from({length:HERO_CHUNKS},(_,i)=>fetchHeroChunk(i+1)));
-    const joined=parts.join('').replace(/\s+/g,'');
-    if(!joined.startsWith('/9j/')||joined.length<60000)throw new Error('Serenity referentiebeeld is onvolledig');
-    saveHero(joined);
-    return joined;
-  }
-
-  async function applyHero(){
-    if(heroBusy||heroReady)return;
-    const photo=document.querySelector('#ms8210Start .ms8300-photo');
-    if(!photo)return;
-    heroBusy=true;
-
-    /* Nooit meer eerst de zwaar gepixelde 8275-versie tonen. */
-    if(!String(photo.src||'').startsWith('data:image/jpeg;base64,')){
-      photo.src=`/assets/serenity-hero-8274.jpg?v=${TOKEN}`;
-    }
-
-    try{
-      const base64=await heroBase64();
-      const src=`data:image/jpeg;base64,${base64}`;
-      if(photo.src!==src){
-        photo.src=src;
-        photo.removeAttribute('srcset');
-        try{await photo.decode?.()}catch{}
+  function loadCore(){
+    if(window.__msStart8300)return Promise.resolve(true);
+    if(corePromise)return corePromise;
+    corePromise=new Promise(resolve=>{
+      let script=document.querySelector('script[data-ms8303-core]');
+      if(!script){
+        script=document.createElement('script');
+        script.src=CORE;
+        script.async=false;
+        script.dataset.ms8303Core='1';
+        (document.head||document.documentElement).appendChild(script);
       }
-      photo.dataset.msHero='reference-8281';
-      heroReady=true;
-    }catch(error){
-      console.warn('MijnSerenity: scherpe Serenity-foto kon niet worden hersteld; veilige fallback actief.',error);
-      photo.src=`/assets/serenity-hero-8274.jpg?v=${TOKEN}`;
-    }finally{
-      heroBusy=false;
+      let finished=false;
+      const done=ok=>{if(finished)return;finished=true;clearTimeout(timer);resolve(ok)};
+      const timer=setTimeout(()=>done(Boolean(window.__msStart8300)),3000);
+      script.addEventListener('load',()=>done(Boolean(window.__msStart8300)),{once:true});
+      script.addEventListener('error',()=>done(false),{once:true});
+    });
+    return corePromise;
+  }
+
+  function applyHero(){
+    const root=document.getElementById('ms8210Start');
+    if(!root)return false;
+    const photo=root.querySelector('.ms8300-photo');
+    if(photo){
+      photo.hidden=false;
+      photo.removeAttribute('srcset');
+      photo.setAttribute('loading','eager');
+      photo.setAttribute('fetchpriority','high');
+      if(!String(photo.src||'').includes('/assets/serenity-hero-8274.jpg'))photo.src=HERO;
+      photo.onerror=()=>{
+        if(!String(photo.src||'').includes('/assets/serenity-home-hero-8266.jpg'))photo.src=HERO_FALLBACK;
+      };
     }
+    const eyebrow=root.querySelector('.ms8300-eyebrow');
+    if(eyebrow&&eyebrow.textContent!=='WELKOM TERUG')eyebrow.textContent='WELKOM TERUG';
+    document.querySelectorAll('#ms8287ReleaseControls,#ms8286ReleaseControls,#ms8285ReleaseControls,#ms8290ReleaseControls').forEach(node=>node.remove());
+    return true;
   }
 
   function polish(){
     syncBuild();
     installStyle();
-    const root=document.getElementById('ms8210Start');
-    if(!root)return false;
-
-    const eyebrow=root.querySelector('.ms8300-eyebrow');
-    if(eyebrow&&eyebrow.textContent!=='WELKOM TERUG')eyebrow.textContent='WELKOM TERUG';
-
-    /* Verwijder alleen oude zwevende releaseknoppen die nog boven de huidige header kunnen hangen. */
-    document.querySelectorAll('#ms8287ReleaseControls,#ms8286ReleaseControls,#ms8285ReleaseControls,#ms8290ReleaseControls').forEach(node=>node.remove());
-    applyHero();
-    return true;
+    window.ms8300RefreshStart?.();
+    return applyHero();
   }
 
   function watch(){
@@ -182,29 +140,24 @@
     const queue=()=>{
       if(queued)return;
       queued=true;
-      requestAnimationFrame(()=>{
-        queued=false;
-        polish();
-      });
+      requestAnimationFrame(()=>{queued=false;polish();});
     };
-    const dashboard=document.getElementById('dashboard');
-    if(dashboard){
-      const observer=new MutationObserver(queue);
-      observer.observe(dashboard,{childList:true,subtree:true});
-    }
-    window.addEventListener('pageshow',queue,{passive:true});
-    window.addEventListener('mijnserenity:routechange',queue,{passive:true});
-    setTimeout(queue,300);
-    setTimeout(queue,1200);
+    ['pageshow','orientationchange','mijnserenity:routechange','mijnserenity:dashboard-ready','mijnserenity:boot-complete']
+      .forEach(type=>window.addEventListener(type,queue,{passive:true}));
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue();},{passive:true});
+    setTimeout(queue,80);
+    setTimeout(queue,350);
   }
 
   async function boot(){
+    preloadHero();
     installStyle();
-    await loadBaseRuntime();
+    const ok=await loadCore();
+    if(!ok)console.error('MijnSerenity: lokale Start-runtime kon niet worden geladen.');
     syncBuild();
     polish();
     watch();
-    window.dispatchEvent(new CustomEvent('mijnserenity:hero-ready',{detail:{build:BUILD,hero:'reference-8281'}}));
+    window.dispatchEvent(new CustomEvent('mijnserenity:hero-ready',{detail:{build:BUILD,hero:'local-8274'}}));
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
