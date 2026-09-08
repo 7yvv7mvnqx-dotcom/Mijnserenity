@@ -1,15 +1,15 @@
-/* MijnSerenity 8.30.3 — lokale canonieke Start, zonder externe runtime of hero-chunks. */
+/* MijnSerenity 8.30.4 — lokale canonieke Start, zonder externe runtime of hero-chunks. */
 (()=>{
   'use strict';
-  if(window.__msStart8303HeroFix)return;
-  window.__msStart8303HeroFix=true;
+  if(window.__msStart8304HeroFix)return;
+  window.__msStart8304HeroFix=true;
 
-  const BUILD='8.30.3';
-  const TOKEN='830300';
+  const BUILD='8.30.4';
+  const TOKEN='830400';
   const CORE=`/start-dashboard-core-8300.js?v=${TOKEN}`;
   const HERO=`/assets/serenity-hero-8274.jpg?v=${TOKEN}`;
   const HERO_FALLBACK=`/assets/serenity-home-hero-8266.jpg?v=${TOKEN}`;
-  const STYLE_ID='ms8303HeroStyle';
+  const STYLE_ID='ms8304HeroStyle';
   let corePromise=null;
 
   function syncBuild(){
@@ -22,13 +22,13 @@
   }
 
   function preloadHero(){
-    if(document.querySelector('link[data-ms8303-hero-preload]'))return;
+    if(document.querySelector('link[data-ms8304-hero-preload]'))return;
     const link=document.createElement('link');
     link.rel='preload';
     link.as='image';
     link.href=HERO;
     link.fetchPriority='high';
-    link.dataset.ms8303HeroPreload='1';
+    link.dataset.ms8304HeroPreload='1';
     (document.head||document.documentElement).appendChild(link);
   }
 
@@ -91,17 +91,17 @@
     if(window.__msStart8300)return Promise.resolve(true);
     if(corePromise)return corePromise;
     corePromise=new Promise(resolve=>{
-      let script=document.querySelector('script[data-ms8303-core]');
+      let script=document.querySelector('script[data-ms8304-core]');
       if(!script){
         script=document.createElement('script');
         script.src=CORE;
         script.async=false;
-        script.dataset.ms8303Core='1';
+        script.dataset.ms8304Core='1';
         (document.head||document.documentElement).appendChild(script);
       }
       let finished=false;
       const done=ok=>{if(finished)return;finished=true;clearTimeout(timer);resolve(ok)};
-      const timer=setTimeout(()=>done(Boolean(window.__msStart8300)),3000);
+      const timer=setTimeout(()=>done(Boolean(window.__msStart8300)),2200);
       script.addEventListener('load',()=>done(Boolean(window.__msStart8300)),{once:true});
       script.addEventListener('error',()=>done(false),{once:true});
     });
@@ -145,8 +145,8 @@
     ['pageshow','orientationchange','mijnserenity:routechange','mijnserenity:dashboard-ready','mijnserenity:boot-complete']
       .forEach(type=>window.addEventListener(type,queue,{passive:true}));
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue();},{passive:true});
-    setTimeout(queue,80);
-    setTimeout(queue,350);
+    setTimeout(queue,60);
+    setTimeout(queue,250);
   }
 
   async function boot(){
