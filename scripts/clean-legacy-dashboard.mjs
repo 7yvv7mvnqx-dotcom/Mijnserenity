@@ -18,6 +18,10 @@ const LEGACY_STYLES=[
 ];
 const LEGACY_DEPLOY_FILES=[...LEGACY_SCRIPTS,...LEGACY_STYLES];
 const RWS_COMPAT='/rws-compat-8233.js?v=823300';
+const VISUAL_ROOT_IDS=new Set([
+  'dashboard','msLegacyTelemetryBridge','ms8210Start','ms71510Dashboard','serenityIvms',
+  'msDashboardAnalog7141','msDashboardPremium7143','msStartCockpit7144','msWelcomeCard7140','msWelcomeCard7137'
+]);
 
 function escapeRe(value){
   return String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -61,7 +65,7 @@ function telemetryBridgeFrom(sourceHtml){
   while((match=tagRe.exec(sourceHtml))){
     const tag=match[1].toLowerCase();
     const id=match[2];
-    if(id==='dashboard'||id==='msLegacyTelemetryBridge'||id==='ms8210Start'||seen.has(id))continue;
+    if(VISUAL_ROOT_IDS.has(id)||seen.has(id))continue;
     seen.add(id);
     entries.push({tag,id});
   }
