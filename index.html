@@ -60,9 +60,6 @@ window.repairMijnSerenity=async function(){
   <link rel="stylesheet" href="ruuvi-climate.css?v=715140">
   <link rel="stylesheet" href="movement-presence.css?v=715140">
   <link rel="stylesheet" href="futuristic-analog-7140.css?v=715140">
-  <link rel="stylesheet" href="dashboard-analog-7141.css?v=715140">
-  <link rel="stylesheet" href="dashboard-premium-7143.css?v=71430">
-  <link rel="stylesheet" href="start-cockpit-7144.css?v=71450">
   <link rel="stylesheet" href="captain-ux-711.css?v=715140">
 
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=715140">
@@ -173,116 +170,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
 
   <section id="dashboard">
 
-<section id="ms71510Dashboard" class="ms71510-dashboard" aria-label="Serenity startdashboard">
-  <button type="button" class="ms71514-hero" onclick="captainNavigate('live')" aria-label="Open Live varen">
-    <img id="ms71514HeroPhoto" class="hidden" alt="Serenity op het water" decoding="async">
-    <span><strong>Serenity</strong><small>Welkom aan boord</small></span>
-  </button>
-  <div class="ms71510-top">
-    <button type="button" class="ms71510-system" onclick="captainNavigate('technical')">
-      <span>SYSTEEMSTATUS</span>
-      <strong id="ms71510SystemLabel">NORMAAL</strong>
-      <i id="ms71510SystemDot"></i>
-    </button>
-    <button type="button" class="ms71510-more" onclick="window.ms797OpenMore?.()">☰ <strong>Meer</strong></button>
-  </div>
-
-  <div class="ms71510-metrics">
-    <button type="button" class="ms71510-metric" onclick="captainNavigate('live')">
-      <div class="ms71510-speed-gauge"><i></i></div>
-      <div class="ms71510-value">
-        <small>SNELHEID</small>
-        <strong><b id="ms71510Speed">0</b><em>km/u</em></strong>
-        <span id="ms71510SpeedKn">0 kn</span>
-      </div>
-      <div class="ms71510-chevron">›</div>
-    </button>
-
-    <button type="button" class="ms71510-metric" onclick="captainNavigate('live')">
-      <div class="ms71510-rpm-gauge"><i></i><b>rpm</b></div>
-      <div class="ms71510-value">
-        <small>TOERENTAL</small>
-        <strong><b id="ms71510Rpm">0</b><em>rpm</em></strong>
-        <span id="ms71510RpmSub">0 u/min</span>
-      </div>
-      <div class="ms71510-chevron">›</div>
-    </button>
-
-    <button type="button" class="ms71510-metric" onclick="captainNavigate('live')">
-      <div class="ms71510-depth-icon">≋<span>↓↓</span></div>
-      <div class="ms71510-value">
-        <small>DIEPTE</small>
-        <strong><b id="ms71510Depth">–</b><em>m</em></strong>
-        <span id="ms71510DepthMeta">nog niet gekoppeld</span>
-      </div>
-      <div class="ms71510-chevron">›</div>
-    </button>
-
-    <div class="ms71510-metric ms71512-wind-card" role="group" aria-label="Windkracht en windrichting">
-      <button type="button" class="ms71512-wind-open" onclick="captainNavigate('weather')" aria-label="Open weer">
-        <div class="ms71512-wind-compass" aria-hidden="true">
-          <div class="ms71512-compass-ring"><span>N</span><i id="ms71512WindArrow"></i></div>
-        </div>
-        <div class="ms71510-value">
-          <small>WIND</small>
-          <strong><b id="ms71510Wind">–</b><em>km/u</em></strong>
-          <span><b id="ms71510WindBft">– Bft</b> · <b id="ms71512WindDirection">–</b></span>
-        </div>
-        <div class="ms71510-chevron">›</div>
-      </button>
-      <button id="ms71512CompassPermission" type="button" class="ms71512-compass-permission"
-        onclick="ms71512EnableCompass(event)">🧭 Kompas activeren</button>
-    </div>
-  </div>
-
-  <div class="ms71510-twins">
-    <button type="button" class="ms71510-tile" onclick="captainNavigate('technical')">
-      <span class="ms71510-tile-icon">⛽</span>
-      <div><small>BRANDSTOF</small><strong id="ms71510Fuel">–%</strong></div>
-      <i class="ms71510-progress"><b id="ms71510FuelBar"></b></i>
-    </button>
-    <button type="button" class="ms71510-tile" onclick="captainNavigate('weather')">
-      <span class="ms71510-tile-icon">🌡️</span>
-      <div><small>WATERTEMP.</small><strong id="ms71510WaterTemp">– °C</strong></div>
-      <i class="ms71510-progress"><b id="ms71510WaterTempBar"></b></i>
-    </button>
-  </div>
-
-  <div class="ms71510-battery-row">
-    <button type="button" class="ms71510-house-battery" onclick="captainNavigate('technical')">
-      <span class="ms71510-battery-icon">🔋</span>
-      <div><small>HUISHOUDACCU'S</small><strong id="ms71510HouseVoltage">– V</strong></div>
-      <div><small>VERBRUIK</small><strong id="ms71510HouseCurrent">– A</strong></div>
-      <div><small>LADING</small><strong id="ms71510HouseSoc">–%</strong></div>
-    </button>
-    <button type="button" class="ms71510-start-battery" onclick="captainNavigate('technical')">
-      <small>STARTACCU'S</small>
-      <strong id="ms71510StartVoltage">– V</strong>
-    </button>
-  </div>
-
-  <div class="ms71510-shortcuts">
-    <button type="button" onclick="captainNavigate('map')"><span>📍</span><b>NAVIGATIE</b></button>
-    <button type="button" onclick="captainNavigate('pois')"><span>⚓</span><b>HAVENS</b></button>
-    <button type="button" onclick="captainNavigate('weather')"><span>🌤️</span><b>WEER</b></button>
-    <button type="button" class="ms71510-tech-shortcut" onclick="captainNavigate('technical')"><span>⚡</span><b>TECHNIEK</b></button>\n    <button type="button" onclick="captainNavigate('settings')"><span>⚙️</span><b>INSTELLINGEN</b></button>
-  </div>
-
-  <button type="button" class="ms71510-rudder" onclick="captainNavigate('live')">
-    <div class="ms71510-rudder-title">ROERSTAND</div>
-    <div class="ms71510-rudder-body">
-      <div class="ms71510-bb">BB<strong>35°</strong></div>
-      <div class="ms71510-rudder-arc">
-        <div class="ms71510-rudder-line"></div>
-        <div class="ms71510-rudder-zero">0°</div>
-        <div id="ms71510RudderNeedle" class="ms71510-rudder-needle"></div>
-        <div class="ms71510-boat">▲</div>
-      </div>
-      <div class="ms71510-sb">SB<strong>35°</strong></div>
-    </div>
-    <span id="ms71510RudderText">Midden</span>
-  </button>
-</section>
+<div id="msLegacyTelemetryBridge" hidden aria-hidden="true" data-purpose="telemetry-compat"><img id="ms71514HeroPhoto"><strong id="ms71510SystemLabel"></strong><i id="ms71510SystemDot"></i><b id="ms71510Speed"></b><span id="ms71510SpeedKn"></span><b id="ms71510Rpm"></b><span id="ms71510RpmSub"></span><b id="ms71510Depth"></b><span id="ms71510DepthMeta"></span><i id="ms71512WindArrow"></i><b id="ms71510Wind"></b><b id="ms71510WindBft"></b><b id="ms71512WindDirection"></b><button id="ms71512CompassPermission"></button><strong id="ms71510Fuel"></strong><b id="ms71510FuelBar"></b><strong id="ms71510WaterTemp"></strong><b id="ms71510WaterTempBar"></b><strong id="ms71510HouseVoltage"></strong><strong id="ms71510HouseCurrent"></strong><strong id="ms71510HouseSoc"></strong><strong id="ms71510StartVoltage"></strong><div id="ms71510RudderNeedle"></div><span id="ms71510RudderText"></span></div>
 
 
     <section id="serenityIvms" class="serenity-ivms" aria-label="Serenity geïntegreerd vaartuigdashboard">
@@ -4850,11 +4738,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
 </div>
 
 <script src="auth-bootstrap.js?v=823000"></script>
-<script src="futuristic-analog-7140.js?v=715140"></script>
-<script src="dashboard-analog-7141.js?v=715140"></script>
-<script src="dashboard-premium-7143.js?v=71430"></script>
-<script src="start-cockpit-7144.js?v=71450"></script>
-
 <script id="ms7150-vrm-runtime">
 (function(){
   'use strict';
@@ -4979,5 +4862,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   <script src="ruuvi-climate.js?v=715631"></script>
   <script src="victron-energy-71559.js?v=715631"></script>
   <script src="ais-gps-fix-8221.js?v=822200"></script>
+<script src="/rws-compat-8233.js?v=823300"></script>
 </body>
 </html>
