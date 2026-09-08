@@ -1,6 +1,6 @@
-/* MijnSerenity 8.30.0 — compacte PWA-runtime voor één canonieke Start. */
-const BUILD='8.30.0';
-const BUILD_TOKEN='830000';
+/* MijnSerenity 8.30.1 — compacte PWA-runtime voor één canonieke Start. */
+const BUILD='8.30.1';
+const BUILD_TOKEN='830100';
 const CACHE_NAME=`mijnserenity-${BUILD}-core`;
 const NETWORK_TIMEOUT_MS=9000;
 
@@ -11,6 +11,7 @@ const CORE_ASSETS=[
   `/auth-bootstrap.js?v=${BUILD_TOKEN}`,
   `/app.js?v=${BUILD_TOKEN}`,
   `/start-dashboard-71510.css?v=${BUILD_TOKEN}`,
+  `/iphone-landscape-8301.css?v=${BUILD_TOKEN}`,
   `/start-dashboard-71510.js?v=${BUILD_TOKEN}`,
   `/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,
   `/runtime-stability-8202.js?v=${BUILD_TOKEN}`,
@@ -45,6 +46,11 @@ function ensureScript(html,src,needle){
   return html.replace(/<\/body>/i,`<script src="${src}"></script>\n</body>`);
 }
 
+function ensureStyle(html,href,needle){
+  if(new RegExp(needle,'i').test(html))return html;
+  return html.replace(/<\/head>/i,`<link rel="stylesheet" href="${href}">\n</head>`);
+}
+
 function rewriteIndexHtml(html){
   let out=stripLegacyVisualTags(html)
     .replace(/(<meta\s+name=["']mijnserenity-build["']\s+content=["'])[^"']+(["']\s*\/?>)/i,`$1${BUILD}$2`)
@@ -65,6 +71,7 @@ function rewriteIndexHtml(html){
     out=out.replace(/<\/head>/i,`<style id="ms8300InitialGuard">#dashboard>:not(#ms8210Start){display:none!important;visibility:hidden!important;pointer-events:none!important}</style>\n</head>`);
   }
 
+  out=ensureStyle(out,`/iphone-landscape-8301.css?v=${BUILD_TOKEN}`,'iphone-landscape-8301\\.css');
   out=ensureScript(out,`/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,'dashboard-unified-71919-loader\\.js');
   /* 8.29-releaseguard is vervangen door de canonieke runtime zelf. */
   out=out.replace(/<script[^>]+src=["'][^"']*release-guard-8290\.js[^"']*["'][^>]*><\/script>\s*/gi,'');
