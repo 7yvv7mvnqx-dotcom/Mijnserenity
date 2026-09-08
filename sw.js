@@ -1,8 +1,8 @@
-/* MijnSerenity 8.30.2 — compacte PWA-runtime voor één canonieke Start. */
-const BUILD='8.30.2';
-const BUILD_TOKEN='830200';
+/* MijnSerenity 8.30.3 — compacte PWA-runtime voor één lokale canonieke Start. */
+const BUILD='8.30.3';
+const BUILD_TOKEN='830300';
 const CACHE_NAME=`mijnserenity-${BUILD}-core`;
-const NETWORK_TIMEOUT_MS=9000;
+const NETWORK_TIMEOUT_MS=6000;
 
 const CORE_ASSETS=[
   '/',
@@ -12,9 +12,12 @@ const CORE_ASSETS=[
   `/app.js?v=${BUILD_TOKEN}`,
   `/start-dashboard-71510.css?v=${BUILD_TOKEN}`,
   `/iphone-landscape-8301.css?v=${BUILD_TOKEN}`,
+  `/start-dashboard-core-8300.js?v=${BUILD_TOKEN}`,
   `/start-dashboard-71510.js?v=${BUILD_TOKEN}`,
   `/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,
   `/runtime-stability-8202.js?v=${BUILD_TOKEN}`,
+  `/assets/serenity-hero-8274.jpg?v=${BUILD_TOKEN}`,
+  `/assets/serenity-home-hero-8266.jpg?v=${BUILD_TOKEN}`,
   '/icon-192.png','/icon-512.png','/favicon-64.png'
 ];
 
@@ -66,14 +69,12 @@ function rewriteIndexHtml(html){
     out=out.replace(/<head([^>]*)>/i,`<head$1>\n<meta name="mijnserenity-build" content="${BUILD}">`);
   }
 
-  /* Ook vóór JavaScript mag de historische inline Start nooit zichtbaar worden. */
   if(!/id=["']ms8300InitialGuard["']/i.test(out)){
     out=out.replace(/<\/head>/i,`<style id="ms8300InitialGuard">#dashboard>:not(#ms8210Start){display:none!important;visibility:hidden!important;pointer-events:none!important}</style>\n</head>`);
   }
 
   out=ensureStyle(out,`/iphone-landscape-8301.css?v=${BUILD_TOKEN}`,'iphone-landscape-8301\\.css');
   out=ensureScript(out,`/dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`,'dashboard-unified-71919-loader\\.js');
-  /* 8.29-releaseguard is vervangen door de canonieke runtime zelf. */
   out=out.replace(/<script[^>]+src=["'][^"']*release-guard-8290\.js[^"']*["'][^>]*><\/script>\s*/gi,'');
   return out;
 }
@@ -93,7 +94,7 @@ async function asRewrittenHtml(response){
 
 async function cacheAsset(cache,path){
   try{
-    const response=await fetchWithTimeout(path,{cache:'reload'},18000);
+    const response=await fetchWithTimeout(path,{cache:'reload'},12000);
     if(!response.ok)return;
     const stored=(path==='/'||path==='/index.html')?(await asRewrittenHtml(response.clone())):response;
     if(stored)await cache.put(path,stored);
@@ -114,7 +115,6 @@ self.addEventListener('activate',event=>{
     await Promise.all(keys.filter(key=>key.startsWith('mijnserenity-')&&key!==CACHE_NAME).map(key=>caches.delete(key)));
     await self.clients.claim();
 
-    /* Eén cutover-navigatie voor iOS/PWA; daarna nooit meer release-loops. */
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     await Promise.all(clients.map(async client=>{
       try{
@@ -131,7 +131,7 @@ self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')sel
 
 async function navigationNetworkFirst(request){
   try{
-    const network=await fetchWithTimeout(request,{cache:'no-store'},11000);
+    const network=await fetchWithTimeout(request,{cache:'no-store'},4500);
     if(network.ok){
       const rewritten=await asRewrittenHtml(network);
       if(rewritten){
