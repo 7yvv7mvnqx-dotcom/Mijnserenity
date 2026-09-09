@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const root=new URL('../',import.meta.url);
 const indexUrl=new URL('index.html',root);
 const vrmUrl=new URL('vrm-runtime-8312.js',root);
+const startUrl=new URL('start-dashboard-core.js',root);
 const BUILD='8.31.2';
 const TOKEN='831200';
 let html=fs.readFileSync(indexUrl,'utf8');
@@ -67,6 +68,17 @@ requireReplace(/<\/body>/i,`<script src="/auth-bootstrap.js?v=${TOKEN}"></script
 html=html.replace(/\n{3,}/g,'\n\n');
 fs.writeFileSync(indexUrl,html);
 
+let start=fs.readFileSync(startUrl,'utf8');
+start=start
+  .replace(/\/\* MijnSerenity [^*]+— één canonieke Start-runtime\. \*\//,`/* MijnSerenity ${BUILD} — één canonieke Start-runtime. */`)
+  .replace(/const BUILD='[^']+';/,`const BUILD='${BUILD}';`)
+  .replace(/serenity-hero-8274\.jpg\?v=\d+/g,`serenity-hero-8274.jpg?v=${TOKEN}`)
+  .replace(/serenity-home-hero-8266\.jpg\?v=\d+/g,`serenity-home-hero-8266.jpg?v=${TOKEN}`)
+  .replace(/\[100,500,1400\]\.forEach\(delay=>setTimeout\(render,delay\)\);/,`[160,850].forEach(delay=>setTimeout(render,delay));`)
+  .replace(/setInterval\(\(\)=>\{if\(!document\.hidden\)render\(\);\},5000\);/,`setInterval(()=>{if(!document.hidden&&document.body?.classList.contains('ms8300-start-page'))render();},10000);`);
+if(!start.includes(`const BUILD='${BUILD}'`)||!start.includes('},10000);'))throw new Error('Productieshell: Start-runtime kon niet volledig worden geoptimaliseerd.');
+fs.writeFileSync(startUrl,start);
+
 const afterStyles=(html.match(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)||[]).length;
 const afterScripts=(html.match(/<script\b[^>]*src=["'][^"']+["'][^>]*>/gi)||[]).length;
-console.log(`MijnSerenity ${BUILD}: productieshell geoptimaliseerd · CSS ${beforeStyles}→${afterStyles} · externe/lokale script-tags ${beforeScripts}→${afterScripts} · HTML ${beforeBytes}→${Buffer.byteLength(html)} bytes.`);
+console.log(`MijnSerenity ${BUILD}: productieshell geoptimaliseerd · CSS ${beforeStyles}→${afterStyles} · externe/lokale script-tags ${beforeScripts}→${afterScripts} · HTML ${beforeBytes}→${Buffer.byteLength(html)} bytes · Start-render 5s→10s alleen op Start.`);
