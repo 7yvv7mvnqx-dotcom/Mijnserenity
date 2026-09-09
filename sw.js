@@ -1,7 +1,7 @@
-/* MijnSerenity 8.25.4 — snelle app-cache; Start en live kernwaarden eerst */
-const CACHE_NAME='mijnserenity-8.25.4-fast';
-const BUILD='8.25.4';
-const BUILD_TOKEN='825400';
+/* MijnSerenity 8.25.5 — snelle app-cache; stabiele lokale Start en live kernwaarden eerst */
+const CACHE_NAME='mijnserenity-8.25.5-fast';
+const BUILD='8.25.5';
+const BUILD_TOKEN='825500';
 const NETWORK_TIMEOUT_MS=8000;
 
 /* Alleen bestanden die nodig zijn om snel te openen en live kernwaarden te tonen
@@ -30,6 +30,7 @@ const CORE_ASSETS=[
   `/victron-diagnostics.js?v=${BUILD_TOKEN}`,
   `/ha-live-bridge.js?v=${BUILD_TOKEN}`,
   `/technical-live-sync.js?v=${BUILD_TOKEN}`,
+  '/serenity-ivms-hero.png?v=8255',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -43,21 +44,22 @@ function fetchWithTimeout(input,init={},timeoutMs=NETWORK_TIMEOUT_MS){
 function rewriteIndexHtml(html){
   let rewritten=String(html||'')
     .replace(/(<meta\s+name=["']mijnserenity-build["']\s+content=["'])[^"']+(["']\s*\/?>)/i,`$1${BUILD}$2`)
+    .replace(/(<meta\s+name=["']ms-build["']\s+content=["'])[^"']+(["']\s*\/?>)/i,`$1${BUILD}$2`)
     .replace(/window\.MIJSERENITY_BUILD\s*=\s*['"][^'"]+['"]\s*;/g,`window.MIJSERENITY_BUILD='${BUILD}';`)
-    .replace(/auth-bootstrap\.js\?v=\d+/g,`auth-bootstrap.js?v=${BUILD_TOKEN}`)
-    .replace(/dashboard-unified-71919-loader\.js\?v=\d+/g,`dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`)
-    .replace(/simple-start-8210\.js\?v=\d+/g,`simple-start-8210.js?v=${BUILD_TOKEN}`)
-    .replace(/ais-gps-fix-8221\.js\?v=\d+/g,`ais-gps-fix-8221.js?v=${BUILD_TOKEN}`)
-    .replace(/start-cockpit-7144\.js\?v=\d+/g,`start-cockpit-7144.js?v=${BUILD_TOKEN}`)
-    .replace(/start-dashboard-71510\.js\?v=\d+/g,`start-dashboard-71510.js?v=${BUILD_TOKEN}`)
-    .replace(/wind-direction-71512\.js\?v=\d+/g,`wind-direction-71512.js?v=${BUILD_TOKEN}`)
-    .replace(/ruuvi-climate\.js\?v=\d+/g,`ruuvi-climate.js?v=${BUILD_TOKEN}`)
-    .replace(/rws-water-temp-8233\.js\?v=\d+/g,`rws-water-temp-8233.js?v=${BUILD_TOKEN}`)
+    .replace(/auth-bootstrap\.js\?(?:v|ver)=\d+/g,`auth-bootstrap.js?v=${BUILD_TOKEN}`)
+    .replace(/dashboard-unified-71919-loader\.js\?(?:v|ver)=\d+/g,`dashboard-unified-71919-loader.js?v=${BUILD_TOKEN}`)
+    .replace(/simple-start-8210\.js\?(?:v|ver)=\d+/g,`simple-start-8210.js?v=${BUILD_TOKEN}`)
+    .replace(/ais-gps-fix-8221\.js\?(?:v|ver)=\d+/g,`ais-gps-fix-8221.js?v=${BUILD_TOKEN}`)
+    .replace(/start-cockpit-7144\.js\?(?:v|ver)=\d+/g,`start-cockpit-7144.js?v=${BUILD_TOKEN}`)
+    .replace(/start-dashboard-71510\.js\?(?:v|ver)=\d+/g,`start-dashboard-71510.js?v=${BUILD_TOKEN}`)
+    .replace(/wind-direction-71512\.js\?(?:v|ver)=\d+/g,`wind-direction-71512.js?v=${BUILD_TOKEN}`)
+    .replace(/ruuvi-climate\.js\?(?:v|ver)=\d+/g,`ruuvi-climate.js?v=${BUILD_TOKEN}`)
+    .replace(/rws-water-temp-8233\.js\?(?:v|ver)=\d+/g,`rws-water-temp-8233.js?v=${BUILD_TOKEN}`)
     .replace(/<script[^>]+src=["'][^"']*receipt-ocr-fix-8234\.js[^"']*["'][^>]*><\/script>\s*/gi,'')
     .replace(/(window\.MIJSERENITY_BUILD\|\|document\.querySelector\([^;]+\)\?\.content\|\|)['"][^'"]+['"]/g,`$1'${BUILD}'`)
     .replace(/\\n(?=\s*<\/body>)/gi,'\n');
 
-  /* Fail-safe voor iOS/PWA: de lichte Startmodule is klein en mag direct mee. */
+  /* De lokale Serenity Start-loader wordt als failsafe direct meegenomen. */
   if(!/simple-start-8210\.js/i.test(rewritten)){
     rewritten=rewritten.replace(/<\/body>/i,`<script src="/simple-start-8210.js?v=${BUILD_TOKEN}"></script>\n</body>`);
   }
@@ -212,7 +214,7 @@ self.addEventListener('fetch',event=>{
     event.respondWith(navigationCacheFirst(request));
     return;
   }
-  if(url.pathname==='/ais-gps-fix-8221.js'){
+  if(url.pathname==='/ais-gps-fix-8221.js'||url.pathname==='/simple-start-8210.js'||url.pathname==='/start-dashboard-71510.js'){
     event.respondWith(networkFirst(request));
     return;
   }
