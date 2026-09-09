@@ -1,12 +1,15 @@
-/* MijnSerenity 8.31.1 — eenvoudige, voorspelbare PWA-cache.
-   Geen HTML-mutaties, geen geforceerde client-reloads en geen oude dashboard-cacheketen. */
+/* MijnSerenity 8.31.1 — voorspelbare PWA-cache zonder oude HTML-shell.
+   Navigaties komen altijd van het netwerk; alleen versiegebonden assets mogen
+   als offline fallback uit de actuele cache komen. */
 const BUILD='8.31.1';
 const TOKEN='831100';
-const CACHE_NAME=`mijnserenity-${BUILD}-core`;
-const NAV_TIMEOUT_MS=3500;
+const CACHE_NAME=`mijnserenity-${BUILD}-assets`;
+const NAV_TIMEOUT_MS=12000;
 const CORE_ASSETS=[
-  '/','/index.html','/manifest.json',
+  '/manifest.json',
   `/auth-bootstrap.js?v=${TOKEN}`,
+  `/state-migration-8311.js?v=${TOKEN}`,
+  `/route-assets-8311.js?v=${TOKEN}`,
   `/start-dashboard-core-8311.js?v=${TOKEN}`,
   `/serenity-theme-8311.js?v=${TOKEN}`,
   `/serenity-theme-8311.css?v=${TOKEN}`,
@@ -16,7 +19,6 @@ const CORE_ASSETS=[
   `/route-control.js?v=${TOKEN}`,
   `/easy-auto.js?v=${TOKEN}`,
   `/assets/serenity-hero-8274.jpg?v=${TOKEN}`,
-  `/assets/serenity-home-hero-8266.jpg?v=${TOKEN}`,
   '/icon-192.png','/icon-512.png','/favicon-64.png'
 ];
 
@@ -31,6 +33,9 @@ async function putSafe(cache,key,response){
 
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
+    /* Verwijder vóór het vullen ook caches van oude SW-versies. */
+    const oldNames=await caches.keys();
+    await Promise.all(oldNames.filter(name=>name.startsWith('mijnserenity-')&&name!==CACHE_NAME).map(name=>caches.delete(name)));
     const cache=await caches.open(CACHE_NAME);
     await Promise.allSettled(CORE_ASSETS.map(async asset=>{
       const response=await fetch(asset,{cache:'reload'});
@@ -53,13 +58,15 @@ self.addEventListener('message',event=>{
 });
 
 async function navigationResponse(request){
-  const cache=await caches.open(CACHE_NAME);
   try{
-    const response=await timeoutFetch(request);
-    if(response.ok)await putSafe(cache,'/index.html',response);
-    return response;
+    /* Geen index.html in Cache Storage: hierdoor kan een oud dashboard nooit
+       als navigatiefallback worden teruggezet. */
+    return await timeoutFetch(request);
   }catch{
-    return (await cache.match('/index.html'))||(await cache.match('/'))||new Response('MijnSerenity is offline niet beschikbaar.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}});
+    return new Response(
+      '<!doctype html><html lang="nl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MijnSerenity offline</title><body style="font:16px -apple-system,sans-serif;background:#061525;color:#fff;padding:28px"><h1>MijnSerenity is offline</h1><p>Maak verbinding met internet en open de app opnieuw. Er wordt bewust geen oude dashboardversie getoond.</p></body></html>',
+      {status:503,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}}
+    );
   }
 }
 async function networkFirst(request){
