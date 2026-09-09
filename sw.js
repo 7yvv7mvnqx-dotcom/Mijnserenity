@@ -1,14 +1,14 @@
-/* MijnSerenity 8.26.2 — fresh Haven dashboard and stable offline fallback */
-const CACHE_NAME='mijnserenity-8.26.2';
-const BUILD='8.26.2';
-const TOKEN='826200';
+/* MijnSerenity 8.26.3 — fine-tuned Haven dashboard and stable offline fallback */
+const CACHE_NAME='mijnserenity-8.26.3';
+const BUILD='8.26.3';
+const TOKEN='826300';
 const CORE=[
   '/',
   '/index.html',
   `/simple-start-8210.js?v=${TOKEN}`,
   `/start-dashboard-71510.js?v=${TOKEN}`,
-  `/approved-dashboard-8260.js?v=${TOKEN}`,
-  '/serenity-dashboard-boat-20260909.webp?v=8262',
+  `/approved-dashboard-8263.js?v=${TOKEN}`,
+  '/serenity-dashboard-boat-20260909.webp?v=8263',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png'
@@ -75,7 +75,7 @@ self.addEventListener('fetch',event=>{
     event.respondWith(networkFirst(request,'/index.html'));
     return;
   }
-  if(['/simple-start-8210.js','/start-dashboard-71510.js','/approved-dashboard-8260.js','/serenity-dashboard-boat-20260909.webp'].includes(url.pathname)){
+  if(['/simple-start-8210.js','/start-dashboard-71510.js','/approved-dashboard-8263.js','/approved-dashboard-8260.js','/serenity-dashboard-boat-20260909.webp'].includes(url.pathname)){
     event.respondWith(networkFirst(request));
     return;
   }
