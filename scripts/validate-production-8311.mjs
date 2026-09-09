@@ -24,9 +24,7 @@ function quotedAssets(source){
   const out=new Set();
   const re=/['"`]([^'"`\n]+\.(?:js|css)(?:\?[^'"`\n]*)?)['"`]/gi;
   let m;
-  while((m=re.exec(source))){
-    const p=localPath(m[1]);if(p)out.add(p);
-  }
+  while((m=re.exec(source))){const p=localPath(m[1]);if(p)out.add(p)}
   return [...out];
 }
 function htmlAssets(html){
@@ -58,9 +56,10 @@ async function jpegDimensions(file){
   return null;
 }
 
-const [index,baseCss,theme,sw,auth,routeAssets,startCore]=await Promise.all([
+const [index,baseCss,theme,sw,auth,routeAssets,startCore,shim71510,shim8300]=await Promise.all([
   read('index.html'),read('styles.css'),read('serenity-theme-8311.css'),read('sw.js'),
-  read('auth-bootstrap.js'),read('route-assets-8311.js'),read('start-dashboard-core-8311.js')
+  read('auth-bootstrap.js'),read('route-assets-8311.js'),read('start-dashboard-core-8311.js'),
+  read('start-dashboard-71510.js'),read('start-dashboard-core-8300.js')
 ]);
 
 if(!index.includes(`content="${BUILD}"`))fail('index.html bevat niet de actuele build-meta.');
@@ -69,6 +68,7 @@ if(!index.includes(`/state-migration-8311.js?v=${TOKEN}`))fail('State-migratie o
 if(!index.includes(`/route-assets-8311.js?v=${TOKEN}`))fail('Route-assets ontbreken in index.html.');
 if(!index.includes(`/serenity-theme-8311.css?v=${TOKEN}`))fail('Canonieke 8.31.1 styling ontbreekt in index.html.');
 if(!index.includes(`/assets/serenity-hero-8274.jpg?v=${TOKEN}`))fail('Canonieke Serenity-header wordt niet gepreload.');
+if(!index.includes(`manifest.json?v=${TOKEN}`))fail('Manifest gebruikt niet de actuele cacheversie.');
 if(/ms7150-vrm-runtime/i.test(index))fail('Oude inline VRM-runtime staat nog in index.html.');
 if(/start-dashboard-71510\.js|serenity-theme-8310|dashboard-premium-7143|start-cockpit-7144/i.test(index))fail('Oude dashboard-runtime staat nog in de productie-HTML.');
 
@@ -93,13 +93,17 @@ const forbidden=[
   'dashboard-analog-7141.js','dashboard-premium-7143.js','start-cockpit-7144.js',
   'dashboard-cockpit-portal.js','dashboard-navigation-71548.js','dashboard-pro-71531-loader.js',
   'serenity-theme-8310.css','iphone-landscape-8301.css','mobile-dashboard-7161.js',
-  'simple-accessible.css','serenity-control-dashboard.js','start-dashboard-71510.js',
-  'start-dashboard-core-8300.js','ais.mjs'
+  'simple-accessible.css','serenity-control-dashboard.js','ais.mjs'
 ];
 for(const file of forbidden)if(await exists(file))fail(`Legacy/non-runtime bestand staat nog in dist: ${file}`);
 
+for(const [name,source] of [['start-dashboard-71510.js',shim71510],['start-dashboard-core-8300.js',shim8300]]){
+  if(!source.includes('/start-dashboard-core-8311.js?v=831100'))fail(`${name} is geen zuivere 8.31.1 upgrade-shim.`);
+  if(/document\.createElement\(['"](?:section|div|header)['"]\)/.test(source))fail(`${name} bouwt nog visuele legacy-DOM.`);
+}
+
 if(/main\s*\{\s*max-width\s*:\s*980px/i.test(baseCss))fail('Historische 980px main-limiet staat nog in styles.css.');
-if(!/html,body[^{}]*overflow-x\s*:\s*hidden/i.test(theme.replace(/\s+/g,' '))&&!/overflow-x\s*:\s*hidden/i.test(theme))fail('Globale horizontale overflow-beveiliging ontbreekt.');
+if(!/overflow-x\s*:\s*hidden/i.test(theme))fail('Globale horizontale overflow-beveiliging ontbreekt.');
 if(!/background-size\s*:\s*cover/i.test(theme)&&!/object-fit\s*:\s*cover/i.test(theme))fail('Headerafbeelding heeft geen cover/object-fit regel.');
 for(const marker of ['430px','767px','768px','1180px','1181px','orientation:landscape']){
   if(!theme.includes(marker))fail(`Responsive controlepunt ontbreekt in serenity-theme-8311.css: ${marker}`);
@@ -113,9 +117,7 @@ if(!sw.includes(`const BUILD='${BUILD}'`))fail('Service worker buildnummer klopt
 
 const hero=await jpegDimensions('assets/serenity-hero-8274.jpg');
 if(!hero)fail('Headerafbeelding is geen leesbare JPEG.');
-else{
-  if(hero.width<1600)warn(`Headerfoto is ${hero.width}×${hero.height}px (${hero.bytes} bytes); functioneel correct maar te klein voor echt scherpe HiDPI desktop/iPad-weergave.`);
-}
+else if(hero.width<1600)warn(`Headerfoto is ${hero.width}×${hero.height}px (${hero.bytes} bytes); functioneel correct maar te klein voor echt scherpe HiDPI desktop/iPad-weergave.`);
 
 console.log(`MijnSerenity ${BUILD} productievalidatie:`);
 if(warnings.length){
@@ -131,5 +133,6 @@ if(failures.length){
   console.log('  ✓ geen oude HTML-cachefallback');
   console.log('  ✓ lokale index/bootstrap/route-assets aanwezig');
   console.log('  ✓ bekende legacy visuals niet gepubliceerd');
+  console.log('  ✓ upgrade-shims verwijzen uitsluitend naar 8.31.1');
   console.log('  ✓ responsive basisregels aanwezig');
 }
