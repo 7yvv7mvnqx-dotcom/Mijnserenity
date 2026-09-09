@@ -103,11 +103,19 @@ for(const [name,source] of [['start-dashboard-71510.js',shim71510],['start-dashb
 }
 
 if(/main\s*\{\s*max-width\s*:\s*980px/i.test(baseCss))fail('Historische 980px main-limiet staat nog in styles.css.');
-if(!/overflow-x\s*:\s*hidden/i.test(theme))fail('Globale horizontale overflow-beveiliging ontbreekt.');
-if(!/background-size\s*:\s*cover/i.test(theme)&&!/object-fit\s*:\s*cover/i.test(theme))fail('Headerafbeelding heeft geen cover/object-fit regel.');
-for(const marker of ['430px','767px','768px','1180px','1181px','orientation:landscape']){
-  if(!theme.includes(marker))fail(`Responsive controlepunt ontbreekt in serenity-theme-8311.css: ${marker}`);
-}
+if(!/overflow-x\s*:\s*(?:clip|hidden)/i.test(theme))fail('Globale horizontale overflow-beveiliging ontbreekt.');
+if(!/object-fit\s*:\s*cover/i.test(theme))fail('Headerafbeelding heeft geen object-fit:cover regel.');
+
+/* Test de daadwerkelijke doelapparaten, niet toevallige oude breakpoint-getallen. */
+const responsiveChecks=[
+  ['iPhone portrait',/@media\s*\(max-width\s*:\s*620px\)/i],
+  ['iPad portrait',/@media\s*\(max-width\s*:\s*820px\)/i],
+  ['tablet/iPad landscape',/@media\s*\(max-width\s*:\s*1100px\)/i],
+  ['iPhone landscape',/@media\s*\(orientation\s*:\s*landscape\)[^{]*\(min-width\s*:\s*600px\)[^{]*\(max-width\s*:\s*1100px\)[^{]*\(max-height\s*:\s*700px\)/i]
+];
+for(const [label,re] of responsiveChecks)if(!re.test(theme))fail(`Responsive regels ontbreken voor ${label}.`);
+if(!/--ser-page-max\s*:\s*1540px/i.test(theme))fail('Desktopbreedte is niet expliciet begrensd voor leesbare subpagina’s.');
+
 if(!startCore.includes("const HERO='/assets/serenity-hero-8274.jpg'"))fail('Start-dashboard gebruikt niet de canonieke Serenity-afbeelding.');
 if(!/Geen data/.test(startCore)||!/Niet aangesloten/.test(startCore))fail('Start-dashboard mist expliciete geen-data/niet-aangesloten status.');
 
@@ -134,5 +142,5 @@ if(failures.length){
   console.log('  ✓ lokale index/bootstrap/route-assets aanwezig');
   console.log('  ✓ bekende legacy visuals niet gepubliceerd');
   console.log('  ✓ upgrade-shims verwijzen uitsluitend naar 8.31.1');
-  console.log('  ✓ responsive basisregels aanwezig');
+  console.log('  ✓ responsive regels voor iPhone/iPad/desktop aanwezig');
 }
