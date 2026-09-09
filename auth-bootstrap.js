@@ -6,6 +6,7 @@
 
   const BUILD='8.31.2';
   const VERSION='831200';
+  const RECOVERY_KEY='mijnserenity-launch-recovery-8312';
   const loadedScripts=new Set();
   const loadedStyles=new Set();
   const pendingScripts=new Map();
@@ -13,6 +14,7 @@
   const pendingRoutes=new Map();
   let bootDone=false;
   let bootObserver=null;
+  let recoveryTimer=null;
 
   const SUPABASE_SOURCES=[
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
@@ -143,6 +145,42 @@
     window.dispatchEvent(new CustomEvent('mijnserenity:boot-complete',{detail:{build:BUILD,reason}}));
   }
 
+  function isVisible(node){
+    if(!node||!node.isConnected)return false;
+    const style=getComputedStyle(node);
+    if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;
+    const rect=node.getBoundingClientRect();
+    return rect.width>1&&rect.height>1;
+  }
+  function showRecoveryFallback(){
+    document.documentElement.removeAttribute('data-ms-booting');
+    document.documentElement.removeAttribute('data-ms-start-boot');
+    let cover=document.getElementById('ms8312BootCover');
+    if(!cover){
+      cover=document.createElement('div');cover.id='ms8312BootCover';document.body?.appendChild(cover);
+    }
+    Object.assign(cover.style,{display:'grid',position:'fixed',inset:'0',zIndex:'2147483640',placeItems:'center',background:'#061321',color:'#f6fbff',fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif'});
+    cover.innerHTML='<div style="text-align:center;padding:24px"><strong style="font-size:26px">MijnSerenity</strong><small style="display:block;margin:9px 0 18px;color:#9ab3c5">Opstarten duurde te lang.</small><button type="button" style="padding:12px 18px;border:0;border-radius:12px;font-weight:700" onclick="location.reload()">Opnieuw laden</button></div>';
+  }
+  function scheduleRecoveryCheck(reason='startup',delay=6500){
+    clearTimeout(recoveryTimer);
+    recoveryTimer=setTimeout(()=>{
+      if(document.hidden)return;
+      const auth=document.getElementById('authView');
+      const approval=document.getElementById('approvalView');
+      const app=document.getElementById('appView');
+      const start=document.getElementById('ms8210Start');
+      const usable=isVisible(auth)||isVisible(approval)||(isVisible(app)&&Boolean(start));
+      if(usable){try{sessionStorage.removeItem(RECOVERY_KEY)}catch{};return}
+      let attempts=0;try{attempts=Number(sessionStorage.getItem(RECOVERY_KEY)||0)}catch{}
+      if(attempts<1){
+        try{sessionStorage.setItem(RECOVERY_KEY,String(attempts+1))}catch{}
+        const url=new URL(location.href);url.searchParams.set('herstelstart',Date.now().toString());location.replace(url.toString());return;
+      }
+      console.warn('MijnSerenity startwatchdog:',reason,'UI bleef onzichtbaar.');showRecoveryFallback();
+    },timeout(delay));
+  }
+
   function removeConflicts(){
     const blocked=['page-swipe.css','simple-accessible.css','captain-experience.css','navigation-compact.css','futuristic-analog-7140.css','dashboard-analog-7141.css','dashboard-premium-7143.css','start-cockpit-7144.css','serenity-ivms.css','marine-glass-mobile-7182.css','marine-glass-polish-7185.css','serenity-control-dashboard.css','iphone-landscape-8301.css'];
     document.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{const p=pathOf(link.href);if(blocked.some(name=>p.endsWith('/'+name)||p.endsWith(name)))link.remove()});
@@ -211,14 +249,17 @@
     throw last||new Error('Supabase kon niet worden geladen.');
   }
   async function serviceWorker(){
-    if(!('serviceWorker' in navigator))return;
-    try{const r=await navigator.serviceWorker.register(`/sw.js?v=${VERSION}`,{updateViaCache:'none'});if(r.waiting)r.waiting.postMessage({type:'SKIP_WAITING'})}catch(error){console.warn('Service worker:',error)}
+    if(!/^https?:$/.test(location.protocol)||!('serviceWorker' in navigator))return;
+    try{await navigator.serviceWorker.register(`/sw.js?v=${VERSION}`,{updateViaCache:'none'})}catch(error){console.warn('Service worker:',error)}
   }
   async function clearOldCaches(){
     let previous='';try{previous=localStorage.getItem('mijnserenity-runtime-build')||''}catch{}
     if(previous===BUILD)return;
     try{if('caches'in window){const names=await caches.keys();await Promise.all(names.filter(n=>n.startsWith('mijnserenity-')).map(n=>caches.delete(n)))}}catch{}
     try{localStorage.setItem('mijnserenity-runtime-build',BUILD)}catch{}
+  }
+  function scheduleMaintenance(){
+    idle(()=>clearOldCaches().then(serviceWorker).catch(error=>console.warn('Opstartonderhoud:',error)),1800);
   }
 
   function wrapNavigation(){
@@ -237,9 +278,8 @@
   }
 
   async function boot(){
-    installGuard();setBuild();removeConflicts();ensureStartCss();status('Beveiligde inlog wordt geladen…');
+    installGuard();setBuild();removeConflicts();ensureStartCss();status('Beveiligde inlog wordt geladen…');scheduleRecoveryCheck('boot');
     const startTask=startDashboard().catch(error=>{console.error('Start:',error);return false});
-    clearOldCaches();serviceWorker();
     const slowNotice=setTimeout(()=>status('Verbinding is wat trager; MijnSerenity blijft rustig doorladen…'),timeout(4200));
     try{
       await ensureSupabase();
@@ -247,7 +287,7 @@
       installHooks();wrapNavigation();
       await startTask;removeConflicts();setBuild();
       const signIn=document.getElementById('signInButton');if(signIn)signIn.disabled=false;
-      clearTimeout(slowNotice);finish('ready');
+      clearTimeout(slowNotice);finish('ready');scheduleRecoveryCheck('ready',2200);scheduleMaintenance();
       loadScript(`/runtime-stability-8202.js?v=${VERSION}`,6000).catch(()=>{});
       idle(()=>Promise.allSettled(START_DATA.map(src=>loadScript(src,8500))).then(()=>window.dispatchEvent(new CustomEvent('mijnserenity:live-core-ready',{detail:{build:BUILD}}))),250);
       idle(()=>Promise.allSettled(IDLE.map(src=>loadScript(src,8500))),1300);
@@ -255,11 +295,12 @@
       const msg=document.getElementById('authMsg');if(msg&&/geladen|beveiligde inlog|trager/i.test(msg.textContent||''))msg.textContent='Nog niet ingelogd.';
       console.info(`MijnSerenity ${BUILD}: snelle bootstrap actief.`);
     }catch(error){
-      clearTimeout(slowNotice);console.error('MijnSerenity kon niet starten:',error);await startTask;finish('fallback');status('De beveiligde inlog kon niet volledig worden geladen. Controleer je verbinding en probeer opnieuw.',true);const button=document.getElementById('signInButton');if(button)button.disabled=true;
+      clearTimeout(slowNotice);console.error('MijnSerenity kon niet starten:',error);await startTask;finish('fallback');status('De beveiligde inlog kon niet volledig worden geladen. Controleer je verbinding en probeer opnieuw.',true);const button=document.getElementById('signInButton');if(button)button.disabled=true;scheduleRecoveryCheck('fallback',2200);
     }
   }
 
-  window.addEventListener('mijnserenity:dashboard-ready',()=>{removeConflicts();setBuild();wrapNavigation();finish('dashboard-ready')},{passive:true});
-  window.addEventListener('pageshow',()=>{removeConflicts();setBuild();wrapNavigation()},{passive:true});
+  window.addEventListener('mijnserenity:dashboard-ready',()=>{removeConflicts();setBuild();wrapNavigation();finish('dashboard-ready');scheduleRecoveryCheck('dashboard-ready',1200)},{passive:true});
+  window.addEventListener('pageshow',()=>{removeConflicts();setBuild();wrapNavigation();scheduleRecoveryCheck('pageshow',2500)},{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleRecoveryCheck('visible',2500)},{passive:true});
   if(document.body)queueMicrotask(boot);else document.addEventListener('DOMContentLoaded',boot,{once:true});
 })();
