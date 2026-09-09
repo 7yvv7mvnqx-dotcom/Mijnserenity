@@ -1,5 +1,5 @@
 [build]
-  command = "node scripts/fetch-victron-gui.mjs && node scripts/build-production-8311.mjs"
+  command = "node scripts/fetch-victron-gui.mjs && node scripts/build-production-8311.mjs && node scripts/validate-production-8311.mjs"
   publish = "dist"
 
 [functions]
