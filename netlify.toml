@@ -1,7 +1,6 @@
 [build]
-  command = "node scripts/fetch-victron-gui.mjs"
+  command = "node scripts/fetch-victron-gui.mjs && node tests/static-assets.test.mjs && node tests/release-8310.test.mjs"
   publish = "."
-
 
 [[headers]]
   for = "/*"
@@ -10,8 +9,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
-
-# MijnSerenity 6.7.1 — waterwegrouter zonder Functions-map
+# Routering en databronnen.
 [[redirects]]
   from = "/api/waterway-route"
   to = "https://brouter.grade.de/brouter"
@@ -24,8 +22,6 @@
   status = 200
   force = true
 
-
-# MijnSerenity 6.7.2 — Overpass-proxy voor bruggen, sluizen en POI's
 [[redirects]]
   from = "/api/overpass"
   to = "https://overpass-api.de/api/interpreter"
@@ -38,30 +34,18 @@
   status = 200
   force = true
 
-
-# MijnSerenity 8.25.6 — EuRIS Notice to Skippers met locatieverrijking voor vaarwegberichten
 [[redirects]]
   from = "/api/euris-nts"
   to = "/.netlify/functions/euris-nts"
   status = 200
   force = true
 
-# MijnSerenity 7.14.7 — beveiligde VRM proxy voor RuuviTags
-[[redirects]]
-  from = "/api/vrm-ruuvi"
-  to = "/.netlify/functions/vrm-ruuvi"
-  status = 200
-  force = true
-
-# MijnSerenity 8.21.1 — VRM MQTT-config voor de echte ingebedde Cerbo GUI-v2
 [[redirects]]
   from = "/api/victron-console-config"
   to = "/.netlify/functions/victron-console-config"
   status = 200
   force = true
 
-# MijnSerenity 7.15.16 — RWS WaterWebservices via same-origin proxy
-# Nodig voor iOS/Safari: directe cross-origin POST naar RWS gaf "Load failed".
 [[redirects]]
   from = "/api/rws-water-catalogus"
   to = "https://ddapi20-waterwebservices.rijkswaterstaat.nl/METADATASERVICES/OphalenCatalogus"
@@ -79,7 +63,7 @@
   to = "/index.html"
   status = 200
 
-# MijnSerenity — voorkom gemengde PWA-versies
+# App-shell en code altijd vers; de service worker verzorgt gecontroleerde offline fallback.
 [[headers]]
   for = "/index.html"
   [headers.values]
@@ -91,30 +75,6 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[headers]]
-  for = "/auth-bootstrap.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# 8.21.1 — officiële Victron GUI-v2 wordt tijdens deploy als statische app opgebouwd.
-[[headers]]
-  for = "/victron-gui/*"
-  [headers.values]
-    Cache-Control = "public, max-age=3600"
-    Referrer-Policy = "no-referrer"
-
-# De release bevat een gzip-WASM. De build maakt hiervan een bytekopie op het
-# normale .wasm-pad; deze header laat de browser hem correct decomprimeren.
-[[headers]]
-  for = "/victron-gui/venus-gui-v2.wasm"
-  [headers.values]
-    Content-Type = "application/wasm"
-    Content-Encoding = "gzip"
-    Cache-Control = "public, max-age=604800, immutable"
-
-# 7.18.33 — alle root-JS/CSS komt eerst vers van Netlify; offline caching
-# blijft via de service worker beschikbaar. Dit voorkomt een mix van oude
-# 7.18.12/7.18.32 assets met de actuele build.
-[[headers]]
   for = "/*.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
@@ -124,88 +84,21 @@
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
-# MijnSerenity 7.18.30 — MultiPlus-II bediening altijd vers laden
 [[headers]]
-  for = "/multiplus-control-71830.js"
+  for = "/assets/*"
   [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
 
-
-# MijnSerenity 7.4.6 — Home Assistant en livecamera-assets
+# Officiële Victron GUI-v2.
 [[headers]]
-  for = "/ha-live-bridge.js"
+  for = "/victron-gui/*"
   [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/live-cameras.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
+    Cache-Control = "public, max-age=3600"
+    Referrer-Policy = "no-referrer"
 
 [[headers]]
-  for = "/live-cameras.css"
+  for = "/victron-gui/venus-gui-v2.wasm"
   [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# MijnSerenity 7.4.6 — iPad navigatiecorrectie direct vernieuwen
-[[headers]]
-  for = "/navigation-compact.css"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/navigation-compact.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# MijnSerenity 7.10.2 — vaarwegberichten direct vernieuwen
-[[headers]]
-  for = "/rws-nearby.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/rws-nearby.css"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/start-dashboard-71510.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# MijnSerenity 7.18.15 — live Victron walstroom/AC direct vernieuwen
-[[headers]]
-  for = "/victron-energy-71559.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# MijnSerenity 7.18.15 — actuele accustatus en historie direct vernieuwen
-[[headers]]
-  for = "/victron-diagnostics.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# MijnSerenity 7.18.14.2 — live remap en loader direct vernieuwen
-[[headers]]
-  for = "/update-prompt.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/tank-live-remap-718141.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# MijnSerenity 7.18.18 — Cerbo waarheidspatch direct vernieuwen
-[[headers]]
-  for = "/cerbo-truth-71818.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/cerbo-tank-sync-71819.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# MijnSerenity 7.18.19 — live dieselstand direct vernieuwen
+    Content-Type = "application/wasm"
+    Content-Encoding = "gzip"
+    Cache-Control = "public, max-age=604800, immutable"
