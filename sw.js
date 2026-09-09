@@ -1,6 +1,6 @@
-/* MijnSerenity 8.31.0 — eenvoudige PWA-cache zonder HTML-rewrites of oude dashboardlagen. */
-const BUILD='8.31.0';
-const TOKEN='831000';
+/* MijnSerenity 8.31.1 — eenvoudige PWA-cache zonder HTML-rewrites of oude dashboardlagen. */
+const BUILD='8.31.1';
+const TOKEN='831100';
 const CACHE=`mijnserenity-${BUILD}`;
 const CORE=[
   '/',
@@ -9,6 +9,8 @@ const CORE=[
   `/auth-bootstrap.js?v=${TOKEN}`,
   `/app.js?v=${TOKEN}`,
   `/start-dashboard-71510.css?v=${TOKEN}`,
+  `/start-dashboard-71510.js?v=${TOKEN}`,
+  `/runtime-hotfix-8311.js?v=${TOKEN}`,
   `/start-dashboard-core.js?v=${TOKEN}`,
   `/runtime-stability-8202.js?v=${TOKEN}`,
   `/assets/serenity-hero-8274.jpg?v=${TOKEN}`,
@@ -55,10 +57,13 @@ async function networkFirst(request){
     const response=await fetchTimeout(request,{cache:'no-cache'},6000);
     if(response.ok){const cache=await caches.open(CACHE);await put(cache,request,response);return response}
   }catch{}
-  return (await caches.match(request,{ignoreSearch:false}))||new Response('',{status:503});
+  const exact=await caches.match(request,{ignoreSearch:false});
+  if(exact)return exact;
+  const url=new URL(request.url);
+  return (await caches.match(url.pathname,{ignoreSearch:true}))||new Response('',{status:503});
 }
 async function imageCache(request){
-  const cached=await caches.match(request,{ignoreSearch:false});
+  const cached=(await caches.match(request,{ignoreSearch:false}))||(await caches.match(new URL(request.url).pathname,{ignoreSearch:true}));
   if(cached)return cached;
   try{const response=await fetchTimeout(request,{cache:'default'},8000);if(response.ok){const cache=await caches.open(CACHE);await put(cache,request,response)}return response}catch{return new Response('',{status:503})}
 }
