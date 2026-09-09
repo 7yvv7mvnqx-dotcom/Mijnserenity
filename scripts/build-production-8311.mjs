@@ -11,8 +11,8 @@ const EXCLUDED_DIRS=new Set([
 ]);
 
 /* Alleen bewezen verouderde visuele lagen worden uit productie gehouden.
-   Functionele modules met oude versienummers blijven staan zolang de actuele
-   bootstrap of route-loader ze nog gebruikt. */
+   Functionele modules en twee kleine upgrade-shims blijven staan zolang de
+   actuele bootstrap of een nog geopende oude client ze kan gebruiken. */
 const LEGACY_VISUAL_FILES=new Set([
   '.DS_Store',
   'dashboard-analog-7141.js','dashboard-analog-7141.css',
@@ -39,8 +39,7 @@ const LEGACY_VISUAL_FILES=new Set([
   'professional-ui-71700.css',
   'simple-accessible.css','simple-accessible.js',
   'serenity-control-dashboard.css','serenity-control-dashboard.js',
-  'start-dashboard-71510.css','start-dashboard-71510.js',
-  'start-dashboard-71900-bridge.js','start-dashboard-core-8300.js'
+  'start-dashboard-71510.css','start-dashboard-71900-bridge.js'
 ]);
 
 function isNonRuntimeFile(relative,name){
@@ -132,6 +131,7 @@ function transformIndex(html){
     `<meta name="mijnserenity-build" content="${BUILD}">`);
   html=html.replace(/window\.MIJSERENITY_BUILD\s*=\s*['"][^'"]+['"]/g,
     `window.MIJSERENITY_BUILD='${BUILD}'`);
+  html=html.replace(/manifest\.json\?v=[^"']+/g,`manifest.json?v=${TOKEN}`);
   html=html.replace(/<script\s+id=["']ms7150-vrm-runtime["'][^>]*>[\s\S]*?<\/script>\s*/i,'');
   html=stripLegacyBottomScripts(html);
   html=stripLocalStyles(html);
@@ -192,7 +192,7 @@ const required=[
   'start-dashboard-core-8311.js','serenity-theme-8311.css','serenity-theme-8311.js',
   'state-migration-8311.js','route-assets-8311.js',
   'mission-control.js','route-control.js','easy-auto.js',
-  'dashboard-unified-71919-loader.js',
+  'dashboard-unified-71919-loader.js','start-dashboard-71510.js','start-dashboard-core-8300.js',
   'assets/serenity-hero-8274.jpg'
 ];
 for(const file of required)await fs.access(path.join(DIST,file));
@@ -206,5 +206,4 @@ for(const legacy of LEGACY_VISUAL_FILES){
   }
 }
 
-const published=await fs.readdir(DIST,{recursive:true});
-console.log(`MijnSerenity ${BUILD}: schone productiebuild gemaakt (${published.length} items in dist/).`);
+console.log(`MijnSerenity ${BUILD}: schone productiebuild gemaakt in dist/.`);
