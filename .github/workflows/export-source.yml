@@ -22,10 +22,9 @@ jobs:
 
       - name: Prepare Netlify MCP tools
         run: |
+          rm -rf .deploy-tools
           mkdir -p .deploy-tools
-          cd .deploy-tools
-          npm init -y >/dev/null 2>&1
-          npm install --omit=dev @netlify/mcp@1.15.1
+          npm install --prefix .deploy-tools --omit=dev @netlify/mcp@1.15.1
 
       - name: Upload Netlify MCP tools
         uses: actions/upload-artifact@v4
