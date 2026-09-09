@@ -1,53 +1,76 @@
-/* MijnSerenity 8.25.5 — stabiele lokale Start-loader; geen oud kaart/gauge-dashboard meer */
-(()=>{
+// MijnSerenity 8.26.0 - 2026-09-09
+// Stable start bootstrap + approved Serenity dashboard.
+(function () {
   'use strict';
-  if(window.__msSimpleStart8255)return;
-  window.__msSimpleStart8255=true;
-  window.__msSimpleStart8210=true;
 
-  const BUILD='8.25.5';
-  const TOKEN='825500';
+  const TOKEN = '826000';
+  const BUILD = '8.26.0';
+  const SCRIPT_ID = 'ms8210StartScript';
+  const APPROVED_ID = 'ms8260ApprovedScript';
 
-  /* Stop oude, via CDN doorgeluste dashboardlagen als die nog onderweg zijn. */
-  window.__msReferenceDashboard8254=true;
-  window.__msPersonalWelcome8253=true;
-  window.__msDayNightChoice8252=true;
-  window.__msDayNight8250=true;
-  window.__msDashboardLoader8234=true;
-
-  function syncBuild(){
-    window.MIJSERENITY_BUILD=BUILD;
-    document.querySelector('meta[name="mijnserenity-build"]')?.setAttribute('content',BUILD);
-    document.querySelector('meta[name="ms-build"]')?.setAttribute('content',BUILD);
-    const settings=document.getElementById('settingsAppVersion');
-    if(settings)settings.textContent=BUILD;
+  function atHome() {
+    try { return (location.hash || '#dashboard').slice(1) === 'dashboard'; } catch (_) { return true; }
   }
 
-  function render(){
-    syncBuild();
-    try{
-      if(typeof window.ms8255RenderStart==='function'){
-        window.ms8255RenderStart();
-        return true;
-      }
-    }catch(error){console.warn('Serenity Start render:',error)}
+  function syncBuild() {
+    try { window.APP_BUILD = BUILD; window.MIJSERENITY_BUILD = BUILD; } catch (_) {}
+    try { document.documentElement.dataset.build = TOKEN; } catch (_) {}
+    const badge = document.getElementById('buildStamp');
+    if (badge) badge.textContent = 'v' + BUILD;
+  }
+
+  function applyApproved() {
+    if (!atHome()) return false;
+    if (typeof window.ms8260ApplyApprovedDashboard === 'function') {
+      try { window.ms8260ApplyApprovedDashboard(); syncBuild(); return true; } catch (e) { console.warn('Approved dashboard apply failed', e); }
+    }
+    let script = document.getElementById(APPROVED_ID);
+    if (!script) {
+      script = document.createElement('script');
+      script.id = APPROVED_ID;
+      script.src = 'approved-dashboard-8260.js?v=' + TOKEN;
+      script.async = false;
+      script.addEventListener('load', () => { try { window.ms8260ApplyApprovedDashboard?.(); syncBuild(); } catch (_) {} }, { once: true });
+      document.head.appendChild(script);
+    }
     return false;
   }
 
-  function loadFresh(){
-    if(render())return;
-    if(document.querySelector('script[data-ms-start-8255]'))return;
-    const script=document.createElement('script');
-    script.src=`/start-dashboard-71510.js?v=${TOKEN}`;
-    script.async=false;
-    script.dataset.msStart8255='1';
-    script.onload=()=>{render();setTimeout(render,120)};
-    script.onerror=()=>console.warn('Serenity Start kon niet lokaal worden geladen.');
-    document.head.appendChild(script);
+  function render() {
+    if (!atHome()) return false;
+    let rendered = false;
+    if (typeof window.ms8255RenderStart === 'function') {
+      try { window.ms8255RenderStart(); rendered = true; } catch (e) { console.warn('Start render failed', e); }
+    }
+    setTimeout(applyApproved, 0);
+    syncBuild();
+    return rendered;
   }
 
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadFresh,{once:true});
-  else loadFresh();
-  [120,500,1400].forEach(ms=>setTimeout(loadFresh,ms));
-  window.addEventListener('pageshow',render,{passive:true});
+  function loadFresh() {
+    const rendered = render();
+    let script = document.getElementById(SCRIPT_ID);
+    if (!rendered && !script) {
+      script = document.createElement('script');
+      script.id = SCRIPT_ID;
+      script.src = 'start-dashboard-71510.js?v=' + TOKEN;
+      script.async = false;
+      script.addEventListener('load', () => { render(); setTimeout(applyApproved, 0); }, { once: true });
+      document.head.appendChild(script);
+    } else {
+      try { script?.addEventListener('load', () => { render(); setTimeout(applyApproved, 0); }, { once: true }); } catch (_) {}
+      applyApproved();
+    }
+  }
+
+  function boot() {
+    syncBuild();
+    loadFresh();
+    [100, 350, 900, 1600].forEach(ms => setTimeout(() => { render(); setTimeout(applyApproved, 15); }, ms));
+    window.addEventListener('hashchange', () => setTimeout(loadFresh, 0));
+    window.addEventListener('pageshow', () => setTimeout(loadFresh, 0));
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })();
