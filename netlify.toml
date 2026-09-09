@@ -1,5 +1,5 @@
 [build]
-  command = "node scripts/fetch-victron-gui.mjs && node tests/static-assets.test.mjs && node tests/release-8310.test.mjs"
+  command = "node scripts/fetch-victron-gui.mjs && node tests/static-assets.test.mjs && node tests/release-8310.test.mjs && node tests/runtime-hotfix-8311.test.mjs"
   publish = "."
 
 [[headers]]
