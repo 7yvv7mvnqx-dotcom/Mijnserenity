@@ -14,7 +14,7 @@ assert.doesNotMatch(html,/leaflet@1\.9\.4\/dist\/leaflet\.(?:css|js)/,'Leaflet m
 assert.doesNotMatch(html,/jszip@3\.10\.1\/dist\/jszip\.min\.js/,'JSZip mag niet meer in de critical path staan');
 assert.doesNotMatch(html,/mijnserenity-logo\.png/,'Zware login-afbeelding staat nog in de critical path');
 assert.match(html,/icon-192\.png\?v=831200/,'Lichte login-afbeelding ontbreekt');
-assert.match(html,/rel="preload" as="image" href="\/assets\/serenity-hero-8274\.jpg\?v=831200"/,'Serenity-header wordt niet gepreload');
+assert.match(html,/rel="preload" as="image" href="\/assets\/serenity-hero-8275\.jpg\?v=831200"/,'Correcte Serenity-header wordt niet gepreload');
 
 const styles=[...html.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1]);
 assert.ok(styles.length<=3,`Te veel render-blocking stylesheets: ${styles.length}`);
@@ -32,7 +32,9 @@ assert.match(bootstrap,/bootObserver\?\.disconnect\(\)/,'Boot-observer wordt nie
 
 assert.match(sw,/const BUILD='8\.31\.2'/);
 assert.doesNotMatch(sw,/runtime-hotfix-8311|start-dashboard-71510\.js/,'Oude opstartlagen staan nog in de core-cache');
+assert.match(sw,/serenity-hero-8275\.jpg/,'Correcte Serenity-header ontbreekt in de PWA-cache');
 assert.match(start,/const BUILD='8\.31\.2'/);
+assert.match(start,/const HERO='\/assets\/serenity-hero-8275\.jpg\?v=831200'/,'Start-runtime gebruikt niet de correcte Serenity-foto');
 assert.match(start,/10000/,'Start-render is niet gethrottled');
 
 console.log(`MijnSerenity 8.31.2 performancecontract: OK · ${styles.length} render-blocking stylesheets.`);
