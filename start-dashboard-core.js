@@ -7,8 +7,8 @@
   const BUILD='8.31.2';
   const ROOT_ID='ms8210Start';
   const THEME_KEY='mijnserenity-daynight-v1';
-  const HERO='/assets/serenity-hero-8274.jpg?v=831200';
-  const HERO_FALLBACK='/assets/serenity-home-hero-8266.jpg?v=831200';
+  const HERO='/assets/serenity-hero-8275.jpg?v=831200';
+  const HERO_FALLBACK='/assets/serenity-hero-8274.jpg?v=831200';
   const $=id=>document.getElementById(id);
   const finite=value=>{
     if(value===null||value===undefined||value===''||typeof value==='boolean')return null;
@@ -94,7 +94,7 @@
     root.setAttribute('aria-label','MijnSerenity Start');
     root.innerHTML=`
       <header class="ms8300-hero">
-        <img class="ms8300-photo" src="${HERO}" alt="Serenity" fetchpriority="high" decoding="async">
+        <img class="ms8300-photo" src="${HERO}" width="936" height="650" alt="Serenity, VriJon Contessa" fetchpriority="high" decoding="async" draggable="false">
         <div class="ms8300-overlay" aria-hidden="true"></div>
         <div class="ms8300-top">
           <div class="ms8300-brand"><strong>Serenity</strong><small>EXPLORE · NAVIGATE · ENJOY</small></div>
@@ -145,7 +145,14 @@
     });
     $('ms8300Theme')?.addEventListener('click',event=>{event.stopPropagation();applyTheme(readTheme()==='night'?'day':'night',true);});
     const img=root.querySelector('.ms8300-photo');
-    if(img)img.onerror=()=>{if(!img.src.includes('serenity-home-hero-8266.jpg'))img.src=HERO_FALLBACK;};
+    if(img)img.onerror=()=>{
+      if(img.dataset.fallback==='1'){
+        img.remove();
+        return;
+      }
+      img.dataset.fallback='1';
+      img.src=HERO_FALLBACK;
+    };
     dashboard.classList.add('ms8300-ready');
     document.body?.classList.add('ms8300-start-page');
     return true;
