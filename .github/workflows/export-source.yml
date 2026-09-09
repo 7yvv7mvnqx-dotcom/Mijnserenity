@@ -1,0 +1,20 @@
+name: Export source
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Upload repository source
+        uses: actions/upload-artifact@v4
+        with:
+          name: mijnserenity-source
+          path: .
+          include-hidden-files: true
+          retention-days: 1
