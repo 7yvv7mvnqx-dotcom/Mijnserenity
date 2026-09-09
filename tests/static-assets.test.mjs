@@ -18,6 +18,7 @@ assert.match(sw,/start-dashboard-core\.js/);
 assert.match(bootstrap,/mission-control\.js/);
 assert.match(bootstrap,/easy-auto\.js/);
 assert.match(bootstrap,/route-control\.js/);
-assert.ok(fs.existsSync(path.resolve(new URL(root).pathname,'assets/serenity-hero-8274.jpg')),'Canonieke Serenity-header ontbreekt');
+assert.ok(fs.existsSync(path.resolve(new URL(root).pathname,'assets/serenity-hero-8275.jpg')),'Canonieke Serenity-header ontbreekt');
+assert.ok(fs.existsSync(path.resolve(new URL(root).pathname,'assets/serenity-hero-8274.jpg')),'Serenity fallback-header ontbreekt');
 assert.ok(fs.existsSync(path.resolve(new URL(root).pathname,'vrm-runtime-8312.js')),'Uitgestelde VRM-runtime ontbreekt');
 console.log(`Statische appbestanden: OK (${new Set(refs).size} lokale HTML-referenties)`);
