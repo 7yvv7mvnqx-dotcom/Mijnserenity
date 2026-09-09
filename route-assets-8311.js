@@ -9,6 +9,7 @@
   const loadedScripts=new Set();
 
   const CORE_STYLES=[
+    'serenity-shell-8311.css',
     'mission-control.css','easy-auto.css','route-control.css','ruuvi-climate.css',
     'victron-energy-71559.css','victron-diagnostics.css','home-assistant-contrast.css'
   ];
