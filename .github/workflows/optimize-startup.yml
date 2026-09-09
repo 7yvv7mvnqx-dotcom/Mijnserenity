@@ -1,0 +1,46 @@
+name: Optimize MijnSerenity startup
+
+on:
+  push:
+    paths:
+      - '.github/workflows/optimize-startup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Optimize production shell
+        run: node scripts/optimize-production-shell.mjs
+
+      - name: Verify startup performance contract
+        run: node tests/performance-start-8312.test.mjs
+
+      - name: Verify static assets
+        run: node tests/static-assets.test.mjs
+
+      - name: Commit optimized startup
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No startup changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html start-dashboard-core.js vrm-runtime-8312.js
+          git commit -m "perf: streamline startup loading"
+          git push
