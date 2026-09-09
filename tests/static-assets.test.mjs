@@ -13,10 +13,11 @@ assert.deepEqual(missing,[],`Ontbrekende lokale HTML-bestanden: ${missing.join('
 const sw=fs.readFileSync(new URL('sw.js',root),'utf8');
 const bootstrap=fs.readFileSync(new URL('auth-bootstrap.js',root),'utf8');
 const start=fs.readFileSync(new URL('start-dashboard-core.js',root),'utf8');
-for(const source of [html,sw,bootstrap,start])assert.match(source,/8\.31\.0|831000/,'Build 8.31.0 ontbreekt in actieve runtime');
+for(const source of [html,sw,bootstrap,start])assert.match(source,/8\.31\.2|831200/,'Build 8.31.2 ontbreekt in actieve runtime');
 assert.match(sw,/start-dashboard-core\.js/);
 assert.match(bootstrap,/mission-control\.js/);
 assert.match(bootstrap,/easy-auto\.js/);
 assert.match(bootstrap,/route-control\.js/);
 assert.ok(fs.existsSync(path.resolve(new URL(root).pathname,'assets/serenity-hero-8274.jpg')),'Canonieke Serenity-header ontbreekt');
+assert.ok(fs.existsSync(path.resolve(new URL(root).pathname,'vrm-runtime-8312.js')),'Uitgestelde VRM-runtime ontbreekt');
 console.log(`Statische appbestanden: OK (${new Set(refs).size} lokale HTML-referenties)`);
