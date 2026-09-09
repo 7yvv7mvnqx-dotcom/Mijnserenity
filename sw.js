@@ -1,6 +1,6 @@
-/* MijnSerenity 8.31.1 — eenvoudige PWA-cache zonder HTML-rewrites of oude dashboardlagen. */
-const BUILD='8.31.1';
-const TOKEN='831100';
+/* MijnSerenity 8.31.2 — compacte PWA-cache: alleen de echte opstartketen vooraf cachen. */
+const BUILD='8.31.2';
+const TOKEN='831200';
 const CACHE=`mijnserenity-${BUILD}`;
 const CORE=[
   '/',
@@ -8,9 +8,9 @@ const CORE=[
   '/manifest.json',
   `/auth-bootstrap.js?v=${TOKEN}`,
   `/app.js?v=${TOKEN}`,
+  `/styles.css?v=${TOKEN}`,
+  `/captain-ux-711.css?v=${TOKEN}`,
   `/start-dashboard-71510.css?v=${TOKEN}`,
-  `/start-dashboard-71510.js?v=${TOKEN}`,
-  `/runtime-hotfix-8311.js?v=${TOKEN}`,
   `/start-dashboard-core.js?v=${TOKEN}`,
   `/runtime-stability-8202.js?v=${TOKEN}`,
   `/assets/serenity-hero-8274.jpg?v=${TOKEN}`,
@@ -47,7 +47,7 @@ self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')sel
 
 async function navigation(request){
   try{
-    const response=await fetchTimeout(request,{cache:'no-store'},4500);
+    const response=await fetchTimeout(request,{cache:'no-store'},4000);
     if(response.ok){const cache=await caches.open(CACHE);await put(cache,'/index.html',response);return response}
   }catch{}
   return (await caches.match('/index.html'))||(await caches.match('/'))||new Response('MijnSerenity is offline en heeft nog geen lokale versie.',{status:503,headers:{'content-type':'text/plain; charset=utf-8'}});
