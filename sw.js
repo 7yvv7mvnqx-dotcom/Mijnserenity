@@ -1,7 +1,7 @@
-/* MijnSerenity 8.31.2 — compacte PWA-cache: alleen de echte opstartketen vooraf cachen. */
+/* MijnSerenity 8.31.2 — stabiele PWA-cache zonder overname tijdens een actieve opstart. */
 const BUILD='8.31.2';
 const TOKEN='831200';
-const CACHE=`mijnserenity-${BUILD}`;
+const CACHE=`mijnserenity-${BUILD}-stable-launch`;
 const CORE=[
   '/',
   '/index.html',
@@ -31,7 +31,7 @@ self.addEventListener('install',event=>{
     await Promise.allSettled(CORE.map(async asset=>{
       try{const response=await fetchTimeout(asset,{cache:'reload'},9000);await put(cache,asset,response)}catch{}
     }));
-    await self.skipWaiting();
+    /* Geen skipWaiting: een nieuwe worker neemt nooit midden in een iPhone-opstart over. */
   })());
 });
 
@@ -39,11 +39,9 @@ self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     const names=await caches.keys();
     await Promise.all(names.filter(name=>name.startsWith('mijnserenity-')&&name!==CACHE).map(name=>caches.delete(name)));
-    await self.clients.claim();
+    /* Geen clients.claim(): bestaande pagina's houden hun huidige runtime tot de volgende start. */
   })());
 });
-
-self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting()});
 
 async function navigation(request){
   try{
@@ -57,10 +55,8 @@ async function networkFirst(request){
     const response=await fetchTimeout(request,{cache:'no-cache'},6000);
     if(response.ok){const cache=await caches.open(CACHE);await put(cache,request,response);return response}
   }catch{}
-  const exact=await caches.match(request,{ignoreSearch:false});
-  if(exact)return exact;
-  const url=new URL(request.url);
-  return (await caches.match(url.pathname,{ignoreSearch:true}))||new Response('',{status:503});
+  /* Alleen exact dezelfde versie teruggeven. Nooit oud JS/CSS met een nieuwe index mengen. */
+  return (await caches.match(request,{ignoreSearch:false}))||new Response('',{status:503});
 }
 async function imageCache(request){
   const cached=(await caches.match(request,{ignoreSearch:false}))||(await caches.match(new URL(request.url).pathname,{ignoreSearch:true}));
