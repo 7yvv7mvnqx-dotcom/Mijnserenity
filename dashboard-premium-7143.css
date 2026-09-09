@@ -1,0 +1,215 @@
+/* MijnSerenity 7.14.3 — premium overzichtelijk dashboard */
+#dashboard > .captain-strip{ display:none !important; }
+#dashboard > .dashboard-photo-card{
+  display:none !important;
+}
+.captain-command-center{
+  margin-top:14px;
+}
+.captain-command-center .card{
+  border-radius:24px !important;
+  background:linear-gradient(180deg,rgba(12,28,43,.96),rgba(7,18,30,.98)) !important;
+  border:1px solid rgba(255,255,255,.07) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 14px 30px rgba(0,0,0,.18) !important;
+}
+.ms-welcome-card{
+  margin:0 0 14px !important;
+  border-radius:24px !important;
+  background:linear-gradient(135deg,rgba(20,50,78,.98),rgba(10,27,43,.98)) !important;
+}
+.ms-dashboard-premium{
+  margin:0 0 14px;
+  padding:16px;
+  border-radius:26px;
+  background:
+    radial-gradient(circle at top right,rgba(89,188,255,.12),transparent 28%),
+    linear-gradient(180deg,rgba(11,26,41,.98),rgba(7,18,30,.99));
+  border:1px solid rgba(123,180,233,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 16px 36px rgba(0,0,0,.18);
+}
+.ms-premium-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+.ms-premium-head h3{
+  margin:0;
+  font-size:1.08rem;
+  line-height:1.15;
+  color:#fff;
+}
+.ms-premium-head p{
+  margin:4px 0 0;
+  color:#a9bfd2;
+  font-size:.8rem;
+  line-height:1.25;
+}
+.ms-premium-badge{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:7px 11px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.08);
+  color:#e1eef9;
+  font-size:.68rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.ms-premium-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.ms-premium-card{
+  min-width:0;
+  padding:14px;
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(15,34,53,.96),rgba(9,20,33,.98));
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+.ms-premium-card-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:10px;
+}
+.ms-premium-card-header strong{
+  font-size:.92rem;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:#fff;
+}
+.ms-premium-pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:.66rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  background:rgba(255,255,255,.08);
+  color:#dce9f6;
+  border:1px solid rgba(255,255,255,.07);
+}
+.ms-premium-pill.good{ color:#b8f0c0; background:rgba(119,225,143,.12); border-color:rgba(119,225,143,.18); }
+.ms-premium-pill.warning{ color:#ffe08a; background:rgba(255,211,107,.12); border-color:rgba(255,211,107,.18); }
+.ms-premium-pill.critical{ color:#ffc0b6; background:rgba(255,140,124,.12); border-color:rgba(255,140,124,.18); }
+.ms-premium-primary{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:12px;
+}
+.ms-premium-big{
+  font-size:1.7rem;
+  font-weight:800;
+  line-height:1;
+  color:#fff;
+}
+.ms-premium-sub{
+  margin-top:4px;
+  font-size:.78rem;
+  line-height:1.22;
+  color:#a9bfd2;
+}
+.ms-premium-micro{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.ms-premium-micro span,
+.ms-premium-bar-row,
+.ms-premium-status-row{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+  padding:9px 10px;
+  border-radius:16px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.05);
+}
+.ms-premium-micro small,
+.ms-premium-bar-row small,
+.ms-premium-status-row small{
+  font-size:.62rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#86a6c0;
+}
+.ms-premium-micro strong,
+.ms-premium-bar-row strong,
+.ms-premium-status-row strong{
+  font-size:.92rem;
+  line-height:1.15;
+  color:#fff;
+  overflow-wrap:anywhere;
+}
+.ms-premium-bars{ display:flex; flex-direction:column; gap:8px; }
+.ms-premium-bar-track{
+  position:relative;
+  height:9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  overflow:hidden;
+}
+.ms-premium-bar-fill{
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width:var(--fill,50%);
+  border-radius:999px;
+  background:linear-gradient(90deg,#4bd0ff,#77e18f);
+}
+.ms-premium-bar-fill.warning{ background:linear-gradient(90deg,#ffcc6b,#ffe08a); }
+.ms-premium-bar-fill.critical{ background:linear-gradient(90deg,#ff8475,#ffc0b6); }
+.ms-premium-actions{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-top:12px;
+}
+.ms-premium-action{
+  border:none;
+  border-radius:16px;
+  padding:10px 8px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.06);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  min-width:0;
+}
+.ms-premium-action span{ font-size:1.1rem; line-height:1; }
+.ms-premium-action small{ font-size:.68rem; color:#d7e5f2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+@media (max-width:430px){
+  .ms-dashboard-premium{ padding:12px 10px; border-radius:20px; }
+  .ms-premium-head{ margin-bottom:10px; }
+  .ms-premium-head h3{ font-size:.98rem; }
+  .ms-premium-head p{ font-size:.74rem; }
+  .ms-premium-badge{ font-size:.62rem; padding:5px 8px; }
+  .ms-premium-grid{ gap:8px; }
+  .ms-premium-card{ padding:11px 10px; border-radius:18px; }
+  .ms-premium-big{ font-size:1.44rem; }
+  .ms-premium-sub{ font-size:.73rem; }
+  .ms-premium-micro strong,.ms-premium-bar-row strong,.ms-premium-status-row strong{ font-size:.85rem; }
+  .ms-premium-actions{ grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  .ms-premium-action{ border-radius:14px; padding:9px 6px; }
+  .ms-premium-action small{ font-size:.62rem; }
+}
+@media (max-width:355px){
+  .ms-premium-grid{ grid-template-columns:1fr; }
+  .ms-premium-actions{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}

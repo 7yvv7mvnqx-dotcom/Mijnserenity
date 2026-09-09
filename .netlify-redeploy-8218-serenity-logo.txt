@@ -1,0 +1,5 @@
+MijnSerenity 8.21.8
+- Koptekst “Start” vervangen door Serenity-woordmerk
+- Nautisch zeilicoon en subtiele golflijn toegevoegd
+- Bestaande startpagina, aandachtspunten en navigatietegels blijven ongewijzigd
+- Productie-redeploy geforceerd op 2026-09-01

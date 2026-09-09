@@ -1,0 +1,7 @@
+MijnSerenity 8.21.5
+- Eenvoudige Startpagina hard gekoppeld voor iOS/PWA
+- Service-worker cache vernieuwd naar 8.21.5
+- simple-start-8210.js toegevoegd aan core cache
+- Runtime herstelt de Startpagina wanneer de module wel aanwezig is maar de Start-root ontbreekt
+- Versie 8.21.5
+- Productie-redeploy geforceerd op 2026-09-01

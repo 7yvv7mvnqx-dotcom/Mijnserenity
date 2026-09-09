@@ -1,0 +1,7 @@
+MijnSerenity 8.21.6
+- Startpagina wordt nu rechtstreeks in start-dashboard-71510.js opgebouwd
+- Geen afhankelijkheid meer van simple-start dynamische loader
+- Bestaand kaart/meterdashboard wordt op Start hard verborgen
+- Navigatietegels met aandachtbadges zijn de enige Start-inhoud
+- Oudere simple-start injectie wordt geblokkeerd om dubbele Startpagina's te voorkomen
+- Productie-redeploy geforceerd op 2026-09-01

@@ -1,0 +1,2 @@
+MijnSerenity Start collision radar 8.20.1
+Triggered 2026-08-30 for live AIS radar on Marine Glass dashboard.

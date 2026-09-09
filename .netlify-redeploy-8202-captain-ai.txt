@@ -1,0 +1,2 @@
+Force redeploy MijnSerenity Captain AI dashboard 8.20.2 — 2026-08-31T17:08Z
+Reason: publish existing Captain AI layer and bypass stale iPhone/PWA asset cache.

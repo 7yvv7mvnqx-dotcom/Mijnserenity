@@ -1,0 +1,5 @@
+MijnSerenity 8.21.7
+- Legacy Marine Glass dashboard wordt op Start inline verborgen
+- Nieuwe tegel-Start wordt inline met !important zichtbaar gehouden
+- Extra MutationObserver en retries voor iOS/PWA
+- Productie-redeploy geforceerd op 2026-09-01

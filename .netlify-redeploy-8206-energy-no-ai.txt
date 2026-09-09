@@ -1,0 +1,5 @@
+MijnSerenity 8.20.6
+- AI/ChatGPT dashboard verwijderd
+- Captain AI serverfuncties verwijderd
+- Marine Glass energie gekoppeld aan bestaande live VRM/SmartShunt/Home Assistant bronnen
+- PWA cache vernieuwd naar 8.20.6

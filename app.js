@@ -15088,7 +15088,7 @@ async function registerMijnSerenityServiceWorker(){
   if(!('serviceWorker' in navigator))return;
 
   try{
-    const registration=await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'});
+    const registration=await navigator.serviceWorker.register('/sw.js?v=71100',{updateViaCache:'none'});
 
     await registration.update();
 

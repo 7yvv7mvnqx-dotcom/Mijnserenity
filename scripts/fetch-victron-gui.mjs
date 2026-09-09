@@ -74,7 +74,3 @@ html=html.replace('</head>',bridge+'\n</head>');
 await fs.writeFile(indexPath,html,'utf8');
 await fs.writeFile(path.join(OUT,'mijnserenity-release.txt'),`${RELEASE}\n`,'utf8');
 console.log(`Victron GUI ${RELEASE} klaargezet in ${OUT}`);
-
-/* Maak de gepubliceerde site deterministisch: oude dashboards worden uit de
-   deploy verwijderd in plaats van alleen met CSS verstopt. */
-await import('./clean-legacy-dashboard.mjs');
