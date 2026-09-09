@@ -1,0 +1,90 @@
+/* MijnSerenity 8.31.1 — structurele app-shell voor navigatie en viewport.
+   Geen horizontaal scrollende hoofdmenu's: smal = twee rijen, breed = één rij. */
+
+html,body,main,#appView,#dashboard{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+}
+html,body,#appView,#dashboard{overflow-x:clip}
+
+/* Start heeft eigen geïntegreerde navigatie in de header en functietegels. */
+body.ms8300-start-page{padding-bottom:0!important}
+body.ms8300-start-page .bottom-nav{display:none!important}
+
+/* Subpagina's: alle hoofdfuncties blijven zichtbaar zonder horizontaal vegen. */
+body.ms8300-sub-page{
+  --ms-shell-nav-rows:2;
+  --ms-shell-nav-row:44px;
+  --ms-shell-nav-height:calc((var(--ms-shell-nav-rows) * var(--ms-shell-nav-row)) + 8px + env(safe-area-inset-bottom));
+  padding-bottom:var(--ms-shell-nav-height)!important;
+}
+body.ms8300-sub-page .bottom-nav{
+  position:fixed!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  z-index:2147482400!important;
+  display:grid!important;
+  grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;
+  grid-auto-rows:var(--ms-shell-nav-row)!important;
+  gap:2px!important;
+  width:100%!important;
+  max-width:100vw!important;
+  height:var(--ms-shell-nav-height)!important;
+  min-height:var(--ms-shell-nav-height)!important;
+  padding:4px max(5px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(5px,env(safe-area-inset-left))!important;
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+}
+body.ms8300-sub-page .bottom-nav-item{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  min-height:0!important;
+  height:var(--ms-shell-nav-row)!important;
+  margin:0!important;
+  padding:3px 1px!important;
+  border-radius:10px!important;
+  overflow:hidden!important;
+}
+body.ms8300-sub-page .bottom-nav-item span{
+  display:block!important;
+  font-size:18px!important;
+  line-height:1!important;
+}
+body.ms8300-sub-page .bottom-nav-item small{
+  max-width:100%!important;
+  overflow:hidden!important;
+  font-size:8px!important;
+  line-height:1.05!important;
+  white-space:nowrap!important;
+  text-overflow:ellipsis!important;
+}
+body.ms8300-sub-page #appView>section:not(#dashboard){
+  padding-bottom:calc(var(--ms-shell-nav-height) + 16px)!important;
+}
+
+/* iPhone landscape, iPad en desktop: 13 mogelijke items passen in één rij. */
+@media (min-width:700px){
+  body.ms8300-sub-page{
+    --ms-shell-nav-rows:1;
+    --ms-shell-nav-row:56px;
+  }
+  body.ms8300-sub-page .bottom-nav{
+    grid-template-columns:repeat(13,minmax(0,1fr))!important;
+  }
+  body.ms8300-sub-page .bottom-nav-item span{font-size:20px!important}
+  body.ms8300-sub-page .bottom-nav-item small{font-size:8px!important}
+}
+
+/* Zeer smalle iPhones: 7 kolommen blijven binnen de safe-area. */
+@media (max-width:390px){
+  body.ms8300-sub-page .bottom-nav-item span{font-size:17px!important}
+  body.ms8300-sub-page .bottom-nav-item small{font-size:7px!important}
+}
+
+@supports not (overflow:clip){
+  html,body,#appView,#dashboard{overflow-x:hidden}
+}
