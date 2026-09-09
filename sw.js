@@ -1,6 +1,6 @@
-/* MijnSerenity 8.31.2 — stabiele PWA-cache zonder overname tijdens een actieve opstart. */
-const BUILD='8.31.2';
-const TOKEN='831200';
+/* MijnSerenity 8.31.3 — stabiele PWA-cache met betrouwbare update-activatie. */
+const BUILD='8.31.3';
+const TOKEN='831300';
 const CACHE=`mijnserenity-${BUILD}-stable-launch`;
 const CORE=[
   '/',
@@ -31,15 +31,26 @@ self.addEventListener('install',event=>{
     await Promise.allSettled(CORE.map(async asset=>{
       try{const response=await fetchTimeout(asset,{cache:'reload'},9000);await put(cache,asset,response)}catch{}
     }));
-    /* Geen skipWaiting: een nieuwe worker neemt nooit midden in een iPhone-opstart over. */
+    /* Geen automatische skipWaiting: alleen een bewuste update mag een actieve sessie overnemen. */
   })());
+});
+
+/* De app stuurt dit bericht wanneer 'Bijwerken' wordt gekozen (of de stille updater
+   een reeds geïnstalleerde versie aantreft). Zonder deze handler bleef de worker
+   permanent in de waiting-status staan en bleef de update-melding terugkomen. */
+self.addEventListener('message',event=>{
+  if(event.data?.type==='SKIP_WAITING'){
+    event.waitUntil(self.skipWaiting());
+  }
 });
 
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     const names=await caches.keys();
     await Promise.all(names.filter(name=>name.startsWith('mijnserenity-')&&name!==CACHE).map(name=>caches.delete(name)));
-    /* Geen clients.claim(): bestaande pagina's houden hun huidige runtime tot de volgende start. */
+    /* Na een expliciet geactiveerde update direct de bestaande pagina overnemen.
+       Daardoor ontvangt de app controllerchange en herlaadt hij precies één keer. */
+    await self.clients.claim();
   })());
 });
 
