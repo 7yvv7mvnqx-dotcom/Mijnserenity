@@ -250,7 +250,7 @@
   }
   async function serviceWorker(){
     if(!/^https?:$/.test(location.protocol)||!('serviceWorker' in navigator))return;
-    try{await navigator.serviceWorker.register(`/sw.js?v=${VERSION}`,{updateViaCache:'none'})}catch(error){console.warn('Service worker:',error)}
+    try{await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'})}catch(error){console.warn('Service worker:',error)}
   }
   async function clearOldCaches(){
     let previous='';try{previous=localStorage.getItem('mijnserenity-runtime-build')||''}catch{}
