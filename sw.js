@@ -1,7 +1,7 @@
-/* MijnSerenity 8.31.3 — stabiele PWA-cache met betrouwbare update-activatie. */
-const BUILD='8.31.3';
-const TOKEN='831300';
-const CACHE=`mijnserenity-${BUILD}-stable-launch`;
+/* MijnSerenity 8.31.2 — stabiele PWA-cache met betrouwbare update-activatie. */
+const BUILD='8.31.2';
+const TOKEN='831200';
+const CACHE=`mijnserenity-${BUILD}-stable-launch-v2`;
 const CORE=[
   '/',
   '/index.html',
