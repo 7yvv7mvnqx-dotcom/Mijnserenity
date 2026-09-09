@@ -18,3 +18,17 @@ window.addEventListener('hashchange',()=>{if(route()==='dashboard')setTimeout(ap
 document.addEventListener('click',e=>{const el=e.target.closest?.('[data-target="dashboard"],[data-route="dashboard"],[href="#dashboard"]');if(el&&!$(ROOT)?.contains(el))setTimeout(showHome,0)},true);
 let queued=false;new MutationObserver(()=>{if(queued||route()!=='dashboard')return;queued=true;requestAnimationFrame(()=>{queued=false;apply()})}).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+/* 8.26.4 live instruments: loaded separately so the approved layout stays untouched. */
+(()=>{
+  const id='ms8264DashboardLiveScript';
+  const load=()=>{
+    if(window.__msApprovedDashboardLive8264||document.getElementById(id))return;
+    const script=document.createElement('script');
+    script.id=id;
+    script.src='/approved-dashboard-live-8264.js?v=826400';
+    script.async=false;
+    document.head.appendChild(script);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();
+})();
