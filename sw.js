@@ -13,7 +13,7 @@ const CORE=[
   `/start-dashboard-71510.css?v=${TOKEN}`,
   `/start-dashboard-core.js?v=${TOKEN}`,
   `/runtime-stability-8202.js?v=${TOKEN}`,
-  `/assets/serenity-hero-8274.jpg?v=${TOKEN}`,
+  `/assets/serenity-hero-8275.jpg?v=${TOKEN}`,
   '/icon-192.png','/icon-512.png','/favicon-64.png'
 ];
 
