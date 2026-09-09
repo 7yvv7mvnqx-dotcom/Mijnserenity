@@ -52,7 +52,11 @@
     if(!root)return false;
     syncBuild();
     if(typeof window.ms8260ApplyApprovedDashboard==='function'){
-      try{return !!window.ms8260ApplyApprovedDashboard()}catch(e){console.warn('Approved dashboard apply failed',e)}
+      try{
+        const ok=!!window.ms8260ApplyApprovedDashboard();
+        syncBuild();
+        return ok;
+      }catch(e){console.warn('Approved dashboard apply failed',e)}
     }
     let script=$(APPROVED);
     if(!script){
