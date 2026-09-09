@@ -39,6 +39,8 @@ const coreHead=`
 requireReplace(/(<link\s+rel=["']manifest["'][^>]*>)/i,`$1${coreHead}`,'manifest-invoegpunt');
 
 html=html.replace(/<img\s+class=["']auth-brand-logo["'][^>]*>/i,`<img class="auth-brand-logo" src="/icon-192.png?v=${TOKEN}" width="192" height="192" alt="MijnSerenity" decoding="async">`);
+html=html.replace(/src=["']\/?mijnserenity-logo\.png(?:\?[^"']*)?["']/gi,`src="/icon-192.png?v=${TOKEN}"`);
+html=html.replace(/<img\s+class=["']approval-brand-logo["']([^>]*)>/i,`<img class="approval-brand-logo"$1 width="192" height="192" loading="lazy" decoding="async">`);
 
 const vrmMatch=html.match(/<script\s+id=["']ms7150-vrm-runtime["']>\s*([\s\S]*?)\s*<\/script>/i);
 if(vrmMatch){
