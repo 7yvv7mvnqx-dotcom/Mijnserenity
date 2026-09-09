@@ -1,14 +1,14 @@
-/* MijnSerenity 8.31.0 — één canonieke Start-runtime. */
+/* MijnSerenity 8.31.2 — één canonieke Start-runtime. */
 (()=>{
   'use strict';
   if(window.__msStart8310)return;
   window.__msStart8310=true;
 
-  const BUILD='8.31.0';
+  const BUILD='8.31.2';
   const ROOT_ID='ms8210Start';
   const THEME_KEY='mijnserenity-daynight-v1';
-  const HERO='/assets/serenity-hero-8274.jpg?v=831000';
-  const HERO_FALLBACK='/assets/serenity-home-hero-8266.jpg?v=831000';
+  const HERO='/assets/serenity-hero-8274.jpg?v=831200';
+  const HERO_FALLBACK='/assets/serenity-home-hero-8266.jpg?v=831200';
   const $=id=>document.getElementById(id);
   const finite=value=>{
     if(value===null||value===undefined||value===''||typeof value==='boolean')return null;
@@ -252,8 +252,8 @@
     if(!build())return;
     applyTheme(readTheme());
     render();syncRouteChrome();
-    [100,500,1400].forEach(delay=>setTimeout(render,delay));
-    setInterval(()=>{if(!document.hidden)render();},5000);
+    [160,850].forEach(delay=>setTimeout(render,delay));
+    setInterval(()=>{if(!document.hidden&&document.body?.classList.contains('ms8300-start-page'))render();},10000);
     ['mijnserenity-ha-state-updated','mijnserenity-ha-connected','mijnserenity-ruuvi-vrm-updated','mijnserenity-vrm-updated','mijnserenity:vrm-energy-updated','mijnserenity:live-values-ready','weather:update','weather:updated','online','pageshow'].forEach(name=>window.addEventListener(name,render,{passive:true}));
     window.addEventListener('mijnserenity:routechange',()=>requestAnimationFrame(syncRouteChrome),{passive:true});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();syncRouteChrome();}},{passive:true});

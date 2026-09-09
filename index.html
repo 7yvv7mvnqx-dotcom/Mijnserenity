@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="nl">
+<html lang="nl" data-ms-start-boot="1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="8.23.0">
+<meta name="mijnserenity-build" content="8.31.2">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='8.23.0';
+window.MIJSERENITY_BUILD='8.31.2';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -29,40 +29,15 @@ window.repairMijnSerenity=async function(){
   window.location.replace(url.toString());
 };
 </script>
-<link rel="manifest" href="manifest.json?v=715140">
-<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="manifest" href="/manifest.json?v=831200">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=715140">
-  <link rel="stylesheet" href="ha-live-bridge.css?v=715140">
-  <link rel="stylesheet" href="live-cameras.css?v=715140">
-  <link rel="stylesheet" href="mission-control.css?v=715140">
-  <link rel="stylesheet" href="easy-auto.css?v=715140">
-<link rel="stylesheet" href="auto-track-reliability.css?v=715140">
-<link rel="stylesheet" href="gps-continuity-guard.css?v=715140">
-<link rel="stylesheet" href="waterkaarten-split-launch.css?v=715140">
-  <link rel="stylesheet" href="live-split.css?v=715140">
-  <link rel="stylesheet" href="route-control.css?v=715140">
-  <link rel="stylesheet" href="page-swipe.css?v=715140">
-  <link rel="stylesheet" href="weather-page.css?v=715140">
-  <link rel="stylesheet" href="weather-radar.css?v=715140">
-  <link rel="stylesheet" href="rws-nearby.css?v=715140">
-  <link rel="stylesheet" href="ais-page.css?v=715140">
-  <link rel="stylesheet" href="entertainment-page.css?v=715140">
-  <link rel="stylesheet" href="navigation-compact.css?v=715140">
-  <link rel="stylesheet" href="simple-accessible.css?v=715140">
-  <link rel="stylesheet" href="home-assistant-contrast.css?v=715140">
-  <link rel="stylesheet" href="captain-experience.css?v=715140">
-  <link rel="stylesheet" href="technical-live-sync.css?v=715140">
-  <link rel="stylesheet" href="ruuvi-climate.css?v=715140">
-  <link rel="stylesheet" href="movement-presence.css?v=715140">
-  <link rel="stylesheet" href="futuristic-analog-7140.css?v=715140">
-  <link rel="stylesheet" href="captain-ux-711.css?v=715140">
+<link rel="preload" as="image" href="/assets/serenity-hero-8274.jpg?v=831200" fetchpriority="high">
+<link rel="stylesheet" href="/styles.css?v=831200">
+<link rel="stylesheet" href="/captain-ux-711.css?v=831200">
+<link rel="stylesheet" href="/start-dashboard-71510.css?v=831200">
 
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=715140">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png?v=715140">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=831200">
+  <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png?v=831200">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity">
@@ -76,17 +51,19 @@ window.msSyncBuildVersion=function(){
 };
 document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:true});
 </script>
-  <link rel="stylesheet" href="start-dashboard-71510.css?v=715141">
-  <link rel="stylesheet" href="poi-regio-filter-71511.css?v=715140">
-  <link rel="stylesheet" href="wind-direction-71512.css?v=715140">
-  <link rel="stylesheet" href="victron-energy-71559.css?v=715590">
-  <link rel="stylesheet" href="victron-diagnostics.css?v=715600">
+
+<style id="ms8312-critical">
+html,body{max-width:100%;overflow-x:hidden}
+#dashboard>:not(#ms8210Start):not(#msLegacyTelemetryBridge){display:none!important;visibility:hidden!important;pointer-events:none!important}
+#msLegacyTelemetryBridge{display:none!important}
+html[data-ms-start-boot="1"] #dashboard:not(.ms8300-ready)::before{content:'MijnSerenity laden…';display:block;margin:18px auto;padding:22px;width:min(92%,860px);box-sizing:border-box;border:1px solid rgba(83,204,243,.24);border-radius:20px;background:#061321;color:#9eb6c5;font:750 14px/1.3 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center}
+</style>
 </head>
 <body>
 <main>
 <section id="authView">
   <div class="card hero auth-card">
-    <img class="auth-brand-logo" src="mijnserenity-logo.png?v=715140" alt="MijnSerenity">
+    <img class="auth-brand-logo" src="/icon-192.png?v=831200" width="192" height="192" alt="MijnSerenity" decoding="async">
     <div class="auth-heading">
       <div>
         <span class="eyebrow">BEVEILIGDE TOEGANG</span>
@@ -125,10 +102,9 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   </div>
 </section>
 
-
 <section id="approvalView" class="hidden">
   <div class="card hero approval-card">
-    <img class="approval-brand-logo" src="mijnserenity-logo.png?v=715140" alt="MijnSerenity">
+    <img class="approval-brand-logo" src="/icon-192.png?v=831200" alt="MijnSerenity" width="192" height="192" loading="lazy" decoding="async">
     <div class="approval-icon" id="approvalIcon">⏳</div>
     <span class="eyebrow">ACCOUNTTOEGANG</span>
     <h2 id="approvalTitle">Wachten op toestemming</h2>
@@ -170,7 +146,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   <section id="dashboard">
 <div id="msLegacyTelemetryBridge" hidden aria-hidden="true" data-purpose="telemetry-compat"><img id="ms71514HeroPhoto"><strong id="ms71510SystemLabel"></strong><i id="ms71510SystemDot"></i><b id="ms71510Speed"></b><span id="ms71510SpeedKn"></span><b id="ms71510Rpm"></b><span id="ms71510RpmSub"></span><b id="ms71510Depth"></b><span id="ms71510DepthMeta"></span><i id="ms71512WindArrow"></i><b id="ms71510Wind"></b><b id="ms71510WindBft"></b><b id="ms71512WindDirection"></b><button id="ms71512CompassPermission"></button><strong id="ms71510Fuel"></strong><b id="ms71510FuelBar"></b><strong id="ms71510WaterTemp"></strong><b id="ms71510WaterTempBar"></b><strong id="ms71510HouseVoltage"></strong><strong id="ms71510HouseCurrent"></strong><strong id="ms71510HouseSoc"></strong><strong id="ms71510StartVoltage"></strong><div id="ms71510RudderNeedle"></div><span id="ms71510RudderText"></span><div id="ivmsBrandPhoto"></div><img id="ivmsBoatPhoto"><strong id="ivmsTime"></strong><span id="ivmsDate"></span><span id="ivmsAlarmCount"></span><button id="ivmsSystemStatus"></button><strong id="ivmsSystemLabel"></strong><strong id="ivmsFuelLiters"></strong><span id="ivmsFuelCapacity"></span><div id="ivmsFuelRing"></div><strong id="ivmsWaterValue"></strong><span id="ivmsWaterMeta"></span><div id="ivmsWaterRing"></div><strong id="ivmsPowerSource"></strong><small id="ivmsPowerStatus"></small><strong id="ivmsBatteryVoltage"></strong><span id="ivmsBatteryMeta"></span><div id="ivmsBatteryRing"></div><strong id="ivmsBatteryCurrent"></strong><strong id="ivmsBatteryPower"></strong><strong id="ivmsBatteryTime"></strong><div id="ivmsShoreDetails"></div><strong id="ivmsPowerVoltage"></strong><strong id="ivmsPowerFrequency"></strong><strong id="ivmsCabinTemp"></strong><em id="ivmsCabinHumidity"></em><strong id="ivmsForwardTemp"></strong><em id="ivmsForwardHumidity"></em><strong id="ivmsOutsideTemp"></strong><div id="ivmsClimatePressure"></div><span id="ivmsSpeed"></span><em id="ivmsSpeedKn"></em><span id="ivmsHeading"></span><em id="ivmsHeadingDir"></em><span id="ivmsDepth"></span><em id="ivmsDepthUnit"></em><span id="ivmsWindValue"></span><em id="ivmsWindUnit"></em><div id="ivmsHero"></div><strong id="ivmsSolarPower"></strong><em id="ivmsSolarBattery"></em><strong id="ivmsChargerPower"></strong><em id="ivmsChargerStatus"></em><strong id="ivmsPeople"></strong><span id="ivmsPeopleMode"></span><div id="ivmsBilgeIcon"></div><div id="ivmsBilgeStatus"></div><div id="ivmsSecurityStatus"></div><strong id="ivmsGpsLat"></strong><strong id="ivmsGpsLon"></strong><span id="ivmsGpsStatus"></span><i id="ivmsTankFuelBar"></i><strong id="ivmsTankFuelValue"></strong><i id="ivmsTankWaterBar"></i><strong id="ivmsTankWaterValue"></strong><i id="ivmsTankWasteBar"></i><strong id="ivmsTankWasteValue"></strong><strong id="ivmsWeatherTemp"></strong><span id="ivmsWeatherDescription"></span><div id="ivmsHourly"></div><span id="ivmsWeatherWind"></span><span id="ivmsWeatherRain"></span><img id="dashboardBoatPhoto"><div id="dashboardPhotoPlaceholder"></div><h2 id="welcome"></h2><h2 id="captainGreeting"></h2><span id="captainSeasonBadge"></span><p id="captainInsight"></p><input id="captainSearch"><button id="captainSearchClear"></button><div id="captainSearchResults"></div><div id="ms701AutoCard"></div><h2 id="ms701AutoTitle"></h2><p id="ms701AutoDetail"></p><input id="ms701AutoToggle"><div id="ms704AutoExpandedContent"></div><strong id="ms701DepartureStatus"></strong><strong id="ms701ShareStatus"></strong><strong id="ms701LogStatus"></strong><button id="ms701SimpleToggle"></button><div id="ms701AutoMessage"></div><div id="ms735ReliabilityCard"></div><strong id="ms735ReliabilityTitle"></strong><small id="ms735ReliabilityDetail"></small><span id="ms735GpsBadge"></span><span id="ms736SourceBadge"></span><span id="ms735DeviceBadge"></span><span id="ms735CloudBadge"></span><div id="ms736GpsMetrics"></div><strong id="ms709MissionHeadline"></strong><p id="ms709MissionSummary"></p><div id="ms700MissionRing"></div><strong id="ms700MissionScore"></strong><strong id="ms700ReadinessStatus"></strong><small id="ms700ReadinessDetail"></small><strong id="ms700DataStatus"></strong><small id="ms700DataDetail"></small><strong id="ms709MissionWeatherStatus"></strong><small id="ms709MissionWeatherDetail"></small><strong id="ms700SystemStatus"></strong><small id="ms700SystemDetail"></small><strong id="ms700BackupStatus"></strong><small id="ms700BackupDetail"></small><div id="ms700MissionInsight"></div><div id="ms690HealthRing"></div><strong id="ms690HealthScore"></strong><strong id="ms690TechnicalStatus"></strong><small id="ms690TechnicalDetail"></small><strong id="ms690FuelRange"></strong><small id="ms690FuelRangeDetail"></small><strong id="ms690Maintenance"></strong><small id="ms690MaintenanceDetail"></small><strong id="ms690SeasonScore"></strong><small id="ms690SeasonDetail"></small><div id="ms690AdviceList"></div><input id="ms690Question"><div id="ms690CaptainAnswer"></div><strong id="captainTripCount"></strong><small id="captainTripLabel"></small><strong id="captainDistance"></strong><small id="captainHours"></small><strong id="captainFavoriteCount"></strong><small id="captainPoiLabel"></small><strong id="captainTotalSpend"></strong><small id="captainFuelLabel"></small><div id="captainActivityList"></div><small id="dashboardTechnicalStatus"></small><small id="dTrips"></small><small id="dPois"></small><small id="dCosts"></small><button id="adminApprovalDashboardCard"></button><span id="dashboardPendingAccountCount"></span><div id="dashboardFinanceCard"></div><strong id="dashboardFinanceTotal"></strong><div id="dashboardFinanceCategories"></div><div id="latestRouteCard"></div><h2 id="latestRouteTitle"></h2><p id="latestRouteMeta"></p><div id="latestRouteMap"></div><button id="dashboardRefreshButton"></button><span id="dBoat"></span><div id="dSync"></div><button id="connectionStatus"></button></div>
 </section>
-
 
   <section id="live" class="hidden">
     <div class="card hero live-hero">
@@ -911,7 +886,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
     </div>
   </section>
 
-
   
   
   <section id="ais" class="hidden">
@@ -1554,8 +1528,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
     <div class="card map-card"><div id="mapCanvas"></div>
       <div id="poiMapStatus" class="status small poi-map-status"></div></div>
   </section>
-
-
 
   <section id="entertainment" class="hidden entertainment-page">
     <div class="entertainment-hero">
@@ -3086,7 +3058,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
     </div><div class="card"><h2>Gedeelde POI's</h2><div id="poiList"></div></div>
   </section>
 
-
   <section id="logbook" class="hidden">
     <div class="card collapsible-card">
       <button id="tripFormToggle" class="section-toggle" type="button" onclick="toggleSection('tripFormWrap',this)">
@@ -3514,7 +3485,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
           </div>
         </div>
 
-
         <div id="adminAccessSection" class="account-section admin-access-section hidden">
           <div class="admin-access-head">
             <div>
@@ -3922,7 +3892,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
     </div>
   </div>
 
-
 <div id="plannerMapFullscreen"
     class="planner-map-fullscreen hidden"
     role="dialog"
@@ -3998,7 +3967,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
       onclick="captainNavigate('settings',this)"><span>🚤</span></button>
   </nav>
 
-
 <div id="poiMapPicker" class="map-picker hidden">
   <div class="map-picker-panel">
     <div class="map-picker-header">
@@ -4032,7 +4000,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   <button onclick="applyAppUpdate()">Bijwerken</button>
 </div>
 
-
 <div id="poiDetailModal" class="poi-detail-modal hidden" onclick="closePoiDetails(event)">
   <div class="poi-detail-card">
     <button class="poi-detail-close" onclick="closePoiDetails()">×</button>
@@ -4051,132 +4018,6 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
     <button onclick="closeInstallHelp()">Begrepen</button>
   </div>
 </div>
-
-<script src="auth-bootstrap.js?v=823000"></script>
-<script id="ms7150-vrm-runtime">
-(function(){
-  'use strict';
-  const VRM_ENDPOINT = 'https://wufslczbtguvtgmfufid.supabase.co/functions/v1/vrm-ruuvi';
-  const TOKEN_KEYS = ['ms7148_vrm_token','ms7148VrmToken','mijnserenity_vrm_token','vrm_api_token'];
-  let refreshTimer = null;
-
-  function el(id){ return document.getElementById(id); }
-  function getSavedToken(){
-    for (const k of TOKEN_KEYS) {
-      const v = localStorage.getItem(k);
-      if (v && String(v).trim()) return String(v).trim();
-    }
-    return '';
-  }
-  function saveToken(v){
-    const token = String(v || '').trim();
-    if (!token) return;
-    for (const k of TOKEN_KEYS) localStorage.setItem(k, token);
-  }
-  function num(v){
-    if (v === null || v === undefined || v === '') return null;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-  function fmt(v, digits=1){
-    const n = num(v);
-    return n === null ? '–' : n.toLocaleString('nl-NL',{minimumFractionDigits:digits,maximumFractionDigits:digits});
-  }
-  function setText(id, text){ const n=el(id); if(n) n.textContent=text; }
-  function setBadge(ok, text){
-    const b=el('ms7148VrmBadge');
-    if (!b) return;
-    b.textContent=text;
-    b.classList.toggle('offline', !ok);
-    b.classList.toggle('online', ok);
-  }
-  function applyData(data){
-    window.MIJSERENITY_VRM_DATA=data||{};
-    const salon = data && data.salon ? data.salon : {};
-    const machinekamer = data && data.machinekamer ? data.machinekamer : {};
-    const st = num(salon.temperature), mt = num(machinekamer.temperature);
-    const sh = num(salon.humidity), mh = num(machinekamer.humidity);
-    const sp = num(salon.pressure), mp = num(machinekamer.pressure);
-
-    setText('ivmsCabinTemp', st===null ? '– °C' : `${fmt(st,1)} °C`);
-    setText('ivmsCabinHumidity', sh===null ? '– % RV' : `${fmt(sh,0)} % RV`);
-    setText('ivmsForwardTemp', mt===null ? '– °C' : `${fmt(mt,1)} °C`);
-    setText('ivmsForwardHumidity', mh===null ? '– % RV' : `${fmt(mh,0)} % RV`);
-    const pressure = sp !== null ? sp : mp;
-    setText('ivmsClimatePressure', pressure===null ? 'LUCHTDRUK –' : `LUCHTDRUK ${fmt(pressure,1)} hPa`);
-
-    const status=el('ms7148VrmStatus');
-    if(status){
-      const sTxt = st===null ? '–' : `${fmt(st,1)} °C`;
-      const mTxt = mt===null ? '–' : `${fmt(mt,1)} °C`;
-      status.textContent = `Verbonden ✅ · Salon ${sTxt} · Machinekamer ${mTxt}`;
-    }
-    setBadge(true,'VRM live');
-    window.dispatchEvent(new CustomEvent('mijnserenity-vrm-updated',{detail:data||{}}));
-    try { localStorage.setItem('ms7150_ruuvi_last', JSON.stringify({salon,machinekamer,energy:data.energy||{},updatedAt:data.updatedAt||new Date().toISOString()})); } catch(e){}
-  }
-
-  async function fetchVrm(showBusy=true){
-    const input=el('ms7148VrmToken');
-    const token=String((input && input.value) || getSavedToken() || '').trim();
-    const status=el('ms7148VrmStatus');
-    if(!token){
-      if(status) status.textContent='Vul eerst je Victron VRM API-token in.';
-      setBadge(false,'Niet gekoppeld');
-      return false;
-    }
-    saveToken(token);
-    if(showBusy && status) status.textContent='VRM-data ophalen…';
-    try{
-      const r=await fetch(VRM_ENDPOINT,{
-        method:'GET',
-        cache:'no-store',
-        headers:{'x-vrm-token':token,'accept':'application/json'}
-      });
-      const data=await r.json().catch(()=>({}));
-      if(!r.ok || !data || data.success===false) throw new Error(data && data.error ? data.error : `HTTP ${r.status}`);
-      applyData(data);
-      return true;
-    }catch(err){
-      if(status) status.textContent=`VRM-fout: ${err && err.message ? err.message : err}`;
-      setBadge(false,'Fout');
-      return false;
-    }
-  }
-
-  window.ms7148ToggleVrmToken=function(btn){
-    const input=el('ms7148VrmToken'); if(!input) return;
-    const show=input.type==='password'; input.type=show?'text':'password'; if(btn) btn.textContent=show?'Verberg':'Toon';
-  };
-  window.ms7148SaveAndTestVrm=async function(){
-    const input=el('ms7148VrmToken');
-    if(input) saveToken(input.value);
-    return fetchVrm(true);
-  };
-  window.ms7148RefreshVrm=async function(){ return fetchVrm(true); };
-
-  function init(){
-    const input=el('ms7148VrmToken');
-    const saved=getSavedToken();
-    if(input && saved && !input.value) input.value=saved;
-    try{
-      const cached=JSON.parse(localStorage.getItem('ms7150_ruuvi_last')||'null');
-      if(cached) applyData(cached);
-    }catch(e){}
-    if(saved){ fetchVrm(false); }
-    if(refreshTimer) clearInterval(refreshTimer);
-    refreshTimer=setInterval(()=>{ if(getSavedToken()) fetchVrm(false); },60000);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
-})();
-</script>
-
-  <script src="start-dashboard-71510.js?v=715141"></script>
-  <script src="poi-regio-filter-71511.js?v=715140"></script>
-  <script src="wind-direction-71512.js?v=715140"></script>
-  <script src="ruuvi-climate.js?v=715631"></script>
-  <script src="victron-energy-71559.js?v=715631"></script>
-  <script src="ais-gps-fix-8221.js?v=822200"></script>
-<script src="/rws-compat-8233.js?v=823300"></script>
+<script src="/auth-bootstrap.js?v=831200"></script>
 </body>
 </html>
