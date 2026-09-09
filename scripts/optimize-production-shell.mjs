@@ -32,7 +32,7 @@ html=html.replace(/<link\s+rel=["']icon["'][^>]*sizes=["']64x64["'][^>]*>/i,`<li
 
 const coreHead=`
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="preload" as="image" href="/assets/serenity-hero-8274.jpg?v=${TOKEN}" fetchpriority="high">
+<link rel="preload" as="image" href="/assets/serenity-hero-8275.jpg?v=${TOKEN}" fetchpriority="high">
 <link rel="stylesheet" href="/styles.css?v=${TOKEN}">
 <link rel="stylesheet" href="/captain-ux-711.css?v=${TOKEN}">
 <link rel="stylesheet" href="/start-dashboard-71510.css?v=${TOKEN}">`;
@@ -74,13 +74,13 @@ let start=fs.readFileSync(startUrl,'utf8');
 start=start
   .replace(/\/\* MijnSerenity [^*]+— één canonieke Start-runtime\. \*\//,`/* MijnSerenity ${BUILD} — één canonieke Start-runtime. */`)
   .replace(/const BUILD='[^']+';/,`const BUILD='${BUILD}';`)
-  .replace(/serenity-hero-8274\.jpg\?v=\d+/g,`serenity-hero-8274.jpg?v=${TOKEN}`)
-  .replace(/serenity-home-hero-8266\.jpg\?v=\d+/g,`serenity-home-hero-8266.jpg?v=${TOKEN}`)
+  .replace(/const HERO='[^']+';/,`const HERO='/assets/serenity-hero-8275.jpg?v=${TOKEN}';`)
+  .replace(/const HERO_FALLBACK='[^']+';/,`const HERO_FALLBACK='/assets/serenity-hero-8274.jpg?v=${TOKEN}';`)
   .replace(/\[100,500,1400\]\.forEach\(delay=>setTimeout\(render,delay\)\);/,`[160,850].forEach(delay=>setTimeout(render,delay));`)
   .replace(/setInterval\(\(\)=>\{if\(!document\.hidden\)render\(\);\},5000\);/,`setInterval(()=>{if(!document.hidden&&document.body?.classList.contains('ms8300-start-page'))render();},10000);`);
-if(!start.includes(`const BUILD='${BUILD}'`)||!start.includes('},10000);'))throw new Error('Productieshell: Start-runtime kon niet volledig worden geoptimaliseerd.');
+if(!start.includes(`const BUILD='${BUILD}'`)||!start.includes('serenity-hero-8275.jpg')||!start.includes('},10000);'))throw new Error('Productieshell: Start-runtime kon niet volledig worden geoptimaliseerd.');
 fs.writeFileSync(startUrl,start);
 
-const afterStyles=(html.match(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)||[]).length;
+const afterStyles=(html.match(/<link\b[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi)||[]).length;
 const afterScripts=(html.match(/<script\b[^>]*src=["'][^"']+["'][^>]*>/gi)||[]).length;
 console.log(`MijnSerenity ${BUILD}: productieshell geoptimaliseerd · CSS ${beforeStyles}→${afterStyles} · externe/lokale script-tags ${beforeScripts}→${afterScripts} · HTML ${beforeBytes}→${Buffer.byteLength(html)} bytes · Start-render 5s→10s alleen op Start.`);
