@@ -178,3 +178,109 @@ body.ms750-simple-ui .bottom-nav.ms744-compact-nav .bottom-nav-item span{
 }
 
 @media(prefers-reduced-motion:reduce){.ms711-energy-flow i{animation:none}}
+
+/* MijnSerenity 8.31.2 hotfix — altijd een duidelijke Haven-knop op inhoudspagina's.
+   De bestaande dashboardknop blijft de router gebruiken; alleen de presentatie verandert.
+   De boot is een gestileerde VriJon Contessa 37E met de boeg naar links. */
+body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav,
+body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav{
+  display:contents!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav > .bottom-nav-item,
+body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav > .bottom-nav-item{
+  display:none!important;
+}
+body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav > .bottom-nav-item[data-target="dashboard"],
+body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]{
+  display:flex!important;
+  position:fixed!important;
+  top:calc(env(safe-area-inset-top,0px) + 12px)!important;
+  right:14px!important;
+  bottom:auto!important;
+  left:auto!important;
+  z-index:2147483500!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  width:auto!important;
+  min-width:124px!important;
+  max-width:none!important;
+  height:48px!important;
+  min-height:48px!important;
+  padding:6px 14px 6px 10px!important;
+  margin:0!important;
+  border:1px solid rgba(91,211,242,.40)!important;
+  border-radius:999px!important;
+  background:linear-gradient(145deg,rgba(6,45,66,.96),rgba(3,28,45,.97))!important;
+  color:#f4fcff!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.06)!important;
+  backdrop-filter:blur(16px)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  transform:none!important;
+  text-indent:0!important;
+  font:850 14px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  letter-spacing:.01em!important;
+  overflow:visible!important;
+  -webkit-tap-highlight-color:transparent;
+}
+body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav > .bottom-nav-item[data-target="dashboard"] > span,
+body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav > .bottom-nav-item[data-target="dashboard"] > span{
+  display:none!important;
+}
+body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]::before,
+body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]::before{
+  content:"";
+  display:block;
+  flex:0 0 54px;
+  width:54px;
+  height:27px;
+  background:url('/assets/vrijon-contessa-37e-left.svg?v=8312') center/contain no-repeat;
+}
+body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]::after,
+body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]::after{
+  content:"Haven";
+  display:block;
+  color:#f6fcff;
+  text-shadow:0 1px 10px rgba(0,0,0,.28);
+}
+body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]:active,
+body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]:active{
+  transform:scale(.96)!important;
+  filter:brightness(1.08);
+}
+
+@media(max-width:430px){
+  body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav > .bottom-nav-item[data-target="dashboard"],
+  body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]{
+    top:calc(env(safe-area-inset-top,0px) + 9px)!important;
+    right:10px!important;
+    min-width:112px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:5px 12px 5px 9px!important;
+    gap:6px!important;
+    font-size:13px!important;
+  }
+  body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]::before,
+  body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]::before{
+    flex-basis:48px;
+    width:48px;
+    height:24px;
+  }
+}
+
+@media(orientation:landscape) and (max-height:520px){
+  body:has(#appView:not(.hidden) > #dashboard.hidden) > .bottom-nav > .bottom-nav-item[data-target="dashboard"],
+  body:has(.bottom-nav > .bottom-nav-item.active:not([data-target="dashboard"])) > .bottom-nav > .bottom-nav-item[data-target="dashboard"]{
+    top:calc(env(safe-area-inset-top,0px) + 6px)!important;
+    right:calc(env(safe-area-inset-right,0px) + 9px)!important;
+    height:40px!important;
+    min-height:40px!important;
+  }
+}
