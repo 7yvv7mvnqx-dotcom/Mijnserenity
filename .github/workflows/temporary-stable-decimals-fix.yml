@@ -1,0 +1,67 @@
+name: Temporary stable decimals fix
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ github.event.head_commit.message == 'Run stable decimal formatter fix' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make live dashboard formatting stable
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('approved-dashboard-8263.js')
+          s = p.read_text(encoding='utf-8')
+          replacements = [
+              ("setText('ms8263BatterySub',[Number.isFinite(vN)?`${fmtNum(vN,1)} V`:'',Number.isFinite(aN)?`${fmtNum(aN,1)} A`:''].filter(Boolean).join(' · ')||'Geen live data');",
+               "setText('ms8263BatterySub',[Number.isFinite(vN)?`${fmtNum(vN,2)} V`:'',Number.isFinite(aN)?`${aN>0?'+':''}${fmtNum(aN,1)} A`:''].filter(Boolean).join(' · ')||'Geen live data');"),
+              ("setText('ms8263Outside',Number.isFinite(tN)?`${fmtNum(tN,0)}°`:'—°');",
+               "setText('ms8263Outside',Number.isFinite(tN)?`${fmtNum(tN,1)}°`:'—°');"),
+              ("setText('ms8263OutsideSub',Number.isFinite(tN)?'Actuele meting':'Geen data');",
+               "setText('ms8263OutsideSub',Number.isFinite(tN)?'Actueel weer':'Geen data');"),
+              ("#${ROOT} .ms8263-status-card>strong{grid-area:val;margin-top:3px;font-size:18px;line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+               "#${ROOT} .ms8263-status-card>strong{grid-area:val;margin-top:3px;font-size:18px;line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}"),
+              ("#${ROOT} .ms8263-status-card>em{grid-area:sub;margin-top:5px;color:#9db3c1;font-size:11px;font-style:normal;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+               "#${ROOT} .ms8263-status-card>em{grid-area:sub;margin-top:5px;color:#9db3c1;font-size:11px;font-style:normal;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}")
+          ]
+          for old, new in replacements:
+              if old not in s:
+                  raise SystemExit(f'Expected 8263 text not found: {old[:70]}')
+              s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('approved-dashboard-live-8264.js')
+          s = p.read_text(encoding='utf-8')
+          old = "#${ROOT} .ms8264-copy strong{display:block;margin-top:3px;font-size:19px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}"
+          new = "#${ROOT} .ms8264-copy strong{display:block;margin-top:3px;font-size:19px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}"
+          if old not in s:
+              raise SystemExit('Expected 8264 strong style not found')
+          s = s.replace(old, new, 1)
+          old = "#${ROOT} .ms8264-copy em{display:block;margin-top:5px;color:#a8bdc8;font-size:9.5px;font-style:normal;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}"
+          new = "#${ROOT} .ms8264-copy em{display:block;margin-top:5px;color:#a8bdc8;font-size:9.5px;font-style:normal;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}"
+          if old not in s:
+              raise SystemExit('Expected 8264 em style not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Validate JavaScript
+        run: |
+          git diff --check
+          node --check approved-dashboard-8263.js
+          node --check approved-dashboard-live-8264.js
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add approved-dashboard-8263.js approved-dashboard-live-8264.js
+          git commit -m "Fix stable dashboard decimal formatting"
+          git push
