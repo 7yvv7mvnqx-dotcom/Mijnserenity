@@ -217,6 +217,10 @@
     return select?.selectedOptions?.[0]?.textContent?.trim()||'Heel Nederland';
   }
 
+  function ms71511NoRatingFilter(){
+    return String($('ms692HarbourMinimum')?.value||'')==='0';
+  }
+
   function ms71511PopulateHarbourRegions(){
     const select=$('ms692HarbourCountry');
     if(!select)return false;
@@ -234,6 +238,42 @@
     return true;
   }
 
+  function ms71511PopulateHarbourRatings(){
+    const select=$('ms692HarbourMinimum');
+    if(!select)return false;
+    if(select.dataset.ms71511NoFilterReady==='1')return true;
+
+    let option=[...select.options].find(item=>item.value==='0');
+    if(!option){
+      option=document.createElement('option');
+      option.value='0';
+      option.textContent='Geen filter – alle havens';
+      select.prepend(option);
+    }
+
+    select.value='0';
+    select.dataset.ms71511NoFilterReady='1';
+    select.setAttribute('aria-label','Beoordelingsfilter voor havens');
+
+    const button=$('ms692HarbourImportButton');
+    if(button)button.textContent='⚓ Zoek havens';
+    return true;
+  }
+
+  function ms71511AllHarboursQuery(){
+    const marinaSelectors=[
+      '["leisure"="marina"]',
+      '["seamark:harbour:category"="marina"]',
+      '["seamark:type"="harbour"]["harbour"="marina"]'
+    ];
+    return `[out:json][timeout:90];
+area["ISO3166-1"="NL"][admin_level=2]->.searchArea;
+(
+  ${marinaSelectors.map(marina=>`nwr${marina}(area.searchArea);`).join('\n  ')}
+);
+out center tags;`;
+  }
+
   function ms71511PatchHarbourQuery(){
     const original=window.ms692HarbourQuery;
     if(typeof original!=='function')return false;
@@ -244,7 +284,9 @@
       const known=ms71511HarbourRegions.some(([value])=>value===requested)
         ?requested
         :'NL';
-      const query=original('NL');
+      const query=ms71511NoRatingFilter()
+        ?ms71511AllHarboursQuery()
+        :original('NL');
       if(known==='NL')return query;
 
       return query.replace(
@@ -259,6 +301,89 @@
     return true;
   }
 
+  function ms71511UnratedHarbourReview(element,tags,ratingInfo){
+    if(ratingInfo&&typeof window.ms692HarbourReview==='function'){
+      return window.ms692HarbourReview(element,tags,ratingInfo);
+    }
+
+    return [
+      'Geïmporteerd uit openbare OpenStreetMap-gegevens.',
+      'Geen openbare numerieke beoordeling beschikbaar.',
+      tags.website||tags['contact:website']
+        ?`website: ${tags.website||tags['contact:website']}`
+        :'',
+      tags.phone||tags['contact:phone']
+        ?`telefoon: ${tags.phone||tags['contact:phone']}`
+        :'',
+      tags.vhf?`VHF: ${tags.vhf}`:'',
+      tags.power_supply==='yes'||tags.power_supply==='available'
+        ?'walstroom aanwezig'
+        :'',
+      tags.shower==='yes'?'douches aanwezig':'',
+      tags.toilets==='yes'?'toiletten aanwezig':'',
+      tags.washing_machine==='yes'?'wasmachine aanwezig':'',
+      `[OSM:${element.type}/${element.id}]`
+    ].filter(Boolean).join(' · ');
+  }
+
+  function ms71511PatchHarbourRows(){
+    const original=window.ms692HarbourRows;
+    if(typeof original!=='function')return false;
+    if(original.__ms71511NoRatingAware)return true;
+
+    const noRatingAware=function(elements,minimum){
+      if(!ms71511NoRatingFilter()){
+        return original(elements,minimum);
+      }
+
+      const seen=new Set();
+      const rows=[];
+
+      (elements||[]).forEach(element=>{
+        const tags=element.tags||{};
+        const position=window.ms692ElementPosition?.(element);
+        if(!position?.valid)return;
+
+        const name=String(
+          tags.name||
+          tags['seamark:name']||
+          tags.operator||
+          ''
+        ).trim();
+        if(!name)return;
+
+        const key=`${element.type}:${element.id}`;
+        if(seen.has(key))return;
+        seen.add(key);
+
+        const ratingInfo=window.ms692HarbourRating?.(tags)||null;
+        rows.push({
+          osmKey:key,
+          name,
+          category:'Haven',
+          place:window.ms692HarbourPlace?.(tags)||'',
+          address:window.ms692Address?.(tags)||'',
+          review:ms71511UnratedHarbourReview(element,tags,ratingInfo),
+          rating:ratingInfo?.rating??null,
+          is_favorite:false,
+          latitude:position.lat,
+          longitude:position.lon,
+          tags
+        });
+      });
+
+      return rows.sort((a,b)=>
+        (Number(b.rating)||0)-(Number(a.rating)||0)||
+        a.name.localeCompare(b.name,'nl')
+      );
+    };
+
+    noRatingAware.__ms71511NoRatingAware=true;
+    noRatingAware.__ms71511Original=original;
+    window.ms692HarbourRows=noRatingAware;
+    return true;
+  }
+
   function ms71511PatchHarbourStatus(){
     const original=window.ms692SetHarbourStatus;
     if(typeof original!=='function')return false;
@@ -269,6 +394,20 @@
       const region=String(select?.value||'NL').toUpperCase();
       const label=ms71511HarbourRegionLabel();
       let message=String(text||'');
+
+      if(ms71511NoRatingFilter()){
+        if(/openbare score hoger dan/i.test(message)){
+          message=region==='NL'
+            ?'Alle Nederlandse havens, ongeacht beoordeling, worden gezocht…'
+            :`Alle havens in ${label}, ongeacht beoordeling, worden gezocht…`;
+        }else if(/geen Nederlandse havens met een bruikbare numerieke score/i.test(message)){
+          message=region==='NL'
+            ?'De openbare kaartgegevens bevatten op dit moment geen havens.'
+            :`De openbare kaartgegevens bevatten op dit moment geen havens in ${label}.`;
+        }else{
+          message=message.replace(/gewaardeerde haven/g,'haven');
+        }
+      }
 
       if(region!=='NL'){
         message=message.replace(/Nederlandse havens/g,`havens in ${label}`);
@@ -286,10 +425,12 @@
   let ms71511HarbourPatchAttempts=0;
   function ms71511InstallHarbourRegions(){
     const selectorReady=ms71511PopulateHarbourRegions();
+    const ratingReady=ms71511PopulateHarbourRatings();
     const queryReady=ms71511PatchHarbourQuery();
+    const rowsReady=ms71511PatchHarbourRows();
     const statusReady=ms71511PatchHarbourStatus();
 
-    if(selectorReady&&queryReady&&statusReady)return;
+    if(selectorReady&&ratingReady&&queryReady&&rowsReady&&statusReady)return;
     if(ms71511HarbourPatchAttempts++<40){
       setTimeout(ms71511InstallHarbourRegions,250);
     }
