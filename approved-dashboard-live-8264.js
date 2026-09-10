@@ -169,8 +169,8 @@ function ensureStyle(){
   #${ROOT} .ms8264-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:12px;background:rgba(36,207,245,.10);font-size:20px}
   #${ROOT} .ms8264-copy{min-width:0}
   #${ROOT} .ms8264-copy small{display:block;color:#91adbd;font-size:9px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #${ROOT} .ms8264-copy strong{display:block;margin-top:3px;font-size:19px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #${ROOT} .ms8264-copy em{display:block;margin-top:5px;color:#a8bdc8;font-size:9.5px;font-style:normal;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #${ROOT} .ms8264-copy strong{display:block;margin-top:3px;font-size:19px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+  #${ROOT} .ms8264-copy em{display:block;margin-top:5px;color:#a8bdc8;font-size:9.5px;font-style:normal;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
   #${ROOT} .ms8264-bar{display:block;height:3px;margin-top:8px;border-radius:999px;background:rgba(174,215,230,.12);overflow:hidden}
   #${ROOT} .ms8264-bar b{display:block;width:0;height:100%;border-radius:inherit;background:#22d8ff;transition:width .45s ease}
   #${ROOT} .ms8264-bar.empty{opacity:.25}

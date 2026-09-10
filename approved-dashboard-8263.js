@@ -66,8 +66,8 @@ function installStyle(){
  #${ROOT} .ms8263-status-card{display:grid;grid-template-columns:43px minmax(0,1fr);grid-template-areas:"ic lab" "ic val" "ic sub";align-items:center;min-width:0;min-height:111px;padding:15px 14px;border:1px solid rgba(79,199,241,.33);border-radius:20px;background:linear-gradient(145deg,rgba(7,54,78,.92),rgba(3,31,48,.82));color:#fff;text-align:left;box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 25px rgba(0,0,0,.10);cursor:pointer}
  #${ROOT} .ms8263-status-card>svg{grid-area:ic;width:31px;height:31px;color:#f4fbff}
  #${ROOT} .ms8263-status-card>small{grid-area:lab;color:#9db5c5;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
- #${ROOT} .ms8263-status-card>strong{grid-area:val;margin-top:3px;font-size:18px;line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- #${ROOT} .ms8263-status-card>em{grid-area:sub;margin-top:5px;color:#9db3c1;font-size:11px;font-style:normal;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #${ROOT} .ms8263-status-card>strong{grid-area:val;margin-top:3px;font-size:18px;line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+ #${ROOT} .ms8263-status-card>em{grid-area:sub;margin-top:5px;color:#9db3c1;font-size:11px;font-style:normal;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
  #${ROOT} .ms8263-welcome{position:relative;padding:29px 27px 24px;border:1px solid rgba(69,198,241,.37);border-radius:25px;background:radial-gradient(circle at 88% 23%,rgba(22,109,143,.17),transparent 33%),linear-gradient(145deg,rgba(2,27,42,.98),rgba(2,17,29,.98));overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.18)}
  #${ROOT} .ms8263-welcome:before{content:"";position:absolute;right:4%;top:3%;width:180px;height:180px;border:1px solid rgba(33,165,207,.10);border-radius:50%;box-shadow:inset 0 0 0 18px rgba(33,165,207,.025),inset 0 0 0 41px rgba(33,165,207,.025);pointer-events:none}
  #${ROOT} .ms8263-welcome:after{content:"✦";position:absolute;right:9%;top:57px;font-size:104px;line-height:1;color:rgba(24,157,202,.08);transform:rotate(20deg);pointer-events:none}
@@ -255,12 +255,12 @@ function refreshData(){
  const volt=sourceText(['ms71510HouseVoltage','liveHouseVoltage','houseVoltage']);
  const amp=sourceText(['ms71510HouseCurrent','houseCurrent','batteryCurrent']);
  const vN=numberFrom(volt),aN=numberFrom(amp);
- setText('ms8263BatterySub',[Number.isFinite(vN)?`${fmtNum(vN,1)} V`:'',Number.isFinite(aN)?`${fmtNum(aN,1)} A`:''].filter(Boolean).join(' · ')||'Geen live data');
+ setText('ms8263BatterySub',[Number.isFinite(vN)?`${fmtNum(vN,2)} V`:'',Number.isFinite(aN)?`${aN>0?'+':''}${fmtNum(aN,1)} A`:''].filter(Boolean).join(' · ')||'Geen live data');
 
  const temp=sourceText(['outsideTemperature','weatherTemperature','weatherCurrentTemp','currentTemperature','msWeatherTemperature']);
  const tN=numberFrom(temp);
- setText('ms8263Outside',Number.isFinite(tN)?`${fmtNum(tN,0)}°`:'—°');
- setText('ms8263OutsideSub',Number.isFinite(tN)?'Actuele meting':'Geen data');
+ setText('ms8263Outside',Number.isFinite(tN)?`${fmtNum(tN,1)}°`:'—°');
+ setText('ms8263OutsideSub',Number.isFinite(tN)?'Actueel weer':'Geen data');
  }
 
 function startGps(){
