@@ -1,7 +1,7 @@
-/* MijnSerenity 8.26.6 — single Haven dashboard, network-first critical boot files */
-const CACHE_NAME='mijnserenity-8.26.6';
-const BUILD='8.26.6';
-const TOKEN='826600';
+/* MijnSerenity 8.26.8 — single Haven dashboard, network-first critical boot files */
+const CACHE_NAME='mijnserenity-8.26.8';
+const BUILD='8.26.8';
+const TOKEN='826800';
 const CORE=[
   '/',
   '/index.html',
@@ -11,6 +11,7 @@ const CORE=[
   `/approved-dashboard-8263.js?v=${TOKEN}`,
   `/approved-dashboard-live-8264.js?v=${TOKEN}`,
   `/dashboard-buttons-8265.js?v=${TOKEN}`,
+  `/rws-water-temp-8233.js?v=${TOKEN}`,
   '/serenity-dashboard-boat-20260909.webp?v=8264',
   '/manifest.json',
   '/icon-192.png',
@@ -62,6 +63,7 @@ const CRITICAL=new Set([
   '/approved-dashboard-8263.js',
   '/approved-dashboard-live-8264.js',
   '/dashboard-buttons-8265.js',
+  '/rws-water-temp-8233.js',
   '/serenity-dashboard-boat-20260909.webp'
 ]);
 
