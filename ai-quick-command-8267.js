@@ -1,4 +1,4 @@
-/* MijnSerenity 8.26.7 — AI snelvraag + slimme paginanavigatie. */
+/* MijnSerenity 8.26.8 — AI snelvraag + slimme paginanavigatie + kostenanalyse. */
 (()=>{
   'use strict';
   if(window.__msQuickAsk8267)return;
@@ -42,6 +42,21 @@
     {target:'settings',words:['instellingen','settings','configuratie']}
   ];
 
+  const financeCategories=[
+    {name:'Elektra',words:['elektra','electra','elektriciteit','electriciteit','elektrisch','stroom','walstroom','shore power','victron']},
+    {name:'Diesel',words:['diesel','brandstof','fuel','tanken']},
+    {name:'Havengeld',words:['havengeld','jachthaven','marina','passantenhaven']},
+    {name:'Ligplaats',words:['ligplaats','liggeld','vaste plaats']},
+    {name:'Winterstalling',words:['winterstalling','winterberging','stalling']},
+    {name:'Onderhoud',words:['onderhoud','reparatie','service','werkplaats','monteur']},
+    {name:'Onderdelen',words:['onderdelen','onderdeel']},
+    {name:'Materialen',words:['materialen','materiaal']},
+    {name:'Boodschappen',words:['boodschappen','supermarkt']},
+    {name:'Eten & Drinken',words:['eten en drinken','eten drinken','restaurant','horeca']},
+    {name:'Verzekering',words:['verzekering','verzekeringen']},
+    {name:'Overig',words:['overig','overige kosten']}
+  ];
+
   function installStyle(){
     if(document.getElementById(STYLE))return;
     const s=document.createElement('style');
@@ -58,7 +73,7 @@
       #${ROOT} .msqa8267-send{display:grid!important;place-items:center!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;padding:0!important;border:0!important;border-radius:14px!important;background:linear-gradient(135deg,#0ec4ec,#20dff8)!important;color:#fff!important;box-shadow:0 8px 20px rgba(12,196,231,.18)!important;cursor:pointer!important}
       #${ROOT} .msqa8267-send svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2}
       #${ROOT} .msqa8267-send[disabled]{opacity:.55;cursor:wait!important}
-      #${ROOT} .msqa8267-result{display:none;margin:8px 2px 0;padding:10px 12px;border:1px solid rgba(89,199,238,.25);border-radius:14px;background:rgba(2,24,37,.88);color:#dcebf1;font-size:12px;line-height:1.4}
+      #${ROOT} .msqa8267-result{display:none;margin:8px 2px 0;padding:10px 12px;border:1px solid rgba(89,199,238,.25);border-radius:14px;background:rgba(2,24,37,.88);color:#dcebf1;font-size:12px;line-height:1.4;white-space:pre-line}
       #${ROOT} .msqa8267-result.show{display:block}
       #${ROOT} .msqa8267-result strong{color:#39ddfa}
       #${ROOT} .msqa8267-examples{margin:7px 2px 0;color:#7695a6;font-size:10px;line-height:1.35}
@@ -115,6 +130,152 @@
     const hits=ctx.filter(item=>rule.labels.includes(item.label));
     if(!hits.length)return {action:'answer',answer:'Die live waarde is op dit moment nog niet beschikbaar.'};
     return {action:'answer',answer:hits.map(item=>`${item.label}: ${item.value}${item.sub?` · ${item.sub}`:''}`).join('\n')};
+  }
+
+  function euro(value){
+    return new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(Number(value)||0);
+  }
+
+  function resolveFinanceCategory(q){
+    const n=normal(q);
+    return financeCategories.find(category=>includesAny(n,[category.name,...category.words]))||null;
+  }
+
+  function resolveFinancePeriod(q){
+    const n=normal(q);
+    const now=new Date();
+    const iso=date=>{
+      const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);
+      return local.toISOString().slice(0,10);
+    };
+    const range=(start,end,label)=>({start:iso(start),end:iso(end),label});
+
+    if(/\bvandaag\b/.test(n)){
+      const d=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+      return range(d,d,'vandaag');
+    }
+    if(/\bdeze week\b/.test(n)){
+      const day=(now.getDay()+6)%7;
+      const start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-day);
+      const end=new Date(start.getFullYear(),start.getMonth(),start.getDate()+6);
+      return range(start,end,'deze week');
+    }
+    if(/\bvorige week\b/.test(n)){
+      const day=(now.getDay()+6)%7;
+      const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()-day-1);
+      const start=new Date(end.getFullYear(),end.getMonth(),end.getDate()-6);
+      return range(start,end,'vorige week');
+    }
+    if(/\bdeze maand\b/.test(n)){
+      const start=new Date(now.getFullYear(),now.getMonth(),1);
+      const end=new Date(now.getFullYear(),now.getMonth()+1,0);
+      return range(start,end,'deze maand');
+    }
+    if(/\bvorige maand\b/.test(n)){
+      const start=new Date(now.getFullYear(),now.getMonth()-1,1);
+      const end=new Date(now.getFullYear(),now.getMonth(),0);
+      return range(start,end,'vorige maand');
+    }
+    if(/\bdit jaar\b|\bdit seizoen\b/.test(n)){
+      const start=new Date(now.getFullYear(),0,1);
+      const end=new Date(now.getFullYear(),11,31);
+      return range(start,end,String(now.getFullYear()));
+    }
+    if(/\bvorig jaar\b|\bvorig seizoen\b/.test(n)){
+      const year=now.getFullYear()-1;
+      return range(new Date(year,0,1),new Date(year,11,31),String(year));
+    }
+    const explicitYear=n.match(/\b(20\d{2})\b/);
+    if(explicitYear){
+      const year=Number(explicitYear[1]);
+      return range(new Date(year,0,1),new Date(year,11,31),String(year));
+    }
+    return {start:'',end:'',label:'in totaal'};
+  }
+
+  function isFinanceQuestion(q){
+    const n=normal(q);
+    const hasMoneyWord=/\b(kosten?|gekost|kostte|uitgegeven|uitgaven|betaald|besteed|bedrag|euro|financien|financieel)\b/.test(n);
+    const hasQuestionWord=/\b(wat|hoeveel|welke|toon|geef|totaal|som)\b/.test(n);
+    const hasCategory=!!resolveFinanceCategory(n);
+    return hasMoneyWord&&(hasQuestionWord||hasCategory);
+  }
+
+  function readFinanceEntries(){
+    try{
+      if(typeof getAllFinanceEntries==='function'){
+        const entries=getAllFinanceEntries();
+        if(Array.isArray(entries))return entries.slice();
+      }
+    }catch(error){console.warn('Serenity AI: financieel overzicht niet direct beschikbaar.',error)}
+    try{
+      if(typeof costCache!=='undefined'&&Array.isArray(costCache)){
+        return costCache.map(cost=>({
+          type:'cost',
+          id:cost.id,
+          date:cost.expense_date||cost.date||'',
+          category:cost.category||'Overig',
+          description:String(cost.description||''),
+          amount:Number(cost.amount||0)
+        })).filter(entry=>Number.isFinite(entry.amount)&&entry.amount>0);
+      }
+    }catch{}
+    return [];
+  }
+
+  async function ensureFinanceEntries(){
+    let entries=readFinanceEntries();
+    if(entries.length)return entries;
+    const tasks=[];
+    try{if(typeof loadCosts==='function')tasks.push(loadCosts())}catch{}
+    try{if(typeof loadTrips==='function')tasks.push(loadTrips())}catch{}
+    if(tasks.length){
+      await Promise.allSettled(tasks);
+      entries=readFinanceEntries();
+    }
+    return entries;
+  }
+
+  async function financeAnswer(q){
+    if(!isFinanceQuestion(q))return null;
+    const category=resolveFinanceCategory(q);
+    const period=resolveFinancePeriod(q);
+    let entries=await ensureFinanceEntries();
+
+    if(period.start)entries=entries.filter(entry=>{
+      const date=String(entry.date||'').slice(0,10);
+      return date&&date>=period.start&&date<=period.end;
+    });
+
+    if(category){
+      const categoryName=normal(category.name);
+      entries=entries.filter(entry=>normal(entry.category)===categoryName);
+    }
+
+    const total=entries.reduce((sum,entry)=>sum+Number(entry.amount||0),0);
+    const count=entries.length;
+    const subject=category?category.name:'alle opgeslagen kosten';
+
+    if(!count){
+      return {action:'answer',answer:`Ik vind geen opgeslagen kosten voor ${subject}${period.label==='in totaal'?'':' in '+period.label}.`};
+    }
+
+    if(category){
+      const noun=count===1?'kostenpost':'kostenposten';
+      return {action:'answer',answer:`Volgens je opgeslagen kosten is aan ${category.name} ${period.label} ${euro(total)} uitgegeven, verdeeld over ${count} ${noun}.`};
+    }
+
+    const groups={};
+    entries.forEach(entry=>{
+      const key=String(entry.category||'Overig');
+      groups[key]=(groups[key]||0)+Number(entry.amount||0);
+    });
+    const top=Object.entries(groups)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,3)
+      .map(([name,amount])=>`${name}: ${euro(amount)}`)
+      .join(' · ');
+    return {action:'answer',answer:`Je ${subject} zijn ${period.label} ${euro(total)}, verdeeld over ${count} kostenposten.${top?`\nGrootste categorieën: ${top}.`:''}`};
   }
 
   function sectionFor(q){
@@ -212,6 +373,8 @@
   async function handle(query){
     const q=String(query||'').trim();
     if(q.length<2){setResult('Typ kort wat je wilt openen of weten.');return}
+    const financeInfo=await financeAnswer(q);
+    if(financeInfo){setResult(financeInfo.answer);return}
     const localInfo=metricAnswer(q);
     if(localInfo){setResult(localInfo.answer);return}
     const localNav=localNavigation(q);
@@ -248,7 +411,7 @@
         <input id="msQuickAskInput8267" type="search" enterkeyhint="go" autocomplete="off" autocapitalize="sentences" aria-label="Vraag Serenity AI" placeholder="Waar wil je heen of wat wil je weten?">
         <button id="msQuickAskSend8267" class="msqa8267-send" type="submit" aria-label="Vraag versturen"><svg viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
       </div>
-      <div class="msqa8267-examples">Bijv. “ga naar drinkwater”, “open logboek” of “wat is de accustand?”</div>
+      <div class="msqa8267-examples">Bijv. “wat kost elektra?”, “open logboek” of “wat is de accustand?”</div>
       <div id="msQuickAskResult8267" class="msqa8267-result" aria-live="polite"></div>`;
     start.before(form);
 
