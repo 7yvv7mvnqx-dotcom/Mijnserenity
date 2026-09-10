@@ -195,4 +195,110 @@
     const box=$('ms71511PoiResults');if(box)box.innerHTML='';
     setStatus('Filters gewist. Zoek zonder filters voor POI’s rond je huidige locatie.');
   };
+
+  const ms71511HarbourRegions=[
+    ['NL','Heel Nederland'],
+    ['NL-DR','Drenthe'],
+    ['NL-FL','Flevoland'],
+    ['NL-FR','Friesland'],
+    ['NL-GE','Gelderland'],
+    ['NL-GR','Groningen'],
+    ['NL-LI','Limburg'],
+    ['NL-NB','Noord-Brabant'],
+    ['NL-NH','Noord-Holland'],
+    ['NL-OV','Overijssel'],
+    ['NL-UT','Utrecht'],
+    ['NL-ZE','Zeeland'],
+    ['NL-ZH','Zuid-Holland']
+  ];
+
+  function ms71511HarbourRegionLabel(){
+    const select=$('ms692HarbourCountry');
+    return select?.selectedOptions?.[0]?.textContent?.trim()||'Heel Nederland';
+  }
+
+  function ms71511PopulateHarbourRegions(){
+    const select=$('ms692HarbourCountry');
+    if(!select)return false;
+    if(select.dataset.ms71511ProvinceReady==='1')return true;
+
+    const current=String(select.value||'NL').toUpperCase();
+    select.innerHTML=ms71511HarbourRegions
+      .map(([value,label])=>`<option value="${value}">${label}</option>`)
+      .join('');
+    select.value=ms71511HarbourRegions.some(([value])=>value===current)
+      ?current
+      :'NL';
+    select.dataset.ms71511ProvinceReady='1';
+    select.setAttribute('aria-label','Regio voor gewaardeerde havens');
+    return true;
+  }
+
+  function ms71511PatchHarbourQuery(){
+    const original=window.ms692HarbourQuery;
+    if(typeof original!=='function')return false;
+    if(original.__ms71511ProvinceAware)return true;
+
+    const provinceAware=function(region='NL'){
+      const requested=String(region||'NL').toUpperCase().trim();
+      const known=ms71511HarbourRegions.some(([value])=>value===requested)
+        ?requested
+        :'NL';
+      const query=original('NL');
+      if(known==='NL')return query;
+
+      return query.replace(
+        'area["ISO3166-1"="NL"][admin_level=2]->.searchArea;',
+        `area["ISO3166-2"="${known}"][admin_level=4]->.searchArea;`
+      );
+    };
+
+    provinceAware.__ms71511ProvinceAware=true;
+    provinceAware.__ms71511Original=original;
+    window.ms692HarbourQuery=provinceAware;
+    return true;
+  }
+
+  function ms71511PatchHarbourStatus(){
+    const original=window.ms692SetHarbourStatus;
+    if(typeof original!=='function')return false;
+    if(original.__ms71511RegionAware)return true;
+
+    const regionAware=function(text,type){
+      const select=$('ms692HarbourCountry');
+      const region=String(select?.value||'NL').toUpperCase();
+      const label=ms71511HarbourRegionLabel();
+      let message=String(text||'');
+
+      if(region!=='NL'){
+        message=message.replace(/Nederlandse havens/g,`havens in ${label}`);
+      }
+
+      return original(message,type);
+    };
+
+    regionAware.__ms71511RegionAware=true;
+    regionAware.__ms71511Original=original;
+    window.ms692SetHarbourStatus=regionAware;
+    return true;
+  }
+
+  let ms71511HarbourPatchAttempts=0;
+  function ms71511InstallHarbourRegions(){
+    const selectorReady=ms71511PopulateHarbourRegions();
+    const queryReady=ms71511PatchHarbourQuery();
+    const statusReady=ms71511PatchHarbourStatus();
+
+    if(selectorReady&&queryReady&&statusReady)return;
+    if(ms71511HarbourPatchAttempts++<40){
+      setTimeout(ms71511InstallHarbourRegions,250);
+    }
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',ms71511InstallHarbourRegions,{once:true});
+  }else{
+    ms71511InstallHarbourRegions();
+  }
+  window.addEventListener('load',ms71511InstallHarbourRegions,{once:true});
 })();
