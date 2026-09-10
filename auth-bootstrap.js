@@ -30,7 +30,8 @@
     `/runtime-performance-71700.js?v=${VERSION}`,
     `/victron-diagnostics.js?v=${VERSION}`,
     `/ha-live-bridge.js?v=${VERSION}`,
-    `/technical-live-sync.js?v=${VERSION}`
+    `/technical-live-sync.js?v=${VERSION}`,
+    `/auto-stop-confirmation-8236.js?v=${VERSION}`
   ];
 
   const IDLE_BACKGROUND=[
