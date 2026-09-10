@@ -1,45 +1,3 @@
-const recent=new Map();
-const RATE_WINDOW_MS=1200;
-const RATE_RETENTION_MS=10*60*1000;
-
-const allowedTargets=new Set([
-  'dashboard','map','planner','ais','weather','live',
-  'technical','pois','logbook','costs','settings'
-]);
-
-const allowedSections=new Set([
-  '','house-battery','start-battery','fuel','water','waste',
-  'outside','salon','machine','solar-shore','speed','depth',
-  'wind','current-position'
-]);
-
-function pruneRecent(now=Date.now()){
-  for(const [key,at] of recent){if(now-at>RATE_RETENTION_MS)recent.delete(key)}
-  while(recent.size>500){recent.delete(recent.keys().next().value)}
-}
-
-function clientKey(event){
-  const h=event.headers||{};
-  return String(h['x-nf-client-connection-ip']||h['x-forwarded-for']||h['client-ip']||'unknown').split(',')[0].trim();
-}
-
-function fetchWithTimeout(url,options={},ms=18000){
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),ms);
-  return fetch(url,{...options,signal:controller.signal}).finally(()=>clearTimeout(timer));
-}
-
-function json(statusCode,body){
-  return {
-    statusCode,
-    headers:{
-      'Content-Type':'application/json; charset=utf-8',
-      'Cache-Control':'no-store'
-    },
-    body:JSON.stringify(body)
-  };
-}
-
 function safeText(value,max=1200){
   return String(value??'')
     .replace(/\u0000/g,'')
@@ -47,7 +5,9 @@ function safeText(value,max=1200){
     .slice(0,max);
 }
 
-const forbiddenKey=/secret|password|token|api.?key|authorization|cookie|session|access.?token|refresh.?token|supabase|credential/i;
+function forbiddenKey(key){
+  return /secret|password|token|api.?key|authorization|cookie|session|access.?token|refresh.?token|supabase|credential/i.test(String(key||''));
+}
 
 function sanitize(value,depth=0){
   if(depth>5)return null;
@@ -63,7 +23,7 @@ function sanitize(value,depth=0){
   if(typeof value==='object'){
     const out={};
     for(const [key,val] of Object.entries(value).slice(0,90)){
-      if(forbiddenKey.test(key))continue;
+      if(forbiddenKey(key))continue;
       const clean=sanitize(val,depth+1);
       if(clean!==null)out[safeText(key,80)]=clean;
     }
@@ -94,11 +54,34 @@ function responseText(data){
   return parts.join('\n').trim();
 }
 
+function outputSchema(){
+  return {
+    type:'object',
+    properties:{
+      action:{type:'string',enum:['answer','navigate']},
+      target:{
+        type:'string',
+        enum:['','dashboard','map','planner','ais','weather','live','technical','pois','logbook','costs','settings']
+      },
+      section:{
+        type:'string',
+        enum:['','house-battery','start-battery','fuel','water','waste','outside','salon','machine','solar-shore','speed','depth','wind','current-position']
+      },
+      answer:{type:'string'}
+    },
+    required:['action','target','section','answer'],
+    additionalProperties:false
+  };
+}
+
 function parseAssistantPayload(text){
+  const targets=new Set(['dashboard','map','planner','ais','weather','live','technical','pois','logbook','costs','settings']);
+  const sections=new Set(['','house-battery','start-battery','fuel','water','waste','outside','salon','machine','solar-shore','speed','depth','wind','current-position']);
   const raw=safeText(text,6000)
     .replace(/^```(?:json)?\s*/i,'')
     .replace(/\s*```$/,'')
     .trim();
+
   let parsed;
   try{
     parsed=JSON.parse(raw);
@@ -107,8 +90,8 @@ function parseAssistantPayload(text){
   }
 
   const action=parsed?.action==='navigate'?'navigate':'answer';
-  const target=allowedTargets.has(parsed?.target)?parsed.target:'';
-  const section=allowedSections.has(parsed?.section)?parsed.section:'';
+  const target=targets.has(parsed?.target)?parsed.target:'';
+  const section=sections.has(parsed?.section)?parsed.section:'';
   const answer=safeText(parsed?.answer,2200);
 
   if(action==='navigate'&&target){
@@ -121,24 +104,6 @@ function parseAssistantPayload(text){
     answer:answer||'Ik kon daar nog geen passend antwoord op vinden.'
   };
 }
-
-const outputSchema={
-  type:'object',
-  properties:{
-    action:{type:'string',enum:['answer','navigate']},
-    target:{
-      type:'string',
-      enum:['','dashboard','map','planner','ais','weather','live','technical','pois','logbook','costs','settings']
-    },
-    section:{
-      type:'string',
-      enum:['','house-battery','start-battery','fuel','water','waste','outside','salon','machine','solar-shore','speed','depth','wind','current-position']
-    },
-    answer:{type:'string'}
-  },
-  required:['action','target','section','answer'],
-  additionalProperties:false
-};
 
 function systemPrompt(){
   return `Je bent Serenity AI, de slimme assistent in MijnSerenity voor één boot.
@@ -202,67 +167,96 @@ ${contextText}
 Beantwoord de vraag uitsluitend volgens de instructies.`;
 }
 
-function modelCandidates(){
-  const preferred=safeText(process.env.OPENAI_MODEL,120);
-  return [...new Set([preferred,'gpt-5.6-sol','gpt-5.6-terra','gpt-5-mini'].filter(Boolean))];
+function modelCandidates(preferred){
+  return [...new Set([safeText(preferred,120),'gpt-5.6-sol','gpt-5.6-terra','gpt-5-mini'].filter(Boolean))];
 }
 
-async function callOpenAI(model,input){
-  return fetchWithTimeout('https://api.openai.com/v1/responses',{
-    method:'POST',
+function json(body,status=200){
+  return new Response(JSON.stringify(body),{
+    status,
     headers:{
-      'Authorization':`Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type':'application/json'
-    },
-    body:JSON.stringify({
-      model,
-      input,
-      reasoning:{effort:'low'},
-      max_output_tokens:750,
-      store:false,
-      text:{
-        format:{
-          type:'json_schema',
-          name:'serenity_ai_action',
-          strict:true,
-          schema:outputSchema
-        }
-      }
-    })
+      'Content-Type':'application/json; charset=utf-8',
+      'Cache-Control':'no-store'
+    }
   });
 }
 
-exports.handler=async event=>{
-  if(event.httpMethod==='OPTIONS'){
-    return {statusCode:204,headers:{'Cache-Control':'no-store'},body:''};
+async function callOpenAI(apiKey,model,input){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),18000);
+  try{
+    return await fetch('https://api.openai.com/v1/responses',{
+      method:'POST',
+      signal:controller.signal,
+      headers:{
+        'Authorization':`Bearer ${apiKey}`,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        model,
+        input,
+        reasoning:{effort:'low'},
+        max_output_tokens:750,
+        store:false,
+        text:{
+          format:{
+            type:'json_schema',
+            name:'serenity_ai_action',
+            strict:true,
+            schema:outputSchema()
+          }
+        }
+      })
+    });
+  }finally{
+    clearTimeout(timer);
   }
-  if(event.httpMethod!=='POST'){
-    return json(405,{error:'Alleen POST is toegestaan.'});
+}
+
+export default async (request)=>{
+  if(request.method==='OPTIONS'){
+    return new Response(null,{status:204,headers:{'Cache-Control':'no-store'}});
+  }
+  if(request.method!=='POST'){
+    return json({error:'Alleen POST is toegestaan.'},405);
   }
 
   const now=Date.now();
-  pruneRecent(now);
-  const key=clientKey(event);
-  const last=recent.get(key)||0;
-  if(now-last<RATE_WINDOW_MS){
-    return json(429,{error:'Even wachten en probeer opnieuw.'});
-  }
-  recent.set(key,now);
+  const recent=globalThis.__serenityAiRecent instanceof Map
+    ?globalThis.__serenityAiRecent
+    :(globalThis.__serenityAiRecent=new Map());
 
-  if(!process.env.OPENAI_API_KEY){
-    return json(503,{error:'Serenity AI is nog niet gekoppeld aan OpenAI.'});
+  for(const [key,at] of recent){
+    if(now-at>10*60*1000)recent.delete(key);
+  }
+  while(recent.size>500)recent.delete(recent.keys().next().value);
+
+  const clientIp=String(
+    request.headers.get('x-nf-client-connection-ip')||
+    request.headers.get('x-forwarded-for')||
+    'unknown'
+  ).split(',')[0].trim();
+  const last=recent.get(clientIp)||0;
+  if(now-last<1200){
+    return json({error:'Even wachten en probeer opnieuw.'},429);
+  }
+  recent.set(clientIp,now);
+
+  const apiKey=Netlify.env.get('OPENAI_API_KEY');
+  if(!apiKey){
+    return json({error:'Serenity AI is nog niet gekoppeld aan OpenAI.'},503);
   }
 
   let body;
   try{
-    body=JSON.parse(event.body||'{}');
+    body=await request.json();
   }catch{
-    return json(400,{error:'Ongeldige aanvraag.'});
+    return json({error:'Ongeldige aanvraag.'},400);
   }
 
   const query=safeText(body?.query,700);
   if(query.length<2){
-    return json(400,{error:'Typ eerst een vraag.'});
+    return json({error:'Typ eerst een vraag.'},400);
   }
 
   const context=sanitize(body?.context)||{};
@@ -273,26 +267,25 @@ exports.handler=async event=>{
   ];
 
   let lastStatus=500;
-  let lastMessage='OpenAI gaf geen bruikbaar antwoord.';
 
-  for(const model of modelCandidates()){
+  for(const model of modelCandidates(Netlify.env.get('OPENAI_MODEL'))){
     let response;
     try{
-      response=await callOpenAI(model,input);
+      response=await callOpenAI(apiKey,model,input);
     }catch(error){
       console.error('Serenity AI netwerkfout:',error);
-      return json(502,{error:'Serenity AI kon OpenAI niet bereiken.'});
+      return json({error:'Serenity AI kon OpenAI niet bereiken.'},502);
     }
 
     const data=await response.json().catch(()=>({}));
     if(response.ok){
       const payload=parseAssistantPayload(responseText(data));
-      return json(200,{...payload,model});
+      return json({...payload,model});
     }
 
     lastStatus=response.status;
-    lastMessage=safeText(data?.error?.message||data?.error||'OpenAI gaf een fout.',500);
-    console.warn(`Serenity AI model ${model} gaf ${response.status}:`,lastMessage);
+    const message=safeText(data?.error?.message||data?.error||'OpenAI gaf een fout.',500);
+    console.warn(`Serenity AI model ${model} gaf ${response.status}:`,message);
 
     if([401,429].includes(response.status))break;
     if(![400,403,404,422].includes(response.status))break;
@@ -304,5 +297,5 @@ exports.handler=async event=>{
       ?'Serenity AI is even druk. Probeer het over een moment opnieuw.'
       :'Serenity AI kon deze vraag nu niet verwerken.';
 
-  return json(502,{error:publicError});
+  return json({error:publicError},502);
 };
