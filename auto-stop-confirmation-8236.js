@@ -8,6 +8,14 @@
   let promptOpen=false;
   let snoozeUntil=0;
 
+  function liveState(){
+    try{
+      return typeof liveNavState!=='undefined'?liveNavState:null;
+    }catch{
+      return null;
+    }
+  }
+
   function ensureStyle(){
     if(document.getElementById('msAutoStopConfirm8236Style'))return;
     const style=document.createElement('style');
@@ -76,31 +84,34 @@
   function rearmForTenMinutes(){
     snoozeUntil=Date.now()+REASK_MS;
     try{
-      if(window.liveNavState?.status==='active'){
-        liveNavState.stationarySince=Date.now();
-        liveNavState.autoStopTriggered=false;
-        liveNavState.arrivalIgnoredUntilMove=false;
-        liveNavState.backgroundRecovery=false;
-        liveNavState.backgroundGapMinutes=0;
-        window.persistLiveState?.();
+      const state=liveState();
+      if(state?.status==='active'){
+        state.stationarySince=Date.now();
+        state.autoStopTriggered=false;
+        state.arrivalIgnoredUntilMove=false;
+        state.backgroundRecovery=false;
+        state.backgroundGapMinutes=0;
+        if(typeof persistLiveState==='function')persistLiveState();
       }
-      window.clearLiveAutoStopTimer?.();
-      if(window.liveNavState?.status==='active'){
-        window.updateLiveAutoStopDetection?.({time:Date.now()});
+      if(typeof clearLiveAutoStopTimer==='function')clearLiveAutoStopTimer();
+      if(state?.status==='active'&&typeof updateLiveAutoStopDetection==='function'){
+        updateLiveAutoStopDetection({time:Date.now()});
       }
     }catch(error){
       console.warn('Afmeerdetectie opnieuw starten:',error);
     }
-    window.setLiveAutoLogStatus?.(
-      'Opname blijft actief · bij nogmaals 10 minuten zonder beweging vraagt MijnSerenity opnieuw.',
-      'warning'
-    );
+    if(typeof setLiveAutoLogStatus==='function'){
+      setLiveAutoLogStatus(
+        'Opname blijft actief · bij nogmaals 10 minuten zonder beweging vraagt MijnSerenity opnieuw.',
+        'warning'
+      );
+    }
   }
 
   function qualifiesForQuestion(options){
     return Boolean(
       options?.automatic&&
-      window.liveNavState?.status==='active'
+      liveState()?.status==='active'
     );
   }
 
@@ -117,8 +128,11 @@
 
       if(Date.now()<snoozeUntil||promptOpen){
         try{
-          liveNavState.autoStopTriggered=false;
-          window.persistLiveState?.();
+          const state=liveState();
+          if(state){
+            state.autoStopTriggered=false;
+            if(typeof persistLiveState==='function')persistLiveState();
+          }
         }catch{}
         return false;
       }
@@ -135,7 +149,9 @@
 
         if(stillSailing){
           rearmForTenMinutes();
-          window.showAppToast?.('Opname blijft actief. Over 10 minuten controleren we opnieuw als Serenity stil blijft.');
+          if(typeof showAppToast==='function'){
+            showAppToast('Opname blijft actief. Over 10 minuten controleren we opnieuw als Serenity stil blijft.');
+          }
           return false;
         }
 
@@ -150,7 +166,7 @@
 
         if(!stopAndSave){
           rearmForTenMinutes();
-          window.showAppToast?.('Opname blijft actief.');
+          if(typeof showAppToast==='function')showAppToast('Opname blijft actief.');
           return false;
         }
 
