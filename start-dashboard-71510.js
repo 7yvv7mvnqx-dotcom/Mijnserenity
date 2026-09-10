@@ -10,7 +10,7 @@ window.__msSimpleStart8210=true;
 window.__msDisableLegacyVisuals=true;
 
 const BUILD='8.26.6',TOKEN='826600',ROOT='ms8210Start';
-const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript';
+const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',AI='ms8266QuickAskScript';
 const $=id=>document.getElementById(id);
 function route(){try{return((location.hash||'#dashboard').replace(/^#/,'').split(/[?&/]/)[0]||'dashboard').toLowerCase()}catch(_){return'dashboard'}}
 function deepLink(){try{const q=new URLSearchParams(location.search);return q.has('alarm')||q.has('route')||q.has('page')}catch(_){return false}}
@@ -20,8 +20,9 @@ function ensureRoot(){if(route()!=='dashboard')return null;const dashboard=$('da
 function load(path,id,after){if($(id)){after?.();return}const script=document.createElement('script');script.id=id;script.src=`${path}?v=${TOKEN}`;script.async=false;script.addEventListener('load',()=>after?.(),{once:true});document.head.appendChild(script)}
 function ensurePatch(){if(typeof window.ms8265ApplyDashboardButtons==='function'){try{window.ms8265ApplyDashboardButtons()}catch(_){};return}load('/dashboard-buttons-8265.js',PATCH,()=>{try{window.ms8265ApplyDashboardButtons?.();syncBuild()}catch(_){}})}
 function ensureLive(){if(window.__msApprovedDashboardLive8264)return;load('/approved-dashboard-live-8264.js',LIVE,()=>{syncBuild()})}
-function finish(){try{window.ms8263ApplyApprovedDashboard?.()}catch(_){};ensurePatch();ensureLive();syncBuild()}
-function apply(){installStyle();const root=ensureRoot();if(!root)return false;syncBuild();if(typeof window.ms8263ApplyApprovedDashboard==='function'){try{const ok=!!window.ms8263ApplyApprovedDashboard();ensurePatch();ensureLive();return ok}catch(e){console.warn('Approved Haven dashboard failed',e)}}load('/approved-dashboard-8263.js',APPROVED,finish);return false}
+function ensureAi(){if(window.__msQuickAsk8267){try{window.ms8267MountQuickAsk?.()}catch(_){};return}load('/ai-quick-command-8267.js',AI,()=>{try{window.ms8267MountQuickAsk?.()}catch(_){}})}
+function finish(){try{window.ms8263ApplyApprovedDashboard?.()}catch(_){};ensurePatch();ensureLive();ensureAi();syncBuild()}
+function apply(){installStyle();const root=ensureRoot();if(!root)return false;syncBuild();if(typeof window.ms8263ApplyApprovedDashboard==='function'){try{const ok=!!window.ms8263ApplyApprovedDashboard();ensurePatch();ensureLive();ensureAi();return ok}catch(e){console.warn('Approved Haven dashboard failed',e)}}load('/approved-dashboard-8263.js',APPROVED,finish);return false}
 function showHome(){try{history.replaceState(null,'',location.pathname+location.search+'#dashboard')}catch(_){};setTimeout(apply,0)}
 function boot(){syncBuild();installStyle();if(!deepLink())showHome();else if(route()==='dashboard')apply();[120,500,1400].forEach(ms=>setTimeout(()=>{if(route()==='dashboard')apply()},ms))}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
