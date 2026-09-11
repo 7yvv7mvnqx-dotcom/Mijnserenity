@@ -1,7 +1,7 @@
-/* MijnSerenity 8.26.8 — single Haven dashboard, network-first critical boot files */
-const CACHE_NAME='mijnserenity-8.26.8';
-const BUILD='8.26.8';
-const TOKEN='826800';
+/* MijnSerenity 8.26.9 — OCR hotfix + single Haven dashboard, network-first critical boot files */
+const CACHE_NAME='mijnserenity-8.26.9';
+const BUILD='8.26.9';
+const TOKEN='826900';
 const CORE=[
   '/',
   '/index.html',
