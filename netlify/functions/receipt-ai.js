@@ -117,7 +117,7 @@ function normalize(payload,categories){
   const p=payload&&typeof payload==='object'?payload:{};
   const category=categories.includes(String(p.category||''))?String(p.category):'';
   const date=/^20\d{2}-\d{2}-\d{2}$/.test(String(p.date||''))?String(p.date):'';
-  const num=v=>Number.isFinite(Number(v))?Number(v):null;
+  const num=v=>v===null||v===undefined||v===''?undefined:(Number.isFinite(Number(v))?Number(v):undefined);
   const items=Array.isArray(p.items)?p.items.slice(0,20).map(item=>({
     article_number:safeText(item?.article_number,80),
     description:safeText(item?.description,300),
