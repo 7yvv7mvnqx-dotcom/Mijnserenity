@@ -1,7 +1,7 @@
-/* MijnSerenity 8.26.11 — supplier/item OCR hotfix + network-first OCR */
-const CACHE_NAME='mijnserenity-8.26.11';
-const BUILD='8.26.11';
-const TOKEN='826911';
+/* MijnSerenity 8.26.12 — receipt date correction + network-first OCR */
+const CACHE_NAME='mijnserenity-8.26.12';
+const BUILD='8.26.12';
+const TOKEN='826912';
 const CORE=[
   '/',
   '/index.html',
