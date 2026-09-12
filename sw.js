@@ -1,7 +1,7 @@
-/* MijnSerenity 8.26.12 — receipt date correction + network-first OCR */
-const CACHE_NAME='mijnserenity-8.26.12';
-const BUILD='8.26.12';
-const TOKEN='826912';
+/* MijnSerenity 8.26.13 — AI-first receipt reader + network-first scanner */
+const CACHE_NAME='mijnserenity-8.26.13';
+const BUILD='8.26.13';
+const TOKEN='826913';
 const CORE=[
   '/',
   '/index.html',
@@ -12,6 +12,8 @@ const CORE=[
   `/approved-dashboard-live-8264.js?v=${TOKEN}`,
   `/dashboard-buttons-8265.js?v=${TOKEN}`,
   `/rws-water-temp-8233.js?v=${TOKEN}`,
+  `/receipt-ocr-fix-8234.js?v=${TOKEN}`,
+  `/receipt-ai-first.js?v=${TOKEN}`,
   '/serenity-dashboard-boat-20260909.webp?v=8264',
   '/manifest.json',
   '/icon-192.png',
@@ -25,7 +27,7 @@ self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')sel
 async function networkFirst(request,fallback){const cache=await caches.open(CACHE_NAME);try{const response=await fresh(request);if(response.ok){await put(cache,request,response);if(fallback)await put(cache,fallback,response)}return response}catch(_){return(await caches.match(request,{ignoreSearch:false}))||(fallback?await caches.match(fallback):null)||new Response('MijnSerenity kon niet worden geladen.',{status:503,headers:{'content-type':'text/plain; charset=utf-8'}})}}
 async function staleWhileRevalidate(request){const cached=await caches.match(request,{ignoreSearch:false});const update=fresh(request).then(async response=>{if(response.ok){const cache=await caches.open(CACHE_NAME);await put(cache,request,response)}return response}).catch(()=>null);return cached||(await update)||new Response('',{status:503})}
 const CRITICAL=new Set([
-  '/auth-bootstrap.js','/start-dashboard-71510.js','/dashboard-unified-71919-loader.js','/approved-dashboard-8263.js','/approved-dashboard-live-8264.js','/dashboard-buttons-8265.js','/rws-water-temp-8233.js','/receipt-reader-pro.js','/receipt-ocr-fix-8234.js','/serenity-dashboard-boat-20260909.webp'
+  '/auth-bootstrap.js','/start-dashboard-71510.js','/dashboard-unified-71919-loader.js','/approved-dashboard-8263.js','/approved-dashboard-live-8264.js','/dashboard-buttons-8265.js','/rws-water-temp-8233.js','/receipt-reader-pro.js','/receipt-ocr-fix-8234.js','/receipt-ai-first.js','/serenity-dashboard-boat-20260909.webp'
 ]);
 self.addEventListener('fetch',event=>{const request=event.request;if(request.method!=='GET')return;const url=new URL(request.url);if(url.origin!==self.location.origin)return;if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/')||url.pathname.startsWith('/victron-gui/'))return;if(request.mode==='navigate'){event.respondWith(networkFirst(request,'/index.html'));return}if(CRITICAL.has(url.pathname)){event.respondWith(networkFirst(request));return}if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){event.respondWith(staleWhileRevalidate(request));return}event.respondWith(staleWhileRevalidate(request))});
 function pushPayload(event){if(!event.data)return{};try{return event.data.json()||{}}catch(_){}try{return{body:event.data.text()}}catch(_){return{}}}
