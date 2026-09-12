@@ -1,4 +1,4 @@
-/* MijnSerenity 8.27.2 — approved Haven + verbeterde Serenity AI met stem en blijvende antwoordballon */
+/* MijnSerenity 8.27.5 — approved Haven + Serenity AI met Gerard, directe stem en iOS-audiofix */
 (()=>{
 'use strict';
 if(window.__msApprovedHomeBootstrap8263)return;
@@ -9,8 +9,8 @@ window.__msUnifiedDashboard8215=true;
 window.__msSimpleStart8210=true;
 window.__msDisableLegacyVisuals=true;
 
-const BUILD='8.27.2',TOKEN='827200',ROOT='ms8210Start';
-const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',PERSIST='ms8272AiPersistScript';
+const BUILD='8.27.5',TOKEN='827500',ROOT='ms8210Start';
+const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8275IosVoiceFixScript',PERSIST='ms8272AiPersistScript';
 const $=id=>document.getElementById(id);
 function route(){try{return((location.hash||'#dashboard').replace(/^#/,'').split(/[?&/]/)[0]||'dashboard').toLowerCase()}catch(_){return'dashboard'}}
 function deepLink(){try{const q=new URLSearchParams(location.search);return q.has('alarm')||q.has('route')||q.has('page')}catch(_){return false}}
@@ -21,7 +21,8 @@ function load(path,id,after){if($(id)){after?.();return}const script=document.cr
 function ensurePatch(){if(typeof window.ms8265ApplyDashboardButtons==='function'){try{window.ms8265ApplyDashboardButtons()}catch(_){};return}load('/dashboard-buttons-8265.js',PATCH,()=>{try{window.ms8265ApplyDashboardButtons?.();syncBuild()}catch(_){}})}
 function ensureLive(){if(window.__msApprovedDashboardLive8264)return;load('/approved-dashboard-live-8264.js',LIVE,()=>{syncBuild()})}
 function ensurePersist(){if(window.__msSerenityAiPersist8272){try{window.ms8272KeepSerenityAnswer?.()}catch(_){};return}load('/serenity-ai-persist-8272.js',PERSIST,()=>{try{window.ms8272KeepSerenityAnswer?.()}catch(_){}})}
-function ensureVoice(){if(window.__msSerenityAiVoice8271){try{window.ms8271EnhanceSerenityAI?.()}catch(_){};ensurePersist();return}load('/serenity-ai-voice-8271.js',VOICE,()=>{try{window.ms8271EnhanceSerenityAI?.()}catch(_){};ensurePersist()})}
+function ensureIosVoice(){if(window.__msSerenityAiIosVoiceFix8275)return;load('/serenity-ai-ios-voice-fix-8275.js',IOSVOICE)}
+function ensureVoice(){if(window.__msSerenityAiVoice8271){try{window.ms8271EnhanceSerenityAI?.()}catch(_){};ensureIosVoice();ensurePersist();return}load('/serenity-ai-voice-8271.js',VOICE,()=>{try{window.ms8271EnhanceSerenityAI?.()}catch(_){};ensureIosVoice();ensurePersist()})}
 function ensureAi(){if(window.__msQuickAsk8270||window.__msQuickAsk8267){try{window.ms8267MountQuickAsk?.()}catch(_){};ensureVoice();return}load('/ai-quick-command-8267.js',AI,()=>{try{window.ms8267MountQuickAsk?.()}catch(_){};ensureVoice()})}
 function finish(){try{window.ms8263ApplyApprovedDashboard?.()}catch(_){};ensurePatch();ensureLive();ensureAi();syncBuild()}
 function apply(){installStyle();const root=ensureRoot();if(!root)return false;syncBuild();if(typeof window.ms8263ApplyApprovedDashboard==='function'){try{const ok=!!window.ms8263ApplyApprovedDashboard();ensurePatch();ensureLive();ensureAi();return ok}catch(e){console.warn('Approved Haven dashboard failed',e)}}load('/approved-dashboard-8263.js',APPROVED,finish);return false}
