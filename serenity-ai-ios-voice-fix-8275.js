@@ -1,8 +1,8 @@
-/* MijnSerenity 8.27.5 — iPhone/iPad hoorbare Gerard-stem fallback. */
+/* MijnSerenity 8.27.7 — veilige iPhone/iPad Gerard-stem, alleen op het antwoordvak. */
 (()=>{
   'use strict';
-  if(window.__msSerenityAiIosVoiceFix8275)return;
-  window.__msSerenityAiIosVoiceFix8275=true;
+  if(window.__msSerenityAiIosVoiceFix8277)return;
+  window.__msSerenityAiIosVoiceFix8277=true;
 
   const isIOS=/iPad|iPhone|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(!isIOS||!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window))return;
@@ -10,8 +10,8 @@
   const RESULT='msQuickAskResult8267';
   const INPUT='msQuickAskInput8267';
   const STATUS='ms8271VoiceStatus';
-  let observer=null;
   let resultObserver=null;
+  let attachAttempts=0;
   let lastAnswer='';
   let speakTimer=null;
   let speechToken=0;
@@ -46,28 +46,30 @@
   }
 
   function chunks(text){
-    const parts=String(text||'').match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[String(text||'')];
+    const source=String(text||'').trim();
+    if(!source)return [];
+    const sentences=source.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[source];
     const out=[];
     let current='';
-    for(const raw of parts){
-      const part=raw.trim();
+    for(const sentence of sentences){
+      const part=sentence.trim();
       if(!part)continue;
-      if((current+' '+part).trim().length<=230){
+      if((current+' '+part).trim().length<=220){
         current=(current+' '+part).trim();
-      }else{
-        if(current)out.push(current);
-        if(part.length<=230){
-          current=part;
-        }else{
-          const words=part.split(/\s+/);
-          current='';
-          for(const word of words){
-            if((current+' '+word).trim().length>220){
-              if(current)out.push(current);
-              current=word;
-            }else current=(current+' '+word).trim();
-          }
-        }
+        continue;
+      }
+      if(current)out.push(current);
+      if(part.length<=220){
+        current=part;
+        continue;
+      }
+      const words=part.split(/\s+/);
+      current='';
+      for(const word of words){
+        if((current+' '+word).trim().length>210){
+          if(current)out.push(current);
+          current=word;
+        }else current=(current+' '+word).trim();
       }
     }
     if(current)out.push(current);
@@ -83,9 +85,8 @@
   function finish(token){
     if(token!==speechToken)return;
     speaking=false;
-    const mic=document.getElementById('ms8271Mic');
-    const label=mic?.textContent||'';
-    status(/Gerard actief|Luisteren|Gesprek actief/i.test(label)?'Ik luister · praat gewoon verder.':'Ik wacht op “Gerard”.');
+    const micText=document.getElementById('ms8271Mic')?.textContent||'';
+    status(/Gerard actief|Luisteren|Gesprek actief/i.test(micText)?'Ik luister · praat gewoon verder.':'Ik wacht op “Gerard”.');
   }
 
   function speakNative(text){
@@ -98,7 +99,7 @@
     speaking=true;
     status('Gerard antwoordt…');
 
-    const speakNext=()=>{
+    const next=()=>{
       if(token!==speechToken||!speaking)return;
       const part=queue.shift();
       if(!part){finish(token);return}
@@ -110,12 +111,12 @@
       utterance.pitch=1.0;
       utterance.volume=1.0;
       utterance.onstart=()=>{if(token===speechToken)status('Gerard antwoordt · praat om te onderbreken.');};
-      utterance.onend=()=>{if(token===speechToken)setTimeout(speakNext,25);};
+      utterance.onend=()=>{if(token===speechToken)setTimeout(next,20);};
       utterance.onerror=event=>{
         if(token!==speechToken)return;
         console.warn('Gerard iOS-stem:',event?.error||event);
         speaking=false;
-        status('Stem kon niet worden afgespeeld · controleer mediavolume.');
+        status('Stem kon niet worden afgespeeld · zet mediavolume hoger en tik één keer in de app.');
       };
       try{
         window.speechSynthesis.resume();
@@ -123,11 +124,11 @@
       }catch(error){
         console.warn('Gerard iOS-stem starten:',error);
         speaking=false;
-        status('Stem kon niet worden afgespeeld · controleer mediavolume.');
+        status('Stem kon niet worden afgespeeld · tik één keer in de app.');
       }
     };
 
-    setTimeout(speakNext,40);
+    setTimeout(next,30);
   }
 
   function scheduleSpeak(){
@@ -137,29 +138,21 @@
       if(!answer||answer===lastAnswer)return;
       lastAnswer=answer;
       speakNative(answer);
-    },170);
+    },160);
   }
 
-  function attachResult(){
+  function attachToAnswer(){
     const result=document.getElementById(RESULT);
-    if(!result)return false;
-    if(result.dataset.ms8275VoiceObserved==='1')return true;
-    result.dataset.ms8275VoiceObserved='1';
+    if(!result){
+      if(++attachAttempts<60)setTimeout(attachToAnswer,250);
+      return;
+    }
+    if(result.dataset.ms8277VoiceObserved==='1')return;
+    result.dataset.ms8277VoiceObserved='1';
     lastAnswer=currentAnswer();
     resultObserver?.disconnect();
     resultObserver=new MutationObserver(scheduleSpeak);
     resultObserver.observe(result,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class']});
-    return true;
-  }
-
-  function updateUi(){
-    const note=document.querySelector('.ms8271-ai-note');
-    if(note)note.textContent='Gerard · stem automatisch';
-    const checkbox=document.getElementById('ms8271Speak');
-    if(checkbox&&!checkbox.checked){
-      checkbox.checked=true;
-      try{localStorage.setItem('mijnserenity-serenity-ai-voice-v2','1')}catch{}
-    }
   }
 
   function prime(){
@@ -169,27 +162,26 @@
       window.speechSynthesis.cancel();
       const u=new SpeechSynthesisUtterance(' ');
       u.lang='nl-NL';
-      u.volume=0;
+      u.volume=0.01;
+      u.rate=1;
       window.speechSynthesis.speak(u);
-      setTimeout(()=>window.speechSynthesis.cancel(),20);
+      setTimeout(()=>window.speechSynthesis.cancel(),30);
     }catch{}
   }
 
   function boot(){
-    updateUi();
-    attachResult();
-    observer?.disconnect();
-    observer=new MutationObserver(()=>{updateUi();attachResult();});
-    observer.observe(document.body,{childList:true,subtree:true});
+    attachToAnswer();
+    try{window.speechSynthesis.getVoices()}catch{}
 
     document.addEventListener('pointerdown',prime,{once:true,passive:true});
     document.addEventListener('touchstart',prime,{once:true,passive:true});
     document.addEventListener('keydown',prime,{once:true,passive:true});
 
     document.addEventListener('input',event=>{
-      if(!speaking||event.target?.id!==INPUT)return;
-      stopNative();
-      status('Onderbroken · ik luister naar je aanvulling.');
+      if(speaking&&event.target?.id===INPUT){
+        stopNative();
+        status('Onderbroken · ik luister naar je aanvulling.');
+      }
     },true);
 
     document.addEventListener('click',event=>{
@@ -199,11 +191,6 @@
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden)stopNative();
     },{passive:true});
-
-    try{window.speechSynthesis.getVoices()}catch{}
-    if(typeof window.speechSynthesis.onvoiceschanged!=='undefined'){
-      window.speechSynthesis.addEventListener?.('voiceschanged',()=>{try{chooseDutchVoice()}catch{}},{once:true});
-    }
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
