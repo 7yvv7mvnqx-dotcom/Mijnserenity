@@ -1,4 +1,4 @@
-/* MijnSerenity 8.27.1 — Serenity AI bovenaan, grotere antwoorden, microfoon en OpenAI-stem. */
+/* MijnSerenity 8.27.3 — Serenity AI handsfree gesprek: pauzedetectie, automatisch antwoorden en barge-in. */
 (()=>{
   'use strict';
   if(window.__msSerenityAiVoice8271)return;
@@ -12,11 +12,21 @@
   const TOOLS='msSerenityAiVoice8271Tools';
   const VOICE_ENDPOINT='/.netlify/functions/ai-voice';
   const VOICE_PREF='mijnserenity-serenity-ai-voice-v1';
+  const SILENCE_AFTER_SPEECH_MS=700;
+  const SILENCE_FALLBACK_MS=1400;
+  const RESTART_DELAY_MS=220;
 
   let observer=null;
   let resultObserver=null;
   let recognition=null;
   let listening=false;
+  let conversationMode=false;
+  let speechActive=false;
+  let recognitionBaseTranscript='';
+  let sessionTranscript='';
+  let silenceTimer=null;
+  let restartTimer=null;
+  let pendingSubmitTimer=null;
   let audioContext=null;
   let audioSource=null;
   let fallbackAudio=null;
@@ -77,12 +87,25 @@
     if(el)el.textContent=String(text||'');
   }
 
+  function renderMicButton(){
+    const button=document.getElementById('ms8271Mic');
+    if(!button)return;
+    button.classList.toggle('listening',conversationMode);
+    const label=conversationMode?(listening?'Luisteren…':'Gesprek actief'):'Microfoon';
+    button.innerHTML=`${micIcon}<span>${label}</span>`;
+    button.setAttribute('aria-label',conversationMode?'Spraakgesprek stoppen':'Spraakgesprek starten');
+  }
+
   function unlockAudio(){
     try{
       const Ctx=window.AudioContext||window.webkitAudioContext;
       if(Ctx&&!audioContext)audioContext=new Ctx();
       if(audioContext?.state==='suspended')audioContext.resume().catch(()=>{});
     }catch{}
+  }
+
+  function voiceIsPlaying(){
+    return !!audioSource||!!(fallbackAudio&&!fallbackAudio.paused&&!fallbackAudio.ended);
   }
 
   function stopVoice(){
@@ -95,6 +118,85 @@
       try{URL.revokeObjectURL(fallbackUrl)}catch{}
       fallbackUrl='';
     }
+  }
+
+  function normalizeSpeech(value){
+    return String(value||'').toLocaleLowerCase('nl-NL').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  }
+
+  function likelyAssistantEcho(value){
+    const heard=normalizeSpeech(value);
+    const spoken=normalizeSpeech(lastSpoken);
+    if(!heard||!spoken||heard.length<8)return false;
+    if(spoken.includes(heard))return true;
+    const words=heard.split(' ').filter(word=>word.length>2);
+    if(words.length<3)return false;
+    const matched=words.filter(word=>spoken.includes(word)).length;
+    return matched/words.length>=0.82;
+  }
+
+  function clearSpeechTimers(){
+    clearTimeout(silenceTimer);
+    clearTimeout(restartTimer);
+    clearTimeout(pendingSubmitTimer);
+    silenceTimer=restartTimer=pendingSubmitTimer=null;
+  }
+
+  function scheduleRecognitionRestart(){
+    clearTimeout(restartTimer);
+    if(!conversationMode)return;
+    restartTimer=setTimeout(()=>{
+      restartTimer=null;
+      if(!conversationMode||listening||!document.getElementById('ms8271Mic'))return;
+      try{recognition?.start()}catch(error){
+        if(error?.name!=='InvalidStateError')console.warn('Microfoon opnieuw starten:',error);
+      }
+    },RESTART_DELAY_MS);
+  }
+
+  function submitSpeechWhenReady(){
+    clearTimeout(pendingSubmitTimer);
+    pendingSubmitTimer=null;
+    const form=document.getElementById(FORM);
+    const input=document.getElementById(INPUT);
+    const button=document.getElementById('msQuickAskSend8267');
+    const query=String(sessionTranscript||input?.value||'').trim();
+    if(!form||!input||!query)return;
+
+    if(button?.disabled){
+      pendingSubmitTimer=setTimeout(submitSpeechWhenReady,220);
+      return;
+    }
+
+    input.value=query;
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    sessionTranscript='';
+    recognitionBaseTranscript='';
+    speechActive=false;
+    clearTimeout(silenceTimer);
+    silenceTimer=null;
+
+    if(listening){
+      try{recognition?.abort()}catch{}
+    }
+
+    setVoiceStatus('Vraag verstuurd · ik blijf luisteren.');
+    if(typeof form.requestSubmit==='function')form.requestSubmit();
+    else form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  }
+
+  function scheduleAutoSubmit(delay=SILENCE_FALLBACK_MS){
+    clearTimeout(silenceTimer);
+    if(!conversationMode||!String(sessionTranscript||'').trim())return;
+    silenceTimer=setTimeout(()=>{
+      silenceTimer=null;
+      if(!conversationMode)return;
+      if(speechActive){
+        scheduleAutoSubmit(SILENCE_AFTER_SPEECH_MS);
+        return;
+      }
+      submitSpeechWhenReady();
+    },delay);
   }
 
   async function speakWithOpenAI(text){
@@ -127,18 +229,26 @@
         audioSource=audioContext.createBufferSource();
         audioSource.buffer=buffer;
         audioSource.connect(audioContext.destination);
-        audioSource.onended=()=>{if(token===voiceToken)setVoiceStatus('OpenAI AI-stem · gereed')};
+        audioSource.onended=()=>{
+          audioSource=null;
+          if(token===voiceToken)setVoiceStatus(conversationMode?'Ik luister · praat gewoon verder.':'OpenAI AI-stem · gereed');
+        };
         audioSource.start(0);
-        setVoiceStatus('OpenAI AI-stem · speelt af');
+        setVoiceStatus(conversationMode?'AI antwoordt · praat om te onderbreken.':'OpenAI AI-stem · speelt af');
+        scheduleRecognitionRestart();
         return;
       }
 
       const blob=new Blob([bytes],{type:'audio/mpeg'});
       fallbackUrl=URL.createObjectURL(blob);
       fallbackAudio=new Audio(fallbackUrl);
-      fallbackAudio.onended=()=>{if(token===voiceToken)setVoiceStatus('OpenAI AI-stem · gereed')};
+      fallbackAudio.onended=()=>{
+        fallbackAudio=null;
+        if(token===voiceToken)setVoiceStatus(conversationMode?'Ik luister · praat gewoon verder.':'OpenAI AI-stem · gereed');
+      };
       await fallbackAudio.play();
-      setVoiceStatus('OpenAI AI-stem · speelt af');
+      setVoiceStatus(conversationMode?'AI antwoordt · praat om te onderbreken.':'OpenAI AI-stem · speelt af');
+      scheduleRecognitionRestart();
     }catch(error){
       if(token!==voiceToken)return;
       console.warn('Serenity AI stem:',error);
@@ -171,6 +281,19 @@
     resultObserver.observe(result,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class']});
   }
 
+  function stopConversation({stopAudio=true}={}){
+    conversationMode=false;
+    speechActive=false;
+    sessionTranscript='';
+    recognitionBaseTranscript='';
+    clearSpeechTimers();
+    try{recognition?.abort()}catch{}
+    listening=false;
+    if(stopAudio)stopVoice();
+    renderMicButton();
+    setVoiceStatus('Spraakgesprek gestopt.');
+  }
+
   function setupMicrophone(){
     const button=document.getElementById('ms8271Mic');
     const input=document.getElementById(INPUT);
@@ -191,36 +314,84 @@
 
     recognition.onstart=()=>{
       listening=true;
-      button.classList.add('listening');
-      button.innerHTML=`${micIcon}<span>Luisteren…</span>`;
-      setVoiceStatus('Spreek je vraag in.');
+      recognitionBaseTranscript=sessionTranscript;
+      renderMicButton();
+      if(conversationMode&&!voiceIsPlaying())setVoiceStatus('Ik luister · antwoord volgt automatisch na je spreekpauze.');
     };
+
+    recognition.onspeechstart=()=>{
+      speechActive=true;
+      clearTimeout(silenceTimer);
+      silenceTimer=null;
+    };
+
+    recognition.onspeechend=()=>{
+      speechActive=false;
+      if(sessionTranscript.trim())scheduleAutoSubmit(SILENCE_AFTER_SPEECH_MS);
+    };
+
     recognition.onresult=event=>{
-      let transcript='';
-      for(let i=event.resultIndex;i<event.results.length;i++)transcript+=event.results[i][0]?.transcript||'';
-      if(transcript.trim()){
-        input.value=transcript.trim();
-        input.dispatchEvent(new Event('input',{bubbles:true}));
+      let chunk='';
+      for(let i=0;i<event.results.length;i++)chunk+=`${event.results[i][0]?.transcript||''} `;
+      chunk=chunk.trim();
+      if(!chunk)return;
+
+      if(voiceIsPlaying()&&likelyAssistantEcho(chunk))return;
+      if(voiceIsPlaying()){
+        stopVoice();
+        lastSpoken='';
+        setVoiceStatus('Onderbroken · ik luister naar je aanvulling.');
       }
+
+      const combined=[recognitionBaseTranscript,chunk].filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
+      sessionTranscript=combined;
+      input.value=combined;
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      scheduleAutoSubmit(SILENCE_FALLBACK_MS);
     };
+
     recognition.onerror=event=>{
-      const message=event.error==='not-allowed'?'Microfoontoegang is niet toegestaan.':'Ik kon de spraak niet goed verstaan.';
-      setVoiceStatus(message);
+      if(event.error==='not-allowed'||event.error==='service-not-allowed'){
+        conversationMode=false;
+        clearSpeechTimers();
+        setVoiceStatus('Microfoontoegang is niet toegestaan.');
+      }else if(event.error==='no-speech'){
+        if(conversationMode)setVoiceStatus('Ik luister · praat wanneer je wilt.');
+      }else if(event.error!=='aborted'){
+        setVoiceStatus('Ik kon de spraak niet goed verstaan · probeer het nog eens.');
+      }
+      renderMicButton();
     };
+
     recognition.onend=()=>{
       listening=false;
-      button.classList.remove('listening');
-      button.innerHTML=`${micIcon}<span>Microfoon</span>`;
-      if(input.value.trim())input.focus();
+      speechActive=false;
+      renderMicButton();
+      if(conversationMode&&sessionTranscript.trim())scheduleAutoSubmit(450);
+      scheduleRecognitionRestart();
     };
 
     button.addEventListener('click',()=>{
       unlockAudio();
-      if(listening){
-        try{recognition.stop()}catch{}
+      if(conversationMode){
+        stopConversation();
         return;
       }
-      try{recognition.start()}catch(error){console.warn('Microfoon starten:',error)}
+
+      conversationMode=true;
+      sessionTranscript='';
+      recognitionBaseTranscript='';
+      const checkbox=document.getElementById('ms8271Speak');
+      if(checkbox&&!checkbox.checked){
+        checkbox.checked=true;
+        saveVoicePreference(true);
+      }
+      renderMicButton();
+      setVoiceStatus('Gesprek actief · praat gewoon, ik antwoord na je spreekpauze.');
+      try{recognition.start()}catch(error){
+        console.warn('Microfoon starten:',error);
+        scheduleRecognitionRestart();
+      }
     });
   }
 
@@ -233,7 +404,7 @@
     tools.id=TOOLS;
     tools.className='ms8271-tools';
     tools.innerHTML=`
-      <button id="ms8271Mic" class="ms8271-tool" type="button" aria-label="Vraag inspreken">${micIcon}<span>Microfoon</span></button>
+      <button id="ms8271Mic" class="ms8271-tool" type="button" aria-label="Spraakgesprek starten">${micIcon}<span>Microfoon</span></button>
       <button id="ms8271Clear" class="ms8271-tool" type="button" aria-label="Vraag en antwoord wissen">${trashIcon}<span>Wis</span></button>
       <label class="ms8271-speak"><input id="ms8271Speak" type="checkbox"><span>Voorlezen met AI-stem</span></label>
       <span class="ms8271-ai-note">OpenAI · AI-gegenereerde stem</span>
@@ -249,21 +420,26 @@
         lastSpoken='';
         const answer=currentAnswer();
         if(answer){lastSpoken=answer;speakWithOpenAI(answer)}
-        else setVoiceStatus('OpenAI AI-stem · ingeschakeld');
+        else setVoiceStatus(conversationMode?'Gesprek actief · ik luister.':'OpenAI AI-stem · ingeschakeld');
       }else{
         stopVoice();
-        setVoiceStatus('');
+        if(conversationMode)setVoiceStatus('Gesprek actief · antwoorden worden niet voorgelezen.');
+        else setVoiceStatus('');
       }
     });
 
     document.getElementById('ms8271Clear')?.addEventListener('click',()=>{
       stopVoice();
       lastSpoken='';
+      sessionTranscript='';
+      recognitionBaseTranscript='';
+      clearTimeout(silenceTimer);
+      silenceTimer=null;
       const input=document.getElementById(INPUT);
       const result=document.getElementById(RESULT);
       if(input){input.value='';input.focus()}
       if(result){result.textContent='';result.classList.remove('show','thinking')}
-      setVoiceStatus('');
+      setVoiceStatus(conversationMode?'Ik luister · praat wanneer je wilt.':'');
     });
 
     form.addEventListener('submit',()=>{
@@ -301,4 +477,7 @@
   else boot();
   window.addEventListener('mijnserenity:dashboard-ready',()=>setTimeout(enhance,40),{passive:true});
   window.addEventListener('pageshow',()=>setTimeout(enhance,80),{passive:true});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden&&conversationMode)stopConversation({stopAudio:true});
+  },{passive:true});
 })();
