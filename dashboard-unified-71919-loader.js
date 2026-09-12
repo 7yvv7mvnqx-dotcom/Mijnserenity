@@ -1,12 +1,12 @@
-/* MijnSerenity 8.26.6 — approved Haven dashboard is the single Start renderer.
-   Replaces the old 8.23.5 simple-start/5-button runtime to prevent old dashboard races. */
+/* MijnSerenity 8.26.14 — approved Haven dashboard + Serenity AI search.
+   Keeps the approved Start renderer and mounts the ChatGPT-powered search/ask field. */
 (()=>{
 'use strict';
-if(window.__msApprovedUnified8266)return;
-window.__msApprovedUnified8266=true;
+if(window.__msApprovedUnified82614)return;
+window.__msApprovedUnified82614=true;
 
-const BUILD='8.26.6';
-const TOKEN='826600';
+const BUILD='8.26.14';
+const TOKEN='826914';
 const ROOT='ms8210Start';
 const $=id=>document.getElementById(id);
 
@@ -31,9 +31,9 @@ function syncBuild(){
 }
 
 function installGuardStyle(){
-  if($('ms8266SingleStartStyle'))return;
+  if($('ms82614SingleStartStyle'))return;
   const style=document.createElement('style');
-  style.id='ms8266SingleStartStyle';
+  style.id='ms82614SingleStartStyle';
   style.textContent=`
     body.ms8263-home-active>.bottom-nav,
     body.ms8263-home-active #appView>.bottom-nav,
@@ -94,16 +94,22 @@ async function applyApproved(){
   document.body?.classList.add('ms8263-home-active');
 
   if(typeof window.ms8263ApplyApprovedDashboard!=='function'){
-    const ok=await loadFresh('/approved-dashboard-8263.js','ms8266ApprovedDashboard');
+    const ok=await loadFresh('/approved-dashboard-8263.js','ms82614ApprovedDashboard');
     if(!ok)return false;
   }
   try{window.ms8263ApplyApprovedDashboard?.()}catch(error){console.warn('Approved Haven renderer:',error);return false}
 
-  if(typeof window.ms8265ApplyDashboardButtons!=='function')await loadFresh('/dashboard-buttons-8265.js','ms8266DashboardButtons');
+  if(typeof window.ms8265ApplyDashboardButtons!=='function')await loadFresh('/dashboard-buttons-8265.js','ms82614DashboardButtons');
   try{window.ms8265ApplyDashboardButtons?.()}catch(_){}
 
-  if(!window.__msApprovedDashboardLive8264)await loadFresh('/approved-dashboard-live-8264.js','ms8266LiveDashboard');
+  if(!window.__msApprovedDashboardLive8264)await loadFresh('/approved-dashboard-live-8264.js','ms82614LiveDashboard');
   try{window.ms8264MountLiveInstruments?.()}catch(_){}
+
+  /* Mount the existing server-side OpenAI quick-search after the approved dashboard exists.
+     It receives curated MijnSerenity context and keeps deterministic/local navigation as fallback. */
+  if(!window.__msQuickAsk8270){
+    await loadFresh('/ai-quick-command-8267.js','ms82614SerenityAiSearch');
+  }
 
   syncBuild();
   return true;
@@ -118,11 +124,12 @@ async function repair(){
 window.ms8202RepairUnifiedUi=repair;
 window.ms8215RepairUnifiedUi=repair;
 window.ms8266RepairApprovedUi=repair;
+window.ms82614RepairApprovedUi=repair;
 
 function boot(){
   repair();
   [120,500,1500].forEach(ms=>setTimeout(()=>{if(route()==='dashboard')repair()},ms));
-  window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,approved:true,singleRenderer:true}}));
+  window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,approved:true,singleRenderer:true,serenityAi:true}}));
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
