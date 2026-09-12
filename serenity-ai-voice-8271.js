@@ -1,4 +1,4 @@
-/* MijnSerenity 8.27.3 — Serenity AI handsfree gesprek: pauzedetectie, automatisch antwoorden en barge-in. */
+/* MijnSerenity 8.27.4 — Serenity AI spreekt standaard direct en luistert op wekwoord “Gerard”. */
 (()=>{
   'use strict';
   if(window.__msSerenityAiVoice8271)return;
@@ -11,22 +11,27 @@
   const STYLE='msSerenityAiVoice8271Style';
   const TOOLS='msSerenityAiVoice8271Tools';
   const VOICE_ENDPOINT='/.netlify/functions/ai-voice';
-  const VOICE_PREF='mijnserenity-serenity-ai-voice-v1';
+  const VOICE_PREF='mijnserenity-serenity-ai-voice-v2';
+  const WAKE_PREF='mijnserenity-serenity-gerard-wake-v1';
   const SILENCE_AFTER_SPEECH_MS=700;
-  const SILENCE_FALLBACK_MS=1400;
-  const RESTART_DELAY_MS=220;
+  const SILENCE_FALLBACK_MS=1250;
+  const RESTART_DELAY_MS=240;
+  const CONVERSATION_IDLE_MS=30000;
+  const WAKE_WORD=/\b(?:gerard|gerrard|geraart)\b/i;
 
   let observer=null;
   let resultObserver=null;
   let recognition=null;
   let listening=false;
   let conversationMode=false;
+  let wakeMode=true;
   let speechActive=false;
   let recognitionBaseTranscript='';
   let sessionTranscript='';
   let silenceTimer=null;
   let restartTimer=null;
   let pendingSubmitTimer=null;
+  let conversationIdleTimer=null;
   let audioContext=null;
   let audioSource=null;
   let fallbackAudio=null;
@@ -34,6 +39,7 @@
   let voiceToken=0;
   let lastSpoken='';
   let speakTimer=null;
+  let recognitionBlocked=false;
 
   const micIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg>';
   const trashIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>';
@@ -55,6 +61,7 @@
       #${ROOT} .ms8271-tool{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 12px;border:1px solid rgba(91,199,233,.28);border-radius:12px;background:rgba(3,28,43,.84);color:#dff5fa;font-size:12px;font-weight:800;cursor:pointer}
       #${ROOT} .ms8271-tool svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
       #${ROOT} .ms8271-tool.listening{border-color:rgba(49,221,251,.88);background:rgba(15,113,139,.35);color:#fff;box-shadow:0 0 0 3px rgba(34,216,255,.08)}
+      #${ROOT} .ms8271-tool.wake{border-color:rgba(122,224,255,.48);background:rgba(7,68,91,.42)}
       #${ROOT} .ms8271-tool:disabled{opacity:.42;cursor:not-allowed}
       #${ROOT} .ms8271-speak{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 12px;border:1px solid rgba(91,199,233,.22);border-radius:12px;background:rgba(3,28,43,.58);color:#dff5fa;font-size:12px;font-weight:750;cursor:pointer;user-select:none}
       #${ROOT} .ms8271-speak input{width:17px!important;height:17px!important;min-width:17px!important;margin:0!important;accent-color:#22d8ff;-webkit-appearance:auto!important}
@@ -75,11 +82,30 @@
   }
 
   function getVoicePreference(){
-    try{return localStorage.getItem(VOICE_PREF)==='1'}catch{return false}
+    try{
+      const value=localStorage.getItem(VOICE_PREF);
+      return value===null?true:value!=='0';
+    }catch{return true}
   }
 
   function saveVoicePreference(value){
     try{localStorage.setItem(VOICE_PREF,value?'1':'0')}catch{}
+  }
+
+  function getWakePreference(){
+    try{
+      const value=localStorage.getItem(WAKE_PREF);
+      return value===null?true:value!=='0';
+    }catch{return true}
+  }
+
+  function saveWakePreference(value){
+    try{localStorage.setItem(WAKE_PREF,value?'1':'0')}catch{}
+  }
+
+  function voiceEnabled(){
+    const checkbox=document.getElementById('ms8271Speak');
+    return checkbox?checkbox.checked:getVoicePreference();
   }
 
   function setVoiceStatus(text){
@@ -91,9 +117,12 @@
     const button=document.getElementById('ms8271Mic');
     if(!button)return;
     button.classList.toggle('listening',conversationMode);
-    const label=conversationMode?(listening?'Luisteren…':'Gesprek actief'):'Microfoon';
+    button.classList.toggle('wake',!conversationMode&&wakeMode);
+    let label='Microfoon';
+    if(conversationMode)label=listening?'Luisteren…':'Gesprek actief';
+    else if(wakeMode)label=listening?'Gerard actief':'Gerard luisteren';
     button.innerHTML=`${micIcon}<span>${label}</span>`;
-    button.setAttribute('aria-label',conversationMode?'Spraakgesprek stoppen':'Spraakgesprek starten');
+    button.setAttribute('aria-label',conversationMode?'Spraakgesprek stoppen':(wakeMode?'Gerard-wachtstand uitschakelen':'Gerard-wachtstand inschakelen'));
   }
 
   function unlockAudio(){
@@ -101,6 +130,12 @@
       const Ctx=window.AudioContext||window.webkitAudioContext;
       if(Ctx&&!audioContext)audioContext=new Ctx();
       if(audioContext?.state==='suspended')audioContext.resume().catch(()=>{});
+      if(audioContext){
+        const source=audioContext.createBufferSource();
+        source.buffer=audioContext.createBuffer(1,1,22050);
+        source.connect(audioContext.destination);
+        try{source.start(0)}catch{}
+      }
     }catch{}
   }
 
@@ -135,6 +170,13 @@
     return matched/words.length>=0.82;
   }
 
+  function stripWakeWord(value){
+    const raw=String(value||'').trim();
+    const match=raw.match(WAKE_WORD);
+    if(!match)return null;
+    return raw.replace(WAKE_WORD,' ').replace(/^[\s,.:;!?-]+|[\s,.:;!?-]+$/g,'').replace(/\s+/g,' ').trim();
+  }
+
   function clearSpeechTimers(){
     clearTimeout(silenceTimer);
     clearTimeout(restartTimer);
@@ -142,16 +184,31 @@
     silenceTimer=restartTimer=pendingSubmitTimer=null;
   }
 
-  function scheduleRecognitionRestart(){
-    clearTimeout(restartTimer);
+  function resetConversationIdle(){
+    clearTimeout(conversationIdleTimer);
     if(!conversationMode)return;
+    conversationIdleTimer=setTimeout(()=>{
+      conversationIdleTimer=null;
+      conversationMode=false;
+      sessionTranscript='';
+      recognitionBaseTranscript='';
+      renderMicButton();
+      setVoiceStatus(wakeMode?'Ik wacht op “Gerard”.':'Spraakgesprek gestopt.');
+    },CONVERSATION_IDLE_MS);
+  }
+
+  function shouldListen(){return conversationMode||wakeMode}
+
+  function scheduleRecognitionRestart(delay=RESTART_DELAY_MS){
+    clearTimeout(restartTimer);
+    if(!shouldListen()||recognitionBlocked)return;
     restartTimer=setTimeout(()=>{
       restartTimer=null;
-      if(!conversationMode||listening||!document.getElementById('ms8271Mic'))return;
+      if(!shouldListen()||listening||!document.getElementById('ms8271Mic')||document.hidden)return;
       try{recognition?.start()}catch(error){
         if(error?.name!=='InvalidStateError')console.warn('Microfoon opnieuw starten:',error);
       }
-    },RESTART_DELAY_MS);
+    },delay);
   }
 
   function submitSpeechWhenReady(){
@@ -176,11 +233,10 @@
     clearTimeout(silenceTimer);
     silenceTimer=null;
 
-    if(listening){
-      try{recognition?.abort()}catch{}
-    }
+    if(listening){try{recognition?.abort()}catch{}}
 
-    setVoiceStatus('Vraag verstuurd · ik blijf luisteren.');
+    resetConversationIdle();
+    setVoiceStatus('Vraag verstuurd · antwoord wordt direct voorgelezen.');
     if(typeof form.requestSubmit==='function')form.requestSubmit();
     else form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
   }
@@ -191,23 +247,19 @@
     silenceTimer=setTimeout(()=>{
       silenceTimer=null;
       if(!conversationMode)return;
-      if(speechActive){
-        scheduleAutoSubmit(SILENCE_AFTER_SPEECH_MS);
-        return;
-      }
+      if(speechActive){scheduleAutoSubmit(SILENCE_AFTER_SPEECH_MS);return}
       submitSpeechWhenReady();
     },delay);
   }
 
   async function speakWithOpenAI(text){
-    const checkbox=document.getElementById('ms8271Speak');
-    if(!checkbox?.checked)return;
+    if(!voiceEnabled())return;
     const clean=String(text||'').replace(/^Serenity AI\s*·\s*/i,'').trim();
     if(clean.length<2)return;
 
     stopVoice();
     const token=voiceToken;
-    setVoiceStatus('OpenAI AI-stem wordt geladen…');
+    setVoiceStatus('AI-stem wordt geladen…');
 
     try{
       const response=await fetch(VOICE_ENDPOINT,{
@@ -231,10 +283,13 @@
         audioSource.connect(audioContext.destination);
         audioSource.onended=()=>{
           audioSource=null;
-          if(token===voiceToken)setVoiceStatus(conversationMode?'Ik luister · praat gewoon verder.':'OpenAI AI-stem · gereed');
+          if(token===voiceToken){
+            setVoiceStatus(conversationMode?'Ik luister · praat verder of zeg opnieuw “Gerard”.':(wakeMode?'Ik wacht op “Gerard”.':'AI-stem · gereed'));
+            resetConversationIdle();
+          }
         };
         audioSource.start(0);
-        setVoiceStatus(conversationMode?'AI antwoordt · praat om te onderbreken.':'OpenAI AI-stem · speelt af');
+        setVoiceStatus('AI antwoordt · praat om te onderbreken.');
         scheduleRecognitionRestart();
         return;
       }
@@ -242,17 +297,21 @@
       const blob=new Blob([bytes],{type:'audio/mpeg'});
       fallbackUrl=URL.createObjectURL(blob);
       fallbackAudio=new Audio(fallbackUrl);
+      fallbackAudio.playsInline=true;
       fallbackAudio.onended=()=>{
         fallbackAudio=null;
-        if(token===voiceToken)setVoiceStatus(conversationMode?'Ik luister · praat gewoon verder.':'OpenAI AI-stem · gereed');
+        if(token===voiceToken){
+          setVoiceStatus(conversationMode?'Ik luister · praat verder of zeg opnieuw “Gerard”.':(wakeMode?'Ik wacht op “Gerard”.':'AI-stem · gereed'));
+          resetConversationIdle();
+        }
       };
       await fallbackAudio.play();
-      setVoiceStatus(conversationMode?'AI antwoordt · praat om te onderbreken.':'OpenAI AI-stem · speelt af');
+      setVoiceStatus('AI antwoordt · praat om te onderbreken.');
       scheduleRecognitionRestart();
     }catch(error){
       if(token!==voiceToken)return;
       console.warn('Serenity AI stem:',error);
-      setVoiceStatus(error?.name==='NotAllowedError'?'Tik nogmaals op Voorlezen om audio toe te staan.':(error?.message||'Voorlezen lukt nu niet.'));
+      setVoiceStatus(error?.name==='NotAllowedError'?'Tik één keer op Gerard luisteren om audio toe te staan.':(error?.message||'Voorlezen lukt nu niet.'));
     }
   }
 
@@ -266,11 +325,10 @@
     clearTimeout(speakTimer);
     speakTimer=setTimeout(()=>{
       const answer=currentAnswer();
-      const checkbox=document.getElementById('ms8271Speak');
-      if(!checkbox?.checked||!answer||answer===lastSpoken)return;
+      if(!voiceEnabled()||!answer||answer===lastSpoken)return;
       lastSpoken=answer;
       speakWithOpenAI(answer);
-    },160);
+    },120);
   }
 
   function watchResult(){
@@ -281,17 +339,43 @@
     resultObserver.observe(result,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class']});
   }
 
-  function stopConversation({stopAudio=true}={}){
+  function stopConversation({stopAudio=true,keepWake=true}={}){
     conversationMode=false;
     speechActive=false;
     sessionTranscript='';
     recognitionBaseTranscript='';
     clearSpeechTimers();
+    clearTimeout(conversationIdleTimer);
+    conversationIdleTimer=null;
+    if(stopAudio)stopVoice();
+    if(!keepWake)wakeMode=false;
     try{recognition?.abort()}catch{}
     listening=false;
-    if(stopAudio)stopVoice();
     renderMicButton();
-    setVoiceStatus('Spraakgesprek gestopt.');
+    setVoiceStatus(wakeMode?'Ik wacht op “Gerard”.':'Spraak luisteren gestopt.');
+    if(wakeMode)scheduleRecognitionRestart();
+  }
+
+  function activateGerard(rest=''){
+    conversationMode=true;
+    recognitionBlocked=false;
+    clearTimeout(conversationIdleTimer);
+    stopVoice();
+    lastSpoken='';
+    sessionTranscript=String(rest||'').trim();
+    recognitionBaseTranscript='';
+    renderMicButton();
+    setVoiceStatus(sessionTranscript?'Gerard gehoord · vraag ontvangen.':'Gerard gehoord · ik luister.');
+    if(sessionTranscript){
+      const input=document.getElementById(INPUT);
+      if(input){
+        input.value=sessionTranscript;
+        input.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+      scheduleAutoSubmit(500);
+    }else{
+      resetConversationIdle();
+    }
   }
 
   function setupMicrophone(){
@@ -299,10 +383,14 @@
     const input=document.getElementById(INPUT);
     if(!button||!input)return;
 
+    wakeMode=getWakePreference();
+    renderMicButton();
+
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SpeechRecognition){
       button.disabled=true;
       button.title='Spraakherkenning wordt door deze browser niet ondersteund.';
+      setVoiceStatus('Deze browser ondersteunt de Gerard-luisterfunctie niet.');
       return;
     }
 
@@ -314,9 +402,11 @@
 
     recognition.onstart=()=>{
       listening=true;
+      recognitionBlocked=false;
       recognitionBaseTranscript=sessionTranscript;
       renderMicButton();
       if(conversationMode&&!voiceIsPlaying())setVoiceStatus('Ik luister · antwoord volgt automatisch na je spreekpauze.');
+      else if(wakeMode&&!voiceIsPlaying())setVoiceStatus('Ik wacht op “Gerard”.');
     };
 
     recognition.onspeechstart=()=>{
@@ -327,7 +417,7 @@
 
     recognition.onspeechend=()=>{
       speechActive=false;
-      if(sessionTranscript.trim())scheduleAutoSubmit(SILENCE_AFTER_SPEECH_MS);
+      if(conversationMode&&sessionTranscript.trim())scheduleAutoSubmit(SILENCE_AFTER_SPEECH_MS);
     };
 
     recognition.onresult=event=>{
@@ -337,26 +427,39 @@
       if(!chunk)return;
 
       if(voiceIsPlaying()&&likelyAssistantEcho(chunk))return;
+
+      if(!conversationMode){
+        const rest=stripWakeWord(chunk);
+        if(rest===null)return;
+        activateGerard(rest);
+        return;
+      }
+
       if(voiceIsPlaying()){
         stopVoice();
         lastSpoken='';
         setVoiceStatus('Onderbroken · ik luister naar je aanvulling.');
       }
 
+      const wakeStripped=stripWakeWord(chunk);
+      if(wakeStripped!==null)chunk=wakeStripped;
+      if(!chunk)return;
+
       const combined=[recognitionBaseTranscript,chunk].filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
       sessionTranscript=combined;
       input.value=combined;
       input.dispatchEvent(new Event('input',{bubbles:true}));
+      resetConversationIdle();
       scheduleAutoSubmit(SILENCE_FALLBACK_MS);
     };
 
     recognition.onerror=event=>{
       if(event.error==='not-allowed'||event.error==='service-not-allowed'){
-        conversationMode=false;
-        clearSpeechTimers();
-        setVoiceStatus('Microfoontoegang is niet toegestaan.');
+        recognitionBlocked=true;
+        setVoiceStatus('Microfoon geblokkeerd · tik één keer op Gerard luisteren en sta microfoon toe.');
       }else if(event.error==='no-speech'){
         if(conversationMode)setVoiceStatus('Ik luister · praat wanneer je wilt.');
+        else if(wakeMode)setVoiceStatus('Ik wacht op “Gerard”.');
       }else if(event.error!=='aborted'){
         setVoiceStatus('Ik kon de spraak niet goed verstaan · probeer het nog eens.');
       }
@@ -373,26 +476,43 @@
 
     button.addEventListener('click',()=>{
       unlockAudio();
+      recognitionBlocked=false;
+
       if(conversationMode){
-        stopConversation();
+        stopConversation({stopAudio:true,keepWake:true});
         return;
       }
 
-      conversationMode=true;
-      sessionTranscript='';
-      recognitionBaseTranscript='';
-      const checkbox=document.getElementById('ms8271Speak');
-      if(checkbox&&!checkbox.checked){
-        checkbox.checked=true;
-        saveVoicePreference(true);
+      wakeMode=!wakeMode;
+      saveWakePreference(wakeMode);
+      if(!wakeMode){
+        try{recognition.abort()}catch{}
+        listening=false;
+        renderMicButton();
+        setVoiceStatus('Gerard-wachtstand uit.');
+        return;
       }
+
       renderMicButton();
-      setVoiceStatus('Gesprek actief · praat gewoon, ik antwoord na je spreekpauze.');
+      setVoiceStatus('Gerard-wachtstand actief · zeg “Gerard”.');
       try{recognition.start()}catch(error){
         console.warn('Microfoon starten:',error);
         scheduleRecognitionRestart();
       }
     });
+
+    const armAfterUserGesture=()=>{
+      unlockAudio();
+      if(wakeMode&&!listening&&!recognitionBlocked)scheduleRecognitionRestart(40);
+    };
+    document.addEventListener('pointerdown',armAfterUserGesture,{once:true,passive:true});
+    document.addEventListener('touchstart',armAfterUserGesture,{once:true,passive:true});
+    document.addEventListener('keydown',armAfterUserGesture,{once:true,passive:true});
+
+    if(wakeMode){
+      setVoiceStatus('Gerard staat klaar · tik één keer in de app als de microfoon nog niet actief is.');
+      scheduleRecognitionRestart(500);
+    }
   }
 
   function addTools(form){
@@ -404,15 +524,19 @@
     tools.id=TOOLS;
     tools.className='ms8271-tools';
     tools.innerHTML=`
-      <button id="ms8271Mic" class="ms8271-tool" type="button" aria-label="Spraakgesprek starten">${micIcon}<span>Microfoon</span></button>
+      <button id="ms8271Mic" class="ms8271-tool" type="button" aria-label="Gerard-wachtstand inschakelen">${micIcon}<span>Gerard luisteren</span></button>
       <button id="ms8271Clear" class="ms8271-tool" type="button" aria-label="Vraag en antwoord wissen">${trashIcon}<span>Wis</span></button>
-      <label class="ms8271-speak"><input id="ms8271Speak" type="checkbox"><span>Voorlezen met AI-stem</span></label>
+      <label class="ms8271-speak"><input id="ms8271Speak" type="checkbox"><span>AI-stem automatisch</span></label>
       <span class="ms8271-ai-note">OpenAI · AI-gegenereerde stem</span>
       <span id="ms8271VoiceStatus" class="ms8271-voice-status" aria-live="polite"></span>`;
     row.insertAdjacentElement('afterend',tools);
 
     const checkbox=document.getElementById('ms8271Speak');
     checkbox.checked=getVoicePreference();
+    if(!checkbox.checked){
+      checkbox.checked=true;
+      saveVoicePreference(true);
+    }
     checkbox.addEventListener('change',()=>{
       saveVoicePreference(checkbox.checked);
       if(checkbox.checked){
@@ -420,11 +544,10 @@
         lastSpoken='';
         const answer=currentAnswer();
         if(answer){lastSpoken=answer;speakWithOpenAI(answer)}
-        else setVoiceStatus(conversationMode?'Gesprek actief · ik luister.':'OpenAI AI-stem · ingeschakeld');
+        else setVoiceStatus(conversationMode?'Gesprek actief · ik luister.':(wakeMode?'Ik wacht op “Gerard”.':'AI-stem · ingeschakeld'));
       }else{
         stopVoice();
-        if(conversationMode)setVoiceStatus('Gesprek actief · antwoorden worden niet voorgelezen.');
-        else setVoiceStatus('');
+        setVoiceStatus('AI-stem uitgeschakeld.');
       }
     });
 
@@ -439,11 +562,11 @@
       const result=document.getElementById(RESULT);
       if(input){input.value='';input.focus()}
       if(result){result.textContent='';result.classList.remove('show','thinking')}
-      setVoiceStatus(conversationMode?'Ik luister · praat wanneer je wilt.':'');
+      setVoiceStatus(conversationMode?'Ik luister · praat wanneer je wilt.':(wakeMode?'Ik wacht op “Gerard”.':''));
     });
 
     form.addEventListener('submit',()=>{
-      if(checkbox.checked)unlockAudio();
+      unlockAudio();
       stopVoice();
       lastSpoken='';
     },true);
@@ -476,8 +599,17 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
   else boot();
   window.addEventListener('mijnserenity:dashboard-ready',()=>setTimeout(enhance,40),{passive:true});
-  window.addEventListener('pageshow',()=>setTimeout(enhance,80),{passive:true});
+  window.addEventListener('pageshow',()=>{
+    setTimeout(enhance,80);
+    if(shouldListen())scheduleRecognitionRestart(400);
+  },{passive:true});
   document.addEventListener('visibilitychange',()=>{
-    if(document.hidden&&conversationMode)stopConversation({stopAudio:true});
+    if(document.hidden){
+      try{recognition?.abort()}catch{}
+      listening=false;
+      stopVoice();
+    }else if(shouldListen()){
+      scheduleRecognitionRestart(400);
+    }
   },{passive:true});
 })();
