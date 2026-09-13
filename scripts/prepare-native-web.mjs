@@ -60,9 +60,13 @@ const indexPath = join(out, 'index.html');
 let html = await readFile(indexPath, 'utf8');
 const nativeScript = '<script src="native-app-bridge.js"></script>';
 if (!html.includes('native-app-bridge.js')) {
-  html = html.includes('</body>')
-    ? html.replace('</body>', `${nativeScript}\n</body>`)
-    : `${html}\n${nativeScript}\n`;
+  if (/<body[^>]*>/i.test(html)) {
+    html = html.replace(/(<body[^>]*>)/i, `$1\n${nativeScript}`);
+  } else if (html.includes('</body>')) {
+    html = html.replace('</body>', `${nativeScript}\n</body>`);
+  } else {
+    html = `${nativeScript}\n${html}`;
+  }
 }
 await writeFile(indexPath, html, 'utf8');
 
