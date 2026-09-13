@@ -341,7 +341,7 @@ function start(){
   window.addEventListener('focus',()=>{mount();queuePaint();refreshLive(false);refreshOutside(false)},{passive:true});
   window.addEventListener('pageshow',()=>{mount();queuePaint();refreshLive(false);refreshOutside(false)},{passive:true});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){mount();queuePaint();refreshLive(false);refreshOutside(false)}},{passive:true});
-  setInterval(()=>{if(!document.hidden){mount();queuePaint()}},3000);
+  /* Rendering is event-driven; periodic work is reserved for data refresh. */
   setInterval(()=>{if(!document.hidden){refreshLive(false);refreshOutside(false)}},60000);
 }
 
