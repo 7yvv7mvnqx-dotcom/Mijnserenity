@@ -1,7 +1,7 @@
-/* MijnSerenity 8.26.14 — ChatGPT dashboard search + AI-first receipt reader */
-const CACHE_NAME='mijnserenity-8.26.14';
-const BUILD='8.26.14';
-const TOKEN='826914';
+/* MijnSerenity 8.27.7 — consistente releasecache voor web en native bronassets */
+const CACHE_NAME='mijnserenity-8.27.7';
+const BUILD='8.27.7';
+const TOKEN='827700';
 const CORE=[
   '/',
   '/index.html',
