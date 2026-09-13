@@ -5,7 +5,41 @@ import { Geolocation } from '@capacitor/geolocation';
 import { Share } from '@capacitor/share';
 
 const isNative = Capacitor.isNativePlatform();
+const webAppOrigin = 'https://mijnserenity.nl';
 let watchId: string | null = null;
+
+function installNativeApiBridge() {
+  if (!isNative || typeof window.fetch !== 'function') return;
+  const target = window as typeof window & { __mijnserenityNativeApiBridge?: boolean };
+  if (target.__mijnserenityNativeApiBridge) return;
+  target.__mijnserenityNativeApiBridge = true;
+
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    try {
+      if (typeof input === 'string' && input.startsWith('/api/')) {
+        return originalFetch(`${webAppOrigin}${input}`, init);
+      }
+
+      const inputUrl = input instanceof URL
+        ? input
+        : (typeof Request !== 'undefined' && input instanceof Request ? new URL(input.url) : null);
+
+      if (inputUrl && inputUrl.pathname.startsWith('/api/') && inputUrl.origin !== webAppOrigin) {
+        const rewrittenUrl = `${webAppOrigin}${inputUrl.pathname}${inputUrl.search}${inputUrl.hash}`;
+        if (typeof Request !== 'undefined' && input instanceof Request) {
+          return originalFetch(new Request(rewrittenUrl, input), init);
+        }
+        return originalFetch(rewrittenUrl, init);
+      }
+    } catch (error) {
+      console.warn('MijnSerenity native API-omleiding overgeslagen:', error);
+    }
+    return originalFetch(input, init);
+  };
+}
+
+installNativeApiBridge();
 
 function safeFileName(value = 'serenity-route.gpx') {
   const name = String(value || 'serenity-route.gpx')
@@ -89,9 +123,10 @@ async function shareText(title: string, text: string) {
 }
 
 const bridge = {
-  version: '0.1.0',
+  version: '0.2.0',
   isNative,
   platform: Capacitor.getPlatform(),
+  webAppOrigin,
   shareGpx,
   shareText,
   getCurrentPosition,
