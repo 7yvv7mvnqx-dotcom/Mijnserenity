@@ -17363,8 +17363,17 @@ openFullPlannerRouteInWaterkaarten=async function(){
   await sharePlannerRouteWithWaterkaarten();
 };
 
+let ms640InitAttempts=0;
+const MS640_INIT_MAX_ATTEMPTS=20;
 ms640InitTimer=setInterval(async()=>{
   if(await ms640EnsureCloud()){
+    clearInterval(ms640InitTimer);
+    ms640InitTimer=null;
+    ms640InitAttempts=0;
+    return;
+  }
+  ms640InitAttempts+=1;
+  if(ms640InitAttempts>=MS640_INIT_MAX_ATTEMPTS){
     clearInterval(ms640InitTimer);
     ms640InitTimer=null;
   }
