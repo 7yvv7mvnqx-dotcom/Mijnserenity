@@ -89,9 +89,14 @@
     scheduleDiagnosisSync();
     window.addEventListener('mijnserenity-vrm-diagnostics-updated',scheduleDiagnosisSync,{passive:true});
     window.addEventListener('mijnserenity:routechange',scheduleDiagnosisSync,{passive:true});
-    const observer=new MutationObserver(()=>scheduleDiagnosisSync());
-    observer.observe(document.body,{subtree:true,childList:true,characterData:true});
-    setInterval(syncDiagnosisAttention,2000);
+    const observer=new MutationObserver(()=>{
+      if(!document.hidden)scheduleDiagnosisSync();
+    });
+    const diagnosisRoot=document.getElementById('msVrmDiagnosisAssessment')?.parentElement||document.body;
+    observer.observe(diagnosisRoot,{subtree:true,childList:true,characterData:true});
+    setInterval(()=>{
+      if(!document.hidden)syncDiagnosisAttention();
+    },10000);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
