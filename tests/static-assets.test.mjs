@@ -24,22 +24,38 @@ const missingCached=[...new Set(cachedFiles)].filter(reference=>
 );
 assert.deepEqual(missingCached,[],`Ontbrekende cachebestanden: ${missingCached.join(', ')}`);
 
-const legacyDashboard=read('start-dashboard-71510.js');
-const currentDashboard=read('start-dashboard-8271.js');
-assert.equal(legacyDashboard,currentDashboard,'Website en native fallback gebruiken niet dezelfde dashboardloader.');
-assert.match(currentDashboard,/const BUILD='8\.27\.7'/);
-assert.match(currentDashboard,/const BUILD='8\.27\.7',TOKEN='827700'/);
-assert.match(currentDashboard,/mijnserenity:dashboard-ready/);
-assert.match(currentDashboard,/__msApprovedHomeReady8277/);
+const activeDashboard=read('start-dashboard-71510.js');
+const fallbackDashboard=read('start-dashboard-8271.js');
+assert.match(activeDashboard,/const BUILD='8\.28\.0',TOKEN='828000'/);
+assert.match(activeDashboard,/nordkapp-gen3-8280\.js/);
+assert.match(activeDashboard,/mijnserenity:dashboard-ready/);
+assert.match(activeDashboard,/__msApprovedHomeReady8279/);
+assert.match(fallbackDashboard,/__msDashboardFallback8280/);
+assert.match(fallbackDashboard,/start-dashboard-71510\.js/);
+assert.match(fallbackDashboard,/828000/);
+assert.doesNotMatch(fallbackDashboard,/approved-dashboard-8263\.js/,
+  'De fallback mag zelf geen tweede dashboardrenderer starten.');
 
 const dashboardCompatibility=read('dashboard-unified-71919-loader.js');
-assert.match(dashboardCompatibility,/__msDashboardCompat8277/);
+assert.match(dashboardCompatibility,/__msDashboardCompat8280/);
 assert.match(dashboardCompatibility,/start-dashboard-71510\.js/);
+assert.match(dashboardCompatibility,/828000/);
 assert.doesNotMatch(dashboardCompatibility,/approved-dashboard-8263\.js/,
   'De oude 71919-loader mag geen tweede dashboardrenderer meer starten.');
 
-assert.match(serviceWorker,/const BUILD='8\.27\.7'/);
-assert.match(serviceWorker,/const TOKEN='827700'/);
+assert.match(serviceWorker,/const BUILD='8\.28\.0'/);
+assert.match(serviceWorker,/const TOKEN='828000'/);
+assert.match(serviceWorker,/nordkapp-gen3-8280\.js/);
+assert.equal(exists('nordkapp-gen3-8280.js'),true,'Nordkapp Gen 3-module ontbreekt in de webbron.');
+
+const nordkapp=read('nordkapp-gen3-8280.js');
+assert.match(nordkapp,/Nordkapp Air Gen 3/);
+assert.match(nordkapp,/mijnserenity-ha-oauth-v733/);
+assert.match(nordkapp,/climate.*turn_off/s);
+assert.match(nordkapp,/set_temperature/);
+assert.match(nordkapp,/Afkoelen/);
+assert.doesNotMatch(nordkapp,/location\.reload\(/,
+  'Nordkapp-module mag geen harde app-reload afdwingen.');
 
 const nativeBridgeSource=read('native-src/bridge.ts');
 assert.match(nativeBridgeSource,/webAppOrigin = 'https:\/\/mijnserenity\.nl'/);
@@ -51,14 +67,15 @@ assert.match(capacitorConfig,/CapacitorHttp:\s*\{\s*enabled:\s*true/s);
 const builtIndex=read('www/index.html');
 const builtBootstrap=read('www/auth-bootstrap.js');
 const builtBridge=read('www/native-app-bridge.js');
-assert.match(builtIndex,/<meta\s+name="mijnserenity-build"\s+content="8\.27\.7"/i);
-assert.match(builtIndex,/window\.MIJSERENITY_BUILD='8\.27\.7';/);
-assert.match(builtIndex,/auth-bootstrap\.js\?v=827700/);
-assert.match(builtIndex,/start-dashboard-71510\.js\?v=827700/);
+assert.match(builtIndex,/<meta\s+name="mijnserenity-build"\s+content="8\.28\.0"/i);
+assert.match(builtIndex,/window\.MIJSERENITY_BUILD='8\.28\.0';/);
+assert.match(builtIndex,/auth-bootstrap\.js\?v=828000/);
+assert.match(builtIndex,/start-dashboard-71510\.js\?v=828000/);
 assert.match(builtIndex,/<body[^>]*>\s*<script src="native-app-bridge\.js"><\/script>/i);
-assert.match(builtBootstrap,/const BUILD='8\.27\.7';/);
-assert.match(builtBootstrap,/const VERSION='827700';/);
+assert.match(builtBootstrap,/const BUILD='8\.28\.0';/);
+assert.match(builtBootstrap,/const VERSION='828000';/);
 assert.match(builtBridge,/mijnserenity\.nl/);
+assert.equal(exists('www/nordkapp-gen3-8280.js'),true,'Nordkapp Gen 3-module ontbreekt in de native webbuild.');
 
 const retiredNativeAssets=[
   'futuristic-analog-7140.js','futuristic-analog-7140.css',
@@ -71,5 +88,5 @@ for(const asset of retiredNativeAssets){
 }
 
 console.log(`Statische appbestanden: OK (${new Set(localReferences).size} HTML, ${new Set(cachedFiles).size} cache)`);
-console.log('Fase-1 native/web pariteit: OK (dashboard 8.27.7, native API bridge actief)');
-console.log('Fase-2 oude code: OK (één Start-renderer, legacy dashboardassets niet in native build)');
+console.log('Fase-1 native/web pariteit: OK (dashboard 8.28.0 + Nordkapp Gen 3, native API bridge actief)');
+console.log('Fase-2 oude code: OK (één Start-renderer, compatibiliteitsloaders delegeren alleen)');
