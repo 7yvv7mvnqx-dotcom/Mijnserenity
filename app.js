@@ -3508,7 +3508,7 @@ async function initialise(session){
 
   $('appView').classList.remove('hidden');
   syncDisplayedAppVersion();
-  await ms640CloseCloud();
+  await ms640CloseCloud({keepInitTimer:true});
   startPresenceHeartbeat();
   applyAdminVisibility();
   renderDynamicWelcome(true);
@@ -5817,11 +5817,11 @@ function subscribeRealtime(){
   });
 }
 
-async function ms640CloseCloud(){
+async function ms640CloseCloud({keepInitTimer=false}={}){
   clearTimeout(ms640SyncTimer);
-  clearInterval(ms640InitTimer);
+  if(!keepInitTimer)clearInterval(ms640InitTimer);
   ms640SyncTimer=null;
-  ms640InitTimer=null;
+  if(!keepInitTimer)ms640InitTimer=null;
   ms640ChannelConnecting=false;
   ms640CloudReady=false;
   ms640Viewing=false;
