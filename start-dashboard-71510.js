@@ -9,7 +9,7 @@ window.__msSimpleStart8210=true;
 window.__msDisableLegacyVisuals=true;
 
 const BUILD='8.28.0',TOKEN='828000',ROOT='ms8210Start';
-const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266ApprovedDashboardLiveScript',VIC='ms8278VictronTankAlarmScript',SETTINGS='ms8279SettingsNotificationsScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8277IosVoiceFixScript',PERSIST='ms8272AiPersistScript',NORDKAPP='ms8280NordkappGen3Script';
+const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',VIC='ms8278VictronTankAlarmScript',SETTINGS='ms8279SettingsNotificationsScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8277IosVoiceFixScript',PERSIST='ms8272AiPersistScript',NORDKAPP='ms8280NordkappGen3Script';
 const $=id=>document.getElementById(id);
 let readyAnnounced=false;
 function route(){try{return((location.hash||'#dashboard').replace(/^#/,'').split(/[?&/]/)[0]||'dashboard').toLowerCase()}catch(_){return'dashboard'}}
