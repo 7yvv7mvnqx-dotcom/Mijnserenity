@@ -11,6 +11,8 @@
   const DASHBOARD='/start-dashboard-71510.js';
   const LEGACY_IDS=['serenityIvms','ms71510Dashboard','ms71510Start','msMarineGlass','msStartCockpit7144','msDashboardAnalog7141','msWelcomeCard7140'];
   let observer=null;
+  let authObserver=null;
+  let authReadyTimer=0;
 
   function syncBuild(){
     window.MIJSERENITY_BUILD=BUILD;
@@ -18,10 +20,18 @@
     document.querySelector('meta[name="mijnserenity-build"]')?.setAttribute('content',BUILD);
     document.querySelector('meta[name="ms-build"]')?.setAttribute('content',BUILD);
     const settings=document.getElementById('settingsAppVersion');
-    if(settings)settings.textContent=BUILD;
+    if(settings&&settings.textContent!==BUILD)settings.textContent=BUILD;
     const stamp=document.getElementById('buildStamp');
-    if(stamp)stamp.textContent='v'+BUILD;
-    document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD);
+    if(stamp&&stamp.textContent!=='v'+BUILD)stamp.textContent='v'+BUILD;
+    document.querySelectorAll('[data-ms-build-version]').forEach(el=>{
+      if(el.textContent!==BUILD)el.textContent=BUILD;
+    });
+  }
+
+  function syncAuthChrome(){
+    const app=document.getElementById('appView');
+    const appVisible=!!app&&!app.classList.contains('hidden');
+    document.body?.classList.toggle('ms8281-app-visible',appVisible);
   }
 
   function installGuardStyle(){
@@ -31,6 +41,7 @@
       #dashboard>#serenityIvms,#dashboard>#ms71510Dashboard,#dashboard>#ms71510Start,
       #dashboard>#msMarineGlass,#dashboard>#msStartCockpit7144,#dashboard>#msDashboardAnalog7141,
       #dashboard>#msWelcomeCard7140{display:none!important;visibility:hidden!important;pointer-events:none!important}
+      body:not(.ms8281-app-visible) .bottom-nav{display:none!important;visibility:hidden!important;pointer-events:none!important}
     `;
   }
 
@@ -49,13 +60,58 @@
     document.getElementById('dashboard')?.classList.remove('mg-active','scd-active','mspro-active');
   }
 
+  function containsLegacy(node){
+    if(!(node instanceof Element))return false;
+    if(LEGACY_IDS.includes(node.id))return true;
+    return LEGACY_IDS.some(id=>node.querySelector?.(`#${id}`));
+  }
+
   function watchLegacy(){
     if(observer||!document.documentElement)return;
-    observer=new MutationObserver(()=>{
-      retireLegacy();
-      syncBuild();
+    observer=new MutationObserver(mutations=>{
+      const legacyAdded=mutations.some(mutation=>
+        [...mutation.addedNodes].some(node=>containsLegacy(node))
+      );
+      if(legacyAdded)retireLegacy();
     });
-    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+    observer.observe(document.documentElement,{subtree:true,childList:true});
+  }
+
+  function watchAuthChrome(){
+    if(authObserver)return;
+    const app=document.getElementById('appView');
+    if(!app)return;
+    authObserver=new MutationObserver(syncAuthChrome);
+    authObserver.observe(app,{attributes:true,attributeFilter:['class']});
+    syncAuthChrome();
+  }
+
+  function monitorAuthReady(){
+    clearInterval(authReadyTimer);
+    const started=Date.now();
+    authReadyTimer=setInterval(()=>{
+      watchAuthChrome();
+      syncAuthChrome();
+      const message=document.getElementById('authMsg');
+      const button=document.getElementById('signInButton');
+      if(typeof window.signIn==='function'){
+        clearInterval(authReadyTimer);
+        authReadyTimer=0;
+        if(button)button.disabled=false;
+        if(message&&/wordt geladen|wordt gestart/i.test(message.textContent||'')){
+          message.textContent='Klaar om in te loggen.';
+        }
+        return;
+      }
+      if(Date.now()-started>15000){
+        clearInterval(authReadyTimer);
+        authReadyTimer=0;
+        if(message&&/wordt geladen|wordt gestart/i.test(message.textContent||'')){
+          message.textContent='De beveiligde inlog kon niet volledig worden geladen. Tik op “App herstellen en vernieuwen”.';
+          message.classList.add('error');
+        }
+      }
+    },250);
   }
 
   async function purgeOldCaches(){
@@ -84,6 +140,7 @@
     retireLegacy();
     syncBuild();
     if(window.__msApprovedHomeBootstrap8281)return;
+    if([...document.scripts].some(script=>script.dataset?.ms8281Bootstrap==='1'))return;
     const script=document.createElement('script');
     script.src=`${DASHBOARD}?v=${VERSION}&bootstrap=1`;
     script.async=false;
@@ -94,6 +151,11 @@
 
   function loadStableCore(){
     if(window.__msBootstrap823500){loadFreshDashboard();return}
+    if([...document.scripts].some(script=>script.dataset?.ms8281StableCore==='1'))return;
+    const message=document.getElementById('authMsg');
+    const button=document.getElementById('signInButton');
+    if(button)button.disabled=true;
+    if(message&&/wordt geladen/i.test(message.textContent||''))message.textContent='Beveiligde inlog wordt gestart…';
     const script=document.createElement('script');
     script.src=`${CORE}?v=${VERSION}`;
     script.async=false;
@@ -104,6 +166,7 @@
     },{once:true});
     script.onerror=()=>{
       console.error('Stabiele MijnSerenity-core kon niet worden geladen.');
+      if(message){message.textContent='De beveiligde inlogmodule kon niet worden geladen. Tik op “App herstellen en vernieuwen”.';message.classList.add('error')}
       loadFreshDashboard();
     };
     document.head.appendChild(script);
@@ -111,16 +174,20 @@
 
   function init(){
     syncBuild();
+    installGuardStyle();
+    syncAuthChrome();
+    watchAuthChrome();
     retireLegacy();
     watchLegacy();
+    monitorAuthReady();
     purgeOldCaches().finally(()=>updateServiceWorker());
     loadStableCore();
   }
 
-  window.addEventListener('mijnserenity:dashboard-ready',()=>{syncBuild();retireLegacy()},{passive:true});
-  window.addEventListener('mijnserenity:live-core-ready',()=>{syncBuild();retireLegacy()},{passive:true});
-  window.addEventListener('mijnserenity:modules-ready',()=>{syncBuild();retireLegacy()},{passive:true});
-  window.addEventListener('pageshow',()=>{syncBuild();retireLegacy();loadFreshDashboard()},{passive:true});
+  window.addEventListener('mijnserenity:dashboard-ready',()=>{syncBuild();retireLegacy();syncAuthChrome()},{passive:true});
+  window.addEventListener('mijnserenity:live-core-ready',()=>{syncBuild();retireLegacy();syncAuthChrome()},{passive:true});
+  window.addEventListener('mijnserenity:modules-ready',()=>{syncBuild();retireLegacy();syncAuthChrome()},{passive:true});
+  window.addEventListener('pageshow',()=>{syncBuild();retireLegacy();syncAuthChrome();loadFreshDashboard()},{passive:true});
 
   init();
 })();
