@@ -3029,7 +3029,16 @@ function startPresenceHeartbeat(){
   );
 }
 
+function cancelRealtimeReconnect(){
+  if(realtimeReconnectTimer){
+    clearTimeout(realtimeReconnectTimer);
+    realtimeReconnectTimer=null;
+  }
+  realtimeReconnectAttempts=0;
+}
+
 function stopPresenceHeartbeat(){
+  cancelRealtimeReconnect();
   if(presenceHeartbeatTimer){
     clearInterval(presenceHeartbeatTimer);
     presenceHeartbeatTimer=null;
@@ -3468,6 +3477,7 @@ async function initialise(session){
       await sb.removeChannel(liveChannel);
       liveChannel=null;
     }
+    await ms640CloseCloud();
     return;
   }
 
@@ -3492,11 +3502,13 @@ async function initialise(session){
       await sb.removeChannel(liveChannel);
       liveChannel=null;
     }
+    await ms640CloseCloud();
     return;
   }
 
   $('appView').classList.remove('hidden');
   syncDisplayedAppVersion();
+  await ms640CloseCloud();
   startPresenceHeartbeat();
   applyAdminVisibility();
   renderDynamicWelcome(true);
@@ -5726,6 +5738,7 @@ async function loadCosts(){
 }
 
 function subscribeRealtime(){
+  cancelRealtimeReconnect();
   if(liveChannel)sb.removeChannel(liveChannel);
 
   liveChannel=sb.channel('serenity-'+currentBoat.id)
@@ -5780,8 +5793,46 @@ function subscribeRealtime(){
   }
 
   liveChannel.subscribe(status=>{
-    $('dSync').textContent=status==='SUBSCRIBED'?'Live':'…';
+    if(status==='SUBSCRIBED'){
+      realtimeReconnectAttempts=0;
+      $('dSync').textContent='Live';
+      return;
+    }
+
+    $('dSync').textContent='Offline';
+    if(
+      ['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status)&&
+      currentUser&&
+      currentBoat&&
+      realtimeReconnectAttempts<5&&
+      !realtimeReconnectTimer
+    ){
+      const delay=Math.min(30000,1000*2**realtimeReconnectAttempts);
+      realtimeReconnectTimer=setTimeout(()=>{
+        realtimeReconnectTimer=null;
+        realtimeReconnectAttempts+=1;
+        subscribeRealtime();
+      },delay);
+    }
   });
+}
+
+async function ms640CloseCloud(){
+  clearTimeout(ms640SyncTimer);
+  clearInterval(ms640InitTimer);
+  ms640SyncTimer=null;
+  ms640InitTimer=null;
+  ms640ChannelConnecting=false;
+  ms640CloudReady=false;
+  ms640Viewing=false;
+  ms640LastReceivedAt=0;
+  if(ms640Channel){
+    const channel=ms640Channel;
+    ms640Channel=null;
+    try{await sb.removeChannel(channel)}catch(error){
+      console.warn('Gedeelde livekaart kon niet direct worden afgesloten:',error);
+    }
+  }
 }
 
 function resetPoiFilters(render=true){
@@ -16991,7 +17042,10 @@ let ms640SyncBusy=false;
 let ms640LastSentAt=0;
 let ms640LastReceivedAt=0;
 let ms640Channel=null;
+let ms640ChannelConnecting=false;
 let ms640InitTimer=null;
+let realtimeReconnectTimer=null;
+let realtimeReconnectAttempts=0;
 
 function ms640DeviceId(){
   const key='mijnserenity-device-id';
@@ -17158,17 +17212,44 @@ async function ms640LoadCloud(){
 
 async function ms640EnsureCloud(){
   if(!currentBoat||!currentUser)return false;
-  if(ms640Channel)return true;
+  if(ms640Channel||ms640ChannelConnecting)return Boolean(ms640Channel);
   try{
     const {error}=await sb.from('live_navigation_state').select('boat_id').eq('boat_id',currentBoat.id).maybeSingle();
     if(error)throw error;
+
+    ms640ChannelConnecting=true;
+    const channel=sb.channel(`live-navigation-${currentBoat.id}`);
+    ms640Channel=channel;
+
+    const subscribed=await new Promise(resolve=>{
+      let settled=false;
+      const finish=value=>{
+        if(settled)return;
+        settled=true;
+        resolve(value);
+      };
+      channel
+        .on('postgres_changes',{event:'*',schema:'public',table:'live_navigation_state',filter:`boat_id=eq.${currentBoat.id}`},payload=>ms640ApplyRow(payload.new))
+        .subscribe(status=>{
+          if(status==='SUBSCRIBED')finish(true);
+          if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status))finish(false);
+        });
+      setTimeout(()=>finish(false),10000);
+    });
+
+    ms640ChannelConnecting=false;
+    if(!subscribed){
+      if(ms640Channel===channel)ms640Channel=null;
+      try{await sb.removeChannel(channel)}catch(error){}
+      return false;
+    }
+
     ms640CloudReady=true;
-    ms640Channel=sb.channel(`live-navigation-${currentBoat.id}`)
-      .on('postgres_changes',{event:'*',schema:'public',table:'live_navigation_state',filter:`boat_id=eq.${currentBoat.id}`},payload=>ms640ApplyRow(payload.new))
-      .subscribe();
     await ms640LoadCloud();
     return true;
   }catch(error){
+    ms640ChannelConnecting=false;
+    ms640Channel=null;
     if(ms640TableMissing(error))ms640SetUi('Cloud livekaart nog niet geactiveerd','Voer SUPABASE_LIVE_VAARKAART_6_4_0.sql één keer uit.','offline');
     return false;
   }
