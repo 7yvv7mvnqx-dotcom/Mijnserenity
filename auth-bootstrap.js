@@ -28,10 +28,18 @@
     });
   }
 
+  function recoverVisibleDashboard(){
+    loadFreshDashboard();
+    [0,120,500,1200].forEach(ms=>setTimeout(()=>{
+      try{window.ms8281RecoverDashboard?.()}catch(error){console.warn('Start-herstel:',error)}
+    },ms));
+  }
+
   function syncAuthChrome(){
     const app=document.getElementById('appView');
     const appVisible=!!app&&!app.classList.contains('hidden');
     document.body?.classList.toggle('ms8281-app-visible',appVisible);
+    if(appVisible)recoverVisibleDashboard();
   }
 
   function installGuardStyle(){
@@ -139,12 +147,16 @@
   function loadFreshDashboard(){
     retireLegacy();
     syncBuild();
-    if(window.__msApprovedHomeBootstrap8281)return;
+    if(window.__msApprovedHomeBootstrap8281){
+      try{window.ms8281RecoverDashboard?.()}catch(_){}
+      return;
+    }
     if([...document.scripts].some(script=>script.dataset?.ms8281Bootstrap==='1'))return;
     const script=document.createElement('script');
     script.src=`${DASHBOARD}?v=${VERSION}&bootstrap=1`;
     script.async=false;
     script.dataset.ms8281Bootstrap='1';
+    script.addEventListener('load',()=>setTimeout(()=>window.ms8281RecoverDashboard?.(),0),{once:true});
     script.onerror=()=>console.warn('Actuele MijnSerenity 8.28.1 Start kon niet direct worden geladen.');
     document.head.appendChild(script);
   }
@@ -162,7 +174,7 @@
     script.dataset.ms8281StableCore='1';
     script.addEventListener('load',()=>{
       syncBuild();retireLegacy();loadFreshDashboard();
-      [300,900,2200].forEach(ms=>setTimeout(()=>{syncBuild();retireLegacy();loadFreshDashboard()},ms));
+      [300,900,2200].forEach(ms=>setTimeout(()=>{syncBuild();retireLegacy();loadFreshDashboard();syncAuthChrome()},ms));
     },{once:true});
     script.onerror=()=>{
       console.error('Stabiele MijnSerenity-core kon niet worden geladen.');
@@ -187,7 +199,7 @@
   window.addEventListener('mijnserenity:dashboard-ready',()=>{syncBuild();retireLegacy();syncAuthChrome()},{passive:true});
   window.addEventListener('mijnserenity:live-core-ready',()=>{syncBuild();retireLegacy();syncAuthChrome()},{passive:true});
   window.addEventListener('mijnserenity:modules-ready',()=>{syncBuild();retireLegacy();syncAuthChrome()},{passive:true});
-  window.addEventListener('pageshow',()=>{syncBuild();retireLegacy();syncAuthChrome();loadFreshDashboard()},{passive:true});
+  window.addEventListener('pageshow',()=>{syncBuild();retireLegacy();syncAuthChrome();recoverVisibleDashboard()},{passive:true});
 
   init();
 })();
