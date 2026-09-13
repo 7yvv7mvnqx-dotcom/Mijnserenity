@@ -1,40 +1,29 @@
-/* MijnSerenity 8.28.1 — herstelbrug voor oude dashboardcaches.
-   Deze compatibiliteits-URL forceert altijd de actuele Start-loader wanneer
-   8.28.1 nog niet actief is, ook als een oude start-dashboard script-tag al bestaat. */
+/* MijnSerenity 8.27.8 — compatibiliteitsbrug voor de voormalige 7.19.19 dashboardloader.
+   Deze URL blijft bestaan voor oudere bootstraps/caches, maar rendert zelf geen dashboard meer.
+   De enige actuele Start-renderer is start-dashboard-71510.js. */
 (()=>{
 'use strict';
-if(window.__msDashboardCompat8281)return;
-window.__msDashboardCompat8281=true;
-window.__msDisableLegacyVisuals=true;
+if(window.__msDashboardCompat8278)return;
+window.__msDashboardCompat8278=true;
 
 const CURRENT_PATH='/start-dashboard-71510.js';
-const CURRENT_SRC=`${CURRENT_PATH}?v=828100&recovery=1`;
+const CURRENT_SRC=`${CURRENT_PATH}?v=827800`;
 
-function retireLegacy(){
-  document.body?.classList.remove('ivms-dashboard-active');
-  document.querySelector('.bottom-nav')?.classList.remove('ivms-dashboard-hidden');
-  ['serenityIvms','ms71510Dashboard','ms71510Start','msMarineGlass','msStartCockpit7144','msDashboardAnalog7141','msWelcomeCard7140'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){el.style.setProperty('display','none','important');el.style.setProperty('visibility','hidden','important')}
-  });
-}
+function currentPresent(){return !!window.__msApprovedHomeBootstrap8263}
+function pathOf(value){try{return new URL(value,location.href).pathname}catch(_){return String(value||'')}}
+function existingCurrent(){return [...document.scripts].find(script=>script.src&&pathOf(script.src)===CURRENT_PATH)}
 
 function loadCurrent(){
-  retireLegacy();
-  if(window.__msApprovedHomeBootstrap8281)return;
-  const stale=[...document.scripts].filter(script=>{
-    try{return script.src&&new URL(script.src,location.href).pathname===CURRENT_PATH}catch(_){return false}
-  });
-  stale.forEach(script=>script.dataset.ms8281Superseded='1');
+  if(currentPresent())return;
+  if(existingCurrent())return;
   const script=document.createElement('script');
   script.src=CURRENT_SRC;
   script.async=false;
-  script.dataset.ms8281Recovery='1';
-  script.onerror=()=>console.warn('MijnSerenity 8.28.1 herstel-dashboard kon niet worden geladen.');
+  script.dataset.ms8278Compatibility='1';
+  script.onerror=()=>console.warn('Actuele MijnSerenity Start-loader kon niet via de compatibiliteitsbrug worden geladen.');
   document.head.appendChild(script);
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCurrent,{once:true});
 else loadCurrent();
-window.addEventListener('pageshow',()=>{retireLegacy();if(!window.__msApprovedHomeBootstrap8281)loadCurrent()},{passive:true});
 })();

@@ -1,12 +1,11 @@
-/* MijnSerenity 8.28.1 — dashboard recovery + Nordkapp Gen 3 + consistente releasecache */
-const CACHE_NAME='mijnserenity-8.28.1';
-const BUILD='8.28.1';
-const TOKEN='828100';
+/* MijnSerenity 8.27.9 — consistente releasecache voor web en native bronassets */
+const CACHE_NAME='mijnserenity-8.27.9';
+const BUILD='8.27.9';
+const TOKEN='827900';
 const CORE=[
   '/',
   '/index.html',
   `/auth-bootstrap.js?v=${TOKEN}`,
-  `/auth-bootstrap-core-8235.js?v=${TOKEN}`,
   `/start-dashboard-71510.js?v=${TOKEN}`,
   `/dashboard-unified-71919-loader.js?v=${TOKEN}`,
   `/approved-dashboard-8263.js?v=${TOKEN}`,
@@ -15,7 +14,6 @@ const CORE=[
   `/settings-notifications-8279.js?v=${TOKEN}`,
   `/dashboard-buttons-8265.js?v=${TOKEN}`,
   `/ai-quick-command-8267.js?v=${TOKEN}`,
-  `/nordkapp-gen3-8280.js?v=${TOKEN}`,
   `/rws-water-temp-8233.js?v=${TOKEN}`,
   `/receipt-ocr-fix-8234.js?v=${TOKEN}`,
   `/receipt-ai-first.js?v=${TOKEN}`,
@@ -32,7 +30,7 @@ self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')sel
 async function networkFirst(request,fallback){const cache=await caches.open(CACHE_NAME);try{const response=await fresh(request);if(response.ok){await put(cache,request,response);if(fallback)await put(cache,fallback,response)}return response}catch(_){return(await caches.match(request,{ignoreSearch:false}))||(fallback?await caches.match(fallback):null)||new Response('MijnSerenity kon niet worden geladen.',{status:503,headers:{'content-type':'text/plain; charset=utf-8'}})}}
 async function staleWhileRevalidate(request){const cached=await caches.match(request,{ignoreSearch:false});const update=fresh(request).then(async response=>{if(response.ok){const cache=await caches.open(CACHE_NAME);await put(cache,request,response)}return response}).catch(()=>null);return cached||(await update)||new Response('',{status:503})}
 const CRITICAL=new Set([
-  '/auth-bootstrap.js','/auth-bootstrap-core-8235.js','/start-dashboard-71510.js','/dashboard-unified-71919-loader.js','/approved-dashboard-8263.js','/approved-dashboard-live-8264.js','/victron-tank-alarm-8278.js','/settings-notifications-8279.js','/dashboard-buttons-8265.js','/ai-quick-command-8267.js','/nordkapp-gen3-8280.js','/rws-water-temp-8233.js','/receipt-reader-pro.js','/receipt-ocr-fix-8234.js','/receipt-ai-first.js','/serenity-dashboard-boat-20260909.webp'
+  '/auth-bootstrap.js','/start-dashboard-71510.js','/dashboard-unified-71919-loader.js','/approved-dashboard-8263.js','/approved-dashboard-live-8264.js','/victron-tank-alarm-8278.js','/settings-notifications-8279.js','/dashboard-buttons-8265.js','/ai-quick-command-8267.js','/rws-water-temp-8233.js','/receipt-reader-pro.js','/receipt-ocr-fix-8234.js','/receipt-ai-first.js','/serenity-dashboard-boat-20260909.webp'
 ]);
 self.addEventListener('fetch',event=>{const request=event.request;if(request.method!=='GET')return;const url=new URL(request.url);if(url.origin!==self.location.origin)return;if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/')||url.pathname.startsWith('/victron-gui/'))return;if(request.mode==='navigate'){event.respondWith(networkFirst(request,'/index.html'));return}if(CRITICAL.has(url.pathname)){event.respondWith(networkFirst(request));return}if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){event.respondWith(staleWhileRevalidate(request));return}event.respondWith(staleWhileRevalidate(request))});
 function pushPayload(event){if(!event.data)return{};try{return event.data.json()||{}}catch(_){}try{return{body:event.data.text()}}catch(_){return{}}}
