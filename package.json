@@ -4,9 +4,11 @@
   "private": true,
   "description": "Native iPhone/iPad shell voor MijnSerenity",
   "scripts": {
+    "test": "node tests/static-assets.test.mjs",
     "native:prepare": "node scripts/prepare-native-web.mjs",
+    "native:verify": "npm run native:prepare && npm test",
     "native:add:ios": "npm run native:prepare && npx cap add ios",
-    "native:sync": "npm run native:prepare && npx cap sync ios",
+    "native:sync": "npm run native:verify && npx cap sync ios",
     "native:open": "npx cap open ios",
     "native:run": "npm run native:sync && npx cap open ios"
   },
