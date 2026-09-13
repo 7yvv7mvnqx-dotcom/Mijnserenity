@@ -55,7 +55,7 @@
       retireLegacy();
       syncBuild();
     });
-    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
+    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
   }
 
   async function purgeOldCaches(){
@@ -122,6 +122,5 @@
   window.addEventListener('mijnserenity:modules-ready',()=>{syncBuild();retireLegacy()},{passive:true});
   window.addEventListener('pageshow',()=>{syncBuild();retireLegacy();loadFreshDashboard()},{passive:true});
 
-  if(document.readyState==='loading')init();
-  else init();
+  init();
 })();
