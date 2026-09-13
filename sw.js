@@ -1,7 +1,7 @@
-/* MijnSerenity 8.28.0 — Nordkapp Gen 3 + consistente releasecache voor web en native bronassets */
-const CACHE_NAME='mijnserenity-8.28.0';
-const BUILD='8.28.0';
-const TOKEN='828000';
+/* MijnSerenity 8.28.1 — dashboard recovery + Nordkapp Gen 3 + consistente releasecache */
+const CACHE_NAME='mijnserenity-8.28.1';
+const BUILD='8.28.1';
+const TOKEN='828100';
 const CORE=[
   '/',
   '/index.html',
