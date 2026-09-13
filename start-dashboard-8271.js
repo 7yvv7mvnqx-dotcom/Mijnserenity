@@ -1,20 +1,20 @@
-/* MijnSerenity 8.28.0 — compatibiliteitsfallback voor oudere dashboardcaches. */
+/* MijnSerenity 8.28.1 — compatibiliteitsfallback voor oudere dashboardcaches. */
 (()=>{
 'use strict';
-if(window.__msApprovedHomeBootstrap8263)return;
-if(window.__msDashboardFallback8280)return;
-window.__msDashboardFallback8280=true;
+if(window.__msApprovedHomeBootstrap8281)return;
+if(window.__msDashboardFallback8281)return;
+window.__msDashboardFallback8281=true;
+window.__msDisableLegacyVisuals=true;
 const PATH='/start-dashboard-71510.js';
-function pathOf(value){try{return new URL(value,location.href).pathname}catch(_){return String(value||'')}}
 function load(){
-  if(window.__msApprovedHomeBootstrap8263)return;
-  if([...document.scripts].some(script=>script.src&&pathOf(script.src)===PATH))return;
+  if(window.__msApprovedHomeBootstrap8281)return;
   const script=document.createElement('script');
-  script.src=`${PATH}?v=828000`;
+  script.src=`${PATH}?v=828100&fallback=1`;
   script.async=false;
-  script.dataset.ms8280Fallback='1';
-  script.onerror=()=>console.warn('MijnSerenity 8.28.0 dashboardloader kon niet via de fallback worden geladen.');
+  script.dataset.ms8281Fallback='1';
+  script.onerror=()=>console.warn('MijnSerenity 8.28.1 dashboardloader kon niet via de fallback worden geladen.');
   document.head.appendChild(script);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();
+window.addEventListener('pageshow',()=>{if(!window.__msApprovedHomeBootstrap8281)load()},{passive:true});
 })();
