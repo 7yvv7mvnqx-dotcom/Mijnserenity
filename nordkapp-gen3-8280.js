@@ -273,6 +273,7 @@ function ensureDashboardCard(){
 }
 function mount(){installStyle();ensureTechnicalCard();ensureDashboardCard()}
 function scheduleMount(){clearTimeout(mountTimer);mountTimer=setTimeout(()=>{mount();renderAll()},100)}
+function needsMount(){return Boolean(($('technical')&&!$(CARD_ID))||($('ms8210Start')&&!$(DASH_ID)))}
 function start(){
   mount();
   refresh(true);
@@ -282,7 +283,7 @@ function start(){
   window.addEventListener('mijnserenity-ha-connected',()=>refresh(true),{passive:true});
   window.addEventListener('mijnserenity-ha-state-updated',()=>{clearTimeout(mountTimer);mountTimer=setTimeout(()=>refresh(),400)},{passive:true});
   window.addEventListener('hashchange',scheduleMount,{passive:true});
-  const observer=new MutationObserver(scheduleMount);observer.observe(document.body,{childList:true,subtree:true});
+  const observer=new MutationObserver(()=>{if(needsMount())scheduleMount()});observer.observe(document.body,{childList:true,subtree:true});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
