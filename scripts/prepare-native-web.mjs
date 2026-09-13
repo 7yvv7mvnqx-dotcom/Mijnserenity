@@ -13,6 +13,11 @@ const skipFiles = new Set([
   'package.json', 'package-lock.json', 'capacitor.config.ts',
   'README_NATIVE_APP.md', 'CHANGELOG.md', 'APPLE_OPDRACHT_WATERKAARTEN.md'
 ]);
+const retiredNativeAssets = new Set([
+  'futuristic-analog-7140.js', 'futuristic-analog-7140.css',
+  'dashboard-analog-7141.js', 'dashboard-analog-7141.css',
+  'start-cockpit-7144.js', 'start-cockpit-7144.css'
+]);
 const allowedExtensions = new Set([
   '.html', '.css', '.js', '.mjs', '.json', '.png', '.jpg', '.jpeg', '.webp',
   '.svg', '.ico', '.txt', '.xml', '.webmanifest', '.woff', '.woff2', '.ttf',
@@ -23,6 +28,7 @@ async function copyTree(source, target, depth = 0) {
   for (const entry of await readdir(source, { withFileTypes: true })) {
     if (depth === 0 && skipTop.has(entry.name)) continue;
     if (depth === 0 && skipFiles.has(entry.name)) continue;
+    if (depth === 0 && retiredNativeAssets.has(entry.name)) continue;
     if (depth === 0 && /^CONTROLE_/i.test(entry.name)) continue;
     if (entry.name === '.DS_Store') continue;
 
@@ -52,6 +58,17 @@ async function alignNativeReleaseVersions() {
   await writeFile(bootstrapPath, bootstrap, 'utf8');
 }
 
+function stripRetiredNativeReferences(html) {
+  let cleaned = html;
+  for (const asset of retiredNativeAssets) {
+    const escaped = asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    cleaned = cleaned
+      .replace(new RegExp(`\\s*<script[^>]+src=["']${escaped}(?:\\?[^"']*)?["'][^>]*><\\/script>\\s*`, 'gi'), '\n')
+      .replace(new RegExp(`\\s*<link[^>]+href=["']${escaped}(?:\\?[^"']*)?["'][^>]*>\\s*`, 'gi'), '\n');
+  }
+  return cleaned;
+}
+
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 await copyTree(root, out);
@@ -70,7 +87,7 @@ await build({
 
 const indexPath = join(out, 'index.html');
 let html = await readFile(indexPath, 'utf8');
-html = html
+html = stripRetiredNativeReferences(html)
   .replace(/(<meta\s+name="mijnserenity-build"\s+content=")[^"]+("\s*>)/i, `$1${nativeRelease.build}$2`)
   .replace(/window\.MIJSERENITY_BUILD='[^']+';/, `window.MIJSERENITY_BUILD='${nativeRelease.build}';`)
   .replace(/auth-bootstrap\.js\?v=\d+/g, `auth-bootstrap.js?v=${nativeRelease.token}`)
