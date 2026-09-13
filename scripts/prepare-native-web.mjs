@@ -4,7 +4,7 @@ import { build } from 'esbuild';
 
 const root = process.cwd();
 const out = join(root, 'www');
-const nativeRelease = { build: '8.27.7', token: '827700' };
+const nativeRelease = { build: '8.28.0', token: '828000' };
 const skipTop = new Set([
   '.git', '.github', 'node_modules', 'www', 'ios', 'android',
   'native-src', 'scripts', 'netlify', '.netlify'
