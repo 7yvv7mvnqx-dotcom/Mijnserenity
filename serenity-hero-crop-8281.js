@@ -10,7 +10,12 @@
     #ms8210Start .ms8263-tag{display:none!important;visibility:hidden!important;}
     #ms8210Start .ms8263-brand{top:max(42px,env(safe-area-inset-top))!important;}
     @media (max-width:640px){
-      #ms8210Start .ms8263-hero{background-position:center 58%!important;}
+      #ms8210Start .ms8263-hero{
+        background-size:auto 92%!important;
+        background-position:42% 0!important;
+        background-repeat:no-repeat!important;
+        background-color:#03131f!important;
+      }
       #ms8210Start .ms8263-brand{top:max(38px,env(safe-area-inset-top))!important;}
     }
   `;
