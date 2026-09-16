@@ -29,10 +29,23 @@
       coverage:skills.length?assessed.length/skills.length:0,under:rows.filter(r=>r.ok&&r.v<r.s[3]).length,lvl5:rows.filter(r=>r.v===5).length};
   }
 
+  function scoreSelect(e,r,compact){
+    const v=r.v;
+    return `<select class="scsel profile-score-edit ${Number.isFinite(v)?'s'+Math.round(v):'se'} ${compact?'profile-score-mini':''}" data-e="${e[0]}" data-s="${esc(r.s[0])}" aria-label="Score ${esc(r.s[1])}"><option value="" ${!Number.isFinite(v)?'selected':''}>—</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${v===n?'selected':''}>${n}</option>`).join('')}</select>`;
+  }
+  function bindScoreEditors(employeeId){
+    $$('.profile-score-edit').forEach(x=>x.onchange=()=>{
+      S.x[String(x.dataset.e)]||={};
+      if(x.value) S.x[String(x.dataset.e)][x.dataset.s]=+x.value;
+      else delete S.x[String(x.dataset.e)][x.dataset.s];
+      save();
+      openEmployeeProfile(employeeId);
+    });
+  }
   function stat(label,value,sub){return `<div class="card profile-stat"><span class="muted">${esc(label)}</span><b>${value}</b><span class="muted">${esc(sub||'')}</span></div>`}
-  function miniRow(r,kind){
+  function miniRow(e,r,kind){
     const d=r.ok?`${r.v.toString().replace('.',',')} / doel ${r.s[3]}`:'Niet beoordeeld';
-    return `<div class="profile-mini ${kind||''}"><div><b>${esc(r.s[1])}</b><span class="muted">${esc(catName(r.s[2]))}</span></div><span class="score ${scoreClass(r.v)}">${r.ok?String(r.v).replace('.',','):'—'}</span><span class="muted">${esc(d)}</span></div>`;
+    return `<div class="profile-mini ${kind||''}"><div><b>${esc(r.s[1])}</b><span class="muted">${esc(catName(r.s[2]))}</span></div>${scoreSelect(e,r,true)}<span class="muted">${esc(d)}</span></div>`;
   }
   function status(r){
     const cl=r.status==='Ontwikkelen'?'crit':r.status==='Niet beoordeeld'?'neutral':r.status==='Niveau 5'?'expert':'good';
@@ -49,6 +62,7 @@
         <div class="profile-ident"><div class="profile-avatar">${esc(e[1].split(/\s+/).map(n=>n[0]).slice(0,2).join('').toUpperCase())}</div><div><h2>${esc(e[1])}</h2><div class="muted">${esc(e[2]||'Support')} · ${esc(e[3]||'—')}</div></div></div>
         <button class="btn s" id="back-emps">← Terug naar medewerkers</button>
       </div>
+      <div class="notice profile-edit-note"><b>Scores direct aanpassen:</b> wijzig hieronder een score naar 1–5 of kies — om een beoordeling leeg te maken. De wijziging wordt direct gebruikt in Matrix, Dashboard, ploegoverzichten en Management.</div>
       <div class="grid profile-kpis">
         ${stat('Gemiddelde',fmt(d.avg),'Alle beoordeelde skills')}
         ${stat('Beoordeeld',pct(d.coverage),`${d.assessed.length}/${d.rows.length} skills`)}
@@ -61,15 +75,20 @@
         ${stat('Extra verantwoordelijkheid',fmt(d.extra),'Categorie C')}
       </div>
       <div class="grid profile-two">
-        <div class="card"><div class="section-title"><div><span class="eyebrow">STERKE PUNTEN</span><h2>Hoogste scores</h2></div></div>${d.strengths.length?d.strengths.map(r=>miniRow(r,'strong')).join(''):'<div class="muted">Nog geen beoordelingen.</div>'}</div>
-        <div class="card"><div class="section-title"><div><span class="eyebrow warn">ONTWIKKELEN</span><h2>Onder doelniveau</h2></div></div>${d.dev.length?d.dev.map(r=>miniRow(r,'develop')).join(''):'<div class="muted">Geen beoordeelde skills onder doel.</div>'}</div>
+        <div class="card"><div class="section-title"><div><span class="eyebrow">STERKE PUNTEN</span><h2>Hoogste scores</h2></div></div>${d.strengths.length?d.strengths.map(r=>miniRow(e,r,'strong')).join(''):'<div class="muted">Nog geen beoordelingen.</div>'}</div>
+        <div class="card"><div class="section-title"><div><span class="eyebrow warn">ONTWIKKELEN</span><h2>Onder doelniveau</h2></div></div>${d.dev.length?d.dev.map(r=>miniRow(e,r,'develop')).join(''):'<div class="muted">Geen beoordeelde skills onder doel.</div>'}</div>
       </div>
-      ${d.missing.length?`<div class="card"><div class="section-title"><div><span class="eyebrow">NOG TE BEOORDELEN</span><h2>${d.missing.length} skills zonder score</h2></div></div><div class="missing-chips">${d.missing.map(r=>`<span>${esc(r.s[1])}</span>`).join('')}</div></div>`:''}
+      ${d.missing.length?`<div class="card"><div class="section-title"><div><span class="eyebrow">NOG TE BEOORDELEN</span><h2>${d.missing.length} skills zonder score</h2></div></div><div class="missing-chips">${d.missing.map(r=>`<button type="button" class="missing-skill-jump" data-s="${esc(r.s[0])}">${esc(r.s[1])}</button>`).join('')}</div></div>`:''}
       <div class="card profile-skills"><div class="section-title"><div><span class="eyebrow">VOLLEDIG OVERZICHT</span><h2>Alle skills</h2></div><div class="legend-inline"><span class="score s1">1</span><span class="score s2">2</span><span class="score s3">3</span><span class="score s4">4</span><span class="score s5">5</span></div></div>
-        <div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>Skill</th><th>Categorie</th><th>Doel</th><th>Score</th><th>Status</th></tr></thead><tbody>${d.rows.map(r=>`<tr><td><b>${esc(r.s[1])}</b></td><td>${esc(catName(r.s[2]))}</td><td>${r.s[3]}</td><td><span class="score ${scoreClass(r.v)}">${r.ok?String(r.v).replace('.',','):'—'}</span></td><td>${status(r)}</td></tr>`).join('')}</tbody></table></div>
+        <div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>Skill</th><th>Categorie</th><th>Doel</th><th>Score</th><th>Status</th></tr></thead><tbody>${d.rows.map(r=>`<tr data-skill-row="${esc(r.s[0])}"><td><b>${esc(r.s[1])}</b></td><td>${esc(catName(r.s[2]))}</td><td>${r.s[3]}</td><td>${scoreSelect(e,r,false)}</td><td>${status(r)}</td></tr>`).join('')}</tbody></table></div>
       </div>
       <div class="card"><div class="section-title"><div><span class="eyebrow">AUDITGESCHIEDENIS</span><h2>Recente audits</h2></div></div>${d.audits.length?`<div class="audit-history">${d.audits.map(a=>`<div><span class="muted">${new Date(a.d).toLocaleDateString('nl-NL')}</span><b>${esc(a.s)}</b><span class="score ${scoreClass(a.p)}">${a.p}</span></div>`).join('')}</div>`:'<div class="muted">Voor deze medewerker zijn in de test-app nog geen audits opgeslagen.</div>'}</div>`;
     $('#back-emps').onclick=()=>{location.hash='emps'; if(location.hash==='#emps') emps()};
+    bindScoreEditors(e[0]);
+    $$('.missing-skill-jump').forEach(b=>b.onclick=()=>{
+      const row=document.querySelector(`[data-skill-row="${CSS.escape(b.dataset.s)}"]`);
+      if(row){row.scrollIntoView({behavior:'smooth',block:'center'});const sel=row.querySelector('.profile-score-edit');if(sel)sel.focus();}
+    });
     window.scrollTo({top:0,behavior:'smooth'});
   };
 
