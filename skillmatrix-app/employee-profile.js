@@ -8,6 +8,15 @@
   const catName=c=>String(c||'').startsWith('A')?'Basis':String(c||'').startsWith('B')?'Senior':'Extra verantwoordelijkheid';
   const activeSkills=()=>S.s.filter(s=>s[5]);
   const scoreMap=e=>S.x[String(e[0])]||{};
+  const scaleDefs={
+    1:{title:'Geen kennis',text:'Kan de skill nog niet voldoende uitleggen of uitvoeren.'},
+    2:{title:'Basis / begeleiding',text:'Kent de basis en voert delen uit, maar heeft begeleiding nodig.'},
+    3:{title:'Beperkt zelfstandig',text:'Kan standaardwerk grotendeels zelfstandig; bij afwijkingen is nog hulp nodig.'},
+    4:{title:'Zelfstandig vakbekwaam',text:'Voert de skill zelfstandig, stabiel en volgens standaard uit en lost normale afwijkingen op.'},
+    5:{title:'Expert / opleider',text:'Beheerst niveau 4 en analyseert complexe oorzaken, leidt anderen op en/of verbetert de werkwijze aantoonbaar.'}
+  };
+  const levelTitle=v=>Number.isFinite(v)&&scaleDefs[v]?scaleDefs[v].title:'Nog niet beoordeeld';
+  const scaleGuide=()=>`<div class="scale-guide">${[1,2,3,4,5].map(n=>`<div class="scale-item"><span class="score s${n}">${n}</span><div><b>${esc(scaleDefs[n].title)}</b><span>${esc(scaleDefs[n].text)}</span></div></div>`).join('')}</div>`;
 
   function details(e){
     const skills=activeSkills(), x=scoreMap(e);
@@ -31,7 +40,7 @@
 
   function scoreSelect(e,r,compact){
     const v=r.v;
-    return `<select class="scsel profile-score-edit ${Number.isFinite(v)?'s'+Math.round(v):'se'} ${compact?'profile-score-mini':''}" data-e="${e[0]}" data-s="${esc(r.s[0])}" aria-label="Score ${esc(r.s[1])}"><option value="" ${!Number.isFinite(v)?'selected':''}>—</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${v===n?'selected':''}>${n}</option>`).join('')}</select>`;
+    return `<select class="scsel profile-score-edit ${Number.isFinite(v)?'s'+Math.round(v):'se'} ${compact?'profile-score-mini':''}" data-e="${e[0]}" data-s="${esc(r.s[0])}" aria-label="Score ${esc(r.s[1])}: ${esc(levelTitle(v))}" title="${esc(levelTitle(v))}"><option value="" ${!Number.isFinite(v)?'selected':''}>—</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${v===n?'selected':''}>${n}</option>`).join('')}</select>`;
   }
   function bindScoreEditors(employeeId){
     $$('.profile-score-edit').forEach(x=>x.onchange=()=>{
@@ -44,7 +53,7 @@
   }
   function stat(label,value,sub){return `<div class="card profile-stat"><span class="muted">${esc(label)}</span><b>${value}</b><span class="muted">${esc(sub||'')}</span></div>`}
   function miniRow(e,r,kind){
-    const d=r.ok?`${r.v.toString().replace('.',',')} / doel ${r.s[3]}`:'Niet beoordeeld';
+    const d=r.ok?`${levelTitle(r.v)} · doel ${r.s[3]}`:'Niet beoordeeld';
     return `<div class="profile-mini ${kind||''}"><div><b>${esc(r.s[1])}</b><span class="muted">${esc(catName(r.s[2]))}</span></div>${scoreSelect(e,r,true)}<span class="muted">${esc(d)}</span></div>`;
   }
   function status(r){
@@ -80,7 +89,9 @@
       </div>
       ${d.missing.length?`<div class="card"><div class="section-title"><div><span class="eyebrow">NOG TE BEOORDELEN</span><h2>${d.missing.length} skills zonder score</h2></div></div><div class="missing-chips">${d.missing.map(r=>`<button type="button" class="missing-skill-jump" data-s="${esc(r.s[0])}">${esc(r.s[1])}</button>`).join('')}</div></div>`:''}
       <div class="card profile-skills"><div class="section-title"><div><span class="eyebrow">VOLLEDIG OVERZICHT</span><h2>Alle skills</h2></div><div class="legend-inline"><span class="score s1">1</span><span class="score s2">2</span><span class="score s3">3</span><span class="score s4">4</span><span class="score s5">5</span></div></div>
-        <div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>Skill</th><th>Categorie</th><th>Doel</th><th>Score</th><th>Status</th></tr></thead><tbody>${d.rows.map(r=>`<tr data-skill-row="${esc(r.s[0])}"><td><b>${esc(r.s[1])}</b></td><td>${esc(catName(r.s[2]))}</td><td>${r.s[3]}</td><td>${scoreSelect(e,r,false)}</td><td>${status(r)}</td></tr>`).join('')}</tbody></table></div>
+        <div class="scale-title"><b>Beoordelingsschaal 1–5</b><span class="muted">Gebruik deze definitie bij iedere skill.</span></div>
+        ${scaleGuide()}
+        <div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>Skill</th><th>Categorie</th><th>Doel</th><th>Score</th><th>Betekenis</th><th>Status</th></tr></thead><tbody>${d.rows.map(r=>`<tr data-skill-row="${esc(r.s[0])}"><td><b>${esc(r.s[1])}</b></td><td>${esc(catName(r.s[2]))}</td><td>${r.s[3]}</td><td>${scoreSelect(e,r,false)}</td><td class="level-meaning"><b>${esc(levelTitle(r.v))}</b>${r.ok?`<span>${esc(scaleDefs[r.v].text)}</span>`:''}</td><td>${status(r)}</td></tr>`).join('')}</tbody></table></div>
       </div>
       <div class="card"><div class="section-title"><div><span class="eyebrow">AUDITGESCHIEDENIS</span><h2>Recente audits</h2></div></div>${d.audits.length?`<div class="audit-history">${d.audits.map(a=>`<div><span class="muted">${new Date(a.d).toLocaleDateString('nl-NL')}</span><b>${esc(a.s)}</b><span class="score ${scoreClass(a.p)}">${a.p}</span></div>`).join('')}</div>`:'<div class="muted">Voor deze medewerker zijn in de test-app nog geen audits opgeslagen.</div>'}</div>`;
     $('#back-emps').onclick=()=>{location.hash='emps'; if(location.hash==='#emps') emps()};
