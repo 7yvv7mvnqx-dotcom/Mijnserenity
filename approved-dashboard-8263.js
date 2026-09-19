@@ -1,4 +1,4 @@
-/* MijnSerenity 8.28.1 — landscape startdashboard
+/* MijnSerenity 8.28.0 — landscape startdashboard
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,10 +8,10 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.28.1';
-const TOKEN='828100';
+const BUILD='8.28.0';
+const TOKEN='828000';
 const ROOT='ms8210Start';
-const STYLE='ms8281LandscapeStyle';
+const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
 
 const icon={
@@ -47,7 +47,7 @@ function installStyle(){
  #${ROOT} button{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
  #${ROOT} svg{display:block;width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 
- #${ROOT} .ms8263-shell{display:grid;grid-template-columns:208px minmax(0,1fr);grid-template-rows:236px minmax(0,1fr);width:100%;height:100%;background:linear-gradient(145deg,#06283b 0,#03131f 55%,#020d16 100%);overflow:hidden}
+ #${ROOT} .ms8263-shell{display:grid;grid-template-columns:188px minmax(0,1fr);grid-template-rows:178px minmax(0,1fr);width:100%;height:100%;background:linear-gradient(145deg,#06283b 0,#03131f 55%,#020d16 100%);overflow:hidden}
  #${ROOT} .ms8280-side{grid-row:1/3;grid-column:1;display:flex;flex-direction:column;min-height:0;padding:22px 12px 15px;border-right:1px solid rgba(76,190,233,.20);background:linear-gradient(180deg,#06304a 0,#031522 46%,#02101b 100%)}
  #${ROOT} .ms8280-logo{padding:1px 10px 19px;text-align:center}
  #${ROOT} .ms8280-logo strong{display:block;font-family:Georgia,"Times New Roman",serif;font-size:37px;font-style:italic;font-weight:500;letter-spacing:-.05em}
@@ -61,7 +61,7 @@ function installStyle(){
  #${ROOT} .ms8280-side-foot{padding:10px 7px 0;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:#8ca7b6;font-size:9px;line-height:1.35}
  #${ROOT} .ms8280-side-foot strong{display:block;color:#e8f4f7;font-size:14px;margin-bottom:1px}
 
- #${ROOT} .ms8263-hero{grid-column:2;grid-row:1;position:relative;min-height:0!important;background:url('/serenity-ivms-hero.png?v=${TOKEN}') center 50%/cover no-repeat!important;isolation:isolate;overflow:hidden}
+ #${ROOT} .ms8263-hero{grid-column:2;grid-row:1;position:relative;min-height:0!important;background:url('/serenity-dashboard-boat-20260909.webp?v=${TOKEN}') center 55%/cover no-repeat!important;isolation:isolate;overflow:hidden}
  #${ROOT} .ms8263-hero:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(1,15,25,.52) 0,rgba(1,15,25,.08) 42%,rgba(1,15,25,.16) 72%,rgba(1,15,25,.55) 100%)}
  #${ROOT} .ms8280-hero-copy{position:absolute;left:28px;bottom:23px;text-shadow:0 3px 18px rgba(0,0,0,.55)}
  #${ROOT} .ms8280-hero-copy strong{display:block;font-size:24px;line-height:1.05}
@@ -69,26 +69,26 @@ function installStyle(){
  #${ROOT} .ms8280-clock{position:absolute;right:27px;top:20px;text-align:right;text-shadow:0 3px 15px rgba(0,0,0,.60)}
  #${ROOT} .ms8280-clock small{display:block;color:#e4eff3;font-size:11px;font-weight:760}
  #${ROOT} .ms8280-clock strong{display:block;margin-top:2px;font-size:31px;line-height:1}
- #${ROOT} .ms8280-clock span{display:block;margin-top:7px;font-size:13px;font-weight:800}\n #${ROOT} .ms8280-clock em{display:block;margin-top:4px;color:#d7e8ee;font-size:10px;font-style:normal;font-weight:650}
+ #${ROOT} .ms8280-clock span{display:block;margin-top:7px;font-size:13px;font-weight:800}
 
- #${ROOT} .ms8263-main{grid-column:2;grid-row:2;display:flex!important;flex-direction:column!important;min-height:0;padding:12px 18px 13px!important;background:linear-gradient(180deg,rgba(3,25,38,.98),#03131f 82%)!important;overflow:auto!important;overscroll-behavior:contain}
- #${ROOT} .ms8263-greet{display:none!important}
+ #${ROOT} .ms8263-main{grid-column:2;grid-row:2;min-height:0;padding:12px 15px 13px!important;background:linear-gradient(180deg,rgba(3,25,38,.98),#03131f 82%)!important;overflow:auto!important;overscroll-behavior:contain}
+ #${ROOT} .ms8263-greet{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 8px!important}
  #${ROOT} .ms8263-greet b{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase}
  #${ROOT} .ms8263-date{margin-top:2px;color:#8faac0;font-size:11px;font-weight:650}
  #${ROOT} .ms8263-theme{display:flex;align-items:center;gap:7px;min-height:34px;padding:0 11px;border:1px solid var(--ms8280-line);border-radius:999px;background:rgba(5,36,53,.72);color:#fff;font-size:11px;font-weight:800;cursor:pointer}
  #${ROOT} .ms8263-theme svg{width:16px;height:16px;color:#25d8ff;fill:#25d8ff;stroke:#25d8ff}
 
- #${ROOT} .ms8280-quick{order:1;margin-bottom:11px;padding:12px 12px 13px;border:1px solid rgba(76,190,233,.28);border-radius:18px;background:rgba(2,24,37,.78)}
- #${ROOT} .ms8280-section-title{display:flex;align-items:center;justify-content:space-between;margin:0 4px 10px}
- #${ROOT} .ms8280-section-title strong{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#edf7fa}
+ #${ROOT} .ms8280-quick{margin-bottom:9px;padding:9px 10px 10px;border:1px solid rgba(76,190,233,.22);border-radius:17px;background:rgba(2,24,37,.67)}
+ #${ROOT} .ms8280-section-title{display:flex;align-items:center;justify-content:space-between;margin:0 2px 7px}
+ #${ROOT} .ms8280-section-title strong{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#dcecf1}
  #${ROOT} .ms8280-section-title button{padding:0;border:0;background:transparent;color:#31d9f7;font-size:10px}
- #${ROOT} .ms8263-features{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:10px!important;margin:0!important}
- #${ROOT} .ms8263-feature{display:flex!important;min-width:0!important;min-height:116px!important;padding:12px 8px 10px!important;border:1px solid rgba(108,215,248,.38)!important;border-radius:15px!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:6px!important;color:#fff!important;text-align:center!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.10),0 8px 20px rgba(0,0,0,.16)!important}
- #${ROOT} .ms8263-feature>svg{width:34px!important;height:34px!important;stroke-width:2!important}
+ #${ROOT} .ms8263-features{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;margin:0!important}
+ #${ROOT} .ms8263-feature{display:flex!important;min-width:0!important;min-height:78px!important;padding:9px 7px!important;border:1px solid rgba(89,196,234,.28)!important;border-radius:14px!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;color:#fff!important;text-align:center!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.04)!important}
+ #${ROOT} .ms8263-feature>svg{width:25px!important;height:25px!important}
  #${ROOT} .ms8263-feature .copy{min-width:0}
- #${ROOT} .ms8263-feature .copy strong{display:block;font-size:14px;line-height:1.08}
- #${ROOT} .ms8263-feature .copy small{display:block;margin-top:4px;color:#d5e7ed;font-size:9px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- #${ROOT} .ms8263-feature .chev{display:grid;place-items:center;width:28px;height:28px;margin-top:2px;border:1px solid rgba(255,255,255,.28);border-radius:50%;background:rgba(255,255,255,.12);font-size:21px;line-height:1}
+ #${ROOT} .ms8263-feature .copy strong{display:block;font-size:12px;line-height:1.05}
+ #${ROOT} .ms8263-feature .copy small{display:block;margin-top:3px;color:#bad0da;font-size:8px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #${ROOT} .ms8263-feature .chev{display:none}
  #${ROOT} .ms8263-feature.blue{background:linear-gradient(145deg,#0a75a5,#075074)!important}
  #${ROOT} .ms8263-feature.cyan{background:linear-gradient(145deg,#0b8798,#075765)!important}
  #${ROOT} .ms8263-feature.orange{background:linear-gradient(145deg,#b85a12,#74390c)!important}
@@ -96,14 +96,14 @@ function installStyle(){
  #${ROOT} .ms8263-feature.green{background:linear-gradient(145deg,#078574,#05594f)!important}
  #${ROOT} .ms8263-feature.navy{background:linear-gradient(145deg,#0a5e8f,#073f62)!important}
 
- #${ROOT} .ms8263-status{order:2;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin:0 0 9px!important}
+ #${ROOT} .ms8263-status{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin:0 0 9px!important}
  #${ROOT} .ms8263-status-card{display:grid!important;grid-template-columns:32px minmax(0,1fr)!important;grid-template-areas:"ic lab" "ic val" "ic sub"!important;align-items:center!important;min-width:0!important;min-height:72px!important;padding:9px 11px!important;border:1px solid rgba(79,199,241,.30)!important;border-radius:15px!important;background:linear-gradient(145deg,rgba(7,54,78,.92),rgba(3,31,48,.82))!important;color:#fff!important;text-align:left!important;cursor:pointer!important}
  #${ROOT} .ms8263-status-card>svg{grid-area:ic;width:22px;height:22px}
  #${ROOT} .ms8263-status-card>small{grid-area:lab;color:#91aebd;font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
  #${ROOT} .ms8263-status-card>strong{grid-area:val;margin-top:1px;font-size:15px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
  #${ROOT} .ms8263-status-card>em{grid-area:sub;margin-top:3px;color:#9fb6c2;font-size:8.5px;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
- #${ROOT} #ms8264LiveInstruments{order:3;margin:0 0 9px!important;padding:9px 10px 10px!important;border-radius:16px!important}
+ #${ROOT} #ms8264LiveInstruments{margin:0 0 9px!important;padding:9px 10px 10px!important;border-radius:16px!important}
  #${ROOT} #ms8264LiveInstruments .ms8264-head{margin-bottom:7px!important}
  #${ROOT} #ms8264LiveInstruments .ms8264-head small{font-size:8px!important}
  #${ROOT} #ms8264LiveInstruments .ms8264-head strong{font-size:14px!important}
@@ -117,7 +117,7 @@ function installStyle(){
  #${ROOT} #ms8264LiveInstruments .ms8264-copy em{font-size:7px!important;margin-top:2px!important}
  #${ROOT} #ms8264LiveInstruments .ms8264-bar{height:2px!important;margin-top:4px!important}
 
- #${ROOT} .ms8263-welcome{order:4;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+ #${ROOT} .ms8263-welcome{margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
  #${ROOT} .ms8263-welcome:before,#${ROOT} .ms8263-welcome:after{display:none!important}
  #${ROOT} .ms8280-ai-label{display:none}
  #${ROOT} .ms8263-start{display:none!important}
@@ -158,7 +158,7 @@ function installStyle(){
    #${ROOT} #ms8264LiveInstruments .ms8264-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
  }
  @media(max-height:760px) and (orientation:landscape){
-   #${ROOT} .ms8263-shell{grid-template-columns:188px minmax(0,1fr);grid-template-rows:205px minmax(0,1fr)}
+   #${ROOT} .ms8263-shell{grid-template-columns:166px minmax(0,1fr);grid-template-rows:145px minmax(0,1fr)}
    #${ROOT} .ms8280-side{padding-top:13px}
    #${ROOT} .ms8280-logo{padding-bottom:10px}
    #${ROOT} .ms8280-logo strong{font-size:31px}
@@ -168,8 +168,8 @@ function installStyle(){
    #${ROOT} .ms8280-clock{top:14px}
    #${ROOT} .ms8263-main{padding:8px 11px!important}
    #${ROOT} .ms8263-greet{margin-bottom:6px!important}
-   #${ROOT} .ms8280-quick{padding:9px 10px 10px;margin-bottom:8px}
-   #${ROOT} .ms8263-feature{min-height:96px!important;padding-top:9px!important;padding-bottom:8px!important}
+   #${ROOT} .ms8280-quick{padding:7px 8px;margin-bottom:6px}
+   #${ROOT} .ms8263-feature{min-height:66px!important}
    #${ROOT} .ms8263-status{margin-bottom:6px!important}
    #${ROOT} .ms8263-status-card{min-height:61px!important;padding:6px 8px!important}
    #${ROOT} #ms8264LiveInstruments{padding:7px 8px!important;margin-bottom:6px!important}
@@ -254,7 +254,7 @@ function refreshData(){
  const temp=sourceText(['ms8264Outside','outsideTemperature','weatherTemperature','weatherCurrentTemp','currentTemperature','msWeatherTemperature']);
  const tN=numberFrom(temp);
  setText('ms8263Outside',Number.isFinite(tN)?`${fmtNum(tN,1)}°`:'—°');
- setText('ms8263OutsideSub',Number.isFinite(tN)?'Actueel weer':'Weer laden…');\n setText('ms8280HeroTemp',Number.isFinite(tN)?`${fmtNum(tN,1)}° · actueel`:'Serenity');
+ setText('ms8263OutsideSub',Number.isFinite(tN)?'Actueel weer':'Weer laden…');
 }
 
 function startGps(){
@@ -264,7 +264,7 @@ function startGps(){
  val.textContent='GPS zoeken…';sub.textContent='Positie wordt bepaald';
  navigator.geolocation.getCurrentPosition(pos=>{
    val.textContent='GPS actief';
-   sub.textContent=`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;\n   setText('ms8280HeroLocation',`${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)}`);
+   sub.textContent=`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
  },()=>{
    val.textContent='GPS wachten';sub.textContent='Locatie nog niet beschikbaar';
  },{enableHighAccuracy:false,timeout:7000,maximumAge:60000});
@@ -296,8 +296,7 @@ function apply(){
  <aside class="ms8280-side">
    <div class="ms8280-logo"><strong>Serenity</strong><small>My boat · my freedom</small></div>
    <nav class="ms8263-nav" aria-label="Hoofdnavigatie">
-     <button class="active" data-ms8263-go="dashboard">${icon.home}<span>Home</span></button>
-     <button data-ms8263-go="live">${icon.route}<span>Varen</span></button>
+     <button class="active" data-ms8263-go="dashboard">${icon.home}<span>Start</span></button>
      <button data-ms8263-go="map">${icon.map}<span>Kaart</span></button>
      <button data-ms8263-go="logbook">${icon.log}<span>Logboek</span></button>
      <button data-ms8263-go="technical">${icon.gear}<span>Techniek</span></button>
@@ -306,13 +305,14 @@ function apply(){
      <button data-ms8263-go="ais">${icon.radar}<span>AIS</span></button>
      <button data-ms8263-go="pois">${icon.pin}<span>POI</span></button>
      <button data-ms8263-go="settings">${icon.gear}<span>Instellingen</span></button>
+     <button data-ms8263-go="more">${icon.more}<span>Meer</span></button>
    </nav>
    <div class="ms8280-side-foot"><strong>Serenity</strong>Varen is leven</div>
  </aside>
 
  <section class="ms8263-hero" aria-label="Serenity">
    <div class="ms8280-hero-copy"><strong id="ms8280Greeting">${greeting()} Michel</strong><span>Fijn dat je weer aan boord bent</span></div>
-   <div class="ms8280-clock"><small id="ms8280HeroDate">${shortDate()}</small><strong id="ms8280Clock">--:--</strong><span id="ms8280HeroTemp">Serenity</span><em id="ms8280HeroLocation">GPS locatie</em></div>
+   <div class="ms8280-clock"><small id="ms8280HeroDate">${shortDate()}</small><strong id="ms8280Clock">--:--</strong><span id="ms8280HeroTemp">Serenity</span></div>
  </section>
 
  <main class="ms8263-main">
@@ -322,14 +322,14 @@ function apply(){
    </section>
 
    <section class="ms8280-quick">
-     <div class="ms8280-section-title"><strong>Snel naar</strong><button type="button" data-ms8263-go="settings">Bewerk ✎</button></div>
+     <div class="ms8280-section-title"><strong>Snel naar</strong><button type="button" data-ms8263-go="more">Meer functies ›</button></div>
      <section class="ms8263-features">
-       ${feature('technical','battery','Energie','Accu's & laden','green')}
+       ${feature('technical','battery','Energie','Accu’s & laden','green')}
        ${feature('technical','cloud','Tanks','Water, diesel, vuilwater','cyan')}
-       ${feature('technical','gear','Techniek','Motor, verwarming, systemen','orange')}
-       ${feature('map','map','Kaart','Waterkaarten & navigatie','purple')}
+       ${feature('technical','gear','Techniek','Motor & systemen','orange')}
+       ${feature('map','map','Kaart','Navigatie','purple')}
        ${feature('logbook','log','Logboek','Nieuwe logregel','navy')}
-       ${feature('planner','route','Reisplanner','Plan je volgende trip','green')}
+       ${feature('planner','route','Reisplanner','Volgende trip','green')}
      </section>
    </section>
 
