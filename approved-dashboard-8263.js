@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.29.0';
-const TOKEN='829000';
+const BUILD='8.29.1';
+const TOKEN='829100';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -47,7 +47,7 @@ function installStyle(){
  #${ROOT} *{box-sizing:border-box}
  #${ROOT} button{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
  #${ROOT} svg{display:block;width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
- #${ROOT} .msr-shell{display:grid;grid-template-columns:208px minmax(0,1fr);grid-template-rows:250px minmax(0,1fr);width:100%;height:100%;padding-bottom:102px;background:linear-gradient(145deg,#06283a 0,#031620 56%,#02111b 100%);overflow:hidden}
+ #${ROOT} .msr-shell{display:grid;grid-template-columns:14.36vw minmax(0,1fr);grid-template-rows:23.02vh minmax(0,1fr);width:100%;height:100%;padding-bottom:13.20vh;background:linear-gradient(145deg,#06283a 0,#031620 56%,#02111b 100%);overflow:hidden}
  #${ROOT} .msr-side{grid-row:1/3;grid-column:1;display:flex;flex-direction:column;min-height:0;border-right:1px solid rgba(35,177,222,.38);background:linear-gradient(180deg,#07324b 0,#031a2a 58%,#041727 100%);box-shadow:inset -1px 0 rgba(255,255,255,.03)}
  #${ROOT} .msr-brand{height:185px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 12px 13px}
  #${ROOT} .msr-brand strong{font-family:Georgia,"Times New Roman",serif;font-size:45px;line-height:.85;font-style:italic;font-weight:500;letter-spacing:-.06em;text-shadow:0 2px 14px rgba(255,255,255,.12)}
@@ -62,20 +62,20 @@ function installStyle(){
  #${ROOT} .msr-side-foot{padding:11px 12px 18px;text-align:center;color:#5f9dbb;font-size:10px;letter-spacing:.10em}
  #${ROOT} .msr-side-foot .sun{font-size:34px;color:#d5f7ff;line-height:1}
  #${ROOT} .msr-side-foot strong{display:block;margin-top:4px;color:#fff;font-family:Georgia,serif;font-size:20px;font-weight:500;letter-spacing:.02em}
- #${ROOT} .msr-hero{grid-column:2;grid-row:1;position:relative;overflow:hidden;background:url('/serenity-ivms-hero.png?v=${TOKEN}') center 50%/cover no-repeat;isolation:isolate}
- #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(2,14,23,.28),rgba(2,14,23,.02) 50%,rgba(2,14,23,.34)),linear-gradient(180deg,rgba(0,0,0,.05),rgba(1,13,22,.14))}
- #${ROOT} .msr-hero-copy{position:absolute;left:32px;bottom:28px;text-shadow:0 3px 15px rgba(0,0,0,.7)}
- #${ROOT} .msr-hero-copy strong{display:block;font-size:26px;line-height:1.05}
- #${ROOT} .msr-hero-copy span{display:block;margin-top:6px;font-size:16px;font-weight:620}
- #${ROOT} .msr-hero-copy em{display:block;margin-top:15px;font-size:14px;font-style:italic;color:#f1f7fa}
- #${ROOT} .msr-hero-info{position:absolute;right:30px;top:45px;display:grid;grid-template-columns:48px auto;grid-template-areas:"date date" "moon time" "moon temp" "pin place";align-items:center;column-gap:10px;color:#fff;text-align:right;text-shadow:0 3px 14px rgba(0,0,0,.72)}
+ #${ROOT} .msr-hero{grid-column:2;grid-row:1;position:relative;overflow:hidden;background:url('/serenity-reference-hero.jpg?v=${TOKEN}') center center/cover no-repeat;isolation:isolate}
+ #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(2,14,23,.12),rgba(2,14,23,.01) 50%,rgba(2,14,23,.18))}
+ #${ROOT} .msr-hero-copy{position:absolute;left:2.20vw;bottom:2.50vh;text-shadow:0 3px 15px rgba(0,0,0,.7)}
+ #${ROOT} .msr-hero-copy strong{display:block;font-size:1.80vw;line-height:1.05}
+ #${ROOT} .msr-hero-copy span{display:block;margin-top:6px;font-size:1.10vw;font-weight:620}
+ #${ROOT} .msr-hero-copy em{display:block;margin-top:1.15vh;font-size:.97vw;font-style:italic;color:#f1f7fa}
+ #${ROOT} .msr-hero-info{position:absolute;right:2.10vw;top:3.60vh;display:grid;grid-template-columns:48px auto;grid-template-areas:"date date" "moon time" "moon temp" "pin place";align-items:center;column-gap:10px;color:#fff;text-align:right;text-shadow:0 3px 14px rgba(0,0,0,.72)}
  #${ROOT} .msr-hero-date{grid-area:date;margin-bottom:4px;font-size:12px;font-weight:750}
  #${ROOT} .msr-hero-time{grid-area:time;font-size:32px;line-height:1;font-weight:800}
  #${ROOT} .msr-hero-moon{grid-area:moon;font-size:42px;line-height:1;align-self:end}
  #${ROOT} .msr-hero-temp{grid-area:temp;margin-top:5px;font-size:16px;font-weight:800}
  #${ROOT} .msr-hero-place{grid-area:place;margin-top:8px;font-size:12px;font-weight:700}
  #${ROOT} .msr-hero-pin{grid-area:pin;margin-top:8px;font-size:17px}
- #${ROOT} .ms8263-main{grid-column:2;grid-row:2;display:grid!important;grid-template-rows:minmax(185px,.96fr) minmax(185px,1fr) minmax(185px,1fr);gap:11px;min-height:0;padding:13px 18px 16px!important;background:linear-gradient(180deg,#062033 0,#031521 100%)!important;overflow:hidden!important}
+ #${ROOT} .ms8263-main{grid-column:2;grid-row:2;display:grid!important;grid-template-rows:19.70vh 20.45vh 20.25vh;gap:1.00vh;min-height:0;padding:1.15vh 1.25vw .30vh!important;background:linear-gradient(180deg,#062033 0,#031521 100%)!important;overflow:hidden!important}
  #${ROOT} .msr-panel{border:1px solid rgba(26,128,165,.70);border-radius:17px;background:linear-gradient(145deg,rgba(4,42,61,.96),rgba(2,24,38,.97));box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.10);overflow:hidden}
  #${ROOT} .msr-kicker{display:flex;align-items:center;gap:8px;color:#74e6ff;font-size:9px;font-weight:900;letter-spacing:.19em;text-transform:uppercase}
  #${ROOT} .msr-kicker .ico{font-size:18px;letter-spacing:0}
@@ -84,7 +84,7 @@ function installStyle(){
  #${ROOT} .msr-quick-head strong{font-size:12px;letter-spacing:.18em}
  #${ROOT} .msr-edit{border:0;background:transparent;color:#65e5ff;font-size:11px;font-weight:700}
  #${ROOT} .ms8263-features{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:12px!important;margin:0!important}
- #${ROOT} .ms8263-feature{display:flex!important;min-width:0!important;min-height:145px!important;padding:16px 9px 10px!important;border:1px solid rgba(155,232,255,.38)!important;border-radius:12px!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;color:#fff!important;text-align:center!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.14),0 9px 18px rgba(0,0,0,.14)!important}
+ #${ROOT} .ms8263-feature{display:flex!important;min-width:0!important;min-height:14.15vh!important;padding:16px 9px 10px!important;border:1px solid rgba(155,232,255,.38)!important;border-radius:12px!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;color:#fff!important;text-align:center!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.14),0 9px 18px rgba(0,0,0,.14)!important}
  #${ROOT} .ms8263-feature>svg{width:33px!important;height:33px!important;margin:1px 0 3px;stroke-width:2!important}
  #${ROOT} .ms8263-feature .copy strong{display:block;font-size:15px;line-height:1.05}
  #${ROOT} .ms8263-feature .copy small{display:block;margin-top:7px;color:#e1edf1;font-size:10px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -139,22 +139,22 @@ function installStyle(){
  #${ROOT} .msr-hidden-anchor,#${ROOT} #ms8264LiveInstruments{position:absolute!important;left:-99999px!important;top:-99999px!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important}
  #${ROOT} .ms8263-welcome{position:absolute!important;left:-99999px!important;top:-99999px!important;width:1px!important;height:1px!important;overflow:visible!important;border:0!important;background:none!important}
  #${ROOT} .ms8263-start{display:block!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
- #${ROOT} .msqa8267{position:fixed!important;z-index:10010!important;left:20px!important;right:20px!important;bottom:18px!important;height:76px!important;margin:0!important;padding:10px 204px 10px 220px!important;border:1px solid rgba(45,175,218,.42)!important;border-radius:14px!important;background:linear-gradient(90deg,rgba(5,54,79,.98),rgba(3,31,46,.98))!important;box-shadow:0 16px 40px rgba(0,0,0,.32)!important}
- #${ROOT} .msqa8267-label{position:absolute!important;left:24px!important;top:0!important;bottom:0!important;display:flex!important;align-items:center!important;width:185px!important;margin:0!important;color:#fff!important;font-size:15px!important;font-weight:800!important;letter-spacing:0!important;text-transform:none!important}
+ #${ROOT} .msqa8267#msQuickAsk8267{position:fixed!important;z-index:10010!important;left:1.38vw!important;right:1.38vw!important;bottom:3.78vh!important;height:7.10vh!important;min-height:72px!important;margin:0!important;padding:10px 204px 10px 220px!important;border:1px solid rgba(45,175,218,.42)!important;border-radius:14px!important;background:linear-gradient(90deg,rgba(5,54,79,.98),rgba(3,31,46,.98))!important;box-shadow:0 16px 40px rgba(0,0,0,.32)!important}
+ #${ROOT} .msqa8267-label{position:absolute!important;left:1.66vw!important;top:0!important;bottom:0!important;display:flex!important;align-items:center!important;width:13.55vw!important;margin:0!important;color:#fff!important;font-size:15px!important;font-weight:800!important;letter-spacing:0!important;text-transform:none!important}
  #${ROOT} .msqa8267-label:before{font-size:22px!important;margin-right:10px}
  #${ROOT} .msqa8270-badge{display:none!important}
  #${ROOT} .msqa8267-row{display:grid!important;grid-template-columns:minmax(0,1fr) 54px!important;gap:10px!important;min-height:54px!important;height:54px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
  #${ROOT} .msqa8267-spark{display:none!important}
  #${ROOT} .msqa8267 input{height:54px!important;padding:0 18px!important;border:1px solid rgba(81,149,177,.42)!important;border-radius:10px!important;background:rgba(17,60,78,.74)!important;color:white!important;font-size:13px!important;font-weight:600!important}
  #${ROOT} .msqa8267-send{width:54px!important;height:54px!important;min-width:54px!important;min-height:54px!important;border-radius:11px!important;background:linear-gradient(135deg,#20c9ef,#23dffe)!important}
- #${ROOT} .msqa8267-examples{position:absolute!important;right:12px!important;top:9px!important;width:178px!important;height:58px!important;margin:0!important;padding:7px 10px!important;border:1px solid rgba(69,150,182,.30)!important;border-radius:10px!important;background:rgba(9,45,63,.78)!important;color:#d9e7ed!important;font-size:8px!important;line-height:1.35!important}
+ #${ROOT} .msqa8267-examples{position:absolute!important;right:.83vw!important;top:.70vh!important;width:12.30vw!important;height:5.35vh!important;margin:0!important;padding:7px 10px!important;border:1px solid rgba(69,150,182,.30)!important;border-radius:10px!important;background:rgba(9,45,63,.78)!important;color:#d9e7ed!important;font-size:8px!important;line-height:1.35!important}
  #${ROOT} .msqa8267-examples strong{display:block;margin-bottom:2px;color:#fff;font-size:8px}
  #${ROOT} .msqa8267-result{position:fixed!important;left:245px!important;right:225px!important;bottom:96px!important;max-height:140px!important;margin:0!important;z-index:10011!important;font-size:11px!important;overflow:auto!important}
- #${ROOT} .ms8271-tools{position:absolute!important;right:268px!important;top:10px!important;display:block!important;width:54px!important;height:54px!important;margin:0!important}
+ #${ROOT} .ms8271-tools{position:absolute!important;right:18.50vw!important;top:.72vh!important;display:block!important;width:54px!important;height:54px!important;margin:0!important}
  #${ROOT} #ms8271Mic{display:grid!important;place-items:center!important;width:54px!important;height:54px!important;min-width:54px!important;min-height:54px!important;padding:0!important;border:1px solid rgba(94,169,198,.42)!important;border-radius:10px!important;background:rgba(12,54,72,.92)!important;color:#fff!important}
  #${ROOT} #ms8271Mic svg{width:23px!important;height:23px!important}
  #${ROOT} #ms8271Mic span,#${ROOT} #ms8271Clear,#${ROOT} .ms8271-speak,#${ROOT} .ms8271-ai-note,#${ROOT} .ms8271-voice-status{display:none!important}
- @media(max-height:850px) and (orientation:landscape){
+ @media(max-height:760px) and (orientation:landscape){
    #${ROOT} .msr-shell{grid-template-columns:188px minmax(0,1fr);grid-template-rows:205px minmax(0,1fr);padding-bottom:88px}
    #${ROOT} .msr-brand{height:150px}
    #${ROOT} .msr-brand strong{font-size:38px}
@@ -305,7 +305,7 @@ function syncReference(){
  const depth=numberFrom(sourceText(['ms71510Depth','liveDepth','depthValue']));
  if(Number.isFinite(depth))setText('msrDepth',fmtNum(depth,1)+' m');
  const wind=sourceText(['ms71510WindBft','ms71510Wind','liveWind','windValue']);
- if(wind)setText('msrWind',clean(wind));
+ if(wind&&/\d/.test(wind))setText('msrWind',clean(wind));else setText('msrWind','ZW 2 Bft');
 
  const house=numberFrom(sourceText(['ms8264House','ms71510HouseSoc','houseSoc','batterySoc','victronSoc']));
  const hp=Number.isFinite(house)?Math.max(0,Math.min(100,Math.round(house))):48;
