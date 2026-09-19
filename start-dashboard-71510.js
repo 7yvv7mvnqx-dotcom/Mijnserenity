@@ -1,4 +1,5 @@
 /* MijnSerenity 8.28.0 — landscape startdashboard + bestaande live/AI/alarm-koppelingen. */
+/* LANDSCAPE_PRODUCTION_8280 */
 (()=>{
 'use strict';
 if(window.__msApprovedHomeBootstrap8263)return;
