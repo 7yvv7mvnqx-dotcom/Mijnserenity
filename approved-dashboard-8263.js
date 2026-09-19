@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.28.0';
-const TOKEN='828001';
+const BUILD='8.29.0';
+const TOKEN='829000';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -38,146 +38,154 @@ function installStyle(){
  ['ms8260ApprovedStyle','ms8263ApprovedStyle','ms8265DashboardButtonsStyle'].forEach(id=>$(id)?.remove());
  const s=document.createElement('style');s.id=STYLE;
  s.textContent=`
- :root{--ms8280-cyan:#25d8ff;--ms8280-bg:#03131f;--ms8280-panel:#062538;--ms8280-line:rgba(76,190,233,.30);--ms8280-muted:#91aaba}
- body.ms8263-home-active{background:#03131f!important;overflow:hidden!important;overscroll-behavior:none!important}
+ :root{--msr-cyan:#1fdcff;--msr-bg:#031623;--msr-panel:#06283b;--msr-line:#0c6688;--msr-muted:#9bb8c6;--msr-green:#27d86e}
+ html,body{background:#02131e!important}
+ body.ms8263-home-active{margin:0!important;background:#02131e!important;overflow:hidden!important;overscroll-behavior:none!important}
  body.ms8263-home-active #appView>.tabs,body.ms8263-home-active>.bottom-nav,body.ms8263-home-active #appView>.bottom-nav{display:none!important}
- #dashboard.ms8255-reference-dashboard{padding:0!important;margin:0!important;max-width:none!important;background:#03131f!important;overflow:hidden!important}
- #${ROOT}{display:block!important;width:100vw!important;height:100dvh!important;min-height:0!important;margin-left:calc(50% - 50vw)!important;padding:0!important;background:#03131f!important;color:#fff!important;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;overflow:hidden!important;-webkit-font-smoothing:antialiased}
+ #dashboard.ms8255-reference-dashboard{padding:0!important;margin:0!important;max-width:none!important;background:#02131e!important;overflow:hidden!important}
+ #${ROOT}{display:block!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;margin:0!important;padding:0!important;background:#02131e!important;color:#fff!important;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;overflow:hidden!important;-webkit-font-smoothing:antialiased}
  #${ROOT} *{box-sizing:border-box}
  #${ROOT} button{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
  #${ROOT} svg{display:block;width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-
- #${ROOT} .ms8263-shell{display:grid;grid-template-columns:188px minmax(0,1fr);grid-template-rows:218px minmax(0,1fr);width:100%;height:100%;background:linear-gradient(145deg,#06283b 0,#03131f 55%,#020d16 100%);overflow:hidden}
- #${ROOT} .ms8280-side{grid-row:1/3;grid-column:1;display:flex;flex-direction:column;min-height:0;padding:22px 12px 15px;border-right:1px solid rgba(76,190,233,.20);background:linear-gradient(180deg,#06304a 0,#031522 46%,#02101b 100%)}
- #${ROOT} .ms8280-logo{padding:1px 10px 19px;text-align:center}
- #${ROOT} .ms8280-logo strong{display:block;font-family:Georgia,"Times New Roman",serif;font-size:37px;font-style:italic;font-weight:500;letter-spacing:-.05em}
- #${ROOT} .ms8280-logo small{display:block;margin-top:4px;color:#8dcde4;font-size:8px;font-weight:850;letter-spacing:.19em;text-transform:uppercase}
- #${ROOT} .ms8263-nav{display:flex!important;position:static!important;flex:1;min-height:0!important;padding:0!important;overflow-y:auto!important;overflow-x:hidden!important;flex-direction:column!important;gap:3px!important;background:none!important;border:0!important;border-radius:0!important;backdrop-filter:none!important;scrollbar-width:none}
- #${ROOT} .ms8263-nav::-webkit-scrollbar{display:none}
- #${ROOT} .ms8263-nav button{display:grid!important;grid-template-columns:28px 1fr!important;align-items:center!important;justify-items:start!important;gap:12px!important;flex:none!important;width:100%!important;min-width:0!important;min-height:47px!important;padding:0 12px!important;border:1px solid transparent!important;border-radius:12px!important;background:transparent!important;color:#e9f4f8!important;font-size:13px!important;font-weight:750!important;cursor:pointer}
- #${ROOT} .ms8263-nav button svg{width:22px!important;height:22px!important}
- #${ROOT} .ms8263-nav button.active{color:#29dbff!important;background:linear-gradient(90deg,rgba(22,187,226,.20),rgba(6,48,69,.44))!important;border-color:rgba(39,209,246,.24)!important}
- #${ROOT} .ms8263-nav button.active:after{display:none!important}
- #${ROOT} .ms8280-side-foot{padding:10px 7px 0;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:#8ca7b6;font-size:9px;line-height:1.35}
- #${ROOT} .ms8280-side-foot strong{display:block;color:#e8f4f7;font-size:14px;margin-bottom:1px}
-
- #${ROOT} .ms8263-hero{grid-column:2;grid-row:1;position:relative;min-height:0!important;background:url('/serenity-ivms-hero.png?v=${TOKEN}') center 50%/cover no-repeat!important;isolation:isolate;overflow:hidden}
- #${ROOT} .ms8263-hero:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(1,15,25,.52) 0,rgba(1,15,25,.08) 42%,rgba(1,15,25,.16) 72%,rgba(1,15,25,.55) 100%)}
- #${ROOT} .ms8280-hero-copy{position:absolute;left:28px;bottom:23px;text-shadow:0 3px 18px rgba(0,0,0,.55)}
- #${ROOT} .ms8280-hero-copy strong{display:block;font-size:24px;line-height:1.05}
- #${ROOT} .ms8280-hero-copy span{display:block;margin-top:5px;color:#dcebf0;font-size:13px;font-weight:650}
- #${ROOT} .ms8280-clock{position:absolute;right:27px;top:20px;text-align:right;text-shadow:0 3px 15px rgba(0,0,0,.60)}
- #${ROOT} .ms8280-clock small{display:block;color:#e4eff3;font-size:11px;font-weight:760}
- #${ROOT} .ms8280-clock strong{display:block;margin-top:2px;font-size:31px;line-height:1}
- #${ROOT} .ms8280-clock span{display:block;margin-top:7px;font-size:13px;font-weight:800}
-
- #${ROOT} .ms8263-main{grid-column:2;grid-row:2;min-height:0;padding:12px 15px 13px!important;background:linear-gradient(180deg,rgba(3,25,38,.98),#03131f 82%)!important;overflow:auto!important;overscroll-behavior:contain}
- #${ROOT} .ms8263-greet{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 8px!important}
- #${ROOT} .ms8263-greet b{display:block;font-size:13px;letter-spacing:.12em;text-transform:uppercase}
- #${ROOT} .ms8263-date{margin-top:2px;color:#8faac0;font-size:11px;font-weight:650}
- #${ROOT} .ms8263-theme{display:flex;align-items:center;gap:7px;min-height:34px;padding:0 11px;border:1px solid var(--ms8280-line);border-radius:999px;background:rgba(5,36,53,.72);color:#fff;font-size:11px;font-weight:800;cursor:pointer}
- #${ROOT} .ms8263-theme svg{width:16px;height:16px;color:#25d8ff;fill:#25d8ff;stroke:#25d8ff}
-
- #${ROOT} .ms8280-quick{margin-bottom:9px;padding:9px 10px 10px;border:1px solid rgba(76,190,233,.22);border-radius:17px;background:rgba(2,24,37,.67)}
- #${ROOT} .ms8280-section-title{display:flex;align-items:center;justify-content:space-between;margin:0 2px 7px}
- #${ROOT} .ms8280-section-title strong{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#dcecf1}
- #${ROOT} .ms8280-section-title button{padding:0;border:0;background:transparent;color:#31d9f7;font-size:10px}
- #${ROOT} .ms8263-features{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;margin:0!important}
- #${ROOT} .ms8263-feature{display:flex!important;min-width:0!important;min-height:78px!important;padding:9px 7px!important;border:1px solid rgba(89,196,234,.28)!important;border-radius:14px!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;color:#fff!important;text-align:center!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.04)!important}
- #${ROOT} .ms8263-feature>svg{width:25px!important;height:25px!important}
- #${ROOT} .ms8263-feature .copy{min-width:0}
- #${ROOT} .ms8263-feature .copy strong{display:block;font-size:12px;line-height:1.05}
- #${ROOT} .ms8263-feature .copy small{display:block;margin-top:3px;color:#bad0da;font-size:8px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- #${ROOT} .ms8263-feature .chev{display:none}
- #${ROOT} .ms8263-feature.blue{background:linear-gradient(145deg,#0a75a5,#075074)!important}
- #${ROOT} .ms8263-feature.cyan{background:linear-gradient(145deg,#0b8798,#075765)!important}
- #${ROOT} .ms8263-feature.orange{background:linear-gradient(145deg,#b85a12,#74390c)!important}
- #${ROOT} .ms8263-feature.purple{background:linear-gradient(145deg,#6a4694,#472b6a)!important}
- #${ROOT} .ms8263-feature.green{background:linear-gradient(145deg,#078574,#05594f)!important}
- #${ROOT} .ms8263-feature.navy{background:linear-gradient(145deg,#0a5e8f,#073f62)!important}
-
- #${ROOT} .ms8263-status{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin:0 0 9px!important}
- #${ROOT} .ms8263-status-card{display:grid!important;grid-template-columns:32px minmax(0,1fr)!important;grid-template-areas:"ic lab" "ic val" "ic sub"!important;align-items:center!important;min-width:0!important;min-height:72px!important;padding:9px 11px!important;border:1px solid rgba(79,199,241,.30)!important;border-radius:15px!important;background:linear-gradient(145deg,rgba(7,54,78,.92),rgba(3,31,48,.82))!important;color:#fff!important;text-align:left!important;cursor:pointer!important}
- #${ROOT} .ms8263-status-card>svg{grid-area:ic;width:22px;height:22px}
- #${ROOT} .ms8263-status-card>small{grid-area:lab;color:#91aebd;font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
- #${ROOT} .ms8263-status-card>strong{grid-area:val;margin-top:1px;font-size:15px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
- #${ROOT} .ms8263-status-card>em{grid-area:sub;margin-top:3px;color:#9fb6c2;font-size:8.5px;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
- #${ROOT} #ms8264LiveInstruments{margin:0 0 9px!important;padding:9px 10px 10px!important;border-radius:16px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-head{margin-bottom:7px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-head small{font-size:8px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-head strong{font-size:14px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-badge{font-size:8px!important;padding:5px 7px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-meter{min-height:64px!important;padding:8px!important;border-radius:13px!important;grid-template-columns:27px minmax(0,1fr)!important;gap:6px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-grid>.ms8264-meter:nth-child(n+5){display:none!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-icon{width:27px!important;height:27px!important;font-size:15px!important;border-radius:9px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-copy small{font-size:7px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-copy strong{font-size:14px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-copy em{font-size:7px!important;margin-top:2px!important}
- #${ROOT} #ms8264LiveInstruments .ms8264-bar{height:2px!important;margin-top:4px!important}
-
- #${ROOT} .ms8263-welcome{margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
- #${ROOT} .ms8263-welcome:before,#${ROOT} .ms8263-welcome:after{display:none!important}
- #${ROOT} .ms8280-ai-label{display:none}
- #${ROOT} .ms8263-start{display:none!important}
- #${ROOT} .msqa8267{margin:0!important;padding:8px 10px!important;border:1px solid rgba(75,195,235,.28)!important;border-radius:16px!important;background:linear-gradient(145deg,rgba(3,34,50,.96),rgba(2,21,33,.96))!important}
- #${ROOT} .msqa8267-label{margin:0 0 5px!important;font-size:9px!important}
- #${ROOT} .msqa8267-row{min-height:47px!important;border-radius:13px!important}
- #${ROOT} .msqa8267 input{height:40px!important;font-size:12px!important}
- #${ROOT} .msqa8267-examples{display:none!important}
- #${ROOT} .msqa8267-result{font-size:10px!important;max-height:76px!important;overflow:auto!important}
-
- #${ROOT} .ms8280-live-mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 8px}
- #${ROOT} .ms8263-metric{display:grid;grid-template-columns:21px minmax(0,1fr);grid-template-areas:"ic val" "ic lab";align-items:center;gap:2px 6px;min-width:0;padding:7px 9px;border:1px solid rgba(79,199,241,.22);border-radius:12px;background:rgba(3,29,44,.62)}
- #${ROOT} .ms8263-metric svg{grid-area:ic;width:18px;height:18px}
- #${ROOT} .ms8263-metric strong{grid-area:val;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- #${ROOT} .ms8263-metric small{grid-area:lab;color:#8faab9;font-size:7.5px}
-
- #${ROOT} .ms8263-sheet{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,9,16,.66);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
- #${ROOT} .ms8263-sheet.open{display:flex}
- #${ROOT} .ms8263-sheet-card{width:min(520px,92vw);padding:17px;border:1px solid rgba(92,204,244,.31);border-radius:22px;background:#062234;box-shadow:0 24px 80px rgba(0,0,0,.48)}
- #${ROOT} .ms8263-sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
- #${ROOT} .ms8263-sheet-head strong{font-size:18px}
- #${ROOT} .ms8263-sheet-close{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(119,210,244,.22);border-radius:50%;background:#082c42;color:#fff}
- #${ROOT} .ms8263-sheet-close svg{width:20px;height:20px}
- #${ROOT} .ms8263-sheet-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- #${ROOT} .ms8263-sheet-grid button{min-height:56px;border:1px solid rgba(119,210,244,.20);border-radius:14px;background:#082a40;color:#fff;font-weight:750}
-
- #${ROOT}[data-theme="day"] .ms8263-main{filter:brightness(1.08) saturate(.94)}
- #${ROOT}[data-theme="day"] .ms8263-theme svg{fill:none}
-
+ #${ROOT} .msr-shell{display:grid;grid-template-columns:208px minmax(0,1fr);grid-template-rows:250px minmax(0,1fr);width:100%;height:100%;padding-bottom:102px;background:linear-gradient(145deg,#06283a 0,#031620 56%,#02111b 100%);overflow:hidden}
+ #${ROOT} .msr-side{grid-row:1/3;grid-column:1;display:flex;flex-direction:column;min-height:0;border-right:1px solid rgba(35,177,222,.38);background:linear-gradient(180deg,#07324b 0,#031a2a 58%,#041727 100%);box-shadow:inset -1px 0 rgba(255,255,255,.03)}
+ #${ROOT} .msr-brand{height:185px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 12px 13px}
+ #${ROOT} .msr-brand strong{font-family:Georgia,"Times New Roman",serif;font-size:45px;line-height:.85;font-style:italic;font-weight:500;letter-spacing:-.06em;text-shadow:0 2px 14px rgba(255,255,255,.12)}
+ #${ROOT} .msr-wave{width:118px;height:16px;margin-top:4px;border-bottom:4px solid #86e9ff;border-radius:0 0 90% 55%;transform:skewX(-16deg)}
+ #${ROOT} .msr-brand small{margin-top:11px;color:#e7f6fb;font-size:9px;letter-spacing:.21em;text-transform:uppercase;font-weight:800}
+ #${ROOT} .msr-nav{display:flex;flex:1;min-height:0;flex-direction:column;gap:4px;padding:0 10px;overflow:auto;scrollbar-width:none}
+ #${ROOT} .msr-nav::-webkit-scrollbar{display:none}
+ #${ROOT} .msr-nav button{display:grid;grid-template-columns:32px 1fr;align-items:center;gap:12px;min-height:56px;padding:0 16px;border:1px solid transparent;border-radius:7px;background:transparent;color:#fff;text-align:left;font-size:15px;font-weight:650;cursor:pointer}
+ #${ROOT} .msr-nav button svg{width:25px;height:25px;stroke-width:2}
+ #${ROOT} .msr-nav button.active{position:relative;background:linear-gradient(90deg,rgba(7,146,190,.70),rgba(6,62,89,.74));border-color:rgba(37,214,255,.34);color:#fff}
+ #${ROOT} .msr-nav button.active:before{content:"";position:absolute;left:-10px;top:-1px;bottom:-1px;width:5px;background:#28ddff;box-shadow:0 0 16px rgba(40,221,255,.65)}
+ #${ROOT} .msr-side-foot{padding:11px 12px 18px;text-align:center;color:#5f9dbb;font-size:10px;letter-spacing:.10em}
+ #${ROOT} .msr-side-foot .sun{font-size:34px;color:#d5f7ff;line-height:1}
+ #${ROOT} .msr-side-foot strong{display:block;margin-top:4px;color:#fff;font-family:Georgia,serif;font-size:20px;font-weight:500;letter-spacing:.02em}
+ #${ROOT} .msr-hero{grid-column:2;grid-row:1;position:relative;overflow:hidden;background:url('/serenity-ivms-hero.png?v=${TOKEN}') center 50%/cover no-repeat;isolation:isolate}
+ #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(2,14,23,.28),rgba(2,14,23,.02) 50%,rgba(2,14,23,.34)),linear-gradient(180deg,rgba(0,0,0,.05),rgba(1,13,22,.14))}
+ #${ROOT} .msr-hero-copy{position:absolute;left:32px;bottom:28px;text-shadow:0 3px 15px rgba(0,0,0,.7)}
+ #${ROOT} .msr-hero-copy strong{display:block;font-size:26px;line-height:1.05}
+ #${ROOT} .msr-hero-copy span{display:block;margin-top:6px;font-size:16px;font-weight:620}
+ #${ROOT} .msr-hero-copy em{display:block;margin-top:15px;font-size:14px;font-style:italic;color:#f1f7fa}
+ #${ROOT} .msr-hero-info{position:absolute;right:30px;top:45px;display:grid;grid-template-columns:48px auto;grid-template-areas:"date date" "moon time" "moon temp" "pin place";align-items:center;column-gap:10px;color:#fff;text-align:right;text-shadow:0 3px 14px rgba(0,0,0,.72)}
+ #${ROOT} .msr-hero-date{grid-area:date;margin-bottom:4px;font-size:12px;font-weight:750}
+ #${ROOT} .msr-hero-time{grid-area:time;font-size:32px;line-height:1;font-weight:800}
+ #${ROOT} .msr-hero-moon{grid-area:moon;font-size:42px;line-height:1;align-self:end}
+ #${ROOT} .msr-hero-temp{grid-area:temp;margin-top:5px;font-size:16px;font-weight:800}
+ #${ROOT} .msr-hero-place{grid-area:place;margin-top:8px;font-size:12px;font-weight:700}
+ #${ROOT} .msr-hero-pin{grid-area:pin;margin-top:8px;font-size:17px}
+ #${ROOT} .ms8263-main{grid-column:2;grid-row:2;display:grid!important;grid-template-rows:minmax(185px,.96fr) minmax(185px,1fr) minmax(185px,1fr);gap:11px;min-height:0;padding:13px 18px 16px!important;background:linear-gradient(180deg,#062033 0,#031521 100%)!important;overflow:hidden!important}
+ #${ROOT} .msr-panel{border:1px solid rgba(26,128,165,.70);border-radius:17px;background:linear-gradient(145deg,rgba(4,42,61,.96),rgba(2,24,38,.97));box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.10);overflow:hidden}
+ #${ROOT} .msr-kicker{display:flex;align-items:center;gap:8px;color:#74e6ff;font-size:9px;font-weight:900;letter-spacing:.19em;text-transform:uppercase}
+ #${ROOT} .msr-kicker .ico{font-size:18px;letter-spacing:0}
+ #${ROOT} .msr-quick{padding:13px 14px 14px}
+ #${ROOT} .msr-quick-head{display:flex;align-items:center;justify-content:space-between;margin:0 3px 10px}
+ #${ROOT} .msr-quick-head strong{font-size:12px;letter-spacing:.18em}
+ #${ROOT} .msr-edit{border:0;background:transparent;color:#65e5ff;font-size:11px;font-weight:700}
+ #${ROOT} .ms8263-features{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:12px!important;margin:0!important}
+ #${ROOT} .ms8263-feature{display:flex!important;min-width:0!important;min-height:145px!important;padding:16px 9px 10px!important;border:1px solid rgba(155,232,255,.38)!important;border-radius:12px!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;color:#fff!important;text-align:center!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.14),0 9px 18px rgba(0,0,0,.14)!important}
+ #${ROOT} .ms8263-feature>svg{width:33px!important;height:33px!important;margin:1px 0 3px;stroke-width:2!important}
+ #${ROOT} .ms8263-feature .copy strong{display:block;font-size:15px;line-height:1.05}
+ #${ROOT} .ms8263-feature .copy small{display:block;margin-top:7px;color:#e1edf1;font-size:10px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #${ROOT} .ms8263-feature .chev{display:grid!important;place-items:center;width:34px;height:34px;margin-top:auto;border:1px solid rgba(255,255,255,.26);border-radius:50%;background:rgba(255,255,255,.12);font-size:21px;line-height:1}
+ #${ROOT} .ms8263-feature.green{background:linear-gradient(145deg,#06a23f,#057637)!important}
+ #${ROOT} .ms8263-feature.cyan{background:linear-gradient(145deg,#0781b0,#075b7f)!important}
+ #${ROOT} .ms8263-feature.orange{background:linear-gradient(145deg,#d36a0d,#914608)!important}
+ #${ROOT} .ms8263-feature.purple{background:linear-gradient(145deg,#724ca4,#50317b)!important}
+ #${ROOT} .ms8263-feature.navy{background:linear-gradient(145deg,#0880bd,#075a8d)!important}
+ #${ROOT} .msr-row{display:grid;grid-template-columns:1.03fr 1.03fr 1.42fr;gap:11px;min-height:0}
+ #${ROOT} .msr-row-bottom{grid-template-columns:1.08fr .98fr 1.16fr}
+ #${ROOT} .msr-card{display:flex;min-height:0;flex-direction:column;padding:13px 13px 9px}
+ #${ROOT} .msr-card-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+ #${ROOT} .msr-live{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;background:rgba(5,55,66,.8);font-size:9px;color:#d7f4dd}
+ #${ROOT} .msr-live i{width:8px;height:8px;border-radius:50%;background:#12d64d;box-shadow:0 0 8px rgba(18,214,77,.65)}
+ #${ROOT} .msr-mainline{display:flex;align-items:center;gap:16px;padding:5px 12px 8px}
+ #${ROOT} .msr-mainline .bigico{font-size:39px;line-height:1}
+ #${ROOT} .msr-mainline strong{font-size:21px;line-height:1.05}
+ #${ROOT} .msr-mainline small{display:block;margin-top:4px;color:#afc4cd;font-size:11px}
+ #${ROOT} .msr-minis{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:auto}
+ #${ROOT} .msr-mini{min-width:0;padding:9px 6px;border:1px solid rgba(79,153,183,.28);border-radius:10px;background:rgba(13,49,66,.62);text-align:center}
+ #${ROOT} .msr-mini small{display:block;color:#c1d0d6;font-size:9px}
+ #${ROOT} .msr-mini strong{display:block;margin-top:4px;font-size:12px}
+ #${ROOT} .msr-action{display:flex;align-items:center;justify-content:center;gap:6px;min-height:30px;margin-top:7px;border:1px solid rgba(56,194,235,.66);border-radius:9px;background:rgba(5,39,57,.72);color:#fff;font-size:10px;font-weight:800}
+ #${ROOT} .msr-weather-main{display:flex;align-items:center;gap:14px;padding:2px 15px 7px}
+ #${ROOT} .msr-weather-icon{font-size:46px}
+ #${ROOT} .msr-weather-main strong{font-size:24px}
+ #${ROOT} .msr-weather-main small{display:block;margin-top:3px;color:#c2d1d7;font-size:11px}
+ #${ROOT} .msr-rings{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;align-items:start;padding:0 4px}
+ #${ROOT} .msr-gauge{text-align:center}
+ #${ROOT} .msr-ring{--p:50;position:relative;width:72px;height:72px;margin:0 auto 5px;border-radius:50%;background:conic-gradient(#24dffb calc(var(--p)*1%),#0a4661 0);box-shadow:inset 0 0 0 8px rgba(2,31,45,.95)}
+ #${ROOT} .msr-ring:after{content:"";position:absolute;inset:11px;border-radius:50%;background:#06283a}
+ #${ROOT} .msr-ring strong{position:absolute;inset:0;z-index:2;display:grid;place-items:center;font-size:17px}
+ #${ROOT} .msr-gauge label{display:block;font-size:10px;font-weight:700}
+ #${ROOT} .msr-gauge small{display:block;margin-top:2px;color:#aec2ca;font-size:8.5px;line-height:1.25}
+ #${ROOT} .msr-tankline{display:grid;grid-template-columns:30px 92px 1fr 42px 18px;align-items:center;gap:6px;min-height:39px;border-bottom:1px solid rgba(255,255,255,.055)}
+ #${ROOT} .msr-tankline .ticon{display:grid;place-items:center;width:28px;height:28px;border-radius:7px;background:rgba(20,105,139,.35);font-size:16px}
+ #${ROOT} .msr-tankline strong{font-size:10.5px}
+ #${ROOT} .msr-bar{height:13px;border-radius:999px;background:#355565;overflow:hidden;box-shadow:inset 0 1px 4px rgba(0,0,0,.45)}
+ #${ROOT} .msr-bar i{display:block;height:100%;width:var(--p);border-radius:inherit;background:linear-gradient(90deg,#ff4d41,#ff6c5f)}
+ #${ROOT} .msr-tankline.water .msr-bar i{background:linear-gradient(90deg,#15c6ed,#46e7ff)}
+ #${ROOT} .msr-tankline small{font-size:9px;color:#b2c3cb}
+ #${ROOT} .msr-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;padding:2px 5px}
+ #${ROOT} .msr-status-item{display:grid;grid-template-columns:18px 1fr;gap:7px;align-items:start}
+ #${ROOT} .msr-check{display:grid;place-items:center;width:17px;height:17px;border-radius:50%;background:#16b94f;color:white;font-size:11px;box-shadow:0 0 8px rgba(22,185,79,.30)}
+ #${ROOT} .msr-status-item strong{display:block;font-size:10px}
+ #${ROOT} .msr-status-item small{display:block;margin-top:2px;color:#a9c0ca;font-size:8.5px}
+ #${ROOT} .msr-upcoming{display:grid;gap:5px}
+ #${ROOT} .msr-upcoming-item{display:grid;grid-template-columns:28px 84px minmax(0,1fr);align-items:center;min-height:30px;padding:0 8px;border:1px solid rgba(93,166,195,.24);border-radius:9px;background:rgba(12,49,67,.54);font-size:9px}
+ #${ROOT} .msr-upcoming-item .uico{font-size:15px}
+ #${ROOT} .msr-upcoming-item strong{font-size:9px}
+ #${ROOT} .msr-hidden-anchor,#${ROOT} #ms8264LiveInstruments{position:absolute!important;left:-99999px!important;top:-99999px!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important}
+ #${ROOT} .ms8263-welcome{position:absolute!important;left:-99999px!important;top:-99999px!important;width:1px!important;height:1px!important;overflow:visible!important;border:0!important;background:none!important}
+ #${ROOT} .ms8263-start{display:block!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+ #${ROOT} .msqa8267{position:fixed!important;z-index:10010!important;left:20px!important;right:20px!important;bottom:18px!important;height:76px!important;margin:0!important;padding:10px 204px 10px 220px!important;border:1px solid rgba(45,175,218,.42)!important;border-radius:14px!important;background:linear-gradient(90deg,rgba(5,54,79,.98),rgba(3,31,46,.98))!important;box-shadow:0 16px 40px rgba(0,0,0,.32)!important}
+ #${ROOT} .msqa8267-label{position:absolute!important;left:24px!important;top:0!important;bottom:0!important;display:flex!important;align-items:center!important;width:185px!important;margin:0!important;color:#fff!important;font-size:15px!important;font-weight:800!important;letter-spacing:0!important;text-transform:none!important}
+ #${ROOT} .msqa8267-label:before{font-size:22px!important;margin-right:10px}
+ #${ROOT} .msqa8270-badge{display:none!important}
+ #${ROOT} .msqa8267-row{display:grid!important;grid-template-columns:minmax(0,1fr) 54px!important;gap:10px!important;min-height:54px!important;height:54px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+ #${ROOT} .msqa8267-spark{display:none!important}
+ #${ROOT} .msqa8267 input{height:54px!important;padding:0 18px!important;border:1px solid rgba(81,149,177,.42)!important;border-radius:10px!important;background:rgba(17,60,78,.74)!important;color:white!important;font-size:13px!important;font-weight:600!important}
+ #${ROOT} .msqa8267-send{width:54px!important;height:54px!important;min-width:54px!important;min-height:54px!important;border-radius:11px!important;background:linear-gradient(135deg,#20c9ef,#23dffe)!important}
+ #${ROOT} .msqa8267-examples{position:absolute!important;right:12px!important;top:9px!important;width:178px!important;height:58px!important;margin:0!important;padding:7px 10px!important;border:1px solid rgba(69,150,182,.30)!important;border-radius:10px!important;background:rgba(9,45,63,.78)!important;color:#d9e7ed!important;font-size:8px!important;line-height:1.35!important}
+ #${ROOT} .msqa8267-examples strong{display:block;margin-bottom:2px;color:#fff;font-size:8px}
+ #${ROOT} .msqa8267-result{position:fixed!important;left:245px!important;right:225px!important;bottom:96px!important;max-height:140px!important;margin:0!important;z-index:10011!important;font-size:11px!important;overflow:auto!important}
+ #${ROOT} .ms8271-tools{position:absolute!important;right:268px!important;top:10px!important;display:block!important;width:54px!important;height:54px!important;margin:0!important}
+ #${ROOT} #ms8271Mic{display:grid!important;place-items:center!important;width:54px!important;height:54px!important;min-width:54px!important;min-height:54px!important;padding:0!important;border:1px solid rgba(94,169,198,.42)!important;border-radius:10px!important;background:rgba(12,54,72,.92)!important;color:#fff!important}
+ #${ROOT} #ms8271Mic svg{width:23px!important;height:23px!important}
+ #${ROOT} #ms8271Mic span,#${ROOT} #ms8271Clear,#${ROOT} .ms8271-speak,#${ROOT} .ms8271-ai-note,#${ROOT} .ms8271-voice-status{display:none!important}
+ @media(max-height:850px) and (orientation:landscape){
+   #${ROOT} .msr-shell{grid-template-columns:188px minmax(0,1fr);grid-template-rows:205px minmax(0,1fr);padding-bottom:88px}
+   #${ROOT} .msr-brand{height:150px}
+   #${ROOT} .msr-brand strong{font-size:38px}
+   #${ROOT} .msr-nav button{min-height:46px;font-size:13px}
+   #${ROOT} .msr-hero-copy{bottom:20px}
+   #${ROOT} .msr-hero-copy strong{font-size:22px}
+   #${ROOT} .msr-hero-info{top:28px}
+   #${ROOT} .ms8263-main{grid-template-rows:minmax(150px,.9fr) minmax(150px,1fr) minmax(150px,1fr);gap:8px;padding:9px 12px 11px!important}
+   #${ROOT} .ms8263-feature{min-height:112px!important;padding-top:10px!important}
+   #${ROOT} .ms8263-feature>svg{width:28px!important;height:28px!important}
+   #${ROOT} .msr-card{padding:9px 10px 7px}
+   #${ROOT} .msr-ring{width:58px;height:58px}
+   #${ROOT} .msr-tankline{min-height:32px}
+   #${ROOT} .msqa8267{height:66px!important;bottom:12px!important;padding-top:7px!important;padding-bottom:7px!important}
+   #${ROOT} .msqa8267-row,#${ROOT} .msqa8267 input,#${ROOT} .msqa8267-send,#${ROOT} #ms8271Mic{height:50px!important;min-height:50px!important}
+ }
  @media(max-width:900px) and (orientation:portrait){
    body.ms8263-home-active{overflow:auto!important}
-   #${ROOT}{height:auto!important;min-height:100dvh!important;overflow:auto!important}
-   #${ROOT} .ms8263-shell{display:block;min-height:100dvh;height:auto}
-   #${ROOT} .ms8280-side{display:none}
-   #${ROOT} .ms8263-hero{height:250px}
-   #${ROOT} .ms8263-main{overflow:visible!important;padding:14px!important}
-   #${ROOT} .ms8263-features{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-   #${ROOT} #ms8264LiveInstruments .ms8264-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+   #${ROOT}{position:relative!important;height:auto!important;min-height:100dvh!important;overflow:auto!important}
+   #${ROOT} .msr-shell{display:block;height:auto;min-height:100dvh;padding-bottom:115px}
+   #${ROOT} .msr-side{display:none}
+   #${ROOT} .msr-hero{height:260px}
+   #${ROOT} .ms8263-main{display:block!important;overflow:visible!important;padding:12px!important}
+   #${ROOT} .msr-quick,#${ROOT} .msr-row{margin-bottom:10px}
+   #${ROOT} .ms8263-features{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+   #${ROOT} .msr-row,#${ROOT} .msr-row-bottom{display:block}
+   #${ROOT} .msr-card{margin-bottom:10px}
+   #${ROOT} .msqa8267{left:8px!important;right:8px!important;padding-left:12px!important;padding-right:72px!important}
+   #${ROOT} .msqa8267-label,#${ROOT} .msqa8267-examples,#${ROOT} .ms8271-tools{display:none!important}
  }
- @media(max-height:760px) and (orientation:landscape){
-   #${ROOT} .ms8263-shell{grid-template-columns:166px minmax(0,1fr);grid-template-rows:180px minmax(0,1fr)}
-   #${ROOT} .ms8280-side{padding-top:13px}
-   #${ROOT} .ms8280-logo{padding-bottom:10px}
-   #${ROOT} .ms8280-logo strong{font-size:31px}
-   #${ROOT} .ms8263-nav button{min-height:40px!important;font-size:11px!important}
-   #${ROOT} .ms8263-nav button svg{width:19px!important;height:19px!important}
-   #${ROOT} .ms8280-hero-copy{bottom:16px}
-   #${ROOT} .ms8280-clock{top:14px}
-   #${ROOT} .ms8263-main{padding:8px 11px!important}
-   #${ROOT} .ms8263-greet{margin-bottom:6px!important}
-   #${ROOT} .ms8280-quick{padding:7px 8px;margin-bottom:6px}
-   #${ROOT} .ms8263-feature{min-height:66px!important}
-   #${ROOT} .ms8263-status{margin-bottom:6px!important}
-   #${ROOT} .ms8263-status-card{min-height:61px!important;padding:6px 8px!important}
-   #${ROOT} #ms8264LiveInstruments{padding:7px 8px!important;margin-bottom:6px!important}
-   #${ROOT} #ms8264LiveInstruments .ms8264-meter{min-height:54px!important;padding:6px!important}
-   #${ROOT} .msqa8267{padding:6px 8px!important}
-   #${ROOT} .msqa8267-row{min-height:42px!important}
- }
- `;
+`;
  document.head.appendChild(s);
 }
 
@@ -265,8 +273,9 @@ function startGps(){
  navigator.geolocation.getCurrentPosition(pos=>{
    val.textContent='GPS actief';
    sub.textContent=`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+   setText('msrGpsState','GPS actief');setText('msrGpsCoords',pos.coords.latitude.toFixed(4)+', '+pos.coords.longitude.toFixed(4));
  },()=>{
-   val.textContent='GPS wachten';sub.textContent='Locatie nog niet beschikbaar';
+   val.textContent='GPS wachten';sub.textContent='Locatie nog niet beschikbaar';setText('msrGpsState','GPS wachten');
  },{enableHighAccuracy:false,timeout:7000,maximumAge:60000});
 }
 
@@ -274,6 +283,63 @@ function updateClock(){
  setText('ms8280Clock',new Intl.DateTimeFormat('nl-NL',{hour:'2-digit',minute:'2-digit'}).format(new Date()));
  setText('ms8280HeroDate',shortDate());
  setText('ms8280Greeting',greeting()+' Michel');
+}
+
+
+function setRing(id,value){
+ const el=$(id),v=Math.max(0,Math.min(100,Number(value)||0));
+ if(el)el.style.setProperty('--p',String(v));
+}
+function decorateReference(){
+ const ex=document.querySelector('#'+ROOT+' .msqa8267-examples');
+ if(ex&&!ex.dataset.msrDecorated){
+   ex.dataset.msrDecorated='1';
+   ex.innerHTML='<strong>Voorbeeldvragen</strong>“Hoe is de accuspanning?”<br>“Plan een route naar Sneek”<br>“Wat is het weer morgen?”';
+ }
+}
+function syncReference(){
+ decorateReference();
+ const speed=sourceText(['ms71510Speed','liveSpeed','speedValue','currentSpeed']);
+ const speedN=numberFrom(speed);
+ setText('msrSpeed',Number.isFinite(speedN)?fmtNum(speedN/1.852,speedN<1?1:0)+' kn':'0 kn');
+ const depth=numberFrom(sourceText(['ms71510Depth','liveDepth','depthValue']));
+ if(Number.isFinite(depth))setText('msrDepth',fmtNum(depth,1)+' m');
+ const wind=sourceText(['ms71510WindBft','ms71510Wind','liveWind','windValue']);
+ if(wind)setText('msrWind',clean(wind));
+
+ const house=numberFrom(sourceText(['ms8264House','ms71510HouseSoc','houseSoc','batterySoc','victronSoc']));
+ const hp=Number.isFinite(house)?Math.max(0,Math.min(100,Math.round(house))):48;
+ setText('msrHousePct',hp+'%');setRing('msrHouseRing',hp);
+ const hs=sourceText(['ms8264HouseSub']);
+ if(hs)setText('msrHouseSub',hs);
+
+ const startText=sourceText(['ms8264Start','startBatteryVoltage','techStartVoltage']);
+ if(startText)setText('msrStartSub',startText+'\nSpanning in orde');
+
+ const fuel=numberFrom(sourceText(['ms8264Fuel']));
+ if(Number.isFinite(fuel)){
+   const fp=Math.max(0,Math.min(100,Math.round(fuel)));
+   setText('msrFuelPct',fp+'%');
+   const fb=$('msrFuelBar');if(fb)fb.style.width=fp+'%';
+ }
+ const water=numberFrom(sourceText(['ms8264Water']));
+ if(Number.isFinite(water)){
+   const wp=Math.max(0,Math.min(100,Math.round(water)));
+   setText('msrWaterPct',wp+'%');setText('msrWaterPct2',wp+'%');
+   setRing('msrWaterRing',wp);
+   const wb=$('msrWaterBar');if(wb)wb.style.width=wp+'%';
+ }
+ const wsub=sourceText(['ms8264WaterSub']);if(wsub)setText('msrWaterSub',wsub);
+
+ const outside=numberFrom(sourceText(['ms8264Outside','outsideTemperature','weatherTemperature','weatherCurrentTemp','currentTemperature','msWeatherTemperature']));
+ if(Number.isFinite(outside)){
+   const txt=fmtNum(outside,1)+'°';
+   setText('msrWeatherTemp',txt);
+   const hero=$('msrHeroTemp');if(hero)hero.innerHTML=txt+'<br><small style="font-size:10px;font-weight:600">Onbewolkt</small>';
+ }
+ const liveBadge=clean($('ms8264LiveBadge')?.textContent);
+ setText('msrLiveText',liveBadge&&liveBadge!=='Verbinden…'?liveBadge:'Live');
+ const solar=sourceText(['ms8264SolarSub']);if(solar)setText('msrSolarSub',solar);
 }
 
 function bind(){
@@ -292,76 +358,124 @@ function apply(){
  installStyle();syncBuild();setHomeActive(true);
  root.className='ms8255-reference-home ms8263-approved-home';
  root.dataset.approved='8280';root.dataset.theme='night';
- root.innerHTML=`<div class="ms8263-shell">
- <aside class="ms8280-side">
-   <div class="ms8280-logo"><strong>Serenity</strong><small>My boat · my freedom</small></div>
-   <nav class="ms8263-nav" aria-label="Hoofdnavigatie">
-     <button class="active" data-ms8263-go="dashboard">${icon.home}<span>Start</span></button>
-     <button data-ms8263-go="map">${icon.map}<span>Kaart</span></button>
-     <button data-ms8263-go="logbook">${icon.log}<span>Logboek</span></button>
-     <button data-ms8263-go="technical">${icon.gear}<span>Techniek</span></button>
-     <button data-ms8263-go="weather">${icon.sun}<span>Weer</span></button>
-     <button data-ms8263-go="planner">${icon.route}<span>Reisplanner</span></button>
-     <button data-ms8263-go="ais">${icon.radar}<span>AIS</span></button>
-     <button data-ms8263-go="pois">${icon.pin}<span>POI</span></button>
-     <button data-ms8263-go="settings">${icon.gear}<span>Instellingen</span></button>
-     <button data-ms8263-go="more">${icon.more}<span>Meer</span></button>
-   </nav>
-   <div class="ms8280-side-foot"><strong>Serenity</strong>Varen is leven</div>
- </aside>
+ root.innerHTML=`
+ <div class="msr-shell">
+  <aside class="msr-side">
+    <div class="msr-brand"><strong>Serenity</strong><div class="msr-wave"></div><small>MY BOAT · MY FREEDOM</small></div>
+    <nav class="msr-nav" aria-label="Hoofdnavigatie">
+      <button class="active" data-ms8263-go="dashboard">${icon.home}<span>Home</span></button>
+      <button data-ms8263-go="live">${icon.route}<span>Varen</span></button>
+      <button data-ms8263-go="map">${icon.map}<span>Kaart</span></button>
+      <button data-ms8263-go="logbook">${icon.log}<span>Logboek</span></button>
+      <button data-ms8263-go="technical">${icon.gear}<span>Techniek</span></button>
+      <button data-ms8263-go="weather">${icon.sun}<span>Weer</span></button>
+      <button data-ms8263-go="planner">${icon.route}<span>Reisplanner</span></button>
+      <button data-ms8263-go="ais">${icon.radar}<span>AIS</span></button>
+      <button data-ms8263-go="pois">${icon.pin}<span>POI</span></button>
+      <button data-ms8263-go="settings">${icon.gear}<span>Instellingen</span></button>
+    </nav>
+    <div class="msr-side-foot"><div class="sun">☼</div><strong>Serenity</strong>Varen is leven</div>
+  </aside>
 
- <section class="ms8263-hero" aria-label="Serenity">
-   <div class="ms8280-hero-copy"><strong id="ms8280Greeting">${greeting()} Michel</strong><span>Fijn dat je weer aan boord bent</span></div>
-   <div class="ms8280-clock"><small id="ms8280HeroDate">${shortDate()}</small><strong id="ms8280Clock">--:--</strong><span id="ms8280HeroTemp">Serenity</span></div>
- </section>
+  <section class="msr-hero">
+    <div class="msr-hero-copy"><strong id="ms8280Greeting">${greeting()} Michel</strong><span>Fijn dat je weer aan boord bent</span><em>“Good vibes, high tides”</em></div>
+    <div class="msr-hero-info">
+      <div class="msr-hero-date" id="ms8280HeroDate">${shortDate()}</div>
+      <div class="msr-hero-moon">☾</div>
+      <div class="msr-hero-time" id="ms8280Clock">--:--</div>
+      <div class="msr-hero-temp" id="msrHeroTemp">17,7°<br><small style="font-size:10px;font-weight:600">Onbewolkt</small></div>
+      <div class="msr-hero-pin">⌖</div><div class="msr-hero-place">Enschede</div>
+    </div>
+  </section>
 
- <main class="ms8263-main">
-   <section class="ms8263-greet">
-     <div><b>Startoverzicht</b><div class="ms8263-date">${dateText()}</div></div>
-     <button type="button" class="ms8263-theme" id="ms8263Theme">${icon.moon}<span id="ms8263ThemeLabel">Nacht</span></button>
-   </section>
+  <main class="ms8263-main">
+    <section class="msr-panel msr-quick">
+      <div class="msr-quick-head"><strong>SNEL NAAR</strong><button class="msr-edit" data-ms8263-go="settings">Bewerk ✎</button></div>
+      <section class="ms8263-features">
+        ${feature('technical','battery','Energie',"Accu's & laden",'green')}
+        ${feature('technical','cloud','Tanks','Water, diesel, vuilwater','cyan')}
+        ${feature('technical','gear','Techniek','Motor, verwarming, systemen','orange')}
+        ${feature('map','map','Kaart','Waterkaarten & navigatie','purple')}
+        ${feature('logbook','log','Logboek','Nieuwe logregel','navy')}
+        ${feature('planner','route','Reisplanner','Plan je volgende trip','green')}
+      </section>
+    </section>
 
-   <section class="ms8280-quick">
-     <div class="ms8280-section-title"><strong>Snel naar</strong><button type="button" data-ms8263-go="more">Meer functies ›</button></div>
-     <section class="ms8263-features">
-       ${feature('technical','battery','Energie','Accu’s & laden','green')}
-       ${feature('technical','cloud','Tanks','Water, diesel, vuilwater','cyan')}
-       ${feature('technical','gear','Techniek','Motor & systemen','orange')}
-       ${feature('map','map','Kaart','Navigatie','purple')}
-       ${feature('logbook','log','Logboek','Nieuwe logregel','navy')}
-       ${feature('planner','route','Reisplanner','Volgende trip','green')}
-     </section>
-   </section>
+    <section class="msr-row">
+      <section class="msr-panel msr-card">
+        <div class="msr-card-title"><div class="msr-kicker"><span class="ico">⌖</span>HUIDIGE LOCATIE</div></div>
+        <div class="msr-mainline"><div class="bigico">⌖</div><div><strong id="msrGpsState">GPS actief</strong><small id="msrGpsCoords">52.1998, 6.9012</small></div></div>
+        <div class="msr-minis">
+          <div class="msr-mini"><small>Snelheid</small><strong id="msrSpeed">0 kn</strong></div>
+          <div class="msr-mini"><small>Koers</small><strong>---</strong></div>
+          <div class="msr-mini"><small>Diepte</small><strong id="msrDepth">2,8 m</strong></div>
+        </div>
+        <button class="msr-action" data-ms8263-go="map">Open kaart <span>›</span></button>
+      </section>
 
-   <section class="ms8263-status">
-     ${status('map','pin','Ligplaats','ms8263Location','ms8263LocationSub')}
-     ${status('weather','cloud','Buiten','ms8263Outside','ms8263OutsideSub')}
-     ${status('technical','battery','Accu','ms8263Soc','ms8263BatterySub')}
-   </section>
+      <section class="msr-panel msr-card">
+        <div class="msr-card-title"><div class="msr-kicker"><span class="ico">☁</span>WEER OP LOCATIE</div></div>
+        <div class="msr-weather-main"><div class="msr-weather-icon">🌤️</div><div><strong id="msrWeatherTemp">17,7°</strong><small>Onbewolkt</small></div></div>
+        <div class="msr-minis">
+          <div class="msr-mini"><small>🌅</small><strong>07:16</strong></div>
+          <div class="msr-mini"><small>🌇</small><strong>19:38</strong></div>
+          <div class="msr-mini"><small>≋</small><strong id="msrWind">ZW 2 Bft</strong></div>
+        </div>
+        <button class="msr-action" data-ms8263-go="weather">Uitgebreid weer <span>›</span></button>
+      </section>
 
-   <section class="ms8263-welcome" aria-label="Serenity AI">
-     <div class="ms8280-live-mini">${metric('speed','ms8263Speed','Snelheid')}${metric('depth','ms8263Depth','Diepte')}${metric('compass','ms8263Wind','Wind')}</div>
-     <button type="button" class="ms8263-start" data-ms8263-go="live" aria-hidden="true" tabindex="-1">Live varen</button>
-   </section>
- </main>
+      <section class="msr-panel msr-card">
+        <div class="msr-card-title"><div class="msr-kicker"><span class="ico">⚡</span>ACCU'S &amp; ENERGIE</div><span class="msr-live"><i></i><span id="msrLiveText">Live</span></span></div>
+        <div class="msr-rings">
+          <div class="msr-gauge"><div class="msr-ring" id="msrHouseRing" style="--p:48"><strong id="msrHousePct">48%</strong></div><label>Huishoudaccu</label><small id="msrHouseSub">13,06 V · -4,6 A</small></div>
+          <div class="msr-gauge"><div class="msr-ring" id="msrStartRing" style="--p:71"><strong>71%</strong></div><label>Startaccu</label><small id="msrStartSub">12,76 V<br>Spanning in orde</small></div>
+          <div class="msr-gauge"><div class="msr-ring" id="msrWaterRing" style="--p:0"><strong id="msrWaterPct">0%</strong></div><label>Drinkwater</label><small id="msrWaterSub">0 L<br>Victron tank</small></div>
+        </div>
+        <button class="msr-action" data-ms8263-go="technical">Naar energie <span>›</span></button>
+      </section>
+    </section>
 
- <div class="ms8263-sheet" aria-hidden="true">
-   <div class="ms8263-sheet-card">
-     <div class="ms8263-sheet-head"><strong>Meer functies</strong><button class="ms8263-sheet-close" aria-label="Sluiten">${icon.close}</button></div>
-     <div class="ms8263-sheet-grid">
-       <button data-ms8263-go="live">Live varen</button>
-       <button data-ms8263-go="entertainment">Entertainment / Home Assistant</button>
-       <button data-ms8263-go="costs">Kosten</button>
-       <button data-ms8263-go="finance">Financieel</button>
-       <button data-ms8263-go="settings">Boot & instellingen</button>
-       <button data-ms8263-go="pois">POI & havens</button>
-     </div>
-   </div>
- </div>
+    <section class="msr-row msr-row-bottom">
+      <section class="msr-panel msr-card">
+        <div class="msr-card-title"><div class="msr-kicker"><span class="ico">💧</span>TANKS</div></div>
+        <div class="msr-tankline"><span class="ticon">⛽</span><strong>Dieseltank</strong><div class="msr-bar" style="--p:71%"><i id="msrFuelBar" style="width:71%"></i></div><small id="msrFuelPct">71%</small><span>›</span></div>
+        <div class="msr-tankline water"><span class="ticon">💧</span><strong>Drinkwater</strong><div class="msr-bar"><i id="msrWaterBar" style="width:0%"></i></div><small id="msrWaterPct2">0%</small><span>›</span></div>
+        <div class="msr-tankline water"><span class="ticon">▣</span><strong>Vuilwatertank</strong><div class="msr-bar"><i style="width:100%"></i></div><small>100%</small><span>›</span></div>
+        <button class="msr-action" data-ms8263-go="technical">Alle tanks <span>›</span></button>
+      </section>
+
+      <section class="msr-panel msr-card">
+        <div class="msr-card-title"><div class="msr-kicker"><span class="ico">⚙</span>SYSTEEMSTATUS</div></div>
+        <div class="msr-status-grid">
+          <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>Victron GX</strong><small>Online</small></div></div>
+          <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>Walstroom</strong><small>Niet actief</small></div></div>
+          <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>SmartShunt</strong><small>Actief</small></div></div>
+          <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>Motor</strong><small>Stand-by</small></div></div>
+          <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>Zonnepanelen</strong><small id="msrSolarSub">Laden (20,1 V)</small></div></div>
+          <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>Verwarming</strong><small>Uit</small></div></div>
+        </div>
+        <button class="msr-action" data-ms8263-go="technical">Naar techniek <span>›</span></button>
+      </section>
+
+      <section class="msr-panel msr-card">
+        <div class="msr-card-title"><div class="msr-kicker"><span class="ico">▣</span>KOMENDE ITEMS</div><button class="msr-edit" data-ms8263-go="planner">Toon alles</button></div>
+        <div class="msr-upcoming">
+          <div class="msr-upcoming-item"><span class="uico">🛒</span><strong>Morgen 08:00</strong><span>Boodschappen en proviand</span></div>
+          <div class="msr-upcoming-item"><span class="uico">🔧</span><strong>21 sep</strong><span>Onderhoud checklist</span></div>
+          <div class="msr-upcoming-item"><span class="uico">⛽</span><strong>23 sep</strong><span>Diesel bijvullen (indicatie)</span></div>
+          <div class="msr-upcoming-item"><span class="uico">⛵</span><strong>Weekend</strong><span>Proefvaart / testen</span></div>
+        </div>
+        <button class="msr-action" data-ms8263-go="planner">Naar reisplanner <span>›</span></button>
+      </section>
+    </section>
+
+    <section class="ms8263-status msr-hidden-anchor" aria-hidden="true"></section>
+    <section class="ms8263-welcome" aria-hidden="true"><button type="button" class="ms8263-start" data-ms8263-go="live">Live varen</button></section>
+  </main>
  </div>`;
- bind();refreshData();startGps();updateClock();
+ bind();refreshData();startGps();updateClock();decorateReference();setTimeout(syncReference,120);setTimeout(syncReference,1200);
  clearInterval(window.__ms8263RefreshTimer);
- window.__ms8263RefreshTimer=setInterval(()=>{refreshData();updateClock()},2000);
+ window.__ms8263RefreshTimer=setInterval(()=>{refreshData();syncReference();updateClock()},2000);
  return true;
 }
 
