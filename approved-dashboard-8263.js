@@ -103,19 +103,19 @@ function installStyle(){
  #${ROOT} .ms8263-status-card>strong{grid-area:val;margin-top:1px;font-size:15px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
  #${ROOT} .ms8263-status-card>em{grid-area:sub;margin-top:3px;color:#9fb6c2;font-size:8.5px;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
- #${ROOT} #ms8264Instruments{margin:0 0 9px!important;padding:9px 10px 10px!important;border-radius:16px!important}
- #${ROOT} #ms8264Instruments .ms8264-head{margin-bottom:7px!important}
- #${ROOT} #ms8264Instruments .ms8264-head small{font-size:8px!important}
- #${ROOT} #ms8264Instruments .ms8264-head strong{font-size:14px!important}
- #${ROOT} #ms8264Instruments .ms8264-badge{font-size:8px!important;padding:5px 7px!important}
- #${ROOT} #ms8264Instruments .ms8264-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
- #${ROOT} #ms8264Instruments .ms8264-meter{min-height:64px!important;padding:8px!important;border-radius:13px!important;grid-template-columns:27px minmax(0,1fr)!important;gap:6px!important}
- #${ROOT} #ms8264Instruments .ms8264-grid>.ms8264-meter:nth-child(n+5){display:none!important}
- #${ROOT} #ms8264Instruments .ms8264-icon{width:27px!important;height:27px!important;font-size:15px!important;border-radius:9px!important}
- #${ROOT} #ms8264Instruments .ms8264-copy small{font-size:7px!important}
- #${ROOT} #ms8264Instruments .ms8264-copy strong{font-size:14px!important}
- #${ROOT} #ms8264Instruments .ms8264-copy em{font-size:7px!important;margin-top:2px!important}
- #${ROOT} #ms8264Instruments .ms8264-bar{height:2px!important;margin-top:4px!important}
+ #${ROOT} #ms8264LiveInstruments{margin:0 0 9px!important;padding:9px 10px 10px!important;border-radius:16px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-head{margin-bottom:7px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-head small{font-size:8px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-head strong{font-size:14px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-badge{font-size:8px!important;padding:5px 7px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-meter{min-height:64px!important;padding:8px!important;border-radius:13px!important;grid-template-columns:27px minmax(0,1fr)!important;gap:6px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-grid>.ms8264-meter:nth-child(n+5){display:none!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-icon{width:27px!important;height:27px!important;font-size:15px!important;border-radius:9px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-copy small{font-size:7px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-copy strong{font-size:14px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-copy em{font-size:7px!important;margin-top:2px!important}
+ #${ROOT} #ms8264LiveInstruments .ms8264-bar{height:2px!important;margin-top:4px!important}
 
  #${ROOT} .ms8263-welcome{margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
  #${ROOT} .ms8263-welcome:before,#${ROOT} .ms8263-welcome:after{display:none!important}
@@ -155,7 +155,7 @@ function installStyle(){
    #${ROOT} .ms8263-hero{height:250px}
    #${ROOT} .ms8263-main{overflow:visible!important;padding:14px!important}
    #${ROOT} .ms8263-features{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-   #${ROOT} #ms8264Instruments .ms8264-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+   #${ROOT} #ms8264LiveInstruments .ms8264-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
  }
  @media(max-height:760px) and (orientation:landscape){
    #${ROOT} .ms8263-shell{grid-template-columns:166px minmax(0,1fr);grid-template-rows:145px minmax(0,1fr)}
@@ -172,8 +172,8 @@ function installStyle(){
    #${ROOT} .ms8263-feature{min-height:66px!important}
    #${ROOT} .ms8263-status{margin-bottom:6px!important}
    #${ROOT} .ms8263-status-card{min-height:61px!important;padding:6px 8px!important}
-   #${ROOT} #ms8264Instruments{padding:7px 8px!important;margin-bottom:6px!important}
-   #${ROOT} #ms8264Instruments .ms8264-meter{min-height:54px!important;padding:6px!important}
+   #${ROOT} #ms8264LiveInstruments{padding:7px 8px!important;margin-bottom:6px!important}
+   #${ROOT} #ms8264LiveInstruments .ms8264-meter{min-height:54px!important;padding:6px!important}
    #${ROOT} .msqa8267{padding:6px 8px!important}
    #${ROOT} .msqa8267-row{min-height:42px!important}
  }
