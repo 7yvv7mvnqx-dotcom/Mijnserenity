@@ -9,7 +9,7 @@ window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
 const BUILD='8.28.0';
-const TOKEN='828000';
+const TOKEN='828001';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -47,7 +47,7 @@ function installStyle(){
  #${ROOT} button{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
  #${ROOT} svg{display:block;width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 
- #${ROOT} .ms8263-shell{display:grid;grid-template-columns:188px minmax(0,1fr);grid-template-rows:178px minmax(0,1fr);width:100%;height:100%;background:linear-gradient(145deg,#06283b 0,#03131f 55%,#020d16 100%);overflow:hidden}
+ #${ROOT} .ms8263-shell{display:grid;grid-template-columns:188px minmax(0,1fr);grid-template-rows:218px minmax(0,1fr);width:100%;height:100%;background:linear-gradient(145deg,#06283b 0,#03131f 55%,#020d16 100%);overflow:hidden}
  #${ROOT} .ms8280-side{grid-row:1/3;grid-column:1;display:flex;flex-direction:column;min-height:0;padding:22px 12px 15px;border-right:1px solid rgba(76,190,233,.20);background:linear-gradient(180deg,#06304a 0,#031522 46%,#02101b 100%)}
  #${ROOT} .ms8280-logo{padding:1px 10px 19px;text-align:center}
  #${ROOT} .ms8280-logo strong{display:block;font-family:Georgia,"Times New Roman",serif;font-size:37px;font-style:italic;font-weight:500;letter-spacing:-.05em}
@@ -61,7 +61,7 @@ function installStyle(){
  #${ROOT} .ms8280-side-foot{padding:10px 7px 0;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:#8ca7b6;font-size:9px;line-height:1.35}
  #${ROOT} .ms8280-side-foot strong{display:block;color:#e8f4f7;font-size:14px;margin-bottom:1px}
 
- #${ROOT} .ms8263-hero{grid-column:2;grid-row:1;position:relative;min-height:0!important;background:url('/serenity-dashboard-boat-20260909.webp?v=${TOKEN}') center 55%/cover no-repeat!important;isolation:isolate;overflow:hidden}
+ #${ROOT} .ms8263-hero{grid-column:2;grid-row:1;position:relative;min-height:0!important;background:url('/serenity-ivms-hero.png?v=${TOKEN}') center 50%/cover no-repeat!important;isolation:isolate;overflow:hidden}
  #${ROOT} .ms8263-hero:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(1,15,25,.52) 0,rgba(1,15,25,.08) 42%,rgba(1,15,25,.16) 72%,rgba(1,15,25,.55) 100%)}
  #${ROOT} .ms8280-hero-copy{position:absolute;left:28px;bottom:23px;text-shadow:0 3px 18px rgba(0,0,0,.55)}
  #${ROOT} .ms8280-hero-copy strong{display:block;font-size:24px;line-height:1.05}
@@ -158,7 +158,7 @@ function installStyle(){
    #${ROOT} #ms8264LiveInstruments .ms8264-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
  }
  @media(max-height:760px) and (orientation:landscape){
-   #${ROOT} .ms8263-shell{grid-template-columns:166px minmax(0,1fr);grid-template-rows:145px minmax(0,1fr)}
+   #${ROOT} .ms8263-shell{grid-template-columns:166px minmax(0,1fr);grid-template-rows:180px minmax(0,1fr)}
    #${ROOT} .ms8280-side{padding-top:13px}
    #${ROOT} .ms8280-logo{padding-bottom:10px}
    #${ROOT} .ms8280-logo strong{font-size:31px}
