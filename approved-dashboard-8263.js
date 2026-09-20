@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.4 — landscape dashboard polish
+/* MijnSerenity 8.30.5 — landscape dashboard visual polish
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.4';
-const TOKEN='830400';
+const BUILD='8.30.5';
+const TOKEN='830500';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -63,7 +63,8 @@ function installStyle(){
  #${ROOT} .msr-side-foot .sun{font-size:34px;color:#d5f7ff;line-height:1}
  #${ROOT} .msr-side-foot strong{display:block;margin-top:4px;color:#fff;font-family:Georgia,serif;font-size:20px;font-weight:500;letter-spacing:.02em}
  #${ROOT} .msr-hero{grid-column:2;grid-row:1;position:relative;overflow:hidden;background:url('/serenity-reference-hero.jpg?v=${TOKEN}') center center/cover no-repeat;isolation:isolate}
- #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(90deg,rgba(2,19,30,.91) 0,rgba(2,19,30,.76) 34%,rgba(2,19,30,.18) 58%,rgba(2,14,23,.16) 100%)}
+ #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(90deg,rgba(2,19,30,.985) 0,rgba(2,19,30,.94) 34%,rgba(2,19,30,.28) 58%,rgba(2,14,23,.16) 100%)}
+ #${ROOT} .msr-hero:after{content:"";position:absolute;left:0;bottom:0;z-index:1;width:49%;height:36%;pointer-events:none;background:linear-gradient(90deg,rgba(2,19,30,1) 0,rgba(2,19,30,.98) 72%,rgba(2,19,30,0) 100%)}
  #${ROOT} .msr-hero-copy{position:absolute;left:1.75vw;bottom:1.65vh;z-index:2;width:min(38vw,560px);padding:11px 28px 11px 14px;border:1px solid rgba(92,196,229,.18);border-radius:12px;background:linear-gradient(90deg,rgba(2,19,30,.97),rgba(2,19,30,.91));box-shadow:0 10px 28px rgba(0,0,0,.24);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);text-shadow:0 3px 15px rgba(0,0,0,.75)}
  #${ROOT} .msr-hero-copy strong{display:block;font-size:1.80vw;line-height:1.05}
  #${ROOT} .msr-hero-copy span{display:block;margin-top:6px;font-size:1.10vw;font-weight:620}
@@ -142,19 +143,19 @@ function installStyle(){
  #${ROOT} .msr-hidden-anchor,#${ROOT} #ms8264LiveInstruments{position:absolute!important;left:-99999px!important;top:-99999px!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important}
  #${ROOT} .ms8263-welcome{position:absolute!important;left:-99999px!important;top:-99999px!important;width:1px!important;height:1px!important;overflow:visible!important;border:0!important;background:none!important}
  #${ROOT} .ms8263-start{display:block!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
- #${ROOT} .msqa8267#msQuickAsk8267{position:fixed!important;z-index:10010!important;left:1.25vw!important;right:1.25vw!important;bottom:max(8px,env(safe-area-inset-bottom))!important;height:66px!important;min-height:66px!important;margin:0!important;padding:6px 188px 6px 210px!important;border:1px solid rgba(45,175,218,.42)!important;border-radius:14px!important;background:linear-gradient(90deg,rgba(5,54,79,.98),rgba(3,31,46,.98))!important;box-shadow:0 14px 34px rgba(0,0,0,.30)!important;overflow:hidden!important}
+ #${ROOT} .msqa8267#msQuickAsk8267{position:fixed!important;z-index:10010!important;left:1.25vw!important;right:1.25vw!important;bottom:max(8px,env(safe-area-inset-bottom))!important;height:64px!important;min-height:64px!important;margin:0!important;padding:6px 202px 6px 210px!important;border:1px solid rgba(45,175,218,.42)!important;border-radius:14px!important;background:linear-gradient(90deg,rgba(5,54,79,.98),rgba(3,31,46,.98))!important;box-shadow:0 14px 34px rgba(0,0,0,.30)!important;overflow:hidden!important}
  #${ROOT} .msqa8267-label{position:absolute!important;left:1.66vw!important;top:0!important;bottom:0!important;display:flex!important;align-items:center!important;width:13.55vw!important;margin:0!important;color:#fff!important;font-size:15px!important;font-weight:800!important;letter-spacing:0!important;text-transform:none!important}
  #${ROOT} .msqa8267-label:before{font-size:22px!important;margin-right:10px}
  #${ROOT} .msqa8270-badge{display:none!important}
- #${ROOT} .msqa8267-row{display:grid!important;grid-template-columns:minmax(0,1fr) 50px!important;gap:8px!important;min-height:52px!important;height:52px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+ #${ROOT} .msqa8267-row{display:grid!important;grid-template-columns:minmax(0,1fr) 50px!important;gap:8px!important;min-height:50px!important;height:50px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
  #${ROOT} .msqa8267-spark{display:none!important}
- #${ROOT} .msqa8267 input{height:52px!important;padding:0 16px!important;border:1px solid rgba(81,149,177,.42)!important;border-radius:10px!important;background:rgba(17,60,78,.74)!important;color:white!important;font-size:13px!important;font-weight:600!important}
- #${ROOT} .msqa8267-send{width:50px!important;height:52px!important;min-width:50px!important;min-height:52px!important;border-radius:11px!important;background:linear-gradient(135deg,#20c9ef,#23dffe)!important}
- #${ROOT} .msqa8267-examples{position:absolute!important;right:.70vw!important;top:6px!important;width:11.75vw!important;height:52px!important;margin:0!important;padding:5px 8px!important;border:1px solid rgba(69,150,182,.30)!important;border-radius:9px!important;background:rgba(9,45,63,.78)!important;color:#d9e7ed!important;font-size:7.5px!important;line-height:1.20!important;overflow:hidden!important}
- #${ROOT} .msqa8267-examples strong{display:block;margin-bottom:2px;color:#fff;font-size:8px}
+ #${ROOT} .msqa8267 input{height:50px!important;padding:0 16px!important;border:1px solid rgba(81,149,177,.42)!important;border-radius:10px!important;background:rgba(17,60,78,.74)!important;color:white!important;font-size:13px!important;font-weight:600!important}
+ #${ROOT} .msqa8267-send{width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;border-radius:11px!important;background:linear-gradient(135deg,#20c9ef,#23dffe)!important}
+ #${ROOT} .msqa8267-examples{position:absolute!important;right:.65vw!important;top:7px!important;width:12.65vw!important;height:50px!important;margin:0!important;padding:4px 8px!important;border:1px solid rgba(69,150,182,.30)!important;border-radius:9px!important;background:rgba(9,45,63,.78)!important;color:#d9e7ed!important;font-size:8.2px!important;line-height:1.16!important;overflow:hidden!important}
+ #${ROOT} .msqa8267-examples strong{display:block;margin-bottom:1px;color:#fff;font-size:8.4px}
  #${ROOT} .msqa8267-result{position:fixed!important;left:245px!important;right:225px!important;bottom:96px!important;max-height:140px!important;margin:0!important;z-index:10011!important;font-size:11px!important;overflow:auto!important}
- #${ROOT} .ms8271-tools{position:absolute!important;right:17.65vw!important;top:6px!important;display:block!important;width:50px!important;height:52px!important;margin:0!important}
- #${ROOT} #ms8271Mic{display:grid!important;place-items:center!important;width:50px!important;height:52px!important;min-width:50px!important;min-height:52px!important;padding:0!important;border:1px solid rgba(94,169,198,.42)!important;border-radius:10px!important;background:rgba(12,54,72,.92)!important;color:#fff!important}
+ #${ROOT} .ms8271-tools{position:absolute!important;right:17.65vw!important;top:7px!important;display:block!important;width:50px!important;height:50px!important;margin:0!important}
+ #${ROOT} #ms8271Mic{display:grid!important;place-items:center!important;width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;padding:0!important;border:1px solid rgba(94,169,198,.42)!important;border-radius:10px!important;background:rgba(12,54,72,.92)!important;color:#fff!important}
  #${ROOT} #ms8271Mic svg{width:23px!important;height:23px!important}
  #${ROOT} #ms8271Mic span,#${ROOT} #ms8271Clear,#${ROOT} .ms8271-speak,#${ROOT} .ms8271-ai-note,#${ROOT} .ms8271-voice-status{display:none!important}
  @media(max-height:760px) and (orientation:landscape){
