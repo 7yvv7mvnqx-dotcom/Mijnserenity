@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.1 — landscape startdashboard
+/* MijnSerenity 8.30.2 — landscape startdashboard
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.1';
-const TOKEN='830100';
+const BUILD='8.30.2';
+const TOKEN='830200';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -47,9 +47,9 @@ function installStyle(){
  #${ROOT} *{box-sizing:border-box}
  #${ROOT} button{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
  #${ROOT} svg{display:block;width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
- #${ROOT} .msr-shell{display:grid;grid-template-columns:14.36vw minmax(0,1fr);grid-template-rows:23.02vh minmax(0,1fr);width:100%;height:100%;padding-bottom:0;background:linear-gradient(145deg,#06283a 0,#031620 56%,#02111b 100%);overflow:hidden}
+ #${ROOT} .msr-shell{display:grid;grid-template-columns:14.36vw minmax(0,1fr);grid-template-rows:18.5vh minmax(0,1fr);width:100%;height:100%;padding-bottom:0;background:linear-gradient(145deg,#06283a 0,#031620 56%,#02111b 100%);overflow:hidden}
  #${ROOT} .msr-side{grid-row:1/3;grid-column:1;display:flex;flex-direction:column;min-height:0;border-right:1px solid rgba(35,177,222,.38);background:linear-gradient(180deg,#07324b 0,#031a2a 58%,#041727 100%);box-shadow:inset -1px 0 rgba(255,255,255,.03)}
- #${ROOT} .msr-brand{height:185px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 12px 13px}
+ #${ROOT} .msr-brand{height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 12px 13px}
  #${ROOT} .msr-brand strong{font-family:Georgia,"Times New Roman",serif;font-size:45px;line-height:.85;font-style:italic;font-weight:500;letter-spacing:-.06em;text-shadow:0 2px 14px rgba(255,255,255,.12)}
  #${ROOT} .msr-wave{width:118px;height:16px;margin-top:4px;border-bottom:4px solid #86e9ff;border-radius:0 0 90% 55%;transform:skewX(-16deg)}
  #${ROOT} .msr-brand small{margin-top:11px;color:#e7f6fb;font-size:9px;letter-spacing:.21em;text-transform:uppercase;font-weight:800}
@@ -75,7 +75,7 @@ function installStyle(){
  #${ROOT} .msr-hero-temp{grid-area:temp;margin-top:5px;font-size:16px;font-weight:800}
  #${ROOT} .msr-hero-place{grid-area:place;margin-top:8px;font-size:12px;font-weight:700}
  #${ROOT} .msr-hero-pin{grid-area:pin;margin-top:8px;font-size:17px}
- #${ROOT} .ms8263-main{grid-column:2;grid-row:2;display:grid!important;grid-template-rows:1.05fr 1fr 1fr;gap:1.00vh;min-height:0;padding:1.15vh 1.25vw 9.1vh!important;background:linear-gradient(180deg,#062033 0,#031521 100%)!important;overflow:hidden!important}
+ #${ROOT} .ms8263-main{grid-column:2;grid-row:2;display:grid!important;grid-template-rows:clamp(142px,19vh,178px) minmax(0,1fr) minmax(0,1fr);gap:.75vh;min-height:0;padding:.8vh 1.25vw 9.1vh!important;background:linear-gradient(180deg,#062033 0,#031521 100%)!important;overflow:hidden!important}
  #${ROOT} .msr-panel{border:1px solid rgba(26,128,165,.70);border-radius:17px;background:linear-gradient(145deg,rgba(4,42,61,.96),rgba(2,24,38,.97));box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.10);overflow:hidden}
  #${ROOT} .msr-kicker{display:flex;align-items:center;gap:8px;color:#74e6ff;font-size:9px;font-weight:900;letter-spacing:.19em;text-transform:uppercase}
  #${ROOT} .msr-kicker .ico{font-size:18px;letter-spacing:0}
@@ -84,7 +84,7 @@ function installStyle(){
  #${ROOT} .msr-quick-head strong{font-size:12px;letter-spacing:.18em}
  #${ROOT} .msr-edit{border:0;background:transparent;color:#65e5ff;font-size:11px;font-weight:700}
  #${ROOT} .ms8263-features{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:12px!important;margin:0!important}
- #${ROOT} .ms8263-feature{display:flex!important;min-width:0!important;min-height:14.15vh!important;padding:16px 9px 10px!important;border:1px solid rgba(155,232,255,.38)!important;border-radius:12px!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;color:#fff!important;text-align:center!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.14),0 9px 18px rgba(0,0,0,.14)!important}
+ #${ROOT} .ms8263-feature{display:flex!important;min-width:0!important;min-height:clamp(88px,11.4vh,122px)!important;padding:16px 9px 10px!important;border:1px solid rgba(155,232,255,.38)!important;border-radius:12px!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;color:#fff!important;text-align:center!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.14),0 9px 18px rgba(0,0,0,.14)!important}
  #${ROOT} .ms8263-feature>svg{width:33px!important;height:33px!important;margin:1px 0 3px;stroke-width:2!important}
  #${ROOT} .ms8263-feature .copy strong{display:block;font-size:15px;line-height:1.05}
  #${ROOT} .ms8263-feature .copy small{display:block;margin-top:7px;color:#e1edf1;font-size:10px;line-height:1.15;white-space:normal;overflow:hidden;overflow-wrap:anywhere}
@@ -108,7 +108,7 @@ function installStyle(){
  #${ROOT} .msr-mini{min-width:0;padding:9px 6px;border:1px solid rgba(79,153,183,.28);border-radius:10px;background:rgba(13,49,66,.62);text-align:center}
  #${ROOT} .msr-mini small{display:block;color:#c1d0d6;font-size:9px}
  #${ROOT} .msr-mini strong{display:block;margin-top:4px;font-size:12px}
- #${ROOT} .msr-action{display:flex;align-items:center;justify-content:center;gap:6px;min-height:30px;margin-top:7px;border:1px solid rgba(56,194,235,.66);border-radius:9px;background:rgba(5,39,57,.72);color:#fff;font-size:10px;font-weight:800}
+ #${ROOT} .msr-action{display:flex;align-items:center;justify-content:center;gap:6px;min-height:30px;margin-top:auto;border:1px solid rgba(56,194,235,.66);border-radius:9px;background:rgba(5,39,57,.72);color:#fff;font-size:10px;font-weight:800}
  #${ROOT} .msr-weather-main{display:flex;align-items:center;gap:14px;padding:2px 15px 7px}
  #${ROOT} .msr-weather-icon{font-size:46px}
  #${ROOT} .msr-weather-main strong{font-size:24px}
@@ -200,15 +200,15 @@ function installStyle(){
  #${ROOT} .ms8263-feature .copy small{min-height:2.3em}
  #${ROOT} .msqa8267#msQuickAsk8267{bottom:max(8px,env(safe-area-inset-bottom))!important}
  @media(max-height:760px) and (orientation:landscape){
-   #${ROOT} .msr-shell{grid-template-rows:20dvh minmax(0,1fr)!important}
-   #${ROOT} .msr-brand{height:118px!important;padding-top:10px!important}
+   #${ROOT} .msr-shell{grid-template-rows:17dvh minmax(0,1fr)!important}
+   #${ROOT} .msr-brand{height:102px!important;padding-top:8px!important}
    #${ROOT} .msr-brand strong{font-size:38px!important}
-   #${ROOT} .msr-nav button{min-height:42px!important}
-   #${ROOT} .ms8263-main{grid-template-rows:126px minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important;padding:7px 12px 72px!important}
+   #${ROOT} .msr-nav button{min-height:38px!important}
+   #${ROOT} .ms8263-main{grid-template-rows:108px minmax(0,1fr) minmax(0,1fr)!important;gap:6px!important;padding:6px 12px 66px!important}
    #${ROOT} .msr-quick{padding:9px 11px!important}
    #${ROOT} .msr-quick-head{margin-bottom:7px!important}
    #${ROOT} .ms8263-features{gap:8px!important}
-   #${ROOT} .ms8263-feature{min-height:91px!important;padding:8px 7px 6px!important;gap:3px!important}
+   #${ROOT} .ms8263-feature{min-height:76px!important;padding:6px 7px 5px!important;gap:2px!important}
    #${ROOT} .ms8263-feature>svg{width:25px!important;height:25px!important;margin:0!important}
    #${ROOT} .ms8263-feature .copy strong{font-size:13px!important}
    #${ROOT} .ms8263-feature .copy small{margin-top:3px!important;font-size:8.5px!important;line-height:1.12!important}
@@ -331,7 +331,7 @@ function startGps(){
 function updateClock(){
  setText('ms8280Clock',new Intl.DateTimeFormat('nl-NL',{hour:'2-digit',minute:'2-digit'}).format(new Date()));
  setText('ms8280HeroDate',shortDate());
- setText('ms8280Greeting',greeting()+' Desi & Michel');
+ setText('ms8280Greeting','Welkom Desi & Michel');
 }
 
 
@@ -488,7 +488,7 @@ function apply(){
   </aside>
 
   <section class="msr-hero">
-    <div class="msr-hero-copy"><strong id="ms8280Greeting">${greeting()} Desi &amp; Michel</strong><span>Fijn dat je weer aan boord bent</span><em>“Good vibes, high tides”</em></div>
+    <div class="msr-hero-copy"><strong id="ms8280Greeting">Welkom Desi &amp; Michel</strong><span>Fijn dat jullie er weer zijn</span><em>“Good vibes, high tides”</em></div>
     <div class="msr-hero-info">
       <div class="msr-hero-date" id="ms8280HeroDate">${shortDate()}</div>
       <div class="msr-hero-moon">☾</div>
