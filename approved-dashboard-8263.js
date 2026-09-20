@@ -1,4 +1,4 @@
-/* MijnSerenity 8.28.0 — landscape startdashboard
+/* MijnSerenity 8.30.0 — landscape startdashboard
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.29.2';
-const TOKEN='829200';
+const BUILD='8.30.0';
+const TOKEN='830000';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -43,7 +43,7 @@ function installStyle(){
  body.ms8263-home-active{margin:0!important;background:#02131e!important;overflow:hidden!important;overscroll-behavior:none!important}
  body.ms8263-home-active #appView>.tabs,body.ms8263-home-active>.bottom-nav,body.ms8263-home-active #appView>.bottom-nav{display:none!important}
  #dashboard.ms8255-reference-dashboard{padding:0!important;margin:0!important;max-width:none!important;background:#02131e!important;overflow:hidden!important}
- #${ROOT}{display:block!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;min-height:100vh!important;margin:0!important;padding:0!important;background:#02131e!important;color:#fff!important;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;overflow:hidden!important;-webkit-font-smoothing:antialiased}
+ #${ROOT}{display:block!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;min-height:100dvh!important;margin:0!important;padding:0!important;background:#02131e!important;color:#fff!important;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;overflow:hidden!important;-webkit-font-smoothing:antialiased}
  #${ROOT} *{box-sizing:border-box}
  #${ROOT} button{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
  #${ROOT} svg{display:block;width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -87,7 +87,7 @@ function installStyle(){
  #${ROOT} .ms8263-feature{display:flex!important;min-width:0!important;min-height:14.15vh!important;padding:16px 9px 10px!important;border:1px solid rgba(155,232,255,.38)!important;border-radius:12px!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;color:#fff!important;text-align:center!important;cursor:pointer!important;box-shadow:inset 0 1px rgba(255,255,255,.14),0 9px 18px rgba(0,0,0,.14)!important}
  #${ROOT} .ms8263-feature>svg{width:33px!important;height:33px!important;margin:1px 0 3px;stroke-width:2!important}
  #${ROOT} .ms8263-feature .copy strong{display:block;font-size:15px;line-height:1.05}
- #${ROOT} .ms8263-feature .copy small{display:block;margin-top:7px;color:#e1edf1;font-size:10px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #${ROOT} .ms8263-feature .copy small{display:block;margin-top:7px;color:#e1edf1;font-size:10px;line-height:1.15;white-space:normal;overflow:hidden;overflow-wrap:anywhere}
  #${ROOT} .ms8263-feature .chev{display:grid!important;place-items:center;width:34px;height:34px;margin-top:auto;border:1px solid rgba(255,255,255,.26);border-radius:50%;background:rgba(255,255,255,.12);font-size:21px;line-height:1}
  #${ROOT} .ms8263-feature.green{background:linear-gradient(145deg,#06a23f,#057637)!important}
  #${ROOT} .ms8263-feature.cyan{background:linear-gradient(145deg,#0781b0,#075b7f)!important}
@@ -185,6 +185,51 @@ function installStyle(){
    #${ROOT} .msqa8267{left:8px!important;right:8px!important;padding-left:12px!important;padding-right:72px!important}
    #${ROOT} .msqa8267-label,#${ROOT} .msqa8267-examples,#${ROOT} .ms8271-tools{display:none!important}
  }
+
+ #${ROOT} .msr-heater{display:grid;grid-template-columns:88px 1fr 62px;align-items:center;gap:7px;margin-top:5px}
+ #${ROOT} .msr-heater button{height:32px;border:1px solid rgba(65,172,211,.46);border-radius:9px;background:rgba(8,50,70,.82);color:#e8f8ff;font-size:10px;font-weight:850}
+ #${ROOT} .msr-heater-power.on,#${ROOT} .msr-heater-auto.on{border-color:rgba(45,225,116,.72);background:rgba(19,126,66,.72);box-shadow:0 0 12px rgba(39,216,110,.16)}
+ #${ROOT} .msr-heater-temp{display:grid;grid-template-columns:32px 1fr 32px;align-items:center;height:32px;border:1px solid rgba(65,172,211,.34);border-radius:9px;background:rgba(8,43,61,.72);overflow:hidden}
+ #${ROOT} .msr-heater-temp button{height:30px;border:0;border-radius:0;background:transparent;font-size:17px}
+ #${ROOT} .msr-heater-temp strong{text-align:center;font-size:14px}
+ #${ROOT} .ms8263-feature .copy{min-width:0;width:100%}
+ #${ROOT} .ms8263-feature .copy small{min-height:2.3em}
+ #${ROOT} .msqa8267#msQuickAsk8267{bottom:max(8px,env(safe-area-inset-bottom))!important}
+ @media(max-height:760px) and (orientation:landscape){
+   #${ROOT} .msr-shell{grid-template-rows:20dvh minmax(0,1fr)!important}
+   #${ROOT} .msr-brand{height:118px!important;padding-top:10px!important}
+   #${ROOT} .msr-brand strong{font-size:38px!important}
+   #${ROOT} .msr-nav button{min-height:42px!important}
+   #${ROOT} .ms8263-main{grid-template-rows:126px minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important;padding:7px 12px 72px!important}
+   #${ROOT} .msr-quick{padding:9px 11px!important}
+   #${ROOT} .msr-quick-head{margin-bottom:7px!important}
+   #${ROOT} .ms8263-features{gap:8px!important}
+   #${ROOT} .ms8263-feature{min-height:91px!important;padding:8px 7px 6px!important;gap:3px!important}
+   #${ROOT} .ms8263-feature>svg{width:25px!important;height:25px!important;margin:0!important}
+   #${ROOT} .ms8263-feature .copy strong{font-size:13px!important}
+   #${ROOT} .ms8263-feature .copy small{margin-top:3px!important;font-size:8.5px!important;line-height:1.12!important}
+   #${ROOT} .ms8263-feature .chev{width:25px!important;height:25px!important;font-size:16px!important}
+   #${ROOT} .msr-card{padding:8px 10px 6px!important}
+   #${ROOT} .msr-card-title{margin-bottom:4px!important}
+   #${ROOT} .msr-mainline{padding:1px 8px 3px!important}
+   #${ROOT} .msr-mainline .bigico{font-size:28px!important}
+   #${ROOT} .msr-mainline strong{font-size:16px!important}
+   #${ROOT} .msr-minis{gap:3px!important}
+   #${ROOT} .msr-mini{padding:5px 4px!important}
+   #${ROOT} .msr-action{min-height:24px!important;margin-top:4px!important}
+   #${ROOT} .msr-ring{width:54px!important;height:54px!important}
+   #${ROOT} .msr-ring strong{font-size:13px!important}
+   #${ROOT} .msr-weather-icon{font-size:34px!important}
+   #${ROOT} .msr-weather-main{padding:0 9px 3px!important}
+   #${ROOT} .msr-tankline{min-height:27px!important}
+   #${ROOT} .msr-status-grid{gap:3px 12px!important}
+   #${ROOT} .msr-status-item small{margin-top:0!important}
+   #${ROOT} .msr-upcoming{gap:3px!important}
+   #${ROOT} .msr-upcoming-item{min-height:24px!important}
+   #${ROOT} .msqa8267#msQuickAsk8267{height:58px!important;min-height:58px!important;padding-top:4px!important;padding-bottom:4px!important}
+   #${ROOT} .msqa8267-row,#${ROOT} .msqa8267 input,#${ROOT} .msqa8267-send,#${ROOT} #ms8271Mic{height:46px!important;min-height:46px!important}
+ }
+ @supports(height:100dvh){#${ROOT}{height:100dvh!important;min-height:100dvh!important}}
 `;
  document.head.appendChild(s);
 }
@@ -282,7 +327,7 @@ function startGps(){
 function updateClock(){
  setText('ms8280Clock',new Intl.DateTimeFormat('nl-NL',{hour:'2-digit',minute:'2-digit'}).format(new Date()));
  setText('ms8280HeroDate',shortDate());
- setText('ms8280Greeting',greeting()+' Michel');
+ setText('ms8280Greeting',greeting()+' Desi & Michel');
 }
 
 
@@ -342,6 +387,34 @@ function syncReference(){
  const solar=sourceText(['ms8264SolarSub']);if(solar)setText('msrSolarSub',solar);
 }
 
+
+const HEATER_KEY='mijnserenity_nordkapp_dashboard';
+function readHeater(){
+ try{return Object.assign({power:false,auto:true,temp:20},JSON.parse(localStorage.getItem(HEATER_KEY)||'{}'))}
+ catch(_){return{power:false,auto:true,temp:20}}
+}
+function saveHeater(next){
+ const state=Object.assign(readHeater(),next||{});
+ state.temp=Math.max(8,Math.min(30,Math.round(Number(state.temp)||20)));
+ try{localStorage.setItem(HEATER_KEY,JSON.stringify(state))}catch(_){}
+ renderHeater(state);
+ window.dispatchEvent(new CustomEvent('mijnserenity:heater-control',{detail:Object.assign({source:'dashboard'},state)}));
+}
+function renderHeater(state=readHeater()){
+ const power=$('msrHeaterPower'),auto=$('msrHeaterAuto');
+ setText('msrHeaterTemp',state.temp+'°');
+ setText('msrHeaterState',state.power?'Aan · '+state.temp+'°':(state.auto?'Stand-by · Auto':'Uit'));
+ if(power){power.classList.toggle('on',!!state.power);power.setAttribute('aria-pressed',String(!!state.power));power.querySelector('span').textContent=state.power?'Aan':'Uit'}
+ if(auto){auto.classList.toggle('on',!!state.auto);auto.setAttribute('aria-pressed',String(!!state.auto))}
+}
+function bindHeater(){
+ $('msrHeaterPower')?.addEventListener('click',()=>{const s=readHeater();saveHeater({power:!s.power})});
+ $('msrHeaterDown')?.addEventListener('click',()=>{const s=readHeater();saveHeater({temp:s.temp-1})});
+ $('msrHeaterUp')?.addEventListener('click',()=>{const s=readHeater();saveHeater({temp:s.temp+1})});
+ $('msrHeaterAuto')?.addEventListener('click',()=>{const s=readHeater();saveHeater({auto:!s.auto})});
+ renderHeater();
+}
+
 function bind(){
  const root=$(ROOT);if(!root)return;
  root.querySelectorAll('[data-ms8263-go]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.ms8263Go)));
@@ -349,6 +422,7 @@ function bind(){
    const day=root.dataset.theme==='day';root.dataset.theme=day?'night':'day';
    setText('ms8263ThemeLabel',day?'Nacht':'Dag');
  });
+ bindHeater();
  rootQuery('.ms8263-sheet')?.addEventListener('click',e=>{if(e.target.classList.contains('ms8263-sheet'))closeMore()});
  rootQuery('.ms8263-sheet-close')?.addEventListener('click',closeMore);
 }
@@ -378,7 +452,7 @@ function apply(){
   </aside>
 
   <section class="msr-hero">
-    <div class="msr-hero-copy"><strong id="ms8280Greeting">${greeting()} Michel</strong><span>Fijn dat je weer aan boord bent</span><em>“Good vibes, high tides”</em></div>
+    <div class="msr-hero-copy"><strong id="ms8280Greeting">${greeting()} Desi &amp; Michel</strong><span>Fijn dat je weer aan boord bent</span><em>“Good vibes, high tides”</em></div>
     <div class="msr-hero-info">
       <div class="msr-hero-date" id="ms8280HeroDate">${shortDate()}</div>
       <div class="msr-hero-moon">☾</div>
@@ -452,7 +526,16 @@ function apply(){
           <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>SmartShunt</strong><small>Actief</small></div></div>
           <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>Motor</strong><small>Stand-by</small></div></div>
           <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>Zonnepanelen</strong><small id="msrSolarSub">Laden (20,1 V)</small></div></div>
-          <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>Verwarming</strong><small>Uit</small></div></div>
+          <div class="msr-status-item"><span class="msr-check">✓</span><div><strong>Nordkapp GEN3</strong><small id="msrHeaterState">Stand-by · Auto</small></div></div>
+        </div>
+        <div class="msr-heater" aria-label="Bijverwarming">
+          <button type="button" id="msrHeaterPower" class="msr-heater-power" aria-pressed="false">⏻ <span>Uit</span></button>
+          <div class="msr-heater-temp" aria-label="Gewenste temperatuur">
+            <button type="button" id="msrHeaterDown" aria-label="Temperatuur lager">−</button>
+            <strong id="msrHeaterTemp">20°</strong>
+            <button type="button" id="msrHeaterUp" aria-label="Temperatuur hoger">+</button>
+          </div>
+          <button type="button" id="msrHeaterAuto" class="msr-heater-auto on" aria-pressed="true">AUTO</button>
         </div>
         <button class="msr-action" data-ms8263-go="technical">Naar techniek <span>›</span></button>
       </section>
