@@ -1,7 +1,7 @@
-/* MijnSerenity 8.30.0 — consistente releasecache voor web en native bronassets */
-const CACHE_NAME='mijnserenity-8.30.0';
-const BUILD='8.30.0';
-const TOKEN='830000';
+/* MijnSerenity 8.30.1 — consistente releasecache voor web en native bronassets */
+const CACHE_NAME='mijnserenity-8.30.1';
+const BUILD='8.30.1';
+const TOKEN='830100';
 const CORE=[
   '/',
   '/index.html',
