@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.0 — landscape startdashboard
+/* MijnSerenity 8.30.1 — landscape startdashboard
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.0';
-const TOKEN='830000';
+const BUILD='8.30.1';
+const TOKEN='830100';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -174,15 +174,19 @@ function installStyle(){
  @media(max-width:900px) and (orientation:portrait){
    body.ms8263-home-active{overflow:auto!important}
    #${ROOT}{position:relative!important;height:auto!important;min-height:100dvh!important;overflow:auto!important}
-   #${ROOT} .msr-shell{display:block;height:auto;min-height:100dvh;padding-bottom:115px}
+   #${ROOT} .msr-shell{display:block;height:auto;min-height:100dvh;padding-bottom:calc(118px + env(safe-area-inset-bottom))}
    #${ROOT} .msr-side{display:none}
    #${ROOT} .msr-hero{height:260px}
-   #${ROOT} .ms8263-main{display:block!important;overflow:visible!important;padding:12px!important}
+   #${ROOT} .ms8263-main{display:block!important;overflow:visible!important;padding:12px 12px 22px!important}
    #${ROOT} .msr-quick,#${ROOT} .msr-row{margin-bottom:10px}
    #${ROOT} .ms8263-features{grid-template-columns:repeat(2,minmax(0,1fr))!important}
    #${ROOT} .msr-row,#${ROOT} .msr-row-bottom{display:block}
    #${ROOT} .msr-card{margin-bottom:10px}
-   #${ROOT} .msqa8267{left:8px!important;right:8px!important;padding-left:12px!important;padding-right:72px!important}
+   #${ROOT} .msqa8267#msQuickAsk8267{left:8px!important;right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;height:58px!important;min-height:58px!important;padding:6px 66px 6px 8px!important;border-radius:14px!important}
+   #${ROOT} .msqa8267-row{height:46px!important;min-height:46px!important;grid-template-columns:minmax(0,1fr) 46px!important;gap:8px!important}
+   #${ROOT} .msqa8267 input{height:46px!important;min-height:46px!important;padding:0 12px!important;font-size:12px!important}
+   #${ROOT} .msqa8267-send{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important}
+   #${ROOT} .msqa8267-result{left:12px!important;right:12px!important;bottom:78px!important;max-height:34vh!important}
    #${ROOT} .msqa8267-label,#${ROOT} .msqa8267-examples,#${ROOT} .ms8271-tools{display:none!important}
  }
 
@@ -415,8 +419,40 @@ function bindHeater(){
  renderHeater();
 }
 
+
+const ALARM_SNOOZE_KEY='mijnserenity_alarm_banner_snooze_v8301';
+const ALARM_SNOOZE_MS=15*60*1000;
+function alarmBannerFingerprint(banner){
+ const title=clean(banner?.querySelector('strong')?.textContent);
+ const body=clean(banner?.querySelector('p')?.textContent);
+ return title||body?`${title}|${body}`:'';
+}
+function readAlarmSnooze(){
+ try{return JSON.parse(sessionStorage.getItem(ALARM_SNOOZE_KEY)||'null')||{fp:'',until:0}}catch(_){return{fp:'',until:0}}
+}
+function installAlarmCloseFix(){
+ if(window.__msAlarmCloseFix8301)return;window.__msAlarmCloseFix8301=true;
+ const save=fp=>{try{sessionStorage.setItem(ALARM_SNOOZE_KEY,JSON.stringify({fp,until:Date.now()+ALARM_SNOOZE_MS}))}catch(_){}};
+ const suppress=()=>{
+   const banner=$('msSerenityAlarmBanner');if(!banner)return;
+   const fp=alarmBannerFingerprint(banner),state=readAlarmSnooze();
+   if(state.fp&&fp&&state.fp!==fp){try{sessionStorage.removeItem(ALARM_SNOOZE_KEY)}catch(_){};return}
+   if(state.fp&&state.fp===fp&&Number(state.until)>Date.now())banner.classList.remove('show');
+ };
+ document.addEventListener('click',event=>{
+   const btn=event.target?.closest?.('#msSerenityAlarmBanner .ms-alarm-close');if(!btn)return;
+   const banner=$('msSerenityAlarmBanner'),fp=alarmBannerFingerprint(banner);
+   if(fp)save(fp);
+   setTimeout(()=>banner?.classList.remove('show'),0);
+ },true);
+ const observe=()=>{if(!document.body)return;const mo=new MutationObserver(suppress);mo.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class'],characterData:true});suppress()};
+ if(document.body)observe();else document.addEventListener('DOMContentLoaded',observe,{once:true});
+ setInterval(suppress,1200);
+}
+
 function bind(){
  const root=$(ROOT);if(!root)return;
+ installAlarmCloseFix();
  root.querySelectorAll('[data-ms8263-go]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.ms8263Go)));
  $('ms8263Theme')?.addEventListener('click',()=>{
    const day=root.dataset.theme==='day';root.dataset.theme=day?'night':'day';
