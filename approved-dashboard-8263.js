@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.5 — landscape dashboard visual polish
+/* MijnSerenity 8.30.6 — landscape dashboard visual polish
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.5';
-const TOKEN='830500';
+const BUILD='8.30.6';
+const TOKEN='830600';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -63,8 +63,9 @@ function installStyle(){
  #${ROOT} .msr-side-foot .sun{font-size:34px;color:#d5f7ff;line-height:1}
  #${ROOT} .msr-side-foot strong{display:block;margin-top:4px;color:#fff;font-family:Georgia,serif;font-size:20px;font-weight:500;letter-spacing:.02em}
  #${ROOT} .msr-hero{grid-column:2;grid-row:1;position:relative;overflow:hidden;background:url('/serenity-reference-hero.jpg?v=${TOKEN}') center center/cover no-repeat;isolation:isolate}
- #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(90deg,rgba(2,19,30,.985) 0,rgba(2,19,30,.94) 34%,rgba(2,19,30,.28) 58%,rgba(2,14,23,.16) 100%)}
- #${ROOT} .msr-hero:after{content:"";position:absolute;left:0;bottom:0;z-index:1;width:49%;height:36%;pointer-events:none;background:linear-gradient(90deg,rgba(2,19,30,1) 0,rgba(2,19,30,.98) 72%,rgba(2,19,30,0) 100%)}
+ #${ROOT} .msr-hero-bg{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;pointer-events:none}
+ #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(2,19,30,.84) 0,rgba(2,19,30,.60) 34%,rgba(2,19,30,.16) 58%,rgba(2,14,23,.08) 100%)}
+ #${ROOT} .msr-hero:after{content:"";position:absolute;left:0;bottom:0;z-index:1;width:43%;height:34%;pointer-events:none;background:linear-gradient(90deg,rgba(2,19,30,.72) 0,rgba(2,19,30,.48) 72%,rgba(2,19,30,0) 100%)}
  #${ROOT} .msr-hero-copy{position:absolute;left:1.75vw;bottom:1.65vh;z-index:2;width:min(38vw,560px);padding:11px 28px 11px 14px;border:1px solid rgba(92,196,229,.18);border-radius:12px;background:linear-gradient(90deg,rgba(2,19,30,.97),rgba(2,19,30,.91));box-shadow:0 10px 28px rgba(0,0,0,.24);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);text-shadow:0 3px 15px rgba(0,0,0,.75)}
  #${ROOT} .msr-hero-copy strong{display:block;font-size:1.80vw;line-height:1.05}
  #${ROOT} .msr-hero-copy span{display:block;margin-top:6px;font-size:1.10vw;font-weight:620}
@@ -506,6 +507,7 @@ function apply(){
   </aside>
 
   <section class="msr-hero">
+    <img class="msr-hero-bg" src="/serenity-reference-hero.jpg?v=${TOKEN}" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
     <div class="msr-hero-copy"><strong id="ms8280Greeting">Welkom Desi &amp; Michel</strong><span>Fijn dat jullie er weer zijn</span><em>“Good vibes, high tides”</em></div>
     <div class="msr-hero-info">
       <div class="msr-hero-date" id="ms8280HeroDate">${shortDate()}</div>
