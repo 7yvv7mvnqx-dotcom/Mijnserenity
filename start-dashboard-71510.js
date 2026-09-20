@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.2 — landscape startdashboard + bestaande live/AI/alarm-koppelingen. */
+/* MijnSerenity 8.30.3 — iPad-landscape viewportfix + bestaande live/AI/alarm-koppelingen. */
 /* REFERENCE_DASHBOARD_8292 */
 (()=>{
 'use strict';
@@ -9,7 +9,7 @@ window.__msUnifiedDashboard8215=true;
 window.__msSimpleStart8210=true;
 window.__msDisableLegacyVisuals=true;
 
-const BUILD='8.30.2',TOKEN='830200',ROOT='ms8210Start';
+const BUILD='8.30.3',TOKEN='830300',ROOT='ms8210Start';
 const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',VIC='ms8278VictronTankAlarmScript',SETTINGS='ms8279SettingsNotificationsScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8277IosVoiceFixScript',PERSIST='ms8272AiPersistScript';
 const $=id=>document.getElementById(id);
 let readyAnnounced=false;
@@ -18,7 +18,7 @@ function deepLink(){try{const q=new URLSearchParams(location.search);return q.ha
 function syncBuild(){try{window.APP_BUILD=BUILD;window.MIJSERENITY_BUILD=BUILD}catch(_){};document.querySelector('meta[name="mijnserenity-build"]')?.setAttribute('content',BUILD);document.querySelector('meta[name="ms-build"]')?.setAttribute('content',BUILD);const b=$('buildStamp');if(b)b.textContent='v'+BUILD;const s=$('settingsAppVersion');if(s)s.textContent=BUILD;document.querySelectorAll('[data-ms-build-version]').forEach(el=>el.textContent=BUILD)}
 function announceReady(){if(readyAnnounced)return;readyAnnounced=true;window.__msApprovedHomeReady8292=true;window.dispatchEvent(new CustomEvent('mijnserenity:dashboard-ready',{detail:{build:BUILD,approved:true,singleRenderer:true,source:'start-dashboard-8292'}}))}
 function installStyle(){if($('ms8266StartGuardStyle'))return;const s=document.createElement('style');s.id='ms8266StartGuardStyle';s.textContent=`body.ms8263-home-active>.bottom-nav,body.ms8263-home-active #appView>.bottom-nav,body.ms8263-home-active .bottom-nav.ms8214-nav{display:none!important;visibility:hidden!important;pointer-events:none!important}body.ms8263-home-active #dashboard>#ms71510Start,body.ms8263-home-active #dashboard>#serenityIvms,body.ms8263-home-active #dashboard>#ms71510Dashboard,body.ms8263-home-active #dashboard>#msMarineGlass{display:none!important}`;document.head.appendChild(s)}
-function ensureRoot(){if(route()!=='dashboard')return null;const dashboard=$('dashboard');if(!dashboard)return null;let root=$(ROOT);if(!root){root=document.createElement('section');root.id=ROOT;dashboard.prepend(root)}dashboard.classList.add('ms8255-reference-dashboard');dashboard.classList.remove('mg-active','scd-active','mspro-active');[...dashboard.children].forEach(el=>{if(el!==root){el.dataset.ms8266Hidden='1';el.style.setProperty('display','none','important')}});root.style.setProperty('display','block','important');if(!root.innerHTML.trim())root.innerHTML='<div style="min-height:100dvh;background:#03131f"></div>';document.body?.classList.add('ms8263-home-active');return root}
+function ensureRoot(){if(route()!=='dashboard'){const existing=$(ROOT);if(existing)existing.style.setProperty('display','none','important');return null}const dashboard=$('dashboard');if(!dashboard)return null;let root=$(ROOT);if(!root){root=document.createElement('section');root.id=ROOT}if(root.parentElement!==document.body)document.body.appendChild(root);dashboard.classList.add('ms8255-reference-dashboard');dashboard.classList.remove('mg-active','scd-active','mspro-active');[...dashboard.children].forEach(el=>{el.dataset.ms8266Hidden='1';el.style.setProperty('display','none','important')});root.style.setProperty('display','block','important');if(!root.innerHTML.trim())root.innerHTML='<div style="min-height:100dvh;background:#03131f"></div>';document.body?.classList.add('ms8263-home-active');return root}
 function load(path,id,after){if($(id)){after?.();return}const script=document.createElement('script');script.id=id;script.src=`${path}?v=${TOKEN}`;script.async=false;script.addEventListener('load',()=>after?.(),{once:true});document.head.appendChild(script)}
 function ensurePatch(){if(typeof window.ms8265ApplyDashboardButtons==='function'){try{window.ms8265ApplyDashboardButtons()}catch(_){};return}load('/dashboard-buttons-8265.js',PATCH,()=>{try{window.ms8265ApplyDashboardButtons?.();syncBuild()}catch(_){}})}
 function ensureVictron(){if(window.__msVictronTankAlarm8278){try{window.ms8278RefreshVictron?.()}catch(_){};return}load('/victron-tank-alarm-8278.js',VIC,()=>{try{window.ms8278RefreshVictron?.()}catch(_){}})}
@@ -34,6 +34,6 @@ function showHome(){try{history.replaceState(null,'',location.pathname+location.
 function boot(){syncBuild();installStyle();ensureSettings();if(!deepLink())showHome();else if(route()==='dashboard')apply();[120,500,1400].forEach(ms=>setTimeout(()=>{ensureSettings();if(route()==='dashboard')apply()},ms))}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 window.addEventListener('pageshow',()=>{syncBuild();ensureSettings();if(route()==='dashboard')setTimeout(apply,0)},{passive:true});
-window.addEventListener('hashchange',()=>{ensureSettings();if(route()==='dashboard')setTimeout(apply,0);else document.body?.classList.remove('ms8263-home-active')},{passive:true});
+window.addEventListener('hashchange',()=>{ensureSettings();if(route()==='dashboard')setTimeout(apply,0);else{document.body?.classList.remove('ms8263-home-active');const root=$(ROOT);if(root)root.style.setProperty('display','none','important')}},{passive:true});
 document.addEventListener('click',e=>{const el=e.target.closest?.('[data-target="dashboard"],[data-route="dashboard"],[href="#dashboard"]');if(el&&!$(ROOT)?.contains(el))setTimeout(showHome,0)},true);
 })();
