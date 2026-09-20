@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.0 — landscape startdashboard + bestaande live/AI/alarm-koppelingen. */
+/* MijnSerenity 8.30.1 — landscape startdashboard + bestaande live/AI/alarm-koppelingen. */
 /* REFERENCE_DASHBOARD_8292 */
 (()=>{
 'use strict';
@@ -9,7 +9,7 @@ window.__msUnifiedDashboard8215=true;
 window.__msSimpleStart8210=true;
 window.__msDisableLegacyVisuals=true;
 
-const BUILD='8.30.0',TOKEN='830000',ROOT='ms8210Start';
+const BUILD='8.30.1',TOKEN='830100',ROOT='ms8210Start';
 const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',VIC='ms8278VictronTankAlarmScript',SETTINGS='ms8279SettingsNotificationsScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8277IosVoiceFixScript',PERSIST='ms8272AiPersistScript';
 const $=id=>document.getElementById(id);
 let readyAnnounced=false;
