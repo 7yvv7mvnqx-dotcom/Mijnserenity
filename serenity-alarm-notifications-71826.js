@@ -1,10 +1,11 @@
-/* MijnSerenity 7.18.26 — duidelijke alarmmeldingen op telefoon */
+/* MijnSerenity 8.30.3 — compacte alarmmeldingen met live-data en blijvend sluiten. */
 (()=>{
   'use strict';
 
-  const BUILD='7.18.26';
+  const BUILD='8.30.3';
   const STORAGE_KEY='mijnserenity-alarm-notifications-v71826';
   const SEEN_KEY='mijnserenity-alarm-notification-seen-v71826';
+  const DISMISSED_KEY='mijnserenity-alarm-dismissed-v8303';
   const DEDUPE_MS=30*60*1000;
   const POLL_MS=5000;
   const SETUP_ID='msSerenityNotificationSetup';
@@ -76,6 +77,8 @@
       }
     }catch(error){console.warn('Serenity alarm: technische waarschuwingen konden niet worden gelezen.',error)}
 
+    warnings=reconcileLiveHouseBattery(warnings);
+
     const system=systemAlarm();
     if(system)warnings.push(system);
 
@@ -98,22 +101,60 @@
     return item?`${item.level}|${item.title}|${item.text}`:'';
   }
 
+  function dismissKey(item){
+    return item?(String(item.level||'warning').toLowerCase()+'|'+String(item.title||'').trim()):'';
+  }
+
+  function dismissedKey(){
+    try{return localStorage.getItem(DISMISSED_KEY)||''}catch{return ''}
+  }
+
+  function setDismissedKey(value){
+    try{
+      if(value)localStorage.setItem(DISMISSED_KEY,value);
+      else localStorage.removeItem(DISMISSED_KEY);
+    }catch{}
+  }
+
+  function freshLiveHouseVoltage(){
+    const live=window.MIJSERENITY_VRM_LIVE_ENERGY;
+    const value=Number(live?.battery?.voltage);
+    if(!Number.isFinite(value)||value<=0)return null;
+    const rawAt=String(live?.sampledAt||'');
+    if(rawAt){
+      const at=Date.parse(rawAt);
+      if(Number.isFinite(at)&&Date.now()-at>10*60*1000)return null;
+    }
+    return value;
+  }
+
+  function reconcileLiveHouseBattery(warnings){
+    const voltage=freshLiveHouseVoltage();
+    if(voltage===null)return warnings;
+    return warnings.filter(item=>{
+      if(!/huishoudaccu/i.test(String(item?.title||'')))return true;
+      if(voltage>=12.2)return false;
+      item.text=voltage.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})+' V gemeten.';
+      return true;
+    });
+  }
+
   function ensureStyles(){
     if($('msSerenityAlarmStyles'))return;
     const style=document.createElement('style');
     style.id='msSerenityAlarmStyles';
     style.textContent=`
-      #${ALARM_ID}{position:fixed;z-index:2147483000;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));top:max(12px,calc(env(safe-area-inset-top) + 8px));display:none;align-items:flex-start;gap:12px;padding:14px 14px 13px;border-radius:18px;color:#fff;box-shadow:0 16px 50px rgba(0,0,0,.38);font-family:inherit;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+      #${ALARM_ID}{position:fixed;z-index:2147483000;left:auto;right:max(12px,env(safe-area-inset-right));top:max(12px,calc(env(safe-area-inset-top) + 8px));width:min(500px,calc(100vw - 24px));max-width:500px;display:none;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:14px;color:#fff;box-shadow:0 14px 38px rgba(0,0,0,.34);font-family:inherit;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
       #${ALARM_ID}.show{display:flex;animation:msAlarmIn .22s ease-out}
       #${ALARM_ID}.critical{background:rgba(178,24,31,.96);border:1px solid rgba(255,255,255,.26)}
       #${ALARM_ID}.warning{background:rgba(191,105,7,.96);border:1px solid rgba(255,255,255,.22)}
-      #${ALARM_ID} .ms-alarm-icon{font-size:26px;line-height:1}
+      #${ALARM_ID} .ms-alarm-icon{font-size:22px;line-height:1}
       #${ALARM_ID} .ms-alarm-copy{min-width:0;flex:1}
-      #${ALARM_ID} strong{display:block;font-size:16px;line-height:1.22;letter-spacing:.1px}
-      #${ALARM_ID} p{margin:4px 0 0;font-size:13px;line-height:1.35;color:rgba(255,255,255,.92)}
-      #${ALARM_ID} small{display:block;margin-top:5px;color:rgba(255,255,255,.72);font-size:11px}
-      #${ALARM_ID} .ms-alarm-actions{display:flex;gap:8px;margin-top:9px}
-      #${ALARM_ID} button{border:0;border-radius:10px;padding:7px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+      #${ALARM_ID} strong{display:block;font-size:14px;line-height:1.2;letter-spacing:.1px}
+      #${ALARM_ID} p{margin:3px 0 0;font-size:12px;line-height:1.3;color:rgba(255,255,255,.92)}
+      #${ALARM_ID} small{display:block;margin-top:3px;color:rgba(255,255,255,.72);font-size:10px}
+      #${ALARM_ID} .ms-alarm-actions{display:flex;gap:7px;margin-top:7px}
+      #${ALARM_ID} button{border:0;border-radius:9px;padding:6px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
       #${ALARM_ID} .ms-alarm-details{background:#fff;color:#202226}
       #${ALARM_ID} .ms-alarm-close{background:rgba(255,255,255,.16);color:#fff}
       #${SETUP_ID}{position:fixed;z-index:2147482500;left:14px;right:14px;bottom:max(14px,calc(env(safe-area-inset-bottom) + 10px));margin:auto;max-width:520px;padding:14px;border-radius:18px;background:rgba(23,25,29,.96);border:1px solid rgba(255,255,255,.14);box-shadow:0 16px 45px rgba(0,0,0,.34);color:#fff;font-family:inherit;display:none}
@@ -124,6 +165,7 @@
       #${SETUP_ID} button{border:0;border-radius:11px;padding:9px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
       #${SETUP_ID} .enable{background:#fff;color:#1d2025}
       #${SETUP_ID} .later{background:rgba(255,255,255,.12);color:#fff}
+      @media(max-width:600px){#${ALARM_ID}{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));width:auto;max-width:none}}
       @keyframes msAlarmIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
     `;
     document.head.appendChild(style);
@@ -169,7 +211,7 @@
       banner.classList.remove('show');
       navigateToDetails();
     });
-    banner.querySelector('.ms-alarm-close')?.addEventListener('click',()=>banner.classList.remove('show'));
+    banner.querySelector('.ms-alarm-close')?.addEventListener('click',()=>{const key=banner.dataset.dismissKey||'';if(key)setDismissedKey(key);banner.classList.remove('show')});
     document.body.appendChild(banner);
     return banner;
   }
@@ -177,7 +219,13 @@
   function showAlarmBanner(item){
     if(!item)return;
     const banner=ensureAlarmBanner();
-    banner.className=`show ${item.level}`;
+    const key=dismissKey(item);
+    banner.dataset.dismissKey=key;
+    if(dismissedKey()===key){
+      banner.className=item.level;
+      return;
+    }
+    banner.className='show '+item.level;
     const icon=banner.querySelector('.ms-alarm-icon');
     const title=banner.querySelector('strong');
     const body=banner.querySelector('p');
@@ -185,7 +233,7 @@
     if(icon)icon.textContent=item.level==='critical'?'🚨':'⚠️';
     if(title)title.textContent=item.title;
     if(body)body.textContent=item.text;
-    if(time)time.textContent=`Serenity · ${new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`;
+    if(time)time.textContent='Serenity · '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
   }
 
   function hideAlarmBanner(){
@@ -334,6 +382,7 @@
       lastHadWarning=false;
       activeFingerprint='';
       lastFingerprint='';
+      setDismissedKey('');
       hideAlarmBanner();
       return {level:'ok',warnings:[]};
     }
