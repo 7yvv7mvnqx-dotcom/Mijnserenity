@@ -1,11 +1,16 @@
-/* MijnSerenity 8.30.3 — compacte alarmmeldingen met live-data en blijvend sluiten. */
+/* MijnSerenity 8.30.4 — compacte alarmmeldingen, stabiele laagspanningsdetectie en blijvend sluiten. */
 (()=>{
   'use strict';
 
-  const BUILD='8.30.3';
+  const BUILD='8.30.4';
   const STORAGE_KEY='mijnserenity-alarm-notifications-v71826';
   const SEEN_KEY='mijnserenity-alarm-notification-seen-v71826';
   const DISMISSED_KEY='mijnserenity-alarm-dismissed-v8303';
+  const HOUSE_LOW_ENTER=12.0;
+  const HOUSE_LOW_CLEAR=12.2;
+  const HOUSE_LOW_HOLD_MS=60*1000;
+  let houseLowSince=0;
+  let houseLowLatched=false;
   const DEDUPE_MS=30*60*1000;
   const POLL_MS=5000;
   const SETUP_ID='msSerenityNotificationSetup';
@@ -131,12 +136,28 @@
   function reconcileLiveHouseBattery(warnings){
     const voltage=freshLiveHouseVoltage();
     if(voltage===null)return warnings;
-    return warnings.filter(item=>{
+    const nowMs=Date.now();
+    if(voltage>=HOUSE_LOW_CLEAR){
+      houseLowSince=0;houseLowLatched=false;
+      return warnings.filter(item=>!/huishoudaccu/i.test(String(item?.title||'')));
+    }
+    if(voltage<HOUSE_LOW_ENTER){
+      if(!houseLowSince)houseLowSince=nowMs;
+      if(nowMs-houseLowSince>=HOUSE_LOW_HOLD_MS)houseLowLatched=true;
+    }else if(!houseLowLatched){
+      houseLowSince=0;
+    }
+    if(!houseLowLatched)return warnings.filter(item=>!/huishoudaccu/i.test(String(item?.title||'')));
+    let found=false;
+    const result=warnings.filter(item=>{
       if(!/huishoudaccu/i.test(String(item?.title||'')))return true;
-      if(voltage>=12.2)return false;
-      item.text=voltage.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})+' V gemeten.';
+      found=true;
+      item.level=voltage<11.8?'critical':'warning';
+      item.text=voltage.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})+' V · langer dan 1 minuut laag.';
       return true;
     });
+    if(!found)result.push({level:voltage<11.8?'critical':'warning',title:'Huishoudaccu laag',text:voltage.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})+' V · langer dan 1 minuut laag.',icon:'⚠️'});
+    return result;
   }
 
   function ensureStyles(){
@@ -144,7 +165,7 @@
     const style=document.createElement('style');
     style.id='msSerenityAlarmStyles';
     style.textContent=`
-      #${ALARM_ID}{position:fixed;z-index:2147483000;left:auto;right:max(12px,env(safe-area-inset-right));top:max(12px,calc(env(safe-area-inset-top) + 8px));width:min(500px,calc(100vw - 24px));max-width:500px;display:none;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:14px;color:#fff;box-shadow:0 14px 38px rgba(0,0,0,.34);font-family:inherit;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+      #${ALARM_ID}{position:fixed;z-index:2147483000;left:auto;right:max(12px,env(safe-area-inset-right));top:max(12px,calc(env(safe-area-inset-top) + 8px));width:min(440px,calc(100vw - 24px));max-width:440px;display:none;align-items:flex-start;gap:9px;padding:9px 10px;border-radius:13px;color:#fff;box-shadow:0 14px 38px rgba(0,0,0,.34);font-family:inherit;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
       #${ALARM_ID}.show{display:flex;animation:msAlarmIn .22s ease-out}
       #${ALARM_ID}.critical{background:rgba(178,24,31,.96);border:1px solid rgba(255,255,255,.26)}
       #${ALARM_ID}.warning{background:rgba(191,105,7,.96);border:1px solid rgba(255,255,255,.22)}
