@@ -8743,3 +8743,138 @@ main,
 @media(max-width:760px){
   .live-solar-yield-metric{min-height:145px}
 }
+
+
+/* MijnSerenity 8.30.9 — compacte, rustige iPhone-login */
+@media(max-width:600px){
+  body:has(#authView:not(.hidden)),
+  body:has(#approvalView:not(.hidden)){
+    padding-bottom:0!important;
+  }
+  body:has(#authView:not(.hidden)) > .bottom-nav,
+  body:has(#approvalView:not(.hidden)) > .bottom-nav,
+  body:has(#authView:not(.hidden)) .bottom-nav,
+  body:has(#approvalView:not(.hidden)) .bottom-nav{
+    display:none!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+  body:has(#authView:not(.hidden)) > main,
+  body:has(#approvalView:not(.hidden)) > main{
+    width:100%!important;
+    max-width:100%!important;
+    min-height:100dvh!important;
+    margin:0!important;
+    padding:max(10px,env(safe-area-inset-top)) 10px max(12px,env(safe-area-inset-bottom))!important;
+  }
+  #authView:not(.hidden),
+  #approvalView:not(.hidden){
+    display:block!important;
+    width:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+  }
+  #authView:not(.hidden) .auth-card,
+  #approvalView:not(.hidden) .approval-card{
+    width:100%!important;
+    max-width:520px!important;
+    margin:0 auto!important;
+    padding:16px!important;
+    border-radius:20px!important;
+  }
+  #authView:not(.hidden) .auth-brand-logo,
+  #approvalView:not(.hidden) .approval-brand-logo{
+    width:min(300px,82%)!important;
+    height:auto!important;
+    max-height:126px!important;
+    margin:0 auto 14px!important;
+    padding:8px!important;
+    border-radius:16px!important;
+  }
+  #authView:not(.hidden) .auth-heading{
+    align-items:center!important;
+    gap:10px!important;
+    margin-bottom:8px!important;
+  }
+  #authView:not(.hidden) .auth-heading .eyebrow{
+    font-size:11px!important;
+    line-height:1.1!important;
+  }
+  #authView:not(.hidden) .auth-heading h2{
+    margin:3px 0 0!important;
+    font-size:30px!important;
+    line-height:1!important;
+  }
+  #authView:not(.hidden) .auth-lock{
+    width:44px!important;
+    height:44px!important;
+    flex:0 0 44px!important;
+    border-radius:14px!important;
+    font-size:21px!important;
+  }
+  #authView:not(.hidden) > .auth-card > p.small{
+    margin:10px 0 14px!important;
+    font-size:14px!important;
+    line-height:1.35!important;
+  }
+  #authView:not(.hidden) label{
+    display:block!important;
+    margin-top:8px!important;
+    font-size:14px!important;
+    font-weight:750!important;
+  }
+  #authView:not(.hidden) input{
+    min-height:52px!important;
+    margin:5px 0 8px!important;
+    padding:11px 13px!important;
+    border-radius:13px!important;
+    font-size:17px!important;
+  }
+  #authView:not(.hidden) .password-field input{
+    padding-right:50px!important;
+  }
+  #authView:not(.hidden) .password-toggle{
+    right:5px!important;
+    width:42px!important;
+    height:42px!important;
+    min-height:42px!important;
+    font-size:20px!important;
+  }
+  #authView:not(.hidden) .auth-actions{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:8px!important;
+    margin-top:10px!important;
+  }
+  #authView:not(.hidden) .auth-actions button{
+    width:100%!important;
+    min-width:0!important;
+    min-height:50px!important;
+    padding:10px 8px!important;
+    border-radius:13px!important;
+    font-size:15px!important;
+    line-height:1.1!important;
+    white-space:normal!important;
+  }
+  #authView:not(.hidden) .auth-link-button{
+    display:block!important;
+    width:auto!important;
+    margin-top:7px!important;
+    padding:4px 0!important;
+    font-size:13px!important;
+    line-height:1.25!important;
+  }
+  #authView:not(.hidden) #authMsg{
+    margin-top:10px!important;
+    padding:9px 10px!important;
+    font-size:12px!important;
+    line-height:1.25!important;
+  }
+}
+@media(max-width:380px){
+  #authView:not(.hidden) .auth-card{padding:13px!important}
+  #authView:not(.hidden) .auth-brand-logo{max-height:108px!important;margin-bottom:11px!important}
+  #authView:not(.hidden) .auth-heading h2{font-size:27px!important}
+  #authView:not(.hidden) .auth-actions button{font-size:14px!important}
+}
