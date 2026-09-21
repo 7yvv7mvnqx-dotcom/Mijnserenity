@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.8 — landscape dashboard + leesbare iPhone-layout
+/* MijnSerenity 8.30.9 — landscape dashboard + leesbare iPhone-layout
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.8';
-const TOKEN='830800';
+const BUILD='8.30.9';
+const TOKEN='830900';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
