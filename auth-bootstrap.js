@@ -1,16 +1,16 @@
-/* MijnSerenity 8.23.5 — snelle uniforme stabiliteitsbootstrap
+/* MijnSerenity 8.30.10 — snelle uniforme stabiliteitsbootstrap
    Eén runtime voor iPhone, iPad en Stage Manager. Start en live kernwaarden
    krijgen voorrang; zware paginamodules worden pas geladen wanneer nodig. */
 (()=>{
   'use strict';
-  if(window.__msBootstrap823500)return;
-  window.__msBootstrap823500=true;
+  if(window.__msBootstrap830100)return;
+  window.__msBootstrap830100=true;
   window.__msDisableLegacyVisuals=true;
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='8.23.5';
-  const VERSION='823500';
+  const BUILD='8.30.10';
+  const VERSION='830100';
   const CORE_SCRIPT=`/app.js?v=${VERSION}`;
   const loaded=new Set();
   const routeLoads=new Map();
