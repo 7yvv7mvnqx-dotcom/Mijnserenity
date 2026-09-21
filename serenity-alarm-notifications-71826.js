@@ -1,8 +1,8 @@
-/* MijnSerenity 8.30.4 — compacte alarmmeldingen, stabiele laagspanningsdetectie en blijvend sluiten. */
+/* MijnSerenity 8.30.10 — betrouwbare alarmknoppen op iPhone/iPad, stabiele laagspanningsdetectie en blijvend sluiten. */
 (()=>{
   'use strict';
 
-  const BUILD='8.30.4';
+  const BUILD='8.30.10';
   const STORAGE_KEY='mijnserenity-alarm-notifications-v71826';
   const SEEN_KEY='mijnserenity-alarm-notification-seen-v71826';
   const DISMISSED_KEY='mijnserenity-alarm-dismissed-v8303';
@@ -20,6 +20,7 @@
   let activeFingerprint='';
   let lastHadWarning=false;
   let timer=null;
+  let lastAlarmActionAt=0;
 
   const now=()=>Date.now();
   const $=id=>document.getElementById(id);
@@ -174,8 +175,8 @@
       #${ALARM_ID} strong{display:block;font-size:14px;line-height:1.2;letter-spacing:.1px}
       #${ALARM_ID} p{margin:3px 0 0;font-size:12px;line-height:1.3;color:rgba(255,255,255,.92)}
       #${ALARM_ID} small{display:block;margin-top:3px;color:rgba(255,255,255,.72);font-size:10px}
-      #${ALARM_ID} .ms-alarm-actions{display:flex;gap:7px;margin-top:7px}
-      #${ALARM_ID} button{border:0;border-radius:9px;padding:6px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+      #${ALARM_ID} .ms-alarm-actions{display:flex;gap:7px;margin-top:7px;position:relative;z-index:4;pointer-events:auto}
+      #${ALARM_ID} button{position:relative;z-index:5;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border:0;border-radius:9px;padding:6px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
       #${ALARM_ID} .ms-alarm-details{background:#fff;color:#202226}
       #${ALARM_ID} .ms-alarm-close{background:rgba(255,255,255,.16);color:#fff}
       #${SETUP_ID}{position:fixed;z-index:2147482500;left:14px;right:14px;bottom:max(14px,calc(env(safe-area-inset-bottom) + 10px));margin:auto;max-width:520px;padding:14px;border-radius:18px;background:rgba(23,25,29,.96);border:1px solid rgba(255,255,255,.14);box-shadow:0 16px 45px rgba(0,0,0,.34);color:#fff;font-family:inherit;display:none}
@@ -235,6 +236,32 @@
     banner.querySelector('.ms-alarm-close')?.addEventListener('click',()=>{const key=banner.dataset.dismissKey||'';if(key)setDismissedKey(key);banner.classList.remove('show')});
     document.body.appendChild(banner);
     return banner;
+  }
+
+  function handleAlarmBannerAction(event){
+    const target=event?.target?.closest?.(`#${ALARM_ID} .ms-alarm-details, #${ALARM_ID} .ms-alarm-close`);
+    if(!target)return;
+    const stamp=Date.now();
+    if(stamp-lastAlarmActionAt<450)return;
+    lastAlarmActionAt=stamp;
+    try{event.preventDefault?.();event.stopPropagation?.()}catch{}
+    const banner=$(ALARM_ID);
+    if(!banner)return;
+    if(target.classList.contains('ms-alarm-close')){
+      const key=banner.dataset.dismissKey||'';
+      if(key)setDismissedKey(key);
+      banner.classList.remove('show');
+      return;
+    }
+    banner.classList.remove('show');
+    navigateToDetails();
+  }
+
+  function installAlarmButtonFallback(){
+    if(window.__msAlarmButtonFallback83010)return;
+    window.__msAlarmButtonFallback83010=true;
+    document.addEventListener('pointerup',handleAlarmBannerAction,true);
+    document.addEventListener('click',handleAlarmBannerAction,true);
   }
 
   function showAlarmBanner(item){
@@ -443,6 +470,7 @@
     installed=true;
     ensureStyles();
     ensureAlarmBanner();
+    installAlarmButtonFallback();
     setTimeout(()=>ensureSetupCard(false),1200);
     maybeOpenAlarmFromUrl();
 
