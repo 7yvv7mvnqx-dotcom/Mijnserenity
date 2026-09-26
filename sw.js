@@ -1,7 +1,7 @@
-/* MijnSerenity 8.31.3 - VRM direct in Home cache */
-const CACHE_NAME='mijnserenity-8.31.3';
-const BUILD='8.31.3';
-const TOKEN='831300';
+/* MijnSerenity 8.31.4 - Victron VRM vast in Home cache */
+const CACHE_NAME='mijnserenity-8.31.4';
+const BUILD='8.31.4';
+const TOKEN='831400';
 const CORE=[
   '/',
   '/index.html',
