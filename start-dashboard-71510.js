@@ -1,4 +1,4 @@
-/* MijnSerenity 8.31.3 - VRM direct in Home-dashboard. */
+/* MijnSerenity 8.31.4 - Victron VRM vast in Home-dashboard. */
 /* REFERENCE_DASHBOARD_8292 */
 (()=>{
 'use strict';
@@ -9,7 +9,7 @@ window.__msUnifiedDashboard8215=true;
 window.__msSimpleStart8210=true;
 window.__msDisableLegacyVisuals=true;
 
-const BUILD='8.31.3',TOKEN='831300',ROOT='ms8210Start';
+const BUILD='8.31.4',TOKEN='831400',ROOT='ms8210Start';
 const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',VIC='ms8278VictronTankAlarmScript',VRMEMBED='ms8312VrmEmbedScript',SETTINGS='ms8279SettingsNotificationsScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8277IosVoiceFixScript',PERSIST='ms8272AiPersistScript';
 const $=id=>document.getElementById(id);
 let readyAnnounced=false;
