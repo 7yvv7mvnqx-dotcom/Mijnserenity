@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.10 — landscape dashboard + leesbare iPhone-layout
+/* MijnSerenity 8.30.11 — interactieve Snel naar-ballonnen + landscape dashboard
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.10';
-const TOKEN='830100';
+const BUILD='8.30.11';
+const TOKEN='830110';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -95,7 +95,19 @@ function installStyle(){
  #${ROOT} .ms8263-feature.cyan{background:linear-gradient(145deg,#0781b0,#075b7f)!important}
  #${ROOT} .ms8263-feature.orange{background:linear-gradient(145deg,#d36a0d,#914608)!important}
  #${ROOT} .ms8263-feature.purple{background:linear-gradient(145deg,#724ca4,#50317b)!important}
+
  #${ROOT} .ms8263-feature.navy{background:linear-gradient(145deg,#0880bd,#075a8d)!important}
+ /* 8.30.11: Snel naar-kaarten komen omhoog zodat de volledige inhoud leesbaar is. */
+ #${ROOT} .msr-quick{position:relative!important;z-index:20!important;overflow:visible!important}
+ #${ROOT} .ms8263-features{position:relative!important;z-index:21!important;overflow:visible!important}
+ #${ROOT} .ms8263-feature{position:relative!important;z-index:1!important;transform:translateY(0);transition:transform 280ms cubic-bezier(.2,.8,.2,1),box-shadow 280ms ease,z-index 0s linear 280ms;will-change:transform}
+ #${ROOT} .ms8263-feature:hover,#${ROOT} .ms8263-feature.msr-feature-expanded{z-index:80!important;transform:translateY(-58px);transition:transform 280ms cubic-bezier(.2,.8,.2,1),box-shadow 280ms ease,z-index 0s;box-shadow:inset 0 1px rgba(255,255,255,.18),0 18px 34px rgba(0,0,0,.36)!important}
+ #${ROOT} .ms8263-feature:hover .copy small,#${ROOT} .ms8263-feature.msr-feature-expanded .copy small{overflow:visible!important}
+ @media (hover:none),(pointer:coarse){
+   #${ROOT} .ms8263-feature:hover{transform:translateY(0)}
+   #${ROOT} .ms8263-feature.msr-feature-expanded{transform:translateY(-52px)}
+ }
+
  #${ROOT} .msr-row{display:grid;grid-template-columns:1.03fr 1.03fr 1.42fr;gap:11px;min-height:0}
  #${ROOT} .msr-row-bottom{grid-template-columns:1.08fr .98fr 1.16fr}
  #${ROOT} .msr-card{display:flex;min-height:0;flex-direction:column;padding:13px 13px 9px}
@@ -582,10 +594,42 @@ function installAlarmCloseFix(){
  setInterval(suppress,1200);
 }
 
+function bindQuickFeatureReveal(root){
+ const features=[...root.querySelectorAll('.ms8263-feature[data-ms8263-go]')];
+ if(!features.length)return;
+ const isTouchLike=()=>window.matchMedia?.('(hover: none), (pointer: coarse)')?.matches===true;
+ const closeAll=except=>features.forEach(card=>{if(card!==except){card.classList.remove('msr-feature-expanded');card.setAttribute('aria-expanded','false')}});
+ features.forEach(card=>{
+   if(card.dataset.msrRevealBound==='1')return;
+   card.dataset.msrRevealBound='1';
+   card.setAttribute('aria-expanded','false');
+   card.addEventListener('click',event=>{
+     if(isTouchLike()&&!card.classList.contains('msr-feature-expanded')){
+       event.preventDefault();event.stopPropagation();
+       closeAll(card);
+       card.classList.add('msr-feature-expanded');
+       card.setAttribute('aria-expanded','true');
+       return;
+     }
+     closeAll();
+     nav(card.dataset.ms8263Go);
+   });
+ });
+ if(root.dataset.msrRevealOutsideBound!=='1'){
+   root.dataset.msrRevealOutsideBound='1';
+   document.addEventListener('pointerdown',event=>{
+     if(!isTouchLike())return;
+     const inside=event.target?.closest?.('#'+ROOT+' .ms8263-feature');
+     if(!inside)closeAll();
+   },{passive:true});
+ }
+}
+
 function bind(){
  const root=$(ROOT);if(!root)return;
  installAlarmCloseFix();
- root.querySelectorAll('[data-ms8263-go]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.ms8263Go)));
+ root.querySelectorAll('[data-ms8263-go]:not(.ms8263-feature)').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.ms8263Go)));
+ bindQuickFeatureReveal(root);
  $('ms8263Theme')?.addEventListener('click',()=>{
    const day=root.dataset.theme==='day';root.dataset.theme=day?'night':'day';
    setText('ms8263ThemeLabel',day?'Nacht':'Dag');
