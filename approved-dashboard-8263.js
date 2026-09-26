@@ -97,16 +97,17 @@ function installStyle(){
  #${ROOT} .ms8263-feature.purple{background:linear-gradient(145deg,#724ca4,#50317b)!important}
 
  #${ROOT} .ms8263-feature.navy{background:linear-gradient(145deg,#0880bd,#075a8d)!important}
- /* 8.30.12: kaarten schuiven omhoog BINNEN het eigen Snel-naar-kader.
-    Geen overlay/voorgrond: alles buiten het kader wordt afgekapt. */
- #${ROOT} .msr-quick{position:relative!important;z-index:auto!important;overflow:hidden!important}
- #${ROOT} .ms8263-features{position:relative!important;z-index:auto!important;overflow:hidden!important}
- #${ROOT} .ms8263-feature{position:relative!important;z-index:auto!important;transform:translateY(0);transition:transform 280ms cubic-bezier(.2,.8,.2,1),box-shadow 280ms ease;will-change:transform}
- #${ROOT} .ms8263-feature:hover,#${ROOT} .ms8263-feature.msr-feature-expanded{z-index:auto!important;transform:translateY(-46px);box-shadow:inset 0 1px rgba(255,255,255,.18),0 9px 18px rgba(0,0,0,.14)!important}
+ /* 8.30.12: kaarten schuiven omhoog; het bovenste deel blijft zichtbaar op de voorgrond.
+    De kaart beweegt uitsluitend omhoog, zodat de onderzijde binnen het eigen Snel-naar-gebied blijft. */
+ #${ROOT} .ms8263-main{position:relative!important;z-index:4!important;overflow:visible!important}
+ #${ROOT} .msr-quick{position:relative!important;z-index:12!important;overflow:visible!important}
+ #${ROOT} .ms8263-features{position:relative!important;z-index:13!important;overflow:visible!important}
+ #${ROOT} .ms8263-feature{position:relative!important;z-index:1!important;transform:translateY(0);transition:transform 280ms cubic-bezier(.2,.8,.2,1),box-shadow 280ms ease;will-change:transform}
+ #${ROOT} .ms8263-feature:hover,#${ROOT} .ms8263-feature.msr-feature-expanded{z-index:40!important;transform:translateY(-46px);box-shadow:inset 0 1px rgba(255,255,255,.20),0 18px 30px rgba(0,0,0,.30)!important}
  #${ROOT} .ms8263-feature .copy small{overflow:hidden!important}
  @media (hover:none),(pointer:coarse){
    #${ROOT} .ms8263-feature:hover{transform:translateY(0)}
-   #${ROOT} .ms8263-feature.msr-feature-expanded{transform:translateY(-46px)}
+   #${ROOT} .ms8263-feature.msr-feature-expanded{z-index:40!important;transform:translateY(-46px)}
  }
 
  #${ROOT} .msr-row{display:grid;grid-template-columns:1.03fr 1.03fr 1.42fr;gap:11px;min-height:0}
