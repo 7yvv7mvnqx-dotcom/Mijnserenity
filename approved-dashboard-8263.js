@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.15 — schone hero-foto zonder ingebrande welkomsttekst
+/* MijnSerenity 8.31.4 — schone hero-foto zonder ingebrande welkomsttekst
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.15';
-const TOKEN='830150';
+const BUILD='8.31.4';
+const TOKEN='831400';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -78,11 +78,11 @@ function installStyle(){
  #${ROOT} .msr-hero-temp{grid-area:temp;margin-top:5px;font-size:16px;font-weight:800}
  #${ROOT} .msr-hero-place{grid-area:place;margin-top:8px;font-size:12px;font-weight:700}
  #${ROOT} .msr-hero-pin{grid-area:pin;margin-top:8px;font-size:17px}
- #${ROOT} .ms8263-main{grid-column:2;grid-row:2;display:grid!important;grid-template-rows:clamp(142px,19vh,178px) minmax(0,1fr) minmax(0,1fr);gap:.75vh;min-height:0;padding:.8vh 1.25vw 9.1vh!important;background:linear-gradient(180deg,#062033 0,#031521 100%)!important;overflow:hidden!important}
+ #${ROOT} .ms8263-main{grid-column:2;grid-row:2;display:grid!important;grid-template-rows:clamp(142px,19vh,178px) minmax(0,1fr);gap:.75vh;min-height:0;padding:.8vh 1.25vw 9.1vh!important;background:linear-gradient(180deg,#062033 0,#031521 100%)!important;overflow:hidden!important}
  #${ROOT} .msr-panel{border:1px solid rgba(26,128,165,.70);border-radius:17px;background:linear-gradient(145deg,rgba(4,42,61,.96),rgba(2,24,38,.97));box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.10);overflow:hidden}
  #${ROOT} .msr-kicker{display:flex;align-items:center;gap:8px;color:#74e6ff;font-size:9px;font-weight:900;letter-spacing:.19em;text-transform:uppercase}
  #${ROOT} .msr-kicker .ico{font-size:18px;letter-spacing:0}
- #${ROOT} .msr-quick{padding:13px 14px 14px}
+ #${ROOT} .msr-quick{padding:13px 14px 14px}\n #${ROOT} .msr-vrm-live{min-height:0;height:100%;overflow:hidden;border:1px solid rgba(26,128,165,.70);border-radius:17px;background:#fff;box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.10)}\n #${ROOT} .msr-vrm-live iframe{display:block;width:100%!important;height:100%!important;min-height:0;border:0;background:#fff}
  #${ROOT} .msr-quick-head{display:flex;align-items:center;justify-content:space-between;margin:0 3px 10px}
  #${ROOT} .msr-quick-head strong{font-size:12px;letter-spacing:.18em}
  #${ROOT} .msr-edit{border:0;background:transparent;color:#65e5ff;font-size:11px;font-weight:700}
@@ -111,7 +111,7 @@ function installStyle(){
    #${ROOT} .ms8263-feature.msr-feature-expanded{z-index:40!important;transform:translateY(-46px)}
  }
 
- #${ROOT} .msr-row{display:grid;grid-template-columns:1.03fr 1.03fr 1.42fr;gap:11px;min-height:0}
+ #${ROOT} .msr-row{display:none!important;grid-template-columns:1.03fr 1.03fr 1.42fr;gap:11px;min-height:0}
  #${ROOT} .msr-row-bottom{grid-template-columns:1.08fr .98fr 1.16fr}
  #${ROOT} .msr-card{display:flex;min-height:0;flex-direction:column;padding:13px 13px 9px}
  #${ROOT} .msr-card-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
@@ -730,6 +730,10 @@ function apply(){
         ${feature('logbook','log','Logboek','Nieuwe logregel','navy')}
         ${feature('planner','route','Reisplanner','Plan je volgende trip','green')}
       </section>
+    </section>
+
+    <section class="msr-vrm-live" aria-label="Victron VRM live">
+      <iframe width="100%" height="800" title="Victron VRM Serenity" src="https://vrm.victronenergy.com/installation/1003203/embed/57c91764" loading="eager" referrerpolicy="strict-origin-when-cross-origin" allow="fullscreen"></iframe>
     </section>
 
     <section class="msr-row">
