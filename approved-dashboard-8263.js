@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.14 — welkomstballon volledig verborgen + stabiele Snel naar-kaarten
+/* MijnSerenity 8.30.15 — schone hero-foto zonder ingebrande welkomsttekst
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.14';
-const TOKEN='830140';
+const BUILD='8.30.15';
+const TOKEN='830150';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -62,7 +62,7 @@ function installStyle(){
  #${ROOT} .msr-side-foot{padding:11px 12px 18px;text-align:center;color:#5f9dbb;font-size:10px;letter-spacing:.10em}
  #${ROOT} .msr-side-foot .sun{font-size:34px;color:#d5f7ff;line-height:1}
  #${ROOT} .msr-side-foot strong{display:block;margin-top:4px;color:#fff;font-family:Georgia,serif;font-size:20px;font-weight:500;letter-spacing:.02em}
- #${ROOT} .msr-hero{grid-column:2;grid-row:1;position:relative;overflow:hidden;background:url('/serenity-reference-hero.jpg?v=${TOKEN}') center center/cover no-repeat;isolation:isolate}
+ #${ROOT} .msr-hero{grid-column:2;grid-row:1;position:relative;overflow:hidden;background:url('/serenity-dashboard-boat-20260909.webp?v=${TOKEN}') center center/cover no-repeat;isolation:isolate}
  #${ROOT} .msr-hero-bg{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;pointer-events:none}
  #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(2,19,30,.84) 0,rgba(2,19,30,.60) 34%,rgba(2,19,30,.16) 58%,rgba(2,14,23,.08) 100%)}
  #${ROOT} .msr-hero:after{content:"";position:absolute;left:0;bottom:0;z-index:1;width:43%;height:34%;pointer-events:none;background:linear-gradient(90deg,rgba(2,19,30,.72) 0,rgba(2,19,30,.48) 72%,rgba(2,19,30,0) 100%)}
@@ -708,7 +708,7 @@ function apply(){
   </aside>
 
   <section class="msr-hero">
-    <img class="msr-hero-bg" src="/serenity-reference-hero.jpg?v=${TOKEN}" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
+    <img class="msr-hero-bg" src="/serenity-dashboard-boat-20260909.webp?v=${TOKEN}" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
     <div class="msr-hero-copy"><strong id="ms8280Greeting">Welkom Desi &amp; Michel</strong><span>Fijn dat jullie er weer zijn</span><em>“Good vibes, high tides”</em></div>
     <div class="msr-hero-info">
       <div class="msr-hero-date" id="ms8280HeroDate">${shortDate()}</div>
