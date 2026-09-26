@@ -37,3 +37,14 @@ window.addEventListener('pageshow',()=>{syncBuild();ensureSettings();if(route()=
 window.addEventListener('hashchange',()=>{ensureSettings();if(route()==='dashboard')setTimeout(apply,0);else{document.body?.classList.remove('ms8263-home-active');const root=$(ROOT);if(root)root.style.setProperty('display','none','important')}},{passive:true});
 document.addEventListener('click',e=>{const el=e.target.closest?.('[data-target="dashboard"],[data-route="dashboard"],[href="#dashboard"]');if(el&&!$(ROOT)?.contains(el))setTimeout(showHome,0)},true);
 })();
+
+
+/* MijnSerenity 8.31.0 — live Victron dashboard extension */
+(()=>{
+  if(document.querySelector('script[data-ms8310-victron]'))return;
+  const s=document.createElement('script');
+  s.src='/dashboard-victron-live-8310.js?v=831000';
+  s.dataset.ms8310Victron='1';
+  s.defer=true;
+  document.head.appendChild(s);
+})();
