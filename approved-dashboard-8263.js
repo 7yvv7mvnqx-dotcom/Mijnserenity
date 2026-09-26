@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.11 — interactieve Snel naar-ballonnen + landscape dashboard
+/* MijnSerenity 8.30.12 — Snel naar-kaarten schuiven binnen eigen kader
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.11';
-const TOKEN='830110';
+const BUILD='8.30.12';
+const TOKEN='830120';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -97,15 +97,16 @@ function installStyle(){
  #${ROOT} .ms8263-feature.purple{background:linear-gradient(145deg,#724ca4,#50317b)!important}
 
  #${ROOT} .ms8263-feature.navy{background:linear-gradient(145deg,#0880bd,#075a8d)!important}
- /* 8.30.11: Snel naar-kaarten komen omhoog zodat de volledige inhoud leesbaar is. */
- #${ROOT} .msr-quick{position:relative!important;z-index:20!important;overflow:visible!important}
- #${ROOT} .ms8263-features{position:relative!important;z-index:21!important;overflow:visible!important}
- #${ROOT} .ms8263-feature{position:relative!important;z-index:1!important;transform:translateY(0);transition:transform 280ms cubic-bezier(.2,.8,.2,1),box-shadow 280ms ease,z-index 0s linear 280ms;will-change:transform}
- #${ROOT} .ms8263-feature:hover,#${ROOT} .ms8263-feature.msr-feature-expanded{z-index:80!important;transform:translateY(-58px);transition:transform 280ms cubic-bezier(.2,.8,.2,1),box-shadow 280ms ease,z-index 0s;box-shadow:inset 0 1px rgba(255,255,255,.18),0 18px 34px rgba(0,0,0,.36)!important}
- #${ROOT} .ms8263-feature:hover .copy small,#${ROOT} .ms8263-feature.msr-feature-expanded .copy small{overflow:visible!important}
+ /* 8.30.12: kaarten schuiven omhoog BINNEN het eigen Snel-naar-kader.
+    Geen overlay/voorgrond: alles buiten het kader wordt afgekapt. */
+ #${ROOT} .msr-quick{position:relative!important;z-index:auto!important;overflow:hidden!important}
+ #${ROOT} .ms8263-features{position:relative!important;z-index:auto!important;overflow:hidden!important}
+ #${ROOT} .ms8263-feature{position:relative!important;z-index:auto!important;transform:translateY(0);transition:transform 280ms cubic-bezier(.2,.8,.2,1),box-shadow 280ms ease;will-change:transform}
+ #${ROOT} .ms8263-feature:hover,#${ROOT} .ms8263-feature.msr-feature-expanded{z-index:auto!important;transform:translateY(-46px);box-shadow:inset 0 1px rgba(255,255,255,.18),0 9px 18px rgba(0,0,0,.14)!important}
+ #${ROOT} .ms8263-feature .copy small{overflow:hidden!important}
  @media (hover:none),(pointer:coarse){
    #${ROOT} .ms8263-feature:hover{transform:translateY(0)}
-   #${ROOT} .ms8263-feature.msr-feature-expanded{transform:translateY(-52px)}
+   #${ROOT} .ms8263-feature.msr-feature-expanded{transform:translateY(-46px)}
  }
 
  #${ROOT} .msr-row{display:grid;grid-template-columns:1.03fr 1.03fr 1.42fr;gap:11px;min-height:0}
