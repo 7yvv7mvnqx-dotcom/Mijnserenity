@@ -66,7 +66,7 @@ function installStyle(){
  #${ROOT} .msr-hero-bg{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;pointer-events:none}
  #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(2,19,30,.84) 0,rgba(2,19,30,.60) 34%,rgba(2,19,30,.16) 58%,rgba(2,14,23,.08) 100%)}
  #${ROOT} .msr-hero:after{content:"";position:absolute;left:0;bottom:0;z-index:1;width:43%;height:34%;pointer-events:none;background:linear-gradient(90deg,rgba(2,19,30,.72) 0,rgba(2,19,30,.48) 72%,rgba(2,19,30,0) 100%)}
- #${ROOT} .msr-hero-copy{position:absolute;left:1.75vw;bottom:1.65vh;z-index:2;width:min(27vw,390px);padding:9px 18px 9px 12px;border:1px solid rgba(92,196,229,.16);border-radius:11px;background:linear-gradient(90deg,rgba(2,19,30,.50),rgba(2,19,30,.34));box-shadow:0 8px 22px rgba(0,0,0,.15);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);text-shadow:0 2px 10px rgba(0,0,0,.80)}
+ #${ROOT} .msr-hero-copy{display:none!important;position:absolute;left:1.75vw;bottom:1.65vh;z-index:2;width:min(27vw,390px);padding:9px 18px 9px 12px;border:1px solid rgba(92,196,229,.16);border-radius:11px;background:linear-gradient(90deg,rgba(2,19,30,.50),rgba(2,19,30,.34));box-shadow:0 8px 22px rgba(0,0,0,.15);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);text-shadow:0 2px 10px rgba(0,0,0,.80)}
  #${ROOT} .msr-hero-copy strong{display:block;font-size:1.58vw;line-height:1.05}
  #${ROOT} .msr-hero-copy span{display:block;margin-top:5px;font-size:.98vw;font-weight:620}
  #${ROOT} .msr-hero-copy em{display:block;margin-top:.75vh;font-size:.88vw;font-style:italic;color:#f1f7fa}
