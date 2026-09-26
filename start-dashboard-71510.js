@@ -1,4 +1,4 @@
-/* MijnSerenity 8.31.0 — live Victron dashboard + cache refresh. */
+/* MijnSerenity 8.31.2 - stabiele VRM embed integratie. */
 /* REFERENCE_DASHBOARD_8292 */
 (()=>{
 'use strict';
@@ -9,8 +9,8 @@ window.__msUnifiedDashboard8215=true;
 window.__msSimpleStart8210=true;
 window.__msDisableLegacyVisuals=true;
 
-const BUILD='8.31.0',TOKEN='831000',ROOT='ms8210Start';
-const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',VIC='ms8278VictronTankAlarmScript',SETTINGS='ms8279SettingsNotificationsScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8277IosVoiceFixScript',PERSIST='ms8272AiPersistScript';
+const BUILD='8.31.2',TOKEN='831200',ROOT='ms8210Start';
+const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',VIC='ms8278VictronTankAlarmScript',VRMEMBED='ms8312VrmEmbedScript',SETTINGS='ms8279SettingsNotificationsScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8277IosVoiceFixScript',PERSIST='ms8272AiPersistScript';
 const $=id=>document.getElementById(id);
 let readyAnnounced=false;
 function route(){try{return((location.hash||'#dashboard').replace(/^#/,'').split(/[?&/]/)[0]||'dashboard').toLowerCase()}catch(_){return'dashboard'}}
@@ -23,13 +23,14 @@ function load(path,id,after){if($(id)){after?.();return}const script=document.cr
 function ensurePatch(){if(typeof window.ms8265ApplyDashboardButtons==='function'){try{window.ms8265ApplyDashboardButtons()}catch(_){};return}load('/dashboard-buttons-8265.js',PATCH,()=>{try{window.ms8265ApplyDashboardButtons?.();syncBuild()}catch(_){}})}
 function ensureVictron(){if(window.__msVictronTankAlarm8278){try{window.ms8278RefreshVictron?.()}catch(_){};return}load('/victron-tank-alarm-8278.js',VIC,()=>{try{window.ms8278RefreshVictron?.()}catch(_){}})}
 function ensureSettings(){if(window.__msSettingsNotifications8279)return;load('/settings-notifications-8279.js',SETTINGS)}
+function ensureVrmEmbed(){if(window.__msVrmEmbed8312)return;load('/vrm-embed-8312.js',VRMEMBED)}
 function ensureLive(){if(window.__msApprovedDashboardLive8264){ensureVictron();return}load('/approved-dashboard-live-8264.js',LIVE,()=>{syncBuild();ensureVictron()})}
 function ensurePersist(){if(window.__msSerenityAiPersist8272){try{window.ms8272KeepSerenityAnswer?.()}catch(_){};return}load('/serenity-ai-persist-8272.js',PERSIST,()=>{try{window.ms8272KeepSerenityAnswer?.()}catch(_){}})}
 function ensureIosVoice(){if(window.__msSerenityAiIosVoiceFix8277)return;load('/serenity-ai-ios-voice-fix-8275.js',IOSVOICE)}
 function ensureVoice(){if(window.__msSerenityAiVoice8271){try{window.ms8271EnhanceSerenityAI?.()}catch(_){};ensureIosVoice();ensurePersist();return}load('/serenity-ai-voice-8271.js',VOICE,()=>{try{window.ms8271EnhanceSerenityAI?.()}catch(_){};ensureIosVoice();ensurePersist()})}
 function ensureAi(){if(window.__msQuickAsk8270||window.__msQuickAsk8267){try{window.ms8267MountQuickAsk?.()}catch(_){};ensureVoice();return}load('/ai-quick-command-8267.js',AI,()=>{try{window.ms8267MountQuickAsk?.()}catch(_){};ensureVoice()})}
-function finish(){try{window.ms8263ApplyApprovedDashboard?.()}catch(_){};ensurePatch();ensureLive();ensureVictron();ensureSettings();ensureAi();syncBuild();announceReady()}
-function apply(){installStyle();ensureSettings();const root=ensureRoot();if(!root)return false;syncBuild();if(typeof window.ms8263ApplyApprovedDashboard==='function'){try{const ok=!!window.ms8263ApplyApprovedDashboard();ensurePatch();ensureLive();ensureVictron();ensureAi();if(ok)announceReady();return ok}catch(e){console.warn('Approved Haven dashboard failed',e)}}load('/approved-dashboard-8263.js',APPROVED,finish);return false}
+function finish(){try{window.ms8263ApplyApprovedDashboard?.()}catch(_){};ensurePatch();ensureLive();ensureVictron();ensureVrmEmbed();ensureSettings();ensureAi();syncBuild();announceReady()}
+function apply(){installStyle();ensureSettings();const root=ensureRoot();if(!root)return false;syncBuild();if(typeof window.ms8263ApplyApprovedDashboard==='function'){try{const ok=!!window.ms8263ApplyApprovedDashboard();ensurePatch();ensureLive();ensureVictron();ensureVrmEmbed();ensureAi();if(ok)announceReady();return ok}catch(e){console.warn('Approved Haven dashboard failed',e)}}load('/approved-dashboard-8263.js',APPROVED,finish);return false}
 function showHome(){try{history.replaceState(null,'',location.pathname+location.search+'#dashboard')}catch(_){};setTimeout(apply,0)}
 function boot(){syncBuild();installStyle();ensureSettings();if(!deepLink())showHome();else if(route()==='dashboard')apply();[120,500,1400].forEach(ms=>setTimeout(()=>{ensureSettings();if(route()==='dashboard')apply()},ms))}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
@@ -38,13 +39,3 @@ window.addEventListener('hashchange',()=>{ensureSettings();if(route()==='dashboa
 document.addEventListener('click',e=>{const el=e.target.closest?.('[data-target="dashboard"],[data-route="dashboard"],[href="#dashboard"]');if(el&&!$(ROOT)?.contains(el))setTimeout(showHome,0)},true);
 })();
 
-
-/* MijnSerenity 8.31.0 — live Victron dashboard extension */
-(()=>{
-  if(document.querySelector('script[data-ms8310-victron]'))return;
-  const s=document.createElement('script');
-  s.src='/dashboard-victron-live-8310.js?v=831000';
-  s.dataset.ms8310Victron='1';
-  s.defer=true;
-  document.head.appendChild(s);
-})();
