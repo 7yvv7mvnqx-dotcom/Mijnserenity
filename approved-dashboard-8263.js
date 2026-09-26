@@ -1,4 +1,4 @@
-/* MijnSerenity 8.30.12 — Snel naar-kaarten schuiven binnen eigen kader
+/* MijnSerenity 8.30.13 — stabiele Snel naar-schuifkaarten met ondermasker
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.30.12';
-const TOKEN='830120';
+const BUILD='8.30.13';
+const TOKEN='830130';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -597,26 +597,68 @@ function installAlarmCloseFix(){
 }
 
 function bindQuickFeatureReveal(root){
+ const grid=root.querySelector('.ms8263-features');
  const features=[...root.querySelectorAll('.ms8263-feature[data-ms8263-go]')];
- if(!features.length)return;
+ if(!grid||!features.length)return;
+
  const isTouchLike=()=>window.matchMedia?.('(hover: none), (pointer: coarse)')?.matches===true;
- const closeAll=except=>features.forEach(card=>{if(card!==except){card.classList.remove('msr-feature-expanded');card.setAttribute('aria-expanded','false')}});
+ const closeAll=except=>features.forEach(card=>{
+   if(card!==except){
+     card.classList.remove('msr-feature-expanded');
+     card.setAttribute('aria-expanded','false');
+   }
+ });
+ const openCard=card=>{
+   closeAll(card);
+   card.classList.add('msr-feature-expanded');
+   card.setAttribute('aria-expanded','true');
+ };
+
+ // Desktop/muis: bepaal de actieve kaart vanuit de VASTE grid-positie.
+ // Daardoor blijft de hoverzone op zijn plaats terwijl de kaart zelf omhoog schuift.
+ if(grid.dataset.msrStableHoverBound!=='1'){
+   grid.dataset.msrStableHoverBound='1';
+   grid.addEventListener('pointermove',event=>{
+     if(isTouchLike()||event.pointerType==='touch')return;
+     const rect=grid.getBoundingClientRect();
+     if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom){
+       closeAll();return;
+     }
+     const styles=getComputedStyle(grid);
+     const gap=parseFloat(styles.columnGap||styles.gap||'0')||0;
+     const count=features.length;
+     const cell=(rect.width-gap*(count-1))/count;
+     const relX=event.clientX-rect.left;
+     const index=Math.max(0,Math.min(count-1,Math.floor(relX/(cell+gap))));
+     const startX=index*(cell+gap);
+     if(relX>=startX&&relX<=startX+cell)openCard(features[index]);
+     else closeAll();
+   },{passive:true});
+   grid.addEventListener('pointerleave',event=>{
+     if(!isTouchLike()&&event.pointerType!=='touch')closeAll();
+   },{passive:true});
+ }
+
+ // Touch: eerste tik opent, tweede tik navigeert.
  features.forEach(card=>{
    if(card.dataset.msrRevealBound==='1')return;
    card.dataset.msrRevealBound='1';
    card.setAttribute('aria-expanded','false');
    card.addEventListener('click',event=>{
-     if(isTouchLike()&&!card.classList.contains('msr-feature-expanded')){
-       event.preventDefault();event.stopPropagation();
-       closeAll(card);
-       card.classList.add('msr-feature-expanded');
-       card.setAttribute('aria-expanded','true');
+     if(isTouchLike()){
+       if(!card.classList.contains('msr-feature-expanded')){
+         event.preventDefault();event.stopPropagation();
+         openCard(card);
+         return;
+       }
+       closeAll();
+       nav(card.dataset.ms8263Go);
        return;
      }
-     closeAll();
      nav(card.dataset.ms8263Go);
    });
  });
+
  if(root.dataset.msrRevealOutsideBound!=='1'){
    root.dataset.msrRevealOutsideBound='1';
    document.addEventListener('pointerdown',event=>{
@@ -626,7 +668,6 @@ function bindQuickFeatureReveal(root){
    },{passive:true});
  }
 }
-
 function bind(){
  const root=$(ROOT);if(!root)return;
  installAlarmCloseFix();
