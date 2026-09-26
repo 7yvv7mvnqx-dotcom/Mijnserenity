@@ -1,7 +1,7 @@
-/* MijnSerenity 8.31.2 - stabiele VRM embed cache */
-const CACHE_NAME='mijnserenity-8.31.2';
-const BUILD='8.31.2';
-const TOKEN='831200';
+/* MijnSerenity 8.31.3 - VRM direct in Home cache */
+const CACHE_NAME='mijnserenity-8.31.3';
+const BUILD='8.31.3';
+const TOKEN='831300';
 const CORE=[
   '/',
   '/index.html',
