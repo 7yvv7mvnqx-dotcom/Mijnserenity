@@ -303,6 +303,7 @@ function fullscreen(){
   }
 }
 function renderPanel(){
+  if(window.__msVictronEmbedded8319)return false;
   const p=panel();
   if(!p)return false;
   installStyle();
