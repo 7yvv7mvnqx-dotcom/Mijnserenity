@@ -685,6 +685,218 @@ function bind(){
  rootQuery('.ms8263-sheet-close')?.addEventListener('click',closeMore);
 }
 
+
+const MSVRM_TOKEN_KEYS=['ms7148_vrm_token','ms7148VrmToken','mijnserenity_vrm_token','vrm_api_token'];
+const MSVRM_EMAIL_KEY='mijnserenity_vrm_mqtt_email';
+let msVrmBusy=false,msVrmReadyTimer=0;
+
+function msVrmSavedToken(){
+ for(const key of MSVRM_TOKEN_KEYS){
+   try{
+     const value=String(localStorage.getItem(key)||'').trim().replace(/^Token\s+/i,'');
+     if(value)return value;
+   }catch(_){}
+ }
+ return '';
+}
+function msVrmSaveToken(value){
+ const token=String(value||'').trim().replace(/^Token\s+/i,'');
+ if(!token)return '';
+ for(const key of MSVRM_TOKEN_KEYS){try{localStorage.setItem(key,token)}catch(_){}}
+ return token;
+}
+function msVrmSavedEmail(){
+ try{return String(localStorage.getItem(MSVRM_EMAIL_KEY)||'').trim()}catch(_){return''}
+}
+function msVrmSaveEmail(value){
+ const email=String(value||'').trim();
+ if(email.includes('@')){try{localStorage.setItem(MSVRM_EMAIL_KEY,email)}catch(_){};return email}
+ return '';
+}
+function msVrmSetStatus(text,state='loading'){
+ const panel=$('ms8319ConsolePanel');
+ const label=$('ms8319ConsoleStatus');
+ const overlay=$('ms8319ConsoleOverlay');
+ if(label)label.textContent=text;
+ panel?.classList.toggle('ms8319-ready',state==='ready');
+ panel?.classList.toggle('ms8319-error',state==='error');
+ if(overlay){
+   overlay.classList.toggle('hidden',state==='ready');
+   overlay.classList.toggle('error',state==='error');
+   const copy=overlay.querySelector('[data-ms8319-status]');
+   if(copy)copy.textContent=text;
+ }
+}
+function msVrmShowSetup(show=true,message=''){
+ const setup=$('ms8319TokenSetup'),normal=$('ms8319ConsoleNormal');
+ setup?.classList.toggle('hidden',!show);
+ normal?.classList.toggle('hidden',show);
+ if(message){const msg=$('ms8319TokenMessage');if(msg)msg.textContent=message}
+ if(show){
+   const email=$('ms8319VrmEmail');if(email&&!email.value)email.value=msVrmSavedEmail();
+   setTimeout(()=>$('ms8319VrmToken')?.focus(),80);
+ }
+}
+async function msVrmConfig(token){
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),10000);
+ try{
+   const response=await fetch('/api/victron-console-config',{
+     method:'POST',
+     cache:'no-store',
+     headers:{'x-vrm-token':token,'accept':'application/json'},
+     signal:controller.signal
+   });
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok||data?.success===false)throw new Error(data?.error||('HTTP '+response.status));
+   return data;
+ }finally{clearTimeout(timer)}
+}
+function msVrmFrameUrl(config,token){
+ const email=msVrmSaveEmail(config?.email||msVrmSavedEmail());
+ if(!email)throw new Error('Vul één keer het e-mailadres van je Victron VRM-account in.');
+ const payload={
+   id:String(config?.portalId||''),
+   shard:String(config?.shard||''),
+   user:email,
+   pass:'Token '+token
+ };
+ if(!payload.id||!payload.shard)throw new Error('Geen live console-configuratie ontvangen.');
+ return '/victron-gui/index.html#msconfig='+encodeURIComponent(JSON.stringify(payload));
+}
+function msVrmWatch(frame){
+ clearInterval(msVrmReadyTimer);
+ let count=0;
+ msVrmReadyTimer=setInterval(()=>{
+   count++;
+   try{
+     if(frame?.contentWindow?.guiv2initialized===true){
+       clearInterval(msVrmReadyTimer);
+       msVrmSetStatus('Console geladen','ready');
+       return;
+     }
+   }catch(_){}
+   if(count>=40){
+     clearInterval(msVrmReadyTimer);
+     const overlay=$('ms8319ConsoleOverlay');
+     if(overlay)overlay.classList.add('hidden');
+     const label=$('ms8319ConsoleStatus');if(label)label.textContent='Console geladen';
+   }
+ },500);
+}
+async function msVrmConnect(force=false){
+ const frame=$('ms8319ConsoleFrame');
+ if(!frame||msVrmBusy)return false;
+ if(!force&&frame.dataset.started==='1')return true;
+ const token=msVrmSavedToken();
+ if(!token){
+   msVrmSetStatus('VRM koppelen','error');
+   msVrmShowSetup(true,'Plak je VRM API-token. Deze wordt alleen op dit apparaat opgeslagen.');
+   return false;
+ }
+ msVrmBusy=true;
+ frame.dataset.started='1';
+ msVrmShowSetup(false);
+ msVrmSetStatus('Verbinden…','loading');
+ try{
+   const config=await msVrmConfig(token);
+   const target=msVrmFrameUrl(config,token);
+   frame.onload=()=>setTimeout(()=>{
+     const overlay=$('ms8319ConsoleOverlay');
+     if(overlay)overlay.classList.add('hidden');
+     const label=$('ms8319ConsoleStatus');if(label)label.textContent='Console geladen';
+   },700);
+   frame.src=target;
+   msVrmSetStatus('Cerbo GX verbinden…','loading');
+   msVrmWatch(frame);
+   return true;
+ }catch(error){
+   frame.dataset.started='0';
+   const msg=error?.name==='AbortError'?'Victron verbinding time-out':String(error?.message||'Console kon niet verbinden.');
+   msVrmSetStatus(msg,'error');
+   if(/token|toegang|account|e-mailadres|email/i.test(msg))msVrmShowSetup(true,msg);
+   return false;
+ }finally{msVrmBusy=false}
+}
+function msVrmReload(){
+ const frame=$('ms8319ConsoleFrame');if(!frame)return;
+ clearInterval(msVrmReadyTimer);
+ frame.dataset.started='0';
+ frame.src='about:blank';
+ msVrmSetStatus('Opnieuw verbinden…','loading');
+ setTimeout(()=>msVrmConnect(true),120);
+}
+function msVrmFullscreen(){
+ const active=document.body.classList.toggle('ms8319-console-full');
+ const button=$('ms8319ConsoleExpand');
+ if(button){button.textContent=active?'↙':'↗';button.title=active?'Console verkleinen':'Console schermvullend'}
+}
+function msVrmMount(){
+ const panel=$('ms8318ConsolePanel');
+ if(!panel)return false;
+ window.__msVrmEmbed8313=true;
+ window.__msVrmEmbed8314=true;
+ window.__msVrmEmbed8318=true;
+ window.__msVictronIsolated8318=true;
+
+ if(!$('ms8319ConsoleStyle')){
+   const style=document.createElement('style');
+   style.id='ms8319ConsoleStyle';
+   style.textContent=
+     '#'+ROOT+' #ms8319ConsolePanel{grid-template-rows:44px minmax(0,1fr)!important;background:#01080d!important}'+
+     '#'+ROOT+' .ms8319-head{display:flex;align-items:center;gap:10px;padding:6px 10px 6px 12px;border-bottom:1px solid rgba(37,172,219,.28);background:linear-gradient(90deg,#061b29,#03121c);color:#fff}'+
+     '#'+ROOT+' .ms8319-v{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#0d77b8;font-weight:900}'+
+     '#'+ROOT+' .ms8319-copy{min-width:0;flex:1;line-height:1.05}#'+ROOT+' .ms8319-copy strong{display:block;font-size:12px}#'+ROOT+' .ms8319-copy small{display:block;margin-top:3px;color:#8fb7ca;font-size:8.5px}'+
+     '#'+ROOT+' .ms8319-state{padding:5px 8px;border:1px solid rgba(68,171,208,.28);border-radius:999px;background:#062536;color:#bcd2dc;font-size:8.5px;font-weight:800;white-space:nowrap}'+
+     '#'+ROOT+' .ms8319-tools{display:flex;gap:5px}#'+ROOT+' .ms8319-tools button{display:grid;place-items:center;width:31px;height:31px;min-height:31px;padding:0;border:1px solid rgba(63,176,217,.30);border-radius:9px;background:#092b3d;color:#fff;font-size:15px;cursor:pointer}'+
+     '#'+ROOT+' .ms8319-view{position:relative;min-height:0;height:100%;overflow:hidden;background:#000}#'+ROOT+' #ms8319ConsoleFrame{display:block;width:100%!important;height:100%!important;border:0!important;background:#000!important}'+
+     '#'+ROOT+' .ms8319-overlay{position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:18px;background:#01080d;color:#c5d7e1;text-align:center;font-size:11px;line-height:1.45;transition:opacity .2s ease}#'+ROOT+' .ms8319-overlay.hidden{opacity:0;pointer-events:none}#'+ROOT+' .ms8319-overlay.error{background:#10090b;color:#ffd4d4}'+
+     '#'+ROOT+' .ms8319-spinner{width:27px;height:27px;margin:0 auto 10px;border:3px solid rgba(94,190,235,.18);border-top-color:#42baff;border-radius:50%;animation:ms8319spin .85s linear infinite}@keyframes ms8319spin{to{transform:rotate(360deg)}}'+
+     '#'+ROOT+' .ms8319-setup{width:min(100%,440px);padding:16px;border:1px solid rgba(77,184,230,.30);border-radius:14px;background:#071c2a;text-align:left;color:#eef8fd}#'+ROOT+' .ms8319-setup.hidden{display:none}#'+ROOT+' .ms8319-normal.hidden{display:none}'+
+     '#'+ROOT+' .ms8319-setup h3{margin:0 0 6px;font-size:16px}#'+ROOT+' .ms8319-setup p{margin:0 0 10px;color:#aac4d0;font-size:10px}#'+ROOT+' .ms8319-setup input{box-sizing:border-box;width:100%;height:38px;margin:0 0 7px;padding:0 10px;border:1px solid rgba(88,190,235,.35);border-radius:9px;background:#020d14;color:#fff;font-size:12px}#'+ROOT+' .ms8319-setup button{width:100%;min-height:38px;border:1px solid rgba(88,190,235,.34);border-radius:9px;background:#0878bd;color:#fff;font-weight:800}'+
+     'body.ms8319-console-full #'+ROOT+' #ms8319ConsolePanel{position:fixed!important;inset:8px!important;z-index:2147483000!important;height:auto!important;border-radius:16px!important}'+
+     '@media(max-width:900px) and (orientation:portrait){#'+ROOT+' #ms8319ConsolePanel{height:720px!important;min-height:720px!important;margin-bottom:10px!important}#'+ROOT+' .ms8319-copy small{display:none}}';
+   document.head.appendChild(style);
+ }
+
+ panel.id='ms8319ConsolePanel';
+ panel.dataset.ms8318Rendered='1';
+ panel.innerHTML=
+   '<div class="ms8319-head">'+
+     '<div class="ms8319-v">V</div>'+
+     '<div class="ms8319-copy"><strong>Victron Cerbo GX · Remote Console</strong><small>Donkere live console · bediening blijft binnen MijnSerenity</small></div>'+
+     '<div class="ms8319-state" id="ms8319ConsoleStatus">Verbinden…</div>'+
+     '<div class="ms8319-tools"><button type="button" id="ms8319ConsoleReload" title="Console vernieuwen">↻</button><button type="button" id="ms8319ConsoleExpand" title="Console schermvullend">↗</button></div>'+
+   '</div>'+
+   '<div class="ms8319-view">'+
+     '<div class="ms8319-overlay" id="ms8319ConsoleOverlay">'+
+       '<div class="ms8319-normal" id="ms8319ConsoleNormal"><div class="ms8319-spinner"></div><strong data-ms8319-status>Live Cerbo-console wordt voorbereid…</strong></div>'+
+       '<form class="ms8319-setup hidden" id="ms8319TokenSetup" autocomplete="off">'+
+         '<h3>Victron koppelen</h3><p id="ms8319TokenMessage">Gebruik je VRM API-token. Vul je VRM e-mailadres alleen in als dit niet automatisch wordt gevonden.</p>'+
+         '<input id="ms8319VrmEmail" type="email" autocapitalize="none" spellcheck="false" placeholder="VRM e-mailadres (optioneel)">'+
+         '<input id="ms8319VrmToken" type="password" autocapitalize="none" spellcheck="false" placeholder="VRM API-token" required>'+
+         '<button type="submit">Opslaan en verbinden</button>'+
+       '</form>'+
+     '</div>'+
+     '<iframe id="ms8319ConsoleFrame" title="Victron Cerbo GX Remote Console" allow="fullscreen; clipboard-read; clipboard-write" referrerpolicy="no-referrer"></iframe>'+
+   '</div>';
+
+ $('ms8319ConsoleReload')?.addEventListener('click',msVrmReload);
+ $('ms8319ConsoleExpand')?.addEventListener('click',msVrmFullscreen);
+ $('ms8319TokenSetup')?.addEventListener('submit',event=>{
+   event.preventDefault();
+   const email=$('ms8319VrmEmail')?.value||'';
+   if(email)msVrmSaveEmail(email);
+   const token=msVrmSaveToken($('ms8319VrmToken')?.value||'');
+   if(!token){msVrmSetStatus('Plak eerst je VRM API-token.','error');return}
+   const frame=$('ms8319ConsoleFrame');if(frame)frame.dataset.started='0';
+   msVrmShowSetup(false);
+   msVrmConnect(true);
+ });
+ msVrmConnect(false);
+ return true;
+}
+
 function apply(){
  const root=$(ROOT);if(!root)return false;
  installStyle();syncBuild();setHomeActive(true);
@@ -824,7 +1036,7 @@ function apply(){
     <section class="ms8263-welcome" aria-hidden="true"><button type="button" class="ms8263-start" data-ms8263-go="live">Live varen</button></section>
   </main>
  </div>`;
- bind();refreshData();startGps();updateClock();decorateReference();setTimeout(syncReference,120);setTimeout(syncReference,1200);
+ bind();refreshData();startGps();updateClock();decorateReference();setTimeout(syncReference,120);setTimeout(syncReference,1200);setTimeout(msVrmMount,0);
  clearInterval(window.__ms8263RefreshTimer);
  window.__ms8263RefreshTimer=setInterval(()=>{refreshData();syncReference();updateClock()},2000);
  return true;
