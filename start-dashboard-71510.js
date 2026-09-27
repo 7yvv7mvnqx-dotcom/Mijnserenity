@@ -1,4 +1,4 @@
-/* MijnSerenity 8.32.0 - Victron console met Serenity AI naast elkaar. */
+/* MijnSerenity 8.32.1 - grotere Serenity hero-banner. */
 /* REFERENCE_DASHBOARD_8292 */
 (()=>{
 'use strict';
@@ -9,7 +9,7 @@ window.__msUnifiedDashboard8215=true;
 window.__msSimpleStart8210=true;
 window.__msDisableLegacyVisuals=true;
 
-const BUILD='8.32.0',TOKEN='832000',ROOT='ms8210Start';
+const BUILD='8.32.1',TOKEN='832010',ROOT='ms8210Start';
 const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',VIC='ms8278VictronTankAlarmScript',VRMEMBED='ms8312VrmEmbedScript',SETTINGS='ms8279SettingsNotificationsScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8277IosVoiceFixScript',PERSIST='ms8272AiPersistScript';
 const $=id=>document.getElementById(id);
 let readyAnnounced=false;
