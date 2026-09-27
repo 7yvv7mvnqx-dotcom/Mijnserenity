@@ -227,7 +227,7 @@ function installStyle(){
    #${ROOT} .msr-brand{height:102px!important;padding-top:8px!important}
    #${ROOT} .msr-brand strong{font-size:38px!important}
    #${ROOT} .msr-nav button{min-height:38px!important}
-   #${ROOT} .ms8263-main{grid-template-rows:108px minmax(0,1fr) minmax(0,1fr)!important;gap:6px!important;padding:6px 12px 66px!important}
+   #${ROOT} .ms8263-main{grid-template-rows:108px minmax(360px,1fr)!important;gap:6px!important;padding:6px 12px 66px!important}
    #${ROOT} .msr-quick{padding:9px 11px!important}
    #${ROOT} .msr-quick-head{margin-bottom:7px!important}
    #${ROOT} .ms8263-features{gap:8px!important}
@@ -766,6 +766,12 @@ function msVrmFrameUrl(config,token){
  if(!payload.id||!payload.shard)throw new Error('Geen live console-configuratie ontvangen.');
  return '/victron-gui/index.html#msconfig='+encodeURIComponent(JSON.stringify(payload));
 }
+function msVrmKickResize(frame){
+ if(!frame)return;
+ [80,250,700,1400].forEach(delay=>setTimeout(()=>{
+   try{frame.contentWindow?.dispatchEvent(new Event('resize'))}catch(_){}
+ },delay));
+}
 function msVrmWatch(frame){
  clearInterval(msVrmReadyTimer);
  let count=0;
@@ -803,11 +809,14 @@ async function msVrmConnect(force=false){
  try{
    const config=await msVrmConfig(token);
    const target=msVrmFrameUrl(config,token);
-   frame.onload=()=>setTimeout(()=>{
-     const overlay=$('ms8319ConsoleOverlay');
-     if(overlay)overlay.classList.add('hidden');
-     const label=$('ms8319ConsoleStatus');if(label)label.textContent='Console geladen';
-   },700);
+   frame.onload=()=>{
+     msVrmKickResize(frame);
+     setTimeout(()=>{
+       const overlay=$('ms8319ConsoleOverlay');
+       if(overlay)overlay.classList.add('hidden');
+       const label=$('ms8319ConsoleStatus');if(label)label.textContent='Console geladen';
+     },900);
+   };
    frame.src=target;
    msVrmSetStatus('Cerbo GX verbinden…','loading');
    msVrmWatch(frame);
@@ -832,6 +841,7 @@ function msVrmFullscreen(){
  const active=document.body.classList.toggle('ms8319-console-full');
  const button=$('ms8319ConsoleExpand');
  if(button){button.textContent=active?'↙':'↗';button.title=active?'Console verkleinen':'Console schermvullend'}
+ msVrmKickResize($('ms8319ConsoleFrame'));
 }
 function msVrmMount(){
  const panel=$('ms8318ConsolePanel');
@@ -851,7 +861,8 @@ function msVrmMount(){
      '#'+ROOT+' .ms8319-copy{min-width:0;flex:1;line-height:1.05}#'+ROOT+' .ms8319-copy strong{display:block;font-size:12px}#'+ROOT+' .ms8319-copy small{display:block;margin-top:3px;color:#8fb7ca;font-size:8.5px}'+
      '#'+ROOT+' .ms8319-state{padding:5px 8px;border:1px solid rgba(68,171,208,.28);border-radius:999px;background:#062536;color:#bcd2dc;font-size:8.5px;font-weight:800;white-space:nowrap}'+
      '#'+ROOT+' .ms8319-tools{display:flex;gap:5px}#'+ROOT+' .ms8319-tools button{display:grid;place-items:center;width:31px;height:31px;min-height:31px;padding:0;border:1px solid rgba(63,176,217,.30);border-radius:9px;background:#092b3d;color:#fff;font-size:15px;cursor:pointer}'+
-     '#'+ROOT+' .ms8319-view{position:relative;min-height:0;height:100%;overflow:hidden;background:#000}#'+ROOT+' #ms8319ConsoleFrame{display:block;width:100%!important;height:100%!important;border:0!important;background:#000!important}'+
+     '#'+ROOT+' .ms8319-view{position:relative;min-height:0;height:100%;overflow:hidden;background:#000}#'+ROOT+' #ms8319ConsoleFrame{display:block;width:100%!important;height:100%!important;min-height:360px!important;border:0!important;background:#000!important}'+
+     '@media(min-width:901px){#'+ROOT+' #ms8319ConsolePanel{min-height:390px!important}#'+ROOT+' .ms8319-view{min-height:346px!important}}'+
      '#'+ROOT+' .ms8319-overlay{position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:18px;background:#01080d;color:#c5d7e1;text-align:center;font-size:11px;line-height:1.45;transition:opacity .2s ease}#'+ROOT+' .ms8319-overlay.hidden{opacity:0;pointer-events:none}#'+ROOT+' .ms8319-overlay.error{background:#10090b;color:#ffd4d4}'+
      '#'+ROOT+' .ms8319-spinner{width:27px;height:27px;margin:0 auto 10px;border:3px solid rgba(94,190,235,.18);border-top-color:#42baff;border-radius:50%;animation:ms8319spin .85s linear infinite}@keyframes ms8319spin{to{transform:rotate(360deg)}}'+
      '#'+ROOT+' .ms8319-setup{width:min(100%,440px);padding:16px;border:1px solid rgba(77,184,230,.30);border-radius:14px;background:#071c2a;text-align:left;color:#eef8fd}#'+ROOT+' .ms8319-setup.hidden{display:none}#'+ROOT+' .ms8319-normal.hidden{display:none}'+
