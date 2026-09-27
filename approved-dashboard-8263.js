@@ -1,4 +1,4 @@
-/* MijnSerenity 8.32.0 — schone hero-foto zonder ingebrande welkomsttekst
+/* MijnSerenity 8.32.1 — hogere hero-banner met meer zicht op Serenity
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -9,8 +9,8 @@ window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 window.__msVictronEmbedded8319=true;
 
-const BUILD='8.32.0';
-const TOKEN='832000';
+const BUILD='8.32.1';
+const TOKEN='832010';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -48,7 +48,7 @@ function installStyle(){
  #${ROOT} *{box-sizing:border-box}
  #${ROOT} button{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
  #${ROOT} svg{display:block;width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
- #${ROOT} .msr-shell{display:grid;grid-template-columns:14.36vw minmax(0,1fr);grid-template-rows:18.5vh minmax(0,1fr);width:100%;height:100%;padding-bottom:0;background:linear-gradient(145deg,#06283a 0,#031620 56%,#02111b 100%);overflow:hidden}
+ #${ROOT} .msr-shell{display:grid;grid-template-columns:14.36vw minmax(0,1fr);grid-template-rows:clamp(205px,28vh,330px) minmax(0,1fr);width:100%;height:100%;padding-bottom:0;background:linear-gradient(145deg,#06283a 0,#031620 56%,#02111b 100%);overflow:hidden}
  #${ROOT} .msr-side{grid-row:1/3;grid-column:1;display:flex;flex-direction:column;min-height:0;border-right:1px solid rgba(35,177,222,.38);background:linear-gradient(180deg,#07324b 0,#031a2a 58%,#041727 100%);box-shadow:inset -1px 0 rgba(255,255,255,.03)}
  #${ROOT} .msr-brand{height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 12px 13px}
  #${ROOT} .msr-brand strong{font-family:Georgia,"Times New Roman",serif;font-size:45px;line-height:.85;font-style:italic;font-weight:500;letter-spacing:-.06em;text-shadow:0 2px 14px rgba(255,255,255,.12)}
@@ -63,8 +63,8 @@ function installStyle(){
  #${ROOT} .msr-side-foot{padding:11px 12px 18px;text-align:center;color:#5f9dbb;font-size:10px;letter-spacing:.10em}
  #${ROOT} .msr-side-foot .sun{font-size:34px;color:#d5f7ff;line-height:1}
  #${ROOT} .msr-side-foot strong{display:block;margin-top:4px;color:#fff;font-family:Georgia,serif;font-size:20px;font-weight:500;letter-spacing:.02em}
- #${ROOT} .msr-hero{grid-column:2;grid-row:1;position:relative;overflow:hidden;background:url('/serenity-dashboard-boat-20260909.webp?v=${TOKEN}') center center/cover no-repeat;isolation:isolate}
- #${ROOT} .msr-hero-bg{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;pointer-events:none}
+ #${ROOT} .msr-hero{grid-column:2;grid-row:1;position:relative;overflow:hidden;background:url('/serenity-dashboard-boat-20260909.webp?v=${TOKEN}') center 55%/cover no-repeat;isolation:isolate}
+ #${ROOT} .msr-hero-bg{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center 55%;display:block;pointer-events:none}
  #${ROOT} .msr-hero:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(2,19,30,.84) 0,rgba(2,19,30,.60) 34%,rgba(2,19,30,.16) 58%,rgba(2,14,23,.08) 100%)}
  #${ROOT} .msr-hero:after{content:"";position:absolute;left:0;bottom:0;z-index:1;width:43%;height:34%;pointer-events:none;background:linear-gradient(90deg,rgba(2,19,30,.72) 0,rgba(2,19,30,.48) 72%,rgba(2,19,30,0) 100%)}
  #${ROOT} .msr-hero-copy{display:none!important}
@@ -178,7 +178,7 @@ function installStyle(){
  #${ROOT} #ms8271Mic svg{width:23px!important;height:23px!important}
  #${ROOT} #ms8271Mic span,#${ROOT} #ms8271Clear,#${ROOT} .ms8271-speak,#${ROOT} .ms8271-ai-note,#${ROOT} .ms8271-voice-status{display:none!important}
  @media(max-height:760px) and (orientation:landscape){
-   #${ROOT} .msr-shell{grid-template-columns:188px minmax(0,1fr);grid-template-rows:205px minmax(0,1fr);padding-bottom:0}
+   #${ROOT} .msr-shell{grid-template-columns:188px minmax(0,1fr);grid-template-rows:235px minmax(0,1fr);padding-bottom:0}
    #${ROOT} .msr-brand{height:150px}
    #${ROOT} .msr-brand strong{font-size:38px}
    #${ROOT} .msr-nav button{min-height:46px;font-size:13px}
