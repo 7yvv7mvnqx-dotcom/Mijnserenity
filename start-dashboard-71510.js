@@ -1,4 +1,4 @@
-/* MijnSerenity 8.31.4 - Victron VRM vast in Home-dashboard. */
+/* MijnSerenity 8.31.9 - Victron console wordt door Home zelf gemonteerd. */
 /* REFERENCE_DASHBOARD_8292 */
 (()=>{
 'use strict';
@@ -9,7 +9,7 @@ window.__msUnifiedDashboard8215=true;
 window.__msSimpleStart8210=true;
 window.__msDisableLegacyVisuals=true;
 
-const BUILD='8.31.4',TOKEN='831400',ROOT='ms8210Start';
+const BUILD='8.31.9',TOKEN='831900',ROOT='ms8210Start';
 const APPROVED='ms8266ApprovedScript',PATCH='ms8266DashboardButtonsScript',LIVE='ms8266DashboardLiveScript',VIC='ms8278VictronTankAlarmScript',VRMEMBED='ms8312VrmEmbedScript',SETTINGS='ms8279SettingsNotificationsScript',AI='ms8266QuickAskScript',VOICE='ms8271AiVoiceScript',IOSVOICE='ms8277IosVoiceFixScript',PERSIST='ms8272AiPersistScript';
 const $=id=>document.getElementById(id);
 let readyAnnounced=false;
@@ -23,7 +23,7 @@ function load(path,id,after){if($(id)){after?.();return}const script=document.cr
 function ensurePatch(){if(typeof window.ms8265ApplyDashboardButtons==='function'){try{window.ms8265ApplyDashboardButtons()}catch(_){};return}load('/dashboard-buttons-8265.js',PATCH,()=>{try{window.ms8265ApplyDashboardButtons?.();syncBuild()}catch(_){}})}
 function ensureVictron(){if(window.__msVictronTankAlarm8278){try{window.ms8278RefreshVictron?.()}catch(_){};return}load('/victron-tank-alarm-8278.js',VIC,()=>{try{window.ms8278RefreshVictron?.()}catch(_){}})}
 function ensureSettings(){if(window.__msSettingsNotifications8279)return;load('/settings-notifications-8279.js',SETTINGS)}
-function ensureVrmEmbed(){if(window.__msVrmEmbed8313)return;load('/vrm-embed-8312.js',VRMEMBED)}
+function ensureVrmEmbed(){try{window.ms8263MountVictronConsole?.()}catch(_){}}
 function ensureLive(){if(window.__msApprovedDashboardLive8264){ensureVictron();return}load('/approved-dashboard-live-8264.js',LIVE,()=>{syncBuild();ensureVictron()})}
 function ensurePersist(){if(window.__msSerenityAiPersist8272){try{window.ms8272KeepSerenityAnswer?.()}catch(_){};return}load('/serenity-ai-persist-8272.js',PERSIST,()=>{try{window.ms8272KeepSerenityAnswer?.()}catch(_){}})}
 function ensureIosVoice(){if(window.__msSerenityAiIosVoiceFix8277)return;load('/serenity-ai-ios-voice-fix-8275.js',IOSVOICE)}
