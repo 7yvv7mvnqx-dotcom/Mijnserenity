@@ -1,4 +1,4 @@
-/* MijnSerenity 8.31.5 — schone hero-foto zonder ingebrande welkomsttekst
+/* MijnSerenity 8.31.6 — schone hero-foto zonder ingebrande welkomsttekst
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.31.5';
-const TOKEN='831500';
+const BUILD='8.31.6';
+const TOKEN='831600';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -82,7 +82,37 @@ function installStyle(){
  #${ROOT} .msr-panel{border:1px solid rgba(26,128,165,.70);border-radius:17px;background:linear-gradient(145deg,rgba(4,42,61,.96),rgba(2,24,38,.97));box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.10);overflow:hidden}
  #${ROOT} .msr-kicker{display:flex;align-items:center;gap:8px;color:#74e6ff;font-size:9px;font-weight:900;letter-spacing:.19em;text-transform:uppercase}
  #${ROOT} .msr-kicker .ico{font-size:18px;letter-spacing:0}
- #${ROOT} .msr-quick{padding:13px 14px 14px}\n #${ROOT} .msr-vrm-live{position:relative;display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;height:100%;overflow:hidden;border:1px solid rgba(26,128,165,.70);border-radius:17px;background:#01080d;box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.22)}\n #${ROOT} .msr-console-head{display:flex;align-items:center;gap:10px;min-height:44px;padding:7px 10px 7px 12px;border-bottom:1px solid rgba(38,169,215,.30);background:linear-gradient(90deg,#061b29,#03121c);color:#fff}\n #${ROOT} .msr-console-brand{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#0b74b7;font-weight:900}\n #${ROOT} .msr-console-copy{min-width:0;flex:1}\n #${ROOT} .msr-console-copy strong{display:block;font-size:12px;line-height:1.1}\n #${ROOT} .msr-console-copy small{display:block;margin-top:2px;color:#8fb6ca;font-size:8.5px}\n #${ROOT} .msr-console-state{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid rgba(62,166,205,.28);border-radius:999px;background:#062536;color:#bcd2dc;font-size:8.5px;font-weight:800;white-space:nowrap}\n #${ROOT} .msr-console-state i{width:7px;height:7px;border-radius:50%;background:#e1ad39;box-shadow:0 0 7px rgba(225,173,57,.45)}\n #${ROOT} .msr-vrm-live.loaded .msr-console-state i{background:#29d66e;box-shadow:0 0 8px rgba(41,214,110,.55)}\n #${ROOT} .msr-vrm-live.error .msr-console-state i{background:#ef5b62;box-shadow:0 0 8px rgba(239,91,98,.45)}\n #${ROOT} .msr-console-tools{display:flex;gap:5px}\n #${ROOT} .msr-console-tools button{display:grid;place-items:center;width:30px;height:30px;min-height:30px;padding:0;border:1px solid rgba(63,176,217,.30);border-radius:9px;background:#092b3d;color:#fff;font-size:14px;cursor:pointer}\n #${ROOT} .msr-console-view{position:relative;min-height:0;height:100%;overflow:hidden;background:#000}\n #${ROOT} .msr-vrm-live iframe{display:block;width:100%!important;height:100%!important;min-height:0;border:0;background:#000}\n #${ROOT} .msr-console-loading{position:absolute;inset:0;z-index:3;display:grid;place-items:center;padding:18px;background:#01080d;color:#c5d7e1;text-align:center;font-size:11px;line-height:1.45;transition:opacity .2s ease}\n #${ROOT} .msr-console-loading.hidden{opacity:0;pointer-events:none}\n #${ROOT} .msr-console-loading.error{background:#12090b;color:#ffd4d4}\n #${ROOT} .msr-console-spinner{width:27px;height:27px;margin:0 auto 10px;border:3px solid rgba(94,190,235,.18);border-top-color:#42baff;border-radius:50%;animation:msr-console-spin .85s linear infinite}\n #${ROOT} .msr-console-loading.error .msr-console-spinner{display:none}\n #${ROOT} .msr-console-token{width:min(100%,420px);padding:16px;border:1px solid rgba(77,184,230,.30);border-radius:14px;background:#071c2a;text-align:left}\n #${ROOT} .msr-console-token.hidden{display:none}\n #${ROOT} .msr-console-token h3{margin:0 0 6px;font-size:16px}\n #${ROOT} .msr-console-token p{margin:0 0 10px;color:#a9c2cf;font-size:10px}\n #${ROOT} .msr-console-token-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}\n #${ROOT} .msr-console-token input{min-width:0;height:38px;padding:0 10px;border:1px solid rgba(88,190,235,.35);border-radius:9px;background:#020d14;color:#fff;font-size:12px}\n #${ROOT} .msr-console-token button{min-height:38px;padding:0 11px;border:1px solid rgba(88,190,235,.34);border-radius:9px;background:#0a3550;color:#fff;font-weight:800}\n #${ROOT} .msr-console-token .save{width:100%;margin-top:7px;background:#0878bd}\n @keyframes msr-console-spin{to{transform:rotate(360deg)}}\n body.ms8315-console-full #${ROOT} .msr-vrm-live{position:fixed!important;inset:8px!important;z-index:2147483000!important;height:auto!important;border-radius:16px!important;background:#01080d!important}\n body.ms8315-console-full #${ROOT} .msr-console-view{min-height:0!important}
+ #${ROOT} .msr-quick{padding:13px 14px 14px}
+ #${ROOT} .msr-vrm-live{position:relative;display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;height:100%;overflow:hidden;border:1px solid rgba(26,128,165,.70);border-radius:17px;background:#01080d;box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.22)}
+ #${ROOT} .msr-console-head{display:flex;align-items:center;gap:10px;min-height:44px;padding:7px 10px 7px 12px;border-bottom:1px solid rgba(38,169,215,.30);background:linear-gradient(90deg,#061b29,#03121c);color:#fff}
+ #${ROOT} .msr-console-brand{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#0b74b7;font-weight:900}
+ #${ROOT} .msr-console-copy{min-width:0;flex:1}
+ #${ROOT} .msr-console-copy strong{display:block;font-size:12px;line-height:1.1}
+ #${ROOT} .msr-console-copy small{display:block;margin-top:2px;color:#8fb6ca;font-size:8.5px}
+ #${ROOT} .msr-console-state{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid rgba(62,166,205,.28);border-radius:999px;background:#062536;color:#bcd2dc;font-size:8.5px;font-weight:800;white-space:nowrap}
+ #${ROOT} .msr-console-state i{width:7px;height:7px;border-radius:50%;background:#e1ad39;box-shadow:0 0 7px rgba(225,173,57,.45)}
+ #${ROOT} .msr-vrm-live.loaded .msr-console-state i{background:#29d66e;box-shadow:0 0 8px rgba(41,214,110,.55)}
+ #${ROOT} .msr-vrm-live.error .msr-console-state i{background:#ef5b62;box-shadow:0 0 8px rgba(239,91,98,.45)}
+ #${ROOT} .msr-console-tools{display:flex;gap:5px}
+ #${ROOT} .msr-console-tools button{display:grid;place-items:center;width:30px;height:30px;min-height:30px;padding:0;border:1px solid rgba(63,176,217,.30);border-radius:9px;background:#092b3d;color:#fff;font-size:14px;cursor:pointer}
+ #${ROOT} .msr-console-view{position:relative;min-height:0;height:100%;overflow:hidden;background:#000}
+ #${ROOT} .msr-vrm-live iframe{display:block;width:100%!important;height:100%!important;min-height:0;border:0;background:#000}
+ #${ROOT} .msr-console-loading{position:absolute;inset:0;z-index:3;display:grid;place-items:center;padding:18px;background:#01080d;color:#c5d7e1;text-align:center;font-size:11px;line-height:1.45;transition:opacity .2s ease}
+ #${ROOT} .msr-console-loading.hidden{opacity:0;pointer-events:none}
+ #${ROOT} .msr-console-loading.error{background:#12090b;color:#ffd4d4}
+ #${ROOT} .msr-console-spinner{width:27px;height:27px;margin:0 auto 10px;border:3px solid rgba(94,190,235,.18);border-top-color:#42baff;border-radius:50%;animation:msr-console-spin .85s linear infinite}
+ #${ROOT} .msr-console-loading.error .msr-console-spinner{display:none}
+ #${ROOT} .msr-console-token{width:min(100%,420px);padding:16px;border:1px solid rgba(77,184,230,.30);border-radius:14px;background:#071c2a;text-align:left}
+ #${ROOT} .msr-console-token.hidden{display:none}
+ #${ROOT} .msr-console-token h3{margin:0 0 6px;font-size:16px}
+ #${ROOT} .msr-console-token p{margin:0 0 10px;color:#a9c2cf;font-size:10px}
+ #${ROOT} .msr-console-token-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+ #${ROOT} .msr-console-token input{min-width:0;height:38px;padding:0 10px;border:1px solid rgba(88,190,235,.35);border-radius:9px;background:#020d14;color:#fff;font-size:12px}
+ #${ROOT} .msr-console-token button{min-height:38px;padding:0 11px;border:1px solid rgba(88,190,235,.34);border-radius:9px;background:#0a3550;color:#fff;font-weight:800}
+ #${ROOT} .msr-console-token .save{width:100%;margin-top:7px;background:#0878bd}
+ @keyframes msr-console-spin{to{transform:rotate(360deg)}}
+ body.ms8316-console-full #${ROOT} .msr-vrm-live{position:fixed!important;inset:8px!important;z-index:2147483000!important;height:auto!important;border-radius:16px!important;background:#01080d!important}
+ body.ms8316-console-full #${ROOT} .msr-console-view{min-height:0!important}
  #${ROOT} .msr-quick-head{display:flex;align-items:center;justify-content:space-between;margin:0 3px 10px}
  #${ROOT} .msr-quick-head strong{font-size:12px;letter-spacing:.18em}
  #${ROOT} .msr-edit{border:0;background:transparent;color:#65e5ff;font-size:11px;font-weight:700}
@@ -732,30 +762,30 @@ function apply(){
       </section>
     </section>
 
-    <section class="msr-vrm-live" id="ms8315ConsolePanel" aria-label="Victron Cerbo GX Remote Console">
+    <section class="msr-vrm-live" id="ms8316ConsolePanel" aria-label="Victron Cerbo GX Remote Console">
       <div class="msr-console-head">
         <div class="msr-console-brand">V</div>
         <div class="msr-console-copy"><strong>Victron Cerbo GX · Remote Console</strong><small>Officiële GUI-v2 · donkere weergave · live bediening</small></div>
-        <div class="msr-console-state"><i></i><span id="ms8315ConsoleStatus">Verbinden…</span></div>
+        <div class="msr-console-state"><i></i><span id="ms8316ConsoleStatus">Verbinden…</span></div>
         <div class="msr-console-tools">
-          <button type="button" id="ms8315ConsoleReload" title="Console vernieuwen" aria-label="Console vernieuwen">↻</button>
-          <button type="button" id="ms8315ConsoleExpand" title="Console schermvullend" aria-label="Console schermvullend">↗</button>
+          <button type="button" id="ms8316ConsoleReload" title="Console vernieuwen" aria-label="Console vernieuwen">↻</button>
+          <button type="button" id="ms8316ConsoleExpand" title="Console schermvullend" aria-label="Console schermvullend">↗</button>
         </div>
       </div>
       <div class="msr-console-view">
-        <div class="msr-console-loading" id="ms8315ConsoleLoading">
-          <div id="ms8315ConsoleLoadingNormal"><div class="msr-console-spinner"></div><strong data-ms8315-console-text>Live Cerbo-console wordt voorbereid…</strong></div>
-          <form class="msr-console-token hidden" id="ms8315ConsoleTokenSetup" autocomplete="off">
+        <div class="msr-console-loading" id="ms8316ConsoleLoading">
+          <div id="ms8316ConsoleLoadingNormal"><div class="msr-console-spinner"></div><strong data-ms8316-console-text>Live Cerbo-console wordt voorbereid…</strong></div>
+          <form class="msr-console-token hidden" id="ms8316ConsoleTokenSetup" autocomplete="off">
             <h3>Victron koppelen</h3>
             <p>Plak je VRM API-token om de live Cerbo-console te openen.</p>
             <div class="msr-console-token-row">
-              <input id="ms8315ConsoleToken" type="password" autocapitalize="none" spellcheck="false" placeholder="VRM API-token" required>
-              <button type="button" id="ms8315ConsoleTokenToggle">Toon</button>
+              <input id="ms8316ConsoleToken" type="password" autocapitalize="none" spellcheck="false" placeholder="VRM API-token" required>
+              <button type="button" id="ms8316ConsoleTokenToggle">Toon</button>
             </div>
             <button type="submit" class="save">Token opslaan en verbinden</button>
           </form>
         </div>
-        <iframe id="ms8315ConsoleFrame" title="Victron Cerbo GX Remote Console" allow="fullscreen; clipboard-read; clipboard-write" referrerpolicy="no-referrer"></iframe>
+        <iframe id="ms8316ConsoleFrame" title="Victron Cerbo GX Remote Console" allow="fullscreen; clipboard-read; clipboard-write" referrerpolicy="no-referrer"></iframe>
       </div>
     </section>
 
