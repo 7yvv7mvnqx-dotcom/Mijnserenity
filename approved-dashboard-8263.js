@@ -1,4 +1,4 @@
-/* MijnSerenity 8.31.4 — schone hero-foto zonder ingebrande welkomsttekst
+/* MijnSerenity 8.31.9 — schone hero-foto zonder ingebrande welkomsttekst
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -9,8 +9,8 @@ window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 window.__msVictronEmbedded8319=true;
 
-const BUILD='8.31.4';
-const TOKEN='831400';
+const BUILD='8.31.9';
+const TOKEN='831900';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -1037,7 +1037,16 @@ function apply(){
     <section class="ms8263-welcome" aria-hidden="true"><button type="button" class="ms8263-start" data-ms8263-go="live">Live varen</button></section>
   </main>
  </div>`;
- bind();refreshData();startGps();updateClock();decorateReference();setTimeout(syncReference,120);setTimeout(syncReference,1200);setTimeout(msVrmMount,0);
+ // Mount de Victron-console direct. Zo kan een fout in een andere Home-widget
+ // de console op desktop niet meer blokkeren.
+ try{msVrmMount()}catch(error){console.warn('Victron Home Console mount:',error)}
+ try{bind()}catch(error){console.warn('Home bind:',error)}
+ try{refreshData()}catch(error){console.warn('Home refresh:',error)}
+ try{startGps()}catch(error){console.warn('Home GPS:',error)}
+ try{updateClock()}catch(error){console.warn('Home clock:',error)}
+ try{decorateReference()}catch(error){console.warn('Home decorate:',error)}
+ setTimeout(()=>{try{syncReference()}catch(_){}},120);
+ setTimeout(()=>{try{syncReference()}catch(_){}},1200);
  clearInterval(window.__ms8263RefreshTimer);
  window.__ms8263RefreshTimer=setInterval(()=>{refreshData();syncReference();updateClock()},2000);
  return true;
@@ -1046,6 +1055,17 @@ function apply(){
 window.ms8263ApplyApprovedDashboard=apply;
 window.ms8260ApplyApprovedDashboard=apply;
 window.ms8263Navigate=nav;
+window.ms8263MountVictronConsole=msVrmMount;
+
+// Desktop/Safari failsafe: als Home opnieuw wordt opgebouwd en het startpaneel
+// nog zichtbaar is, monteer alleen de console opnieuw.
+clearInterval(window.__ms8263VictronMountWatch);
+window.__ms8263VictronMountWatch=setInterval(()=>{
+  if(route()!=='dashboard')return;
+  if($('ms8318ConsolePanel')){
+    try{msVrmMount()}catch(error){console.warn('Victron console watchdog:',error)}
+  }
+},1000);
 
 function start(){if(route()==='dashboard'){if(!apply())setTimeout(start,80)}else setHomeActive(false)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
