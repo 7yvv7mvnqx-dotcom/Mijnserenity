@@ -1,7 +1,7 @@
-/* MijnSerenity 8.32.0 - Home met Victron en Serenity AI naast elkaar */
-const CACHE_NAME='mijnserenity-8.32.0';
-const BUILD='8.32.0';
-const TOKEN='832000';
+/* MijnSerenity 8.32.1 - grotere Serenity hero-banner */
+const CACHE_NAME='mijnserenity-8.32.1';
+const BUILD='8.32.1';
+const TOKEN='832010';
 const CORE=[
   '/',
   '/index.html',
