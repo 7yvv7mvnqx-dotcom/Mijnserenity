@@ -759,6 +759,7 @@ function msVrmFrameUrl(config,token){
  const payload={
    id:String(config?.portalId||''),
    shard:String(config?.shard||''),
+   mqtt:String(config?.mqttWebhost||''),
    user:email,
    pass:'Token '+token
  };
