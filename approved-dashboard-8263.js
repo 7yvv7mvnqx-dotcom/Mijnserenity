@@ -1,4 +1,4 @@
-/* MijnSerenity 8.31.6 — schone hero-foto zonder ingebrande welkomsttekst
+/* MijnSerenity 8.31.7 — schone hero-foto zonder ingebrande welkomsttekst
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -8,8 +8,8 @@ window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 
-const BUILD='8.31.6';
-const TOKEN='831600';
+const BUILD='8.31.7';
+const TOKEN='831700';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
