@@ -44,8 +44,8 @@ function deepFirst(value,names,seen=new Set()){
   return null;
 }
 
-function shardFrom(identifier,mqttWebhost){
-  const match=String(mqttWebhost||'').match(/webmqtt(\d+)\./i);
+function shardFrom(identifier,mqttHost){
+  const match=String(mqttHost||'').match(/(?:webmqtt|mqtt)(\d+)\./i);
   if(match)return match[1];
   const id=String(identifier||'').trim().toLowerCase();
   if(!id)return '';
@@ -72,17 +72,28 @@ exports.handler=async event=>{
     if(!site)return json(404,{success:false,error:'Serenity is niet gevonden in deze VRM-account.'});
 
     const identifier=String(site.identifier||site.portalId||site.portal_id||'').trim();
-    const mqttWebhost=String(site.mqtt_webhost||site.mqttWebhost||'').trim();
-    const shard=shardFrom(identifier,mqttWebhost);
+    // VRM currently returns mqtt_host on installations. Older responses and
+    // some clients used mqtt_webhost. Prefer the server-provided broker over
+    // calculating a shard from the portal id.
+    const mqttHost=String(
+      site.mqtt_webhost||
+      site.mqttWebhost||
+      site.mqtt_host||
+      site.mqttHost||
+      ''
+    ).trim();
+    const shard=shardFrom(identifier,mqttHost);
     if(!identifier||!shard)throw new Error('vrm_mqtt_config_missing');
 
-    const email=String(deepFirst(me,['email','username','login'])||'').trim();
+    const email=String(deepFirst(me,['email','username','login'])||'').trim().toLowerCase();
+    const webmqttHost=`wss://webmqtt${shard}.victronenergy.com/mqtt`;
     return json(200,{
       success:true,
       installationId:INSTALLATION_ID,
       portalId:identifier,
       shard,
-      mqttWebhost:mqttWebhost||`wss://webmqtt${shard}.victronenergy.com/mqtt`,
+      mqttHost:mqttHost||null,
+      mqttWebhost:webmqttHost,
       email:email.includes('@')?email:null
     });
   }catch(error){
