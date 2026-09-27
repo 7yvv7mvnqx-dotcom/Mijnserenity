@@ -50,16 +50,21 @@ const bridge=`
   }
   const config=read();
   if(config&&config.id&&config.shard&&config.user&&config.pass){
-    const q=new URLSearchParams();
-    q.set('id',String(config.id));
-    q.set('shard',String(config.shard));
-    q.set('user',String(config.user));
-    q.set('pass',String(config.pass));
-    q.set('download','vrm');
-    q.set('fullscreen','1');
-    q.set('colorScheme','dark');
-    q.set('animationEnabled','true');
-    history.replaceState(null,'',location.pathname+'?'+q.toString());
+    // Do not use URLSearchParams here. It serializes a space as '+', but
+    // Qt QUrlQuery deliberately does not decode '+' back to a space. For a
+    // VRM access token the MQTT password must be exactly "Token <token>".
+    const q=[];
+    const add=(key,value)=>q.push(encodeURIComponent(key)+'='+encodeURIComponent(String(value)));
+    add('id',config.id);
+    if(config.mqtt) add('mqtt',config.mqtt);
+    else add('shard',config.shard);
+    add('user',config.user);
+    add('pass',config.pass);
+    add('download','vrm');
+    add('fullscreen','1');
+    add('colorScheme','dark');
+    add('animationEnabled','true');
+    history.replaceState(null,'',location.pathname+'?'+q.join('&'));
     const scrub=setInterval(function(){
       if(window.guiv2initialized===true){
         clearInterval(scrub);
