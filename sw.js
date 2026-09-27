@@ -1,7 +1,7 @@
-/* MijnSerenity 8.31.9 - stabiele Home/Victron cache */
-const CACHE_NAME='mijnserenity-8.31.9';
-const BUILD='8.31.9';
-const TOKEN='831900';
+/* MijnSerenity 8.32.0 - Home met Victron en Serenity AI naast elkaar */
+const CACHE_NAME='mijnserenity-8.32.0';
+const BUILD='8.32.0';
+const TOKEN='832000';
 const CORE=[
   '/',
   '/index.html',
