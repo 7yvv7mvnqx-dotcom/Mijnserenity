@@ -203,11 +203,10 @@ async function getConfig(token){
 function makeGuiUrl(config,token){
   const email=saveEmail(config?.email||currentEmail());
   if(!email)throw new Error('VRM-account e-mailadres ontbreekt.');
-  const mqttUser=email.toLowerCase().startsWith('vrmlogin_live_')?email:'vrmlogin_live_'+email;
   const payload={
     id:String(config?.portalId||''),
     shard:String(config?.shard||''),
-    user:mqttUser,
+    user:email,
     pass:'Token '+token
   };
   if(!payload.id||!payload.shard)throw new Error('Geen live console-configuratie ontvangen.');
