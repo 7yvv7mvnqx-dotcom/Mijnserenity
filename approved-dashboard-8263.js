@@ -7,6 +7,7 @@ if(window.__msApprovedDashboard8280)return;
 window.__msApprovedDashboard8280=true;
 window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
+window.__msVictronEmbedded8319=true;
 
 const BUILD='8.31.4';
 const TOKEN='831400';
