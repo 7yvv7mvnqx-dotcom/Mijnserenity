@@ -1,4 +1,4 @@
-/* MijnSerenity 8.31.9 — schone hero-foto zonder ingebrande welkomsttekst
+/* MijnSerenity 8.32.0 — schone hero-foto zonder ingebrande welkomsttekst
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -9,8 +9,8 @@ window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 window.__msVictronEmbedded8319=true;
 
-const BUILD='8.31.9';
-const TOKEN='831900';
+const BUILD='8.32.0';
+const TOKEN='832000';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -368,6 +368,168 @@ function installStyle(){
    #${ROOT} .msqa8267 input{height:46px!important;min-height:46px!important;font-size:13px!important}
    #${ROOT} .msqa8267-send{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important}
    #${ROOT} .msqa8267-label,#${ROOT} .msqa8267-examples,#${ROOT} .ms8271-tools{display:none!important}
+ }
+ /* 8.32.0 — desktop Victron + Serenity AI naast elkaar */
+ @media(min-width:951px){
+   #${ROOT} .ms8263-main{
+     grid-template-rows:clamp(142px,19vh,178px) minmax(0,1fr)!important;
+     padding:.8vh 1.25vw .8vh!important;
+     overflow:visible!important;
+   }
+   #${ROOT} .msr-vrm-live{
+     width:66.6%!important;
+     max-width:66.6%!important;
+     min-width:0!important;
+     justify-self:start!important;
+     align-self:stretch!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267{
+     position:absolute!important;
+     z-index:10020!important;
+     top:calc(.8vh + clamp(142px,19vh,178px) + .75vh)!important;
+     right:1.25vw!important;
+     bottom:.8vh!important;
+     left:auto!important;
+     width:31.4%!important;
+     height:auto!important;
+     min-height:0!important;
+     max-height:none!important;
+     margin:0!important;
+     padding:12px!important;
+     display:flex!important;
+     flex-direction:column!important;
+     gap:8px!important;
+     border:1px solid rgba(45,175,218,.42)!important;
+     border-radius:17px!important;
+     background:linear-gradient(145deg,rgba(4,42,61,.985),rgba(2,24,38,.99))!important;
+     box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.18)!important;
+     overflow:hidden!important;
+     -webkit-backdrop-filter:none!important;
+     backdrop-filter:none!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 .msqa8267-label{
+     position:static!important;
+     display:flex!important;
+     align-items:center!important;
+     width:auto!important;
+     min-height:28px!important;
+     margin:0!important;
+     color:#fff!important;
+     font-size:13px!important;
+     font-weight:850!important;
+     letter-spacing:.02em!important;
+     text-transform:none!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 .msqa8267-label:before{
+     margin-right:8px!important;
+     font-size:18px!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 .msqa8267-row{
+     display:grid!important;
+     grid-template-columns:minmax(0,1fr) 42px!important;
+     gap:7px!important;
+     width:100%!important;
+     height:44px!important;
+     min-height:44px!important;
+     margin:0!important;
+     padding:0!important;
+     border:0!important;
+     background:transparent!important;
+     box-shadow:none!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 .msqa8267-spark{display:none!important}
+   #${ROOT} .msqa8267#msQuickAsk8267 input{
+     width:100%!important;
+     height:44px!important;
+     min-height:44px!important;
+     padding:0 12px!important;
+     border:1px solid rgba(81,149,177,.38)!important;
+     border-radius:10px!important;
+     background:rgba(17,60,78,.62)!important;
+     color:#fff!important;
+     font-size:12px!important;
+     font-weight:600!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 .msqa8267-send{
+     width:42px!important;
+     height:44px!important;
+     min-width:42px!important;
+     min-height:44px!important;
+     border-radius:10px!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 .ms8271-tools{
+     position:static!important;
+     display:flex!important;
+     align-items:center!important;
+     width:auto!important;
+     height:auto!important;
+     margin:0!important;
+     gap:6px!important;
+     flex-wrap:nowrap!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 #ms8271Mic,
+   #${ROOT} .msqa8267#msQuickAsk8267 #ms8271Clear{
+     display:grid!important;
+     place-items:center!important;
+     width:38px!important;
+     height:36px!important;
+     min-width:38px!important;
+     min-height:36px!important;
+     padding:0!important;
+     border:1px solid rgba(94,169,198,.34)!important;
+     border-radius:9px!important;
+     background:rgba(12,54,72,.72)!important;
+     color:#fff!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 #ms8271Mic span,
+   #${ROOT} .msqa8267#msQuickAsk8267 #ms8271Clear span,
+   #${ROOT} .msqa8267#msQuickAsk8267 .ms8271-speak,
+   #${ROOT} .msqa8267#msQuickAsk8267 .ms8271-ai-note,
+   #${ROOT} .msqa8267#msQuickAsk8267 .ms8271-voice-status{display:none!important}
+   #${ROOT} .msqa8267#msQuickAsk8267 .msqa8267-examples{
+     position:static!important;
+     width:auto!important;
+     height:auto!important;
+     min-height:0!important;
+     margin:0!important;
+     padding:7px 9px!important;
+     border:1px solid rgba(69,150,182,.20)!important;
+     border-radius:9px!important;
+     background:rgba(9,45,63,.42)!important;
+     color:#a9c2ce!important;
+     font-size:8.5px!important;
+     line-height:1.28!important;
+     overflow:visible!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 .msqa8267-result{
+     position:static!important;
+     left:auto!important;
+     right:auto!important;
+     bottom:auto!important;
+     display:block!important;
+     flex:1 1 auto!important;
+     width:100%!important;
+     min-height:0!important;
+     max-height:none!important;
+     margin:0!important;
+     padding:12px!important;
+     border:1px solid rgba(89,199,238,.25)!important;
+     border-radius:12px!important;
+     background:rgba(1,14,23,.78)!important;
+     color:#e7f1f5!important;
+     font-size:12px!important;
+     line-height:1.45!important;
+     white-space:pre-line!important;
+     overflow:auto!important;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 .msqa8267-result:empty:before{
+     content:"Antwoorden van Serenity AI verschijnen hier.";
+     color:#6f91a1;
+   }
+   #${ROOT} .msqa8267#msQuickAsk8267 .msqa8267-result strong{
+     color:#39ddfa!important;
+     font-size:11px!important;
+   }
  }
  @supports(height:100dvh){#${ROOT}{height:100dvh!important;min-height:100dvh!important}}
 `;
