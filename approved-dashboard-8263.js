@@ -82,7 +82,9 @@ function installStyle(){
  #${ROOT} .msr-panel{border:1px solid rgba(26,128,165,.70);border-radius:17px;background:linear-gradient(145deg,rgba(4,42,61,.96),rgba(2,24,38,.97));box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.10);overflow:hidden}
  #${ROOT} .msr-kicker{display:flex;align-items:center;gap:8px;color:#74e6ff;font-size:9px;font-weight:900;letter-spacing:.19em;text-transform:uppercase}
  #${ROOT} .msr-kicker .ico{font-size:18px;letter-spacing:0}
- #${ROOT} .msr-quick{padding:13px 14px 14px}\n #${ROOT} .msr-vrm-live{min-height:0;height:100%;overflow:hidden;border:1px solid rgba(26,128,165,.70);border-radius:17px;background:#fff;box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.10)}\n #${ROOT} .msr-vrm-live iframe{display:block;width:100%!important;height:100%!important;min-height:0;border:0;background:#fff}
+ #${ROOT} .msr-quick{padding:13px 14px 14px}
+ #${ROOT} .msr-vrm-live{position:relative;display:grid;grid-template-rows:44px minmax(0,1fr);min-height:0;height:100%;overflow:hidden;border:1px solid rgba(26,128,165,.70);border-radius:17px;background:#01080d;box-shadow:inset 0 1px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.20)}
+ #${ROOT} .msr-vrm-live iframe{display:block;width:100%!important;height:100%!important;min-height:0;border:0;background:#000}
  #${ROOT} .msr-quick-head{display:flex;align-items:center;justify-content:space-between;margin:0 3px 10px}
  #${ROOT} .msr-quick-head strong{font-size:12px;letter-spacing:.18em}
  #${ROOT} .msr-edit{border:0;background:transparent;color:#65e5ff;font-size:11px;font-weight:700}
@@ -732,8 +734,13 @@ function apply(){
       </section>
     </section>
 
-    <section class="msr-vrm-live" aria-label="Victron VRM live">
-      <iframe width="100%" height="800" title="Victron VRM Serenity" src="https://vrm.victronenergy.com/installation/1003203/embed/57c91764" loading="eager" referrerpolicy="strict-origin-when-cross-origin" allow="fullscreen"></iframe>
+    <section class="msr-vrm-live" id="ms8318ConsolePanel" aria-label="Victron Cerbo GX Remote Console">
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 10px 6px 12px;background:linear-gradient(90deg,#061b29,#03121c);border-bottom:1px solid rgba(37,172,219,.28);color:#fff">
+        <div style="display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#0d77b8;font-weight:900">V</div>
+        <div style="min-width:0;flex:1;line-height:1.05"><strong style="display:block;font-size:12px">Victron Cerbo GX · Remote Console</strong><small style="display:block;margin-top:3px;color:#8fb7ca;font-size:8.5px">Donkere live console · bediening blijft binnen MijnSerenity</small></div>
+        <div style="padding:5px 8px;border:1px solid rgba(68,171,208,.28);border-radius:999px;background:#062536;color:#bcd2dc;font-size:8.5px;font-weight:800">STARTEN…</div>
+      </div>
+      <div style="display:grid;place-items:center;min-height:0;background:#01080d;color:#b9cfda;font-size:11px">Victron-console wordt geladen…</div>
     </section>
 
     <section class="msr-row">
