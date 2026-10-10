@@ -1,4 +1,4 @@
-/* MijnSerenity 8.32.1 — hogere hero-banner met meer zicht op Serenity
+/* MijnSerenity 8.32.2 — hogere hero-banner met meer zicht op Serenity
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -9,8 +9,8 @@ window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 window.__msVictronEmbedded8319=true;
 
-const BUILD='8.32.1';
-const TOKEN='832010';
+const BUILD='8.32.2';
+const TOKEN='832020';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -851,7 +851,7 @@ function bind(){
 
 const MSVRM_TOKEN_KEYS=['ms7148_vrm_token','ms7148VrmToken','mijnserenity_vrm_token','vrm_api_token'];
 const MSVRM_EMAIL_KEY='mijnserenity_vrm_mqtt_email';
-let msVrmBusy=false,msVrmReadyTimer=0;
+let msVrmBusy=false,msVrmReadyTimer=0,msVrmAutoRetryUsed=false;
 
 function msVrmSavedToken(){
  for(const key of MSVRM_TOKEN_KEYS){
@@ -942,15 +942,21 @@ function msVrmWatch(frame){
    try{
      if(frame?.contentWindow?.guiv2initialized===true){
        clearInterval(msVrmReadyTimer);
+       msVrmReadyTimer=0;
+       msVrmAutoRetryUsed=false;
        msVrmSetStatus('Console geladen','ready');
        return;
      }
    }catch(_){}
-   if(count>=40){
+   if(count>=24){
      clearInterval(msVrmReadyTimer);
-     const overlay=$('ms8319ConsoleOverlay');
-     if(overlay)overlay.classList.add('hidden');
-     const label=$('ms8319ConsoleStatus');if(label)label.textContent='Console geladen';
+     msVrmReadyTimer=0;
+     if(!msVrmAutoRetryUsed){
+       msVrmAutoRetryUsed=true;
+       msVrmReload(true);
+       return;
+     }
+     msVrmSetStatus('Console reageert niet. Tik op ↻ om opnieuw te proberen.','error');
    }
  },500);
 }
@@ -991,12 +997,14 @@ async function msVrmConnect(force=false){
    return false;
  }finally{msVrmBusy=false}
 }
-function msVrmReload(){
+function msVrmReload(automatic=false){
  const frame=$('ms8319ConsoleFrame');if(!frame)return;
  clearInterval(msVrmReadyTimer);
+ msVrmReadyTimer=0;
+ if(!automatic)msVrmAutoRetryUsed=false;
  frame.dataset.started='0';
  frame.src='about:blank';
- msVrmSetStatus('Opnieuw verbinden…','loading');
+ msVrmSetStatus(automatic?'Eerste verbinding reageert niet; automatisch opnieuw verbinden…':'Opnieuw verbinden…','loading');
  setTimeout(()=>msVrmConnect(true),120);
 }
 function msVrmFullscreen(){

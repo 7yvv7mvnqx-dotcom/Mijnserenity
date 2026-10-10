@@ -1,7 +1,7 @@
-/* MijnSerenity 8.32.1 - grotere Serenity hero-banner */
-const CACHE_NAME='mijnserenity-8.32.1';
-const BUILD='8.32.1';
-const TOKEN='832010';
+/* MijnSerenity 8.32.2 - grotere Serenity hero-banner */
+const CACHE_NAME='mijnserenity-8.32.2';
+const BUILD='8.32.2';
+const TOKEN='832020';
 const CORE=[
   '/',
   '/index.html',
