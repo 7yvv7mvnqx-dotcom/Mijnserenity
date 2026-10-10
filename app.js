@@ -8120,7 +8120,7 @@ function technicalWarnings(){
     );
   }
 
-  if(Number.isFinite(Number(state.waterPct))&&Number(state.waterPct)<=20){
+  if(state.alarmSettings?.water?.enabled!==false&&Number.isFinite(Number(state.waterPct))&&Number(state.waterPct)<=20){
     push('warning','Drinkwater bijna op',
       `Watertank staat op ${Math.round(Number(state.waterPct))}%.`,'💧');
   }
