@@ -107,4 +107,23 @@ assert.ok(shownDetails.includes('Leverancier: Your Adventure'));
 assert.ok(shownStatus.includes('onbetrouwbare OCR-regels verwijderd'));
 assert.ok(shownStatus.includes('Bedrag en bonregels zijn gecontroleerd'));
 
+// Regressie: een IBAN mag nooit leverancier of omschrijving worden.
+const afdekzeilBon=`
+Bestelling 2026-10-12
+NL02RABO0317639129
+2 × Afdekzeil — €59,90
+Subtotaal: €59,90
+Verzend- en afhandelingskosten: €4,95
+Totaal te betalen: €64,85
+`;
+const afdekzeil=window.MSReceiptReaderPro.parseReceiptText(afdekzeilBon);
+assert.equal(afdekzeil.merchant,null);
+assert.equal(afdekzeil.amount,64.85);
+assert.equal(afdekzeil.category,'Materialen');
+assert.equal(afdekzeil.summary,'2 × Afdekzeil');
+assert.ok(afdekzeil.details.includes('• 2 × Afdekzeil — €59,90'));
+assert.ok(!afdekzeil.details.includes('2 × 2 ×'));
+assert.ok(!afdekzeil.details.includes('NL02RABO0317639129'));
+assert.equal(afdekzeil.review.description,false);
+
 console.log('Slimme bonscanner tests: OK');
