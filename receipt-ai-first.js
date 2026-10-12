@@ -20,6 +20,23 @@ function validDate(v){return /^20\d{2}-\d{2}-\d{2}$/.test(String(v||''))}
 function money(v){const n=Number(v);return Number.isFinite(n)&&n>=0?n:null}
 function formatEuro(v){const n=money(v);return n==null?'':`€${n.toFixed(2).replace('.',',')}`}
 function categories(){const s=$('costCategory');return s?[...s.options].map(o=>String(o.value||o.textContent||'').trim()).filter(Boolean):[]}
+function bankReference(value){
+  const text=String(value||'').trim(),compact=text.toUpperCase().replace(/[\s-]+/g,'');
+  return /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(compact)||/\b(?:IBAN|BIC|SWIFT|BANKREKENING|REKENINGNUMMER|BETALINGSREFERENTIE)\b/i.test(text);
+}
+function usefulSummary(r){
+  let summary=String(r?.summary||'').trim();
+  if(bankReference(summary)||summary.toLowerCase()===String(r?.merchant||'').trim().toLowerCase())summary='';
+  if(!summary){
+    const item=(Array.isArray(r?.items)?r.items:[]).find(v=>v?.description&&!bankReference(v.description));
+    if(item){
+      const desc=String(item.description).trim();
+      const qty=Number(item.quantity)>1&&!/^\d+\s*[×x]\s*/i.test(desc)?`${Number(item.quantity)} × `:'';
+      summary=qty+desc;
+    }
+  }
+  return summary;
+}
 
 async function bitmap(blob){
   if(typeof createImageBitmap==='function'){
@@ -56,9 +73,11 @@ function detailsForAi(r){
       out.push(`• ${article?article+' ':''}${desc}${extras.length?' — '+extras.join(' · '):''}`.trim());
     });
   }
-  if(money(r.subtotal_ex_vat)!=null)out.push('',`Totaal excl. BTW: ${formatEuro(r.subtotal_ex_vat)}`);
+  if(money(r.subtotal_amount)!=null)out.push('',`Subtotaal: ${formatEuro(r.subtotal_amount)}`);
+  else if(money(r.subtotal_ex_vat)!=null)out.push('',`Totaal excl. BTW: ${formatEuro(r.subtotal_ex_vat)}`);
+  if(money(r.shipping_amount)!=null)out.push(`Verzend- en afhandelingskosten: ${formatEuro(r.shipping_amount)}`);
   if(money(r.vat_amount)!=null)out.push(`BTW: ${formatEuro(r.vat_amount)}`);
-  if(money(r.total_amount)!=null)out.push(`Totaal incl. BTW: ${formatEuro(r.total_amount)}`);
+  if(money(r.total_amount)!=null)out.push(`Totaal te betalen: ${formatEuro(r.total_amount)}`);
   return out.join('\n').trim();
 }
 
@@ -67,7 +86,11 @@ function applyAi(r,model=''){
   const amount=money(r?.total_amount);
   if(amount!=null&&$('costAmount')){$('costAmount').value=amount.toFixed(2);found.push(`bedrag ${formatEuro(amount)}`)}
   if(validDate(r?.date)&&$('costDate')){$('costDate').value=r.date;found.push(`datum ${r.date.split('-').reverse().join('-')}`)}
-  if(String(r?.summary||'').trim()&&$('costDescription')){$('costDescription').value=String(r.summary).trim();found.push(`omschrijving ${String(r.summary).trim()}`)}
+  const summary=usefulSummary(r);
+  if($('costDescription')){
+    if(summary||bankReference($('costDescription').value))$('costDescription').value=summary;
+    if(summary)found.push(`omschrijving ${summary}`);
+  }
   if(String(r?.category||'').trim()&&$('costCategory')){
     const s=$('costCategory');
     if([...s.options].some(o=>o.value===r.category||String(o.textContent||'').trim()===r.category))s.value=r.category;
@@ -76,17 +99,14 @@ function applyAi(r,model=''){
   if(details&&$('costReceiptDetails')){$('costReceiptDetails').value=details;$('costReceiptDetailsWrap')?.classList.remove('hidden')}
   if(typeof window.showCostReceiptDetails==='function'&&details)window.showCostReceiptDetails(details);
   const itemCount=Array.isArray(r?.items)?r.items.length:0;
-  status(`🤖 AI gelezen: ${found.join(' · ')}${itemCount?` · ${itemCount} artikel${itemCount===1?'':'en'}`:''}.`);
+  const supplierMissing=!String(r?.merchant||'').trim()||bankReference(r.merchant);
+  status(`🤖 AI gelezen: ${found.join(' · ')}${itemCount?` · ${itemCount} artikel${itemCount===1?'':'en'}`:''}.${supplierMissing?' ⚠️ Leverancier niet herkend: controleer de bon en vul de leverancier bij de details aan.':''}`);
 }
 
 function aiComplete(r){
-  return Boolean(
-    String(r?.merchant||'').trim()&&
-    validDate(r?.date)&&
-    money(r?.total_amount)!=null&&
-    String(r?.summary||'').trim()&&
-    Array.isArray(r?.items)&&r.items.length
-  );
+  // Ontbrekende leverancier mag geen goede artikelregels door onbetrouwbare OCR vervangen.
+  return Boolean(money(r?.total_amount)!=null&&(usefulSummary(r)||
+    (Array.isArray(r?.items)&&r.items.some(item=>item?.description&&!bankReference(item.description)))));
 }
 
 async function readAi(file){
