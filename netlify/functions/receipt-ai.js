@@ -157,7 +157,7 @@ function normalize(payload,categories){
   const merchant=reliableMerchant(p.merchant);
   const summary=receiptSummary(p.summary,items,merchant);
   const productText=items.map(item=>item.description).join(' ')+' '+summary;
-  if(categories.includes('Materialen')&&/\b(?:afdekzeilen?|dekzeilen?|schuurpapier|antifouling|grondverf|verfrollers?|afplaktape|verfkrabbers?|primers?)\b/i.test(productText))category='Materialen';
+  if(categories.includes('Materialen')&&/\b(?:afdekzeil(?:en)?|dekzeil(?:en)?|schuurpapier|antifouling|grondverf|verfrollers?|afplaktape|verfkrabbers?|primers?)\b/i.test(productText))category='Materialen';
   return {
     merchant,
     date,
