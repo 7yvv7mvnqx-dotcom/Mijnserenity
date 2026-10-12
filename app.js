@@ -5015,7 +5015,7 @@ function buildReceiptDetails(text,{merchant,date,amount}={}){
     lines.push('');
     lines.push('Artikelen:');
     items.forEach(item=>{
-      const quantity=item.quantity>1?`${item.quantity} × `:'';
+      const quantity=item.quantity>1&&!/^\d+\s*[×x]\s*/i.test(item.description)?`${item.quantity} × `:'';
       lines.push(`• ${quantity}${item.description} — €${item.amount.toFixed(2).replace('.',',')}`);
     });
   }
@@ -5262,6 +5262,9 @@ function extractReceiptMerchant(text){
   receiptLines(text).slice(0,18).forEach((rawLine,index)=>{
     const line=normalizeReceiptTextLine(rawLine);
     const lower=line.toLowerCase();
+    // De bankrekening op een bestelbevestiging is nooit de leverancier.
+    const compact=line.toUpperCase().replace(/[\s-]+/g,'');
+    if(/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(compact)||/\b(?:iban|bic|swift|bankrekening|rekeningnummer)\b/i.test(line))return;
 
     if(line.length<3||line.length>60)return;
     if(!/[A-Za-zÀ-ÿ]{3}/.test(line))return;
@@ -5296,6 +5299,7 @@ function extractReceiptMerchant(text){
 
 function detectReceiptCategory(text){
   const lower=String(text||'').toLowerCase();
+  if(/\b(?:afdekzeil(?:en)?|dekzeil(?:en)?|antifouling|schuurpapier|grondverf|primers?)\b/i.test(lower))return 'Materialen';
   const rules=[
     ['Eten & Drinken',/\brestaurant\b|\bcafé\b|\bcafe\b|\bbistro\b|\bbrasserie\b|\bpizzeria\b|\bhoreca\b|\btafel\b|\bbestelling\b|\bcola\b|\bbier\b|\bbeer\b|\bwijn\b|\bwine\b|\bspaghetti\b|\bpizza\b|\bfiletto\b|\binsalata\b|\bpasta\b|\bburger\b|\bmenu\b|\bdiner\b|\blunch\b|\bkeuken\b/],
     ['Diesel',/\bdiesel\b|\bbrandstof\b|\bfuel\b|\btankstation\b|\bshell\b|\besso\b|\bbp\b|\btango\b|\btinq\b|\bavia\b/],
@@ -5325,9 +5329,15 @@ function applyReceiptOcrResult(text){
     $('costDate').value=date;
     found.push(`datum ${date.split('-').reverse().join('-')}`);
   }
-  if(merchant){
-    $('costDescription').value=merchant;
-    found.push(`omschrijving ${merchant}`);
+  // Gebruik artikelregels voor de omschrijving; geen bedrijfs- of banknaam.
+  const firstItem=items.find(item=>item.description&&!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(String(item.description).replace(/[\s-]+/g,'')));
+  if(firstItem){
+    const desc=String(firstItem.description).trim();
+    const qty=Number(firstItem.quantity)>1&&!/^\d+\s*[×x]\s*/i.test(desc)?`${Number(firstItem.quantity)} × `:'';
+    $('costDescription').value=(qty+desc).slice(0,90);
+    found.push(`omschrijving ${$('costDescription').value}`);
+  }else if(/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/i.test(String($('costDescription').value).replace(/[\s-]+/g,''))){
+    $('costDescription').value='';
   }
   if(category){
     found.push(`categorie-suggestie ${category}`);
