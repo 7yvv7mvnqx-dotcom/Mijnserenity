@@ -396,6 +396,8 @@
 
   function detectCategory(text){
     const normalized=normalizeDocumentText(text).toLowerCase();
+    // Materiaal op een orderbevestiging mag niet als eten/drinken worden gezien.
+    if(/\b(?:afdekzeilen?|dekzeilen?|schuurpapier|antifouling|grondverf|verfrollers?|afplaktape|verfkrabbers?|primers?)\b/i.test(normalized))return 'Materialen';
     if(isInsurancePolicy(normalized))return 'Verzekering';
     if(/\b(?:accu[-\s]?kabel|kabelogen?|kabelschoenen?|stroomkabel|massakabel|zekering(?:houder)?|busbar|verdeelrail|hoofdstroomschakelaar|victron|renogy|orion|multiplus|omvormer|laadregelaar|dc[-\s]?dc|12\s*v|24\s*v|mm²|amp[eè]re)\b/.test(normalized)){
       return 'Elektra';
@@ -432,7 +434,7 @@
 
   function itemDescriptionLooksUseful(value){
     const description=String(value||'').trim();
-    if(description.length<5||description.length>120)return false;
+    if(description.length<5||description.length>120||looksLikeBankIdentifier(description))return false;
     if(!/[A-Za-zÀ-ÿ]{4}/.test(description))return false;
     if(/\b(?:subtotaal|totaal|te betalen|btw|vat|excl|incl|belasting|korting|wisselgeld|voldaan|betaald|verzendkosten|afhandelingskosten)\b/i.test(description))return false;
     if(/^(?:in\s+a|i\s+e+|e+\s+is|met|artikel|regel|item)\b/i.test(description))return false;
@@ -767,12 +769,18 @@
       if(work)return cleanItemDescription(work).slice(0,90);
     }
 
-    if(merchant&&!merchantLooksLikeItem(merchant))return merchant;
-    if(items.length===1)return items[0].description.slice(0,90);
+    // Omschrijving is wat gekocht is, niet de leverancier.
+    if(items.length===1){
+      const item=items[0];
+      const qty=Number(item.quantity)>1?`${Number(item.quantity)} × `:'';
+      return `${qty}${item.description}`.slice(0,90);
+    }
     if(items.length>1){
       if(category==='Onderdelen')return 'Onderdelen voor Serenity';
       if(category==='Materialen')return 'Materialen voor Serenity';
     }
+    if(items.length>1)return items.map(item=>item.description).slice(0,2).join(' en ').slice(0,90);
+    if(merchant&&!merchantLooksLikeItem(merchant))return merchant;
     return '';
   }
 
@@ -972,9 +980,9 @@
       dateInput.value=parsed.date;
       found.push(`datum ${parsed.date.split('-').reverse().join('-')}`);
     }
-    if(parsed.summary&&descriptionInput){
-      descriptionInput.value=parsed.summary;
-      found.push(`omschrijving ${parsed.summary}`);
+    if(descriptionInput){
+      if(parsed.summary||looksLikeBankIdentifier(descriptionInput.value))descriptionInput.value=parsed.summary||'';
+      if(parsed.summary)found.push(`omschrijving ${parsed.summary}`);
     }
     const editing=Boolean(document.getElementById('costId')?.value);
     if(parsed.category&&categoryInput&&(!editing||!categoryInput.value)){
