@@ -39,6 +39,8 @@ function receiptSchema(){
       date:{type:'string'},
       total_amount:nullableNumber,
       subtotal_ex_vat:nullableNumber,
+      subtotal_amount:nullableNumber,
+      shipping_amount:nullableNumber,
       vat_amount:nullableNumber,
       currency:{type:'string'},
       receipt_number:{type:'string'},
@@ -63,7 +65,7 @@ function receiptSchema(){
       },
       confidence:{type:'number'}
     },
-    required:['merchant','date','total_amount','subtotal_ex_vat','vat_amount','currency','receipt_number','order_number','category','summary','items','confidence'],
+    required:['merchant','date','total_amount','subtotal_ex_vat','subtotal_amount','shipping_amount','vat_amount','currency','receipt_number','order_number','category','summary','items','confidence'],
     additionalProperties:false
   };
 }
@@ -79,9 +81,10 @@ REGELS
 - Corrigeer alleen duidelijke tekenverwisselingen, bijvoorbeeld 0/O, 1/I of een slecht leesbaar jaartal, wanneer de rest van de bon dit overtuigend ondersteunt.
 - Gebruik voor date de document-/bon-/factuurdatum, niet een willekeurige andere datum. Formaat exact YYYY-MM-DD. Leeg als echt niet betrouwbaar te bepalen.
 - total_amount is uitsluitend het EINDTOTAAL (totaal te betalen, inclusief btw en eventuele verzend- en afhandelingskosten), nooit het subtotaal. Gebruik een getal, geen tekst. Controleer de optelsom: subtotaal plus eventuele verzendkosten is het totaal wanneer geen andere posten aanwezig zijn.
-- subtotal_ex_vat en vat_amount alleen invullen als ze op de bon staan of direct en eenduidig uit de bon volgen; anders null.
-- merchant is de echte leverancier/bedrijfsnaam, niet een klantnaam, plaatsnaam, IBAN, rekeningnummer, BIC/SWIFT of willekeurige OCR-achtige letterreeks. Als de bedrijfsnaam niet betrouwbaar leesbaar is, gebruik een lege string.
-- summary is een korte bruikbare omschrijving van wat gekocht is, bij voorkeur het belangrijkste artikel. Niet alleen de leverancier.
+- subtotal_amount is het expliciet vermelde SUBTOTAAL vóór verzendkosten (ook als dit bedrag inclusief btw is). shipping_amount is de expliciet vermelde verzend- en afhandelingskosten. Anders null.
+- subtotal_ex_vat en vat_amount alleen invullen als ze op de bon staan of direct en eenduidig uit de bon volgen; anders null. Verwissel subtotal_amount nooit met het bedrag exclusief btw.
+- merchant is de echte leverancier/bedrijfsnaam uit het logo, de koptekst of bedrijfsgegevens, niet een klantnaam, plaatsnaam, IBAN, rekeningnummer, BIC/SWIFT of willekeurige OCR-achtige letterreeks. Zoek de naam in de kop en voet als deze niet direct zichtbaar is. Als de bedrijfsnaam niet betrouwbaar leesbaar is, gebruik een lege string.
+- summary is een korte bruikbare omschrijving van WAT gekocht is, bij voorkeur artikel + aantal (bijvoorbeeld 2 × Afdekzeil). Gebruik hier NOOIT een IBAN, rekeningnummer, betalingsreferentie, banknaam of alleen de leverancier.
 - items bevat alle duidelijk herkenbare gekochte artikelen. Neem artikelnummer, omschrijving en bedragen over wanneer leesbaar.
 - receipt_number is bon-/document-/factuurnummer. order_number is order-/bestelnummer.
 - currency is EUR tenzij op de bon duidelijk iets anders staat.
@@ -122,9 +125,25 @@ async function callOpenAI(apiKey,model,image,categories){
   }
 }
 
+function receiptSummary(value,items,merchant){
+  let summary=safeText(value,300);
+  const normalized=summary.toUpperCase().replace(/[\s-]+/g,'');
+  const isIban=/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(normalized);
+  if(isIban||/\b(?:IBAN|BIC|SWIFT|BANKREKENING|REKENINGNUMMER|BETALINGSREFERENTIE)\b/i.test(summary)||
+    (merchant&&summary.toLowerCase()===merchant.toLowerCase()))summary='';
+  if(!summary){
+    const item=items.find(entry=>entry.description&&reliableMerchant(entry.description));
+    if(item){
+      const qty=Number(item.quantity)>1&&!/^\d+\s*[×x]\s*/i.test(item.description)?`${Number(item.quantity)} × `:'';
+      summary=`${qty}${item.description}`.slice(0,300);
+    }
+  }
+  return summary;
+}
+
 function normalize(payload,categories){
   const p=payload&&typeof payload==='object'?payload:{};
-  const category=categories.includes(String(p.category||''))?String(p.category):'';
+  let category=categories.includes(String(p.category||''))?String(p.category):'';
   const date=/^20\d{2}-\d{2}-\d{2}$/.test(String(p.date||''))?String(p.date):'';
   const num=v=>v===null||v===undefined||v===''?undefined:(Number.isFinite(Number(v))?Number(v):undefined);
   const items=Array.isArray(p.items)?p.items.slice(0,20).map(item=>({
@@ -134,18 +153,24 @@ function normalize(payload,categories){
     unit:safeText(item?.unit,40),
     unit_price:num(item?.unit_price),
     line_total:num(item?.line_total)
-  })).filter(item=>item.description||item.article_number):[];
+  })).filter(item=>(item.description||item.article_number)&&reliableMerchant(item.description||item.article_number)):[];
+  const merchant=reliableMerchant(p.merchant);
+  const summary=receiptSummary(p.summary,items,merchant);
+  const productText=items.map(item=>item.description).join(' ')+' '+summary;
+  if(categories.includes('Materialen')&&/\b(?:afdekzeilen?|dekzeilen?|schuurpapier|antifouling|grondverf|verfrollers?|afplaktape|verfkrabbers?|primers?)\b/i.test(productText))category='Materialen';
   return {
-    merchant:reliableMerchant(p.merchant),
+    merchant,
     date,
     total_amount:num(p.total_amount),
     subtotal_ex_vat:num(p.subtotal_ex_vat),
+    subtotal_amount:num(p.subtotal_amount),
+    shipping_amount:num(p.shipping_amount),
     vat_amount:num(p.vat_amount),
     currency:safeText(p.currency,12)||'EUR',
     receipt_number:safeText(p.receipt_number,120),
     order_number:safeText(p.order_number,120),
     category,
-    summary:safeText(p.summary,300),
+    summary,
     items,
     confidence:Math.max(0,Math.min(1,Number(p.confidence)||0))
   };
