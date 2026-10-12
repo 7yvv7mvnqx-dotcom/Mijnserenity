@@ -308,9 +308,19 @@
     return best.value;
   }
 
+  function looksLikeBankIdentifier(value){
+    const text=String(value||'').trim();
+    if(!text)return false;
+    const compact=text.toUpperCase().replace(/[\s-]+/g,'');
+    if(/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(compact))return true;
+    return /\b(?:iban|bic|bankrekening(?:nummer)?|rekeningnummer|swift)\b/i.test(text)||
+      /\b[A-Z]{2}\d{2}(?:[\s-]?[A-Z0-9]){11,30}\b/i.test(text);
+  }
+
   function merchantLooksLikeItem(value){
     const line=String(value||'').trim();
     if(!line)return true;
+    if(looksLikeBankIdentifier(line))return true;
     if(/^(?:nederland|nederlan|netherlands?|holland|voldaan|betaald|betaling|pin|maestro|visa|mastercard)$/i.test(line))return true;
     if(/^\d{1,3}(?:[,.]\d{1,2})?\s+/.test(line))return true;
     if(moneyValues(line).length)return true;
@@ -785,7 +795,20 @@
     };
   }
 
-  function buildDetails(text,{merchant,date,amount,items:providedItems,itemAudit:providedItemAudit}={}){
+  function reconcileReceiptTotals(text,amount,subtotal,shipping){
+    const cents=value=>Number.isFinite(value)?Math.round(value*100):null;
+    const paid=cents(amount),base=cents(subtotal),postage=cents(shipping);
+    const discount=/\b(?:korting|coupon|tegoed|voucher|discount|retour|terugbetaling)\b/i.test(text);
+    // Wanneer 'subtotaal' precies het betaalbedrag plus verzendkosten is,
+    // heeft de OCR de twee regels omgewisseld. Alleen deze eenduidige situatie corrigeren.
+    if(paid!==null&&base!==null&&postage!==null&&postage>0&&base>paid
+      &&base===paid+postage&&!discount){
+      return {amount:subtotal,subtotal:amount,shipping,swapped:true};
+    }
+    return {amount,subtotal,shipping,swapped:false};
+  }
+
+  function buildDetails(text,{merchant,date,amount,items:providedItems,itemAudit:providedItemAudit,subtotal:providedSubtotal,shipping:providedShipping}={}){
     const result=[];
     const normalized=normalizeDocumentText(text);
     const policy=parseInsurancePolicy(normalized);
@@ -817,15 +840,16 @@
       ||findLabelValue(normalized,/\border(?:nummer)?\s*#?\s*:?\s*([A-Z0-9-]+)/i)
       ||((normalized.match(/\bordernummer\b[\s\S]{0,80}?\b(\d{6,12})\b/i)||[])[1]||'')
       ||((normalized.match(/\buw\s+referentie\b[\s\S]{0,80}?\b(\d{6,12})\b/i)||[])[1]||'');
-    const subtotal=findMoneyByLabel(normalized,/\bsubtotaal\b/i);
-    const shipping=findMoneyByLabel(normalized,/\bverzend(?:ing)?[-\s]+en[-\s]+afhandelingskosten\b/i)
-      ??findMoneyByLabel(normalized,/\bverzendkosten\b/i);
+    let subtotal=providedSubtotal!==undefined?providedSubtotal:findMoneyByLabel(normalized,/\bsubtotaal\b/i);
+    let shipping=providedShipping!==undefined?providedShipping:(findMoneyByLabel(normalized,/\bverzend(?:ing)?[-\s]+en[-\s]+afhandelingskosten\b/i)
+      ??findMoneyByLabel(normalized,/\bverzendkosten\b/i));
     const exclusive=findMoneyByLabel(normalized,/\btotaal\s+excl\.?\s*btw\b/i)
       ??findMoneyAfterLabel(normalized,'\\bEXCL(?:USIEF)?\\.?');
     const vat21=findMoneyAfterLabel(normalized,'\\bBTW\\s*21\\s*%');
     const vat9=findMoneyAfterLabel(normalized,'\\bBTW\\s*9\\s*%');
     const work=findWorkDescription(normalized);
     const extractedItems=providedItems||extractItemCandidates(normalized);
+    ({amount,subtotal,shipping}=reconcileReceiptTotals(normalized,amount,subtotal,shipping));
     const itemAudit=providedItemAudit||reconcileReceiptItems(extractedItems,{amount,subtotal,exclusive,shipping});
     const items=providedItems||itemAudit.items;
 
@@ -871,21 +895,22 @@
 
   function parseReceiptText(text){
     const normalized=normalizeDocumentText(text);
-    const amount=extractAmount(normalized);
+    let amount=extractAmount(normalized);
     const date=extractDocumentDate(normalized);
     const merchant=extractMerchant(normalized);
     const category=detectCategory(normalized);
-    const subtotal=findMoneyByLabel(normalized,/\bsubtotaal\b/i);
-    const shipping=findMoneyByLabel(normalized,/\bverzend(?:ing)?[-\s]+en[-\s]+afhandelingskosten\b/i)
+    let subtotal=findMoneyByLabel(normalized,/\bsubtotaal\b/i);
+    let shipping=findMoneyByLabel(normalized,/\bverzend(?:ing)?[-\s]+en[-\s]+afhandelingskosten\b/i)
       ??findMoneyByLabel(normalized,/\bverzendkosten\b/i);
     const exclusive=findMoneyByLabel(normalized,/\btotaal\s+excl\.?\s*btw\b/i)
       ??findMoneyAfterLabel(normalized,'\\bEXCL(?:USIEF)?\\.?');
     const extractedItems=extractItemCandidates(normalized);
+    ({amount,subtotal,shipping}=reconcileReceiptTotals(normalized,amount,subtotal,shipping));
     const itemAudit=reconcileReceiptItems(extractedItems,{amount,subtotal,exclusive,shipping});
     const items=itemAudit.items;
     const summary=buildSmartDescription(normalized,{merchant,category,items});
     const review=buildReviewState(normalized,{amount,date,merchant,category,summary,itemAudit});
-    const details=buildDetails(normalized,{merchant,date,amount,items,itemAudit});
+    const details=buildDetails(normalized,{merchant,date,amount,subtotal,shipping,items,itemAudit});
     return {normalized,amount,date,merchant,category,summary,items,itemAudit,review,details};
   }
 
@@ -1297,6 +1322,7 @@
     buildDetails,
     cleanItemDescription,
     reconcileReceiptItems,
+    reconcileReceiptTotals,
     normalizeDocumentText,
     parseInsurancePolicy
   };
