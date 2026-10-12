@@ -321,6 +321,8 @@
     const line=String(value||'').trim();
     if(!line)return true;
     if(looksLikeBankIdentifier(line))return true;
+    if(/^(?:bon(?:nummer|datum)?|kassabon|aankoopbon|factuur|bestelling|order|besteloverzicht|betalingsbewijs|betaalbewijs|transactie|ontvangstbewijs|bedankt|document)\b/i.test(line))return true;
+    if(/\b\d{1,2}[-/ ](?:\d{1,2}|jan(?:uari)?|feb(?:ruari)?|mrt|maart|apr(?:il)?|mei|jun(?:i)?|jul(?:i)?|aug(?:ustus)?|sep(?:tember)?|okt(?:ober)?|nov(?:ember)?|dec(?:ember)?)[-/ ]20\d{2}\b/i.test(line))return true;
     if(/^(?:nederland|nederlan|netherlands?|holland|voldaan|betaald|betaling|pin|maestro|visa|mastercard)$/i.test(line))return true;
     if(/^\d{1,3}(?:[,.]\d{1,2})?\s+/.test(line))return true;
     if(moneyValues(line).length)return true;
