@@ -2,6 +2,15 @@ function safeText(value,max=1200){
   return String(value??'').replace(/\u0000/g,'').trim().slice(0,max);
 }
 
+function reliableMerchant(value){
+  const text=safeText(value,180);
+  const compact=text.toUpperCase().replace(/[\s-]/g,'');
+  if(/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(compact))return '';
+  if(/\b(?:IBAN|BIC|SWIFT|rekeningnummer|bankrekening)\b/i.test(text))return '';
+  if(/\b[A-Z]{2}\d{2}(?:[\s-]?[A-Z0-9]){11,30}\b/i.test(text))return '';
+  return text;
+}
+
 function json(body,status=200){
   return new Response(JSON.stringify(body),{
     status,
@@ -69,9 +78,9 @@ REGELS
 - Verzin niets dat niet zichtbaar is of sterk uit het document zelf volgt.
 - Corrigeer alleen duidelijke tekenverwisselingen, bijvoorbeeld 0/O, 1/I of een slecht leesbaar jaartal, wanneer de rest van de bon dit overtuigend ondersteunt.
 - Gebruik voor date de document-/bon-/factuurdatum, niet een willekeurige andere datum. Formaat exact YYYY-MM-DD. Leeg als echt niet betrouwbaar te bepalen.
-- total_amount is het bedrag inclusief btw / te betalen. Gebruik een getal, geen tekst.
+- total_amount is uitsluitend het EINDTOTAAL (totaal te betalen, inclusief btw en eventuele verzend- en afhandelingskosten), nooit het subtotaal. Gebruik een getal, geen tekst. Controleer de optelsom: subtotaal plus eventuele verzendkosten is het totaal wanneer geen andere posten aanwezig zijn.
 - subtotal_ex_vat en vat_amount alleen invullen als ze op de bon staan of direct en eenduidig uit de bon volgen; anders null.
-- merchant is de echte leverancier/bedrijfsnaam, niet een klantnaam, plaatsnaam of willekeurige OCR-achtige letterreeks.
+- merchant is de echte leverancier/bedrijfsnaam, niet een klantnaam, plaatsnaam, IBAN, rekeningnummer, BIC/SWIFT of willekeurige OCR-achtige letterreeks. Als de bedrijfsnaam niet betrouwbaar leesbaar is, gebruik een lege string.
 - summary is een korte bruikbare omschrijving van wat gekocht is, bij voorkeur het belangrijkste artikel. Niet alleen de leverancier.
 - items bevat alle duidelijk herkenbare gekochte artikelen. Neem artikelnummer, omschrijving en bedragen over wanneer leesbaar.
 - receipt_number is bon-/document-/factuurnummer. order_number is order-/bestelnummer.
@@ -127,7 +136,7 @@ function normalize(payload,categories){
     line_total:num(item?.line_total)
   })).filter(item=>item.description||item.article_number):[];
   return {
-    merchant:safeText(p.merchant,180),
+    merchant:reliableMerchant(p.merchant),
     date,
     total_amount:num(p.total_amount),
     subtotal_ex_vat:num(p.subtotal_ex_vat),
