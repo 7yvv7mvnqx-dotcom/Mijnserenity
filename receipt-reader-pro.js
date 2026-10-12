@@ -397,7 +397,7 @@
   function detectCategory(text){
     const normalized=normalizeDocumentText(text).toLowerCase();
     // Materiaal op een orderbevestiging mag niet als eten/drinken worden gezien.
-    if(/\b(?:afdekzeilen?|dekzeilen?|schuurpapier|antifouling|grondverf|verfrollers?|afplaktape|verfkrabbers?|primers?)\b/i.test(normalized))return 'Materialen';
+    if(/\b(?:afdekzeil(?:en)?|dekzeil(?:en)?|schuurpapier|antifouling|grondverf|verfrollers?|afplaktape|verfkrabbers?|primers?)\b/i.test(normalized))return 'Materialen';
     if(isInsurancePolicy(normalized))return 'Verzekering';
     if(/\b(?:accu[-\s]?kabel|kabelogen?|kabelschoenen?|stroomkabel|massakabel|zekering(?:houder)?|busbar|verdeelrail|hoofdstroomschakelaar|victron|renogy|orion|multiplus|omvormer|laadregelaar|dc[-\s]?dc|12\s*v|24\s*v|mm²|amp[eè]re)\b/.test(normalized)){
       return 'Elektra';
@@ -772,7 +772,7 @@
     // Omschrijving is wat gekocht is, niet de leverancier.
     if(items.length===1){
       const item=items[0];
-      const qty=Number(item.quantity)>1?`${Number(item.quantity)} × `:'';
+      const qty=Number(item.quantity)>1&&!/^\d+\s*[×x]\s*/i.test(item.description)?`${Number(item.quantity)} × `:'';
       return `${qty}${item.description}`.slice(0,90);
     }
     if(items.length>1){
@@ -794,7 +794,7 @@
 
   function buildReviewState(text,{amount,date,merchant,category,summary,itemAudit}={}){
     const amountTrusted=amount!==null&&amount!==undefined&&(hasLabelledTotal(text)||itemAudit?.matches===true);
-    const summaryTrusted=Boolean(summary)&&!merchantLooksLikeItem(summary);
+    const summaryTrusted=Boolean(summary)&&!looksLikeBankIdentifier(summary)&&/[A-Za-zÀ-ÿ]{4}/.test(summary)&&!/\b(?:subtotaal|totaal\s+te\s+betalen|bankrekening)\b/i.test(summary);
     return {
       amount:!amountTrusted,
       date:!date,
@@ -876,7 +876,7 @@
       result.push('');
       result.push('Materialen / artikelen:');
       items.forEach(item=>{
-        const quantity=item.quantity>1?`${Number(item.quantity).toLocaleString('nl-NL',{maximumFractionDigits:2})} × `:'';
+        const quantity=item.quantity>1&&!/^\d+\s*[×x]\s*/i.test(item.description)?`${Number(item.quantity).toLocaleString('nl-NL',{maximumFractionDigits:2})} × `:'';
         const unit=item.unitPrice!==undefined&&item.quantity>1
           ?` à €${Number(item.unitPrice).toFixed(2).replace('.',',')}`
           :'';
