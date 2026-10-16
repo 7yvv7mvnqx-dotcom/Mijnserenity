@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="8.32.2">
+<meta name="mijnserenity-build" content="8.32.3">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='8.32.2';
+window.MIJSERENITY_BUILD='8.32.3';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
   <link rel="stylesheet" href="wind-direction-71512.css?v=715140">
   <link rel="stylesheet" href="victron-energy-71559.css?v=715590">
   <link rel="stylesheet" href="victron-diagnostics.css?v=715600">
+<link rel="stylesheet" href="knrm-help.css?v=832030">
 </head>
 <body>
 <main>
@@ -4973,12 +4974,31 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
 })();
 </script>
 
-  <script src="start-dashboard-71510.js?v=832020"></script>
-  <script src="quick-feature-reveal-83014.js?v=832020"></script>
+  <script src="start-dashboard-71510.js?v=832030"></script>
+  <script src="quick-feature-reveal-83014.js?v=832030"></script>
   <script src="poi-regio-filter-71511.js?v=715140"></script>
   <script src="wind-direction-71512.js?v=715140"></script>
   <script src="ruuvi-climate.js?v=715631"></script>
   <script src="victron-energy-71559.js?v=715631"></script>
   <script src="ais-gps-fix-8221.js?v=822200"></script>
+<dialog id="msKnrmHelp" aria-labelledby="msKnrmTitle" aria-describedby="msKnrmIntro">
+  <header><h2 id="msKnrmTitle">Bel voor hulp</h2><button type="button" id="msKnrmClose" aria-label="Hulpvenster sluiten">×</button></header>
+  <p id="msKnrmIntro">Hulp op Nederlandse wateren. Kies hieronder wie je wilt bellen.</p>
+  <div class="ms-knrm-calls">
+    <a class="ms-knrm-call ms-knrm-emergency" href="tel:112"><span>Noodgeval</span><small>Bel 112 · direct gevaar</small></a>
+    <a class="ms-knrm-call ms-knrm-assistance" href="tel:+31889996100"><span>Assistentie</span><small>KNRM · geen spoed · 088 999 6100</small></a>
+  </div>
+  <a class="ms-knrm-link" href="tel:+31889584040">Kustwacht rechtstreeks · +31 88 958 4040</a>
+  <p>Op zee: roep de Kustwacht op via <strong>marifoonkanaal 16</strong>, roepnaam ‘Den Helder Rescue’.</p>
+  <p class="ms-knrm-note">Deze knoppen openen het belscherm van je telefoon. <strong>MijnSerenity stuurt geen positie of bootgegevens mee en activeert geen KNRM-volgfunctie.</strong></p>
+  <h3>KNRM Helpt-app</h3>
+  <p>Heb je KNRM Helpt? Open die app op je telefoon en kies ‘Bel voor hulp’. Bij een oproep vanuit die app kunnen je positie en geregistreerde gegevens worden meegestuurd.</p>
+  <a class="ms-knrm-link" href="https://www.knrm.nl/knrm-helpt-app" target="_blank" rel="noopener noreferrer">KNRM Helpt bekijken / installeren ↗</a>
+  <h3>Je positie doorgeven</h3>
+  <button type="button" id="msKnrmLocate">Mijn huidige positie opvragen</button>
+  <p id="msKnrmPosition" role="status" aria-live="polite">Nog geen positie opgevraagd. Geef je locatie zelf door aan de hulpverlener.</p>
+  <a class="ms-knrm-link" href="https://www.knrm.nl/veelgestelde-vragen" target="_blank" rel="noopener noreferrer">Officiële uitleg van de KNRM ↗</a>
+</dialog>
+<script src="knrm-help.js?v=832030"></script>
 </body>
 </html>

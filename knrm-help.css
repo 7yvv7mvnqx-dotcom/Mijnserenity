@@ -1,0 +1,22 @@
+#ms8210Start .ms-knrm-trigger{display:inline-flex!important;align-items:center;justify-content:center;min-height:44px;padding:7px 14px!important;margin:0 4px;border:1px solid #ffcb72!important;border-radius:10px!important;background:#f7a426!important;color:#16110a!important;font:800 14px/1.2 system-ui!important;cursor:pointer}
+#msKnrmHelp{box-sizing:border-box;width:min(620px,calc(100% - 24px));max-height:90vh;max-height:90dvh;margin:auto;padding:24px;border:1px solid #456674;border-radius:20px;background:#071e2c;color:#fff;box-shadow:0 24px 90px #0009;overflow:auto;overscroll-behavior:contain;font:16px/1.5 system-ui;text-align:left}
+#msKnrmHelp::backdrop{background:#00101cd9}
+#msKnrmHelp *{box-sizing:border-box}
+#msKnrmHelp header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#msKnrmHelp h2{margin:0;color:#fff;font-size:24px;line-height:1.2}
+#msKnrmHelp h3{margin:22px 0 8px;font-size:18px;color:#fff}
+#msKnrmHelp p{color:#d5e4eb;margin:12px 0}
+#msKnrmHelp button,#msKnrmHelp a{touch-action:manipulation}
+#msKnrmHelp button{min-height:44px;padding:10px 14px;border:1px solid #7493a3;border-radius:10px;background:#143b4e;color:#fff;font:700 15px/1.4 system-ui;cursor:pointer}
+#msKnrmHelp button:disabled{opacity:.65;cursor:wait}
+#msKnrmHelp #msKnrmClose{flex-shrink:0;min-width:44px;font-size:22px;padding:4px 12px}
+#msKnrmHelp .ms-knrm-calls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 12px}
+#msKnrmHelp .ms-knrm-call{display:flex;flex-direction:column;justify-content:center;min-height:92px;padding:16px;border:1px solid #ffffff70;border-radius:13px;text-decoration:none;color:#fff;font-size:20px;font-weight:800;line-height:1.35}
+#msKnrmHelp .ms-knrm-call small{margin-top:5px;color:#fff;font-size:14px;font-weight:600}
+#msKnrmHelp .ms-knrm-emergency{background:#b51f32}
+#msKnrmHelp .ms-knrm-assistance{background:#147444}
+#msKnrmHelp .ms-knrm-link{display:inline-flex;align-items:center;min-height:44px;color:#8de2ff;text-decoration:underline;font-weight:650}
+#msKnrmHelp .ms-knrm-note{padding:12px 14px;border-left:3px solid #f7a426;background:#ffffff09;border-radius:6px}
+#msKnrmPosition{padding:12px 0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#msKnrmHelp :is(button,a):focus-visible,#ms8210Start .ms-knrm-trigger:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media(max-width:440px){#msKnrmHelp{padding:18px}#msKnrmHelp .ms-knrm-calls{grid-template-columns:1fr}#msKnrmHelp h2{font-size:22px}#ms8210Start .ms-knrm-trigger{padding:7px 9px!important;font-size:12px!important}}

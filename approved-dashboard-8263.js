@@ -1,4 +1,4 @@
-/* MijnSerenity 8.32.2 — hogere hero-banner met meer zicht op Serenity
+/* MijnSerenity 8.32.3 — hogere hero-banner met meer zicht op Serenity
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -9,8 +9,8 @@ window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 window.__msVictronEmbedded8319=true;
 
-const BUILD='8.32.2';
-const TOKEN='832020';
+const BUILD='8.32.3';
+const TOKEN='832030';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -1118,7 +1118,7 @@ function apply(){
 
   <main class="ms8263-main">
     <section class="msr-panel msr-quick">
-      <div class="msr-quick-head"><strong>SNEL NAAR</strong><button class="msr-edit" data-ms8263-go="settings">Bewerk ✎</button></div>
+      <div class="msr-quick-head"><strong>SNEL NAAR</strong><button type="button" class="ms-knrm-trigger" data-ms-knrm-help aria-haspopup="dialog" aria-controls="msKnrmHelp">☎ Bel voor hulp</button><button class="msr-edit" data-ms8263-go="settings">Bewerk ✎</button></div>
       <section class="ms8263-features">
         ${feature('technical','battery','Energie',"Accu's & laden",'green')}
         ${feature('technical','cloud','Tanks','Water, diesel, vuilwater','cyan')}
