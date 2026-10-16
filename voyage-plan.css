@@ -1,0 +1,32 @@
+#msVoyagePreparation{scroll-margin-top:24px;padding:24px;color:#e9f4fb;background:#092635;border:1px solid #426576;border-radius:18px;margin:20px 0}
+#msVoyagePreparation .ms-voyage-heading{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+#msVoyagePreparation h3{color:#fff;margin:4px 0;font-size:24px}
+#msVoyagePreparation h4{color:#fff;font-size:20px;margin:22px 0 6px}
+#msVoyagePreparation p{line-height:1.5;color:#d2e4ee}
+#msVoyageState{padding:8px 12px;border-radius:20px;background:#163e52;color:#d6f3ff;font-weight:750}
+#msVoyagePreparation .ms-voyage-note{padding:13px 16px;border-left:3px solid #f7a426;border-radius:6px;background:#ffffff08}
+#msVoyagePreparation .ms-voyage-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+#msVoyagePreparation button,#planner .ms-voyage-shortcut,#msKnrmHelp .ms-voyage-shortcut{min-height:44px;border:1px solid #6693a8;background:#17455b;color:#fff;padding:10px 15px;border-radius:10px;font:700 15px/1.4 system-ui;cursor:pointer}
+#msVoyagePreparation #msVoyageSave{background:#176e87}
+#msVoyagePreparation fieldset{border:0;padding:0;margin:18px 0 0;min-width:0}
+#msVoyagePreparation legend{font-size:20px;font-weight:750;color:#fff;margin-bottom:14px}
+#msVoyagePreparation fieldset:disabled{opacity:.55}
+#msVoyagePreparation button:disabled{opacity:.5;cursor:default}
+#msVoyagePreparation .ms-voyage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+#msVoyagePreparation label{display:flex;flex-direction:column;gap:7px;color:#e2eff6;font-weight:650;margin:0}
+#msVoyagePreparation .ms-voyage-wide{grid-column:1/-1}
+#msVoyagePreparation input:not([type=checkbox]),#msVoyagePreparation textarea{box-sizing:border-box;display:block;width:100%;min-width:0;min-height:46px;border:1px solid #7195a6;border-radius:9px;padding:11px;background:#061b28;color:#fff;font:16px/1.5 system-ui;color-scheme:dark}
+#msVoyagePreparation textarea{resize:vertical}
+#msVoyagePreparation .ms-voyage-checks{display:grid;gap:10px}
+#msVoyagePreparation details{border:1px solid #3e6579;border-radius:10px;padding:0 14px;background:#ffffff04}
+#msVoyagePreparation summary{padding:14px 0;cursor:pointer;color:#fff;font-weight:750;min-height:48px}
+#msVoyagePreparation summary span{float:right;padding-left:12px;color:#9fd9ef}
+#msVoyagePreparation .ms-voyage-check{display:flex;flex-direction:row;align-items:flex-start;gap:12px;padding:13px 0;border-top:1px solid #ffffff15;font-weight:450;cursor:pointer;line-height:1.5}
+#msVoyagePreparation input[type=checkbox]{flex:0 0 24px;width:24px;height:24px;min-height:24px;margin:0;accent-color:#43d0c4}
+#msVoyagePreparation #msVoyageMessage{min-height:24px;color:#ffdc93;font-weight:650;white-space:pre-line}
+#msVoyagePreparation #msVoyagePreview{padding-bottom:14px}
+#msVoyagePreparation #msVoyageText{margin:10px 0}
+#msVoyagePreparation :is(input,textarea,button,summary):focus-visible{outline:3px solid #66d7ff;outline-offset:3px}
+#planner .ms-voyage-shortcuts{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+#msKnrmHelp .ms-voyage-shortcut{display:block;width:100%;margin:10px 0;text-align:left}
+@media(max-width:640px){#msVoyagePreparation{padding:17px}#msVoyagePreparation .ms-voyage-grid{grid-template-columns:1fr}#msVoyagePreparation h3{font-size:21px}#msVoyagePreparation .ms-voyage-actions button{flex:1 1 160px}}

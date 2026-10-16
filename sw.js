@@ -1,10 +1,15 @@
-/* MijnSerenity 8.32.2 - grotere Serenity hero-banner */
-const CACHE_NAME='mijnserenity-8.32.2';
-const BUILD='8.32.2';
-const TOKEN='832020';
+/* MijnSerenity 8.32.4 - grotere Serenity hero-banner */
+const CACHE_NAME='mijnserenity-8.32.4';
+const BUILD='8.32.4';
+const TOKEN='832040';
 const CORE=[
   '/',
   '/index.html',
+  `/voyage-plan-core.js?v=${TOKEN}`,
+  `/voyage-plan.js?v=${TOKEN}`,
+  `/voyage-plan.css?v=${TOKEN}`,
+  `/knrm-help.js?v=${TOKEN}`,
+  `/knrm-help.css?v=${TOKEN}`,
   `/auth-bootstrap.js?v=${TOKEN}`,
   `/start-dashboard-71510.js?v=${TOKEN}`,
   `/start-dashboard-8285.js?v=${TOKEN}`,
@@ -36,6 +41,8 @@ self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')sel
 async function networkFirst(request,fallback){const cache=await caches.open(CACHE_NAME);try{const response=await fresh(request);if(response.ok){await put(cache,request,response);if(fallback)await put(cache,fallback,response)}return response}catch(_){return(await caches.match(request,{ignoreSearch:false}))||(fallback?await caches.match(fallback):null)||new Response('MijnSerenity kon niet worden geladen.',{status:503,headers:{'content-type':'text/plain; charset=utf-8'}})}}
 async function staleWhileRevalidate(request){const cached=await caches.match(request,{ignoreSearch:false});const update=fresh(request).then(async response=>{if(response.ok){const cache=await caches.open(CACHE_NAME);await put(cache,request,response)}return response}).catch(()=>null);return cached||(await update)||new Response('',{status:503})}
 const CRITICAL=new Set([
+  '/voyage-plan-core.js','/voyage-plan.js','/voyage-plan.css',
+  '/knrm-help.js','/knrm-help.css',
   '/auth-bootstrap.js','/start-dashboard-71510.js','/start-dashboard-8285.js','/global-dashboard-nav-8290.js','/contessa-start-icon-8290.js','/dashboard-unified-71919-loader.js','/approved-dashboard-8263.js','/approved-dashboard-live-8264.js','/vrm-embed-8312.js','/victron-tank-alarm-8278.js','/settings-notifications-8279.js','/serenity-alarm-notifications-71826.js','/dashboard-buttons-8265.js','/ai-quick-command-8267.js','/rws-water-temp-8233.js','/receipt-reader-pro.js','/receipt-ocr-fix-8234.js','/receipt-ai-first.js','/serenity-dashboard-boat-20260909.webp','/serenity-dashboard-boat-20260926.webp'
 ]);
 self.addEventListener('fetch',event=>{const request=event.request;if(request.method!=='GET')return;const url=new URL(request.url);if(url.origin!==self.location.origin)return;if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/')||url.pathname.startsWith('/victron-gui/'))return;if(request.mode==='navigate'){event.respondWith(networkFirst(request,'/index.html'));return}if(CRITICAL.has(url.pathname)){event.respondWith(networkFirst(request));return}if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){event.respondWith(staleWhileRevalidate(request));return}event.respondWith(staleWhileRevalidate(request))});
