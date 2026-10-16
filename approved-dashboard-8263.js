@@ -1,4 +1,4 @@
-/* MijnSerenity 8.32.3 — hogere hero-banner met meer zicht op Serenity
+/* MijnSerenity 8.32.4 — hogere hero-banner met meer zicht op Serenity
    Belangrijkste bediening in één iPad-landscape scherm.
    Minder gebruikte functies, waaronder Live varen, staan onder Meer. */
 (()=>{
@@ -9,8 +9,8 @@ window.__msApprovedDashboard8263=true;
 window.__msApprovedDashboard8260=true;
 window.__msVictronEmbedded8319=true;
 
-const BUILD='8.32.3';
-const TOKEN='832030';
+const BUILD='8.32.4';
+const TOKEN='832040';
 const ROOT='ms8210Start';
 const STYLE='ms8280LandscapeStyle';
 const $=id=>document.getElementById(id);
@@ -1096,7 +1096,7 @@ function apply(){
       <button data-ms8263-go="logbook">${icon.log}<span>Logboek</span></button>
       <button data-ms8263-go="technical">${icon.gear}<span>Techniek</span></button>
       <button data-ms8263-go="weather">${icon.sun}<span>Weer</span></button>
-      <button data-ms8263-go="planner">${icon.route}<span>Reisplanner</span></button>
+      <button data-ms8263-go="planner">${icon.route}<span>Vaarplan</span></button>
       <button data-ms8263-go="ais">${icon.radar}<span>AIS</span></button>
       <button data-ms8263-go="pois">${icon.pin}<span>POI</span></button>
       <button data-ms8263-go="settings">${icon.gear}<span>Instellingen</span></button>
@@ -1125,7 +1125,7 @@ function apply(){
         ${feature('technical','gear','Techniek','Motor, verwarming, systemen','orange')}
         ${feature('map','map','Kaart','Waterkaarten & navigatie','purple')}
         ${feature('logbook','log','Logboek','Nieuwe logregel','navy')}
-        ${feature('planner','route','Reisplanner','Plan je volgende trip','green')}
+        ${feature('planner','route','Vaarplan','Route & tochtvoorbereiding','green')}
       </section>
     </section>
 
