@@ -107,8 +107,7 @@ async function findPlaces(query) {
     .sort((a, b) =>
       Number(b.country === 'NL') - Number(a.country === 'NL')
       || Number(b.localityType === 'city') - Number(a.localityType === 'city')
-      || Number(b.localityType === 'town') - Number(a.localityType === 'town')
-      || a.name.localeCompare(b.name, 'nl'))
+      || Number(b.localityType === 'town') - Number(a.localityType === 'town'))
     .slice(0, 12);
 }
 function closestPlace(places, query) {
