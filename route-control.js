@@ -1045,12 +1045,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   },1000);
 });
 
-/* MijnSerenity 8.23.6 — tussenstop zoekmodule laden */
+/* MijnSerenity — één gezamenlijke live zoekfunctie voor vertrek, bestemming en tussenstops */
 (()=>{
   if(window.__msPlannerStopSearchLoader8236)return;
   window.__msPlannerStopSearchLoader8236=true;
   const script=document.createElement('script');
-  script.src='/planner-stop-search-8236.js?v=823600';
+  script.src='/planner-live-search-8237.js?v=832050';
   script.async=false;
   document.head.appendChild(script);
 })();
