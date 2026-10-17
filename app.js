@@ -6340,6 +6340,50 @@ function plannerPoiHasLocation(poi){
   return Boolean(position?.valid);
 }
 
+/* Geselecteerde OpenStreetMap-plaatsen zijn routepunten, geen automatisch
+ * aangemaakte persoonlijke POI's. Bewaar ze apart zodat opgeslagen routes
+ * ook na verversen hun coördinaten behouden. */
+function plannerSearchStorageKey(){
+  return 'ms-planner-search-locations-' + (currentBoat?.id || 'serenity');
+}
+function plannerSearchPlaces(){
+  try{
+    const data=JSON.parse(localStorage.getItem(plannerSearchStorageKey()) || '[]');
+    if(!Array.isArray(data))return [];
+    return data.filter(p=>p && /^osm-[nwrp]-\d+$/.test(String(p.id))
+      && Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude)))
+      .slice(0,60);
+  }catch(_){return []}
+}
+function plannerSearchPoiById(id){
+  return plannerSearchPlaces().find(p=>p.id===id)||null;
+}
+window.msPlannerRegisterPlaceSuggestion=function(record){
+  const id=String(record?.id||'');
+  const name=String(record?.name||'').trim().slice(0,110);
+  const lat=Number(record?.lat), lon=Number(record?.lon);
+  if(!/^osm-[nwrp]-\d+$/.test(id)||!name||!Number.isFinite(lat)||!Number.isFinite(lon)
+    ||lat<49||lat>56||lon<2||lon>12)return '';
+  const poi={
+    id,name,place:String(record?.place||'').trim().slice(0,110),
+    category:String(record?.type||'Plaats').trim().slice(0,40),
+    latitude:lat,longitude:lon,source:'OpenStreetMap'
+  };
+  const places=[poi,...plannerSearchPlaces().filter(p=>p.id!==id)].slice(0,60);
+  try{localStorage.setItem(plannerSearchStorageKey(),JSON.stringify(places))}catch(_){}
+  const ref='poi:'+id;
+  ['plannerFrom','plannerTo','plannerStopSelect'].forEach(selectId=>{
+    const select=document.getElementById(selectId);
+    if(!select||[...select.options].some(o=>o.value===ref))return;
+    const option=document.createElement('option');
+    option.value=ref;
+    option.textContent=(poi.category==='Jachthaven'||poi.category==='Haven'?'⚓ ':'📍 ')
+      +poi.name+(poi.place?' · '+poi.place:'');
+    select.appendChild(option);
+  });
+  return ref;
+};
+
 function plannerPoiReference(poi){
   return `poi:${poi.id}`;
 }
@@ -6421,6 +6465,11 @@ function plannerSelectOptions({includeCurrent=false}={}){
       .sort((a,b)=>a.localeCompare(b,'nl'))
   ];
 
+  const stored=plannerSearchPlaces().filter(p=>!poiCache.some(own=>String(own.id)===String(p.id)));
+  const savedOptions=stored.length?`
+    <optgroup label="Eerder gekozen plaatsen en havens">
+      ${stored.map(p=>`<option value="${esc(plannerPoiReference(p))}">${esc(plannerOptionLabel(p))}</option>`).join('')}
+    </optgroup>`:'';
   return currentOption+ordered.map(category=>`
     <optgroup label="${esc(category)}">
       ${groups.get(category).map(poi=>`
@@ -6429,7 +6478,7 @@ function plannerSelectOptions({includeCurrent=false}={}){
         </option>
       `).join('')}
     </optgroup>
-  `).join('');
+  `).join('')+savedOptions;
 }
 
 function populatePlannerSelectors(){
@@ -6634,7 +6683,7 @@ function movePlannerStop(index,direction){
 
 function plannerPoiByRef(ref){
   const id=String(ref||'').replace(/^poi:/,'');
-  return poiCache.find(poi=>String(poi.id)===id)||null;
+  return poiCache.find(poi=>String(poi.id)===id)||plannerSearchPoiById(id);
 }
 
 function plannerRefLabel(ref){
