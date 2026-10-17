@@ -57,7 +57,7 @@
       `/route-control.js?v=832080`,`/waterkaarten-gpx-share-71700.js?v=${VERSION}`,
       `/waterkaarten-route-enrichment-71811.js?v=${VERSION}`,`/marine-map-route-fit-71812.js?v=${VERSION}`
     ],
-    logbook:[`/logbook-route-assist-71828.js?v=${VERSION}`],
+    logbook:[`/logbook-scroll-repair-83210.js?v=832100`,`/logbook-route-assist-71828.js?v=${VERSION}`],
     costs:[`/receipt-reader-pro.js?v=${VERSION}`,`/receipt-ocr-fix-8234.js?v=${VERSION}`],
     weather:[`/weather-page.js?v=${VERSION}`,`/weather-radar.js?v=${VERSION}`,`/rws-nearby.js?v=${VERSION}`],
     rws:[`/weather-page.js?v=${VERSION}`,`/rws-nearby.js?v=${VERSION}`],
