@@ -52,6 +52,16 @@ function photonRecord(feature) {
   const lon = Number(feature?.geometry?.coordinates?.[0]);
   const lat = Number(feature?.geometry?.coordinates?.[1]);
   if (!validPoint(lat, lon) || !p.name || !p.osm_type || !p.osm_id) return null;
+  const country = String(p.countrycode || '').trim().toUpperCase();
+  const countryName = normalized(p.country);
+  const netherlands = country === 'NL' || countryName === 'nederland' || countryName === 'netherlands';
+  if (country && country !== 'NL') {
+    // Bij een korte invoer geen gelijknamige plaatsen buiten Nederland tonen.
+    // Een volledige zoeknaam (5+ letters) mag wél grensoverschrijdend zoeken.
+    const queryLength = Number(feature.__msQueryLength || 0);
+    if (queryLength < 5) return null;
+  }
+  if (!country && countryName && !netherlands && Number(feature.__msQueryLength || 0) < 5) return null;
   const category = p.osm_key === 'place' && PLACE_TYPES.has(p.osm_value) ? 'Plaats' :
     p.osm_value === 'marina' ? 'Jachthaven' :
     /harbour|harbor|port/i.test(p.osm_value || '') ? 'Haven' : '';
@@ -62,7 +72,9 @@ function photonRecord(feature) {
     place: cityLabel(p),
     type: category,
     lat, lon,
-    source: 'OpenStreetMap'
+    source: 'OpenStreetMap',
+    country: country || (netherlands ? 'NL' : ''),
+    localityType: String(p.osm_value || '')
   };
 }
 async function findPlaces(query) {
@@ -76,12 +88,20 @@ async function findPlaces(query) {
   }, 7000);
   const unique = new Map();
   for (const feature of data.features || []) {
+    // De Photon-records zelf alleen binnen dit verzoek uitbreiden.
+    feature.__msQueryLength = normalized(query).length;
     const record = photonRecord(feature);
     if (!record) continue;
     const key = record.id;
     if (!unique.has(key)) unique.set(key, record);
   }
-  return [...unique.values()].slice(0, 12);
+  return [...unique.values()]
+    .sort((a, b) =>
+      Number(b.country === 'NL') - Number(a.country === 'NL')
+      || Number(b.localityType === 'city') - Number(a.localityType === 'city')
+      || Number(b.localityType === 'town') - Number(a.localityType === 'town')
+      || a.name.localeCompare(b.name, 'nl'))
+    .slice(0, 12);
 }
 function closestPlace(places, query) {
   const n = normalized(query);
