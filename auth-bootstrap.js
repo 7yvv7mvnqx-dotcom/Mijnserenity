@@ -53,6 +53,7 @@
       `/marine-map-route-fit-71812.js?v=${VERSION}`
     ],
     planner:[
+      `/planner-scroll-repair-83206.js?v=832060`,
       `/route-control.js?v=832050`,`/waterkaarten-gpx-share-71700.js?v=${VERSION}`,
       `/waterkaarten-route-enrichment-71811.js?v=${VERSION}`,`/marine-map-route-fit-71812.js?v=${VERSION}`
     ],
