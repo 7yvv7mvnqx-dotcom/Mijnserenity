@@ -11,7 +11,7 @@
 
   const BUILD='8.30.10';
   const VERSION='830100';
-  const CORE_SCRIPT=`/app.js?v=${VERSION}`;
+  const CORE_SCRIPT='/app.js?v=832050';
   const loaded=new Set();
   const routeLoads=new Map();
   let bootFinished=false;
@@ -53,7 +53,7 @@
       `/marine-map-route-fit-71812.js?v=${VERSION}`
     ],
     planner:[
-      `/route-control.js?v=${VERSION}`,`/waterkaarten-gpx-share-71700.js?v=${VERSION}`,
+      `/route-control.js?v=832050`,`/waterkaarten-gpx-share-71700.js?v=${VERSION}`,
       `/waterkaarten-route-enrichment-71811.js?v=${VERSION}`,`/marine-map-route-fit-71812.js?v=${VERSION}`
     ],
     logbook:[`/logbook-route-assist-71828.js?v=${VERSION}`],
