@@ -17,7 +17,7 @@ function json(data, status = 200) {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'public, max-age=120, stale-while-revalidate=900',
+      'cache-control': status >= 400 ? 'no-store' : 'public, max-age=120, stale-while-revalidate=900',
       'x-content-type-options': 'nosniff'
     }
   });
@@ -69,7 +69,8 @@ async function findPlaces(query) {
   const u = new URL('https://photon.komoot.io/api/');
   u.searchParams.set('q', query);
   u.searchParams.set('limit', '16');
-  u.searchParams.set('lang', 'nl');
+  // De publieke Photon-server kent geen 'nl'; gebruik de lokale naam van de plaats.
+  u.searchParams.set('lang', 'default');
   const data = await getJson(u, {
     headers: { accept: 'application/json', 'user-agent': 'MijnSerenity/8.32 routeplanner (personal, low-volume)' }
   }, 7000);
@@ -85,9 +86,9 @@ async function findPlaces(query) {
 function closestPlace(places, query) {
   const n = normalized(query);
   return places.find(p => p.type === 'Plaats' && normalized(p.name) === n)
-    || (n.length >= 4 ? places.find(p => p.type === 'Plaats'
+    || (n.length >= 3 ? places.find(p => p.type === 'Plaats'
       && normalized(p.name).startsWith(n)
-      && normalized(p.name).length - n.length <= 3) : null);
+      && normalized(p.name).length - n.length <= 5) : null);
 }
 async function findHarbours(city) {
   const lat = Number(city.lat.toFixed(5));
