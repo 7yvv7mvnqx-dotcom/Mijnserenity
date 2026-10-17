@@ -29,6 +29,10 @@
       '.ms8237-shell.has-value .ms8237-clear{display:block!important}',
       '.ms8237-list{position:absolute;z-index:12040;left:0;right:0;top:calc(100% + 7px);max-height:min(45vh,400px);overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid rgba(122,190,221,.36);border-radius:16px;background:#e8f1f8;color:#061321;box-shadow:0 18px 44px rgba(0,0,0,.38);padding:6px}',
       '.ms8237-list[hidden]{display:none!important}',
+      '.ms8237-list{position:relative!important;top:auto!important;left:auto!important;right:auto!important;max-height:min(35dvh,260px)!important;margin-top:7px!important;box-shadow:0 5px 16px rgba(0,0,0,.22)!important}',
+      '.ms8237-toolbar{position:sticky;z-index:2;top:-6px;display:flex;justify-content:flex-end;align-items:center;min-height:35px;padding:4px 5px;background:#e8f1f8;border-bottom:1px solid rgba(30,77,100,.16)}',
+      '.ms8237-dismiss{width:auto!important;min-width:0!important;min-height:30px!important;padding:5px 10px!important;border:0!important;border-radius:9px!important;background:#cee5f1!important;color:#173b4f!important;font-size:.78rem!important;font-weight:800!important;box-shadow:none!important}',
+      '.ms8237-result{min-height:47px!important;padding:8px 10px!important}',
       '.ms8237-heading{padding:8px 12px 4px;font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;font-weight:800;color:#416476}',
       '.ms8237-result{width:100%!important;min-height:54px!important;display:block!important;text-align:left!important;padding:10px 12px!important;border:0!important;border-radius:12px!important;background:transparent!important;color:#061321!important;box-shadow:none!important}',
       '.ms8237-result:hover,.ms8237-result.is-active{background:rgba(20,111,169,.14)!important}',
@@ -38,7 +42,7 @@
       '.ms8237-note{padding:10px 12px;color:#577080;font-size:.82rem;line-height:1.35}',
       '.planner-stop-add-row.ms8237-stop-ready{align-items:start!important}',
       '.planner-stop-add-row.ms8237-stop-ready>.ms8237-shell{flex:1 1 auto;min-width:0}',
-      '@media(max-width:700px){.planner-stop-add-row.ms8237-stop-ready{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important}.ms8237-list{max-height:43vh}}'
+      '@media(max-width:700px){.planner-stop-add-row.ms8237-stop-ready{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important}.ms8237-list{max-height:min(31dvh,230px)!important}}'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -146,6 +150,19 @@
     control.list.replaceChildren();
     control.results = [];
     control.activeIndex = -1;
+    const toolbar = document.createElement('div');
+    toolbar.className = 'ms8237-toolbar';
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.className = 'ms8237-dismiss';
+    dismiss.textContent = 'Sluiten';
+    dismiss.setAttribute('aria-label', 'Zoeksuggesties sluiten');
+    dismiss.addEventListener('click', () => {
+      close(control);
+      control.input.blur();
+    });
+    toolbar.appendChild(dismiss);
+    control.list.appendChild(toolbar);
     if (current) result(control, current, '', 'Huidige positie');
     if (local.length) {
       heading(control, 'Mijn havens en opgeslagen locaties');
@@ -305,8 +322,8 @@
       delete input.dataset.selectedValue;
       shell.classList.remove('has-value');
       control.remote = null;
-      input.focus();
-      render(control);
+      close(control);
+      input.blur();
     });
     select.addEventListener('change', () => syncFromSelect(control));
     new MutationObserver(() => syncFromSelect(control)).observe(select, { childList: true, subtree: true });
