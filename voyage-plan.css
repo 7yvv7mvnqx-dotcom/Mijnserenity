@@ -28,5 +28,13 @@
 #msVoyagePreparation #msVoyageText{margin:10px 0}
 #msVoyagePreparation :is(input,textarea,button,summary):focus-visible{outline:3px solid #66d7ff;outline-offset:3px}
 #planner .ms-voyage-shortcuts{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+#msVoyagePreparation .ms-voyage-knmi-link{display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
+#weather .ms-knmi-weather-links{margin:14px 0;padding:18px;border:1px solid rgba(103,196,225,.35);border-radius:16px;background:linear-gradient(145deg,#0b2b3b,#0d3547);color:#eaf6fc}
+#weather .ms-knmi-weather-heading h2{margin:4px 0;color:#fff}
+#weather .ms-knmi-weather-heading p{margin:6px 0 12px;color:#d2e4ee}
+#weather .ms-knmi-weather-actions{display:flex;flex-wrap:wrap;gap:10px}
+#weather .ms-knmi-weather-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border:1px solid #6693a8;border-radius:10px;background:#17455b;color:#fff;font-weight:700;text-decoration:none;line-height:1.35}
+#weather .ms-knmi-weather-actions a:focus-visible,#msVoyagePreparation .ms-voyage-knmi-link:focus-visible{outline:3px solid #66d7ff;outline-offset:3px}
+@media(max-width:640px){#weather .ms-knmi-weather-actions a{flex:1 1 100%}}
 #msKnrmHelp .ms-voyage-shortcut{display:block;width:100%;margin:10px 0;text-align:left}
 @media(max-width:640px){#msVoyagePreparation{padding:17px}#msVoyagePreparation .ms-voyage-grid{grid-template-columns:1fr}#msVoyagePreparation h3{font-size:21px}#msVoyagePreparation .ms-voyage-actions button{flex:1 1 160px}}
