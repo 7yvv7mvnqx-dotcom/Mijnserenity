@@ -80,7 +80,11 @@ function photonRecord(feature) {
 async function findPlaces(query) {
   const u = new URL('https://photon.komoot.io/api/');
   u.searchParams.set('q', query);
-  u.searchParams.set('limit', '16');
+  u.searchParams.set('limit', '25');
+  // Geef Nederlandse locaties voorrang bij korte namen zoals 'zw'.
+  u.searchParams.set('lat', '52.15');
+  u.searchParams.set('lon', '5.30');
+  u.searchParams.set('location_bias_scale', '0.2');
   // De publieke Photon-server kent geen 'nl'; gebruik de lokale naam van de plaats.
   u.searchParams.set('lang', 'default');
   const data = await getJson(u, {
@@ -92,6 +96,10 @@ async function findPlaces(query) {
     feature.__msQueryLength = normalized(query).length;
     const record = photonRecord(feature);
     if (!record) continue;
+    // Laat bij een plaatsnaam geen totaal andere plaats uit dezelfde
+    // regio zien. Een haven mag wel op plaatsnaam gevonden worden.
+    const matchText = normalized(record.name + ' ' + (record.type === 'Plaats' ? '' : record.place));
+    if (!matchText.includes(normalized(query))) continue;
     const key = record.id;
     if (!unique.has(key)) unique.set(key, record);
   }
