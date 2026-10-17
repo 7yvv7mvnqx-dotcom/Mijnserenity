@@ -6,7 +6,7 @@
 #msVoyageState{padding:8px 12px;border-radius:20px;background:#163e52;color:#d6f3ff;font-weight:750}
 #msVoyagePreparation .ms-voyage-note{padding:13px 16px;border-left:3px solid #f7a426;border-radius:6px;background:#ffffff08}
 #msVoyagePreparation .ms-voyage-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
-#msVoyagePreparation button,#planner .ms-voyage-shortcut,#msKnrmHelp .ms-voyage-shortcut{min-height:44px;border:1px solid #6693a8;background:#17455b;color:#fff;padding:10px 15px;border-radius:10px;font:700 15px/1.4 system-ui;cursor:pointer}
+#msVoyagePreparation button,#msVoyagePreparation .ms-voyage-knmi-link,#planner .ms-voyage-shortcut,#msKnrmHelp .ms-voyage-shortcut{min-height:44px;border:1px solid #6693a8;background:#17455b;color:#fff;padding:10px 15px;border-radius:10px;font:700 15px/1.4 system-ui;cursor:pointer}
 #msVoyagePreparation #msVoyageSave{background:#176e87}
 #msVoyagePreparation fieldset{border:0;padding:0;margin:18px 0 0;min-width:0}
 #msVoyagePreparation legend{font-size:20px;font-weight:750;color:#fff;margin-bottom:14px}
