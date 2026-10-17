@@ -1,10 +1,21 @@
 /* Vaarplan en tochtvoorbereiding sluiten aan op de bestaande Reisplanner. */
 (()=>{
 'use strict';
+const $=id=>document.getElementById(id);
+function mountKnmiWeatherLinks(){
+  const weather=$('weather');
+  if(!weather||$('msKnmiWeatherLinks'))return;
+  const card=document.createElement('section');
+  card.id='msKnmiWeatherLinks';
+  card.className='card ms-knmi-weather-links';
+  card.setAttribute('aria-labelledby','msKnmiWeatherTitle');
+  card.innerHTML=`<div class="ms-knmi-weather-heading"><div><span class="eyebrow">OFFICIËLE WEERINFORMATIE</span><h2 id="msKnmiWeatherTitle">KNMI</h2><p>Bekijk de officiële verwachting en waarschuwingen naast de lokale vaarverwachting.</p></div></div><div class="ms-knmi-weather-actions"><a href="https://www.knmi.nl/nederland-nu/weer/verwachtingen" target="_blank" rel="noopener noreferrer">🌦️ Weer en verwachting</a><a href="https://www.knmi.nl/nederland-nu/weer/waarschuwingen/overijssel" target="_blank" rel="noopener noreferrer">⚠️ Waarschuwingen Overijssel</a><a href="https://www.knmi.nl/nederland-nu/weer/waarschuwingen-en-verwachtingen/waarschuwingen-kust-en-noordzee" target="_blank" rel="noopener noreferrer">🌊 Kust en ruime binnenwateren</a></div><p class="small">KNMI-pagina’s openen veilig in een nieuw tabblad. Voor actuele route- en vaarwegmeldingen blijft de bestaande RWS-functie beschikbaar.</p>`;
+  weather.prepend(card);
+}
+mountKnmiWeatherLinks();
 const core=window.MSVoyageCore;
 const root=document.getElementById('msVoyagePreparation');
 if(!core||!root)return;
-const $=id=>document.getElementById(id);
 let scope='',plan=null,data=core.empty(),storeFailed=false;
 const fields=['departure','eta','skipper','adults','children','people','activity','contactName','contactPhone','contactAgreement','conditions','alternative','notes'];
 const labels={departure:'Gepland vertrek',eta:'Verwachte aankomst',skipper:'Schipper',adults:'Volwassenen (incl. schipper)',children:'Kinderen',people:'Namen opvarenden / bijzonderheden',activity:'Activiteit',contactName:'Naam thuisblijver',contactPhone:'Telefoon thuisblijver',contactAgreement:'Meldafspraak en wat te doen bij geen contact',conditions:'Weer, wind en waterstanden — eigen beoordeling',alternative:'Uitwijkhaven / alternatief bij vertraging',notes:'Aanvullende tochtnotities'};
@@ -13,7 +24,7 @@ const types={departure:'datetime-local',eta:'datetime-local',adults:'number',chi
 root.innerHTML=`<header class="ms-voyage-heading"><div><span class="eyebrow">VOOR VERTREK</span><h3 tabindex="-1" id="msVoyageTitle">Vaarplan & tochtvoorbereiding</h3></div><span id="msVoyageState">Concept</span></header>
 <p id="msVoyageRoute">Bereken of open eerst een route in de reisplanner.</p>
 <p class="ms-voyage-note">Dit vaarplan blijft op dit apparaat. Er is geen KNRM-volgfunctie of automatische melding bij te late aankomst. Deel het plan zelf met je thuisblijver en spreek af wanneer jullie contact hebben.</p>
-<div class="ms-voyage-actions"><button type="button" data-voyage-route="planner">Route plannen / aanpassen</button><button type="button" data-voyage-route="weather">Weer bekijken</button><button type="button" id="msVoyageWaterChart">Waterkaart controleren</button><button type="button" data-ms-knrm-help>Bel voor hulp</button></div>
+<div class="ms-voyage-actions"><button type="button" data-voyage-route="planner">Route plannen / aanpassen</button><button type="button" data-voyage-route="weather">Eigen vaarweer bekijken</button><a class="ms-voyage-shortcut ms-voyage-knmi-link" href="https://www.knmi.nl/nederland-nu/weer/verwachtingen" target="_blank" rel="noopener noreferrer">🌦️ KNMI-verwachting</a><a class="ms-voyage-shortcut ms-voyage-knmi-link" href="https://www.knmi.nl/nederland-nu/weer/waarschuwingen/overijssel" target="_blank" rel="noopener noreferrer">⚠️ KNMI-waarschuwingen</a><button type="button" id="msVoyageWaterChart">Waterkaart controleren</button><button type="button" data-ms-knrm-help>Hulp op het water</button></div>
 <p id="msVoyageMessage" role="status" aria-live="polite"></p>
 <fieldset id="msVoyageFields" disabled><legend>Gegevens van deze vaartocht</legend><div class="ms-voyage-grid">${fields.map(key=>`<label for="msVoyage-${key}"${multiline.has(key)?' class="ms-voyage-wide"':''}><span>${labels[key]}</span>${multiline.has(key)?`<textarea id="msVoyage-${key}" data-voyage-field="${key}" rows="2" maxlength="6000"></textarea>`:`<input id="msVoyage-${key}" data-voyage-field="${key}" type="${types[key]||'text'}" ${['adults','children'].includes(key)?`min="${key==='adults'?1:0}" max="999" step="1"`:''} maxlength="6000">`}</label>`).join('')}</div>
 <p>Gebruik bij een tocht over meerdere dagen de juiste aankomstdatum. Tijden staan in de tijdzone van dit apparaat.</p>
