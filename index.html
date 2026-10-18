@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="8.32.5">
+<meta name="mijnserenity-build" content="8.32.6">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='8.32.5';
+window.MIJSERENITY_BUILD='8.32.6';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -88,6 +88,62 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
 <link rel="stylesheet" href="knrm-help.css?v=832040">
 <link rel="stylesheet" href="voyage-plan.css?v=832040">
 <link rel="stylesheet" href="voyage-share-rich-83250.css?v=832050">
+<!-- iPhone/iPad: RWS-meetpunt boven de vaste navigatie en onafhankelijk scrollbaar. -->
+<style id="ms83260-water-location-scroll-fix">
+#ms8234WaterLocationSheet.ms8268wo{
+  position:fixed!important;
+  inset:0!important;
+  box-sizing:border-box!important;
+  z-index:2147483640!important;
+  height:100vh!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  padding:max(10px, env(safe-area-inset-top)) 10px 0!important;
+}
+#ms8234WaterLocationSheet.ms8268wo[hidden]{display:none!important}
+#ms8234WaterLocationSheet .ms8268ws{
+  box-sizing:border-box!important;
+  flex:0 1 auto!important;
+  min-height:0!important;
+  max-height:calc(100vh - 16px)!important;
+  max-height:calc(100dvh - max(10px, env(safe-area-inset-top)))!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  touch-action:pan-y;
+  padding-bottom:calc(26px + env(safe-area-inset-bottom))!important;
+  scroll-padding-bottom:calc(26px + env(safe-area-inset-bottom));
+}
+#ms8234WaterLocationSheet .ms8268reading strong{
+  flex-shrink:0;
+  white-space:nowrap;
+}
+#ms8234WaterLocationSheet .ms8268reading [data-d]{
+  min-width:0;
+  overflow-wrap:break-word;
+}
+@media (max-width:600px){
+  #ms8234WaterLocationSheet .ms8268ws{
+    padding-left:16px!important;
+    padding-right:16px!important;
+    border-radius:20px 20px 0 0!important;
+  }
+  #ms8234WaterLocationSheet .ms8268reading strong{
+    font-size:clamp(26px,8vw,34px)!important;
+  }
+  #ms8234WaterLocationSheet .ms8268grid{
+    grid-template-columns:minmax(96px,36%) minmax(0,1fr)!important;
+  }
+  #ms8234WaterLocationSheet .ms8268grid dd{
+    overflow-wrap:anywhere;
+  }
+}
+</style>
 </head>
 <body>
 <main>
