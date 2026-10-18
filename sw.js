@@ -1,10 +1,12 @@
-/* MijnSerenity 8.32.5 - deelbaar vaarplan met logo en veilige contactafspraken */
-const CACHE_NAME='mijnserenity-8.32.5';
-const BUILD='8.32.5';
-const TOKEN='832050';
+/* MijnSerenity 8.32.7 - foto's bij technisch logboek */
+const CACHE_NAME='mijnserenity-8.32.7';
+const BUILD='8.32.7';
+const TOKEN='832070';
 const CORE=[
   '/',
   '/index.html',
+  `/technical-event-photos-8327.js?v=${TOKEN}`,
+  `/technical-event-photos-8327.css?v=${TOKEN}`,
   `/voyage-plan-core.js?v=${TOKEN}`,
   `/voyage-plan.js?v=${TOKEN}`,
   `/voyage-plan.css?v=${TOKEN}`,
