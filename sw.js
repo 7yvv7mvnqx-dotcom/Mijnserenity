@@ -1,12 +1,14 @@
-/* MijnSerenity 8.32.7 - foto's bij technisch logboek */
-const CACHE_NAME='mijnserenity-8.32.7';
-const BUILD='8.32.7';
+/* MijnSerenity 8.32.8 - onderhoud vanuit Boat Intelligence */
+const CACHE_NAME='mijnserenity-8.32.8';
+const BUILD='8.32.8';
 const TOKEN='832070';
 const CORE=[
   '/',
   '/index.html',
   `/technical-event-photos-8327.js?v=${TOKEN}`,
   `/technical-event-photos-8327.css?v=${TOKEN}`,
+  '/boat-intelligence-maintenance-8328.js?v=832080',
+  '/boat-intelligence-maintenance-8328.css?v=832080',
   `/voyage-plan-core.js?v=${TOKEN}`,
   `/voyage-plan.js?v=${TOKEN}`,
   `/voyage-plan.css?v=${TOKEN}`,
@@ -47,7 +49,7 @@ async function staleWhileRevalidate(request){const cached=await caches.match(req
 const CRITICAL=new Set([
   '/voyage-plan-core.js','/voyage-plan.js','/voyage-plan.css','/voyage-share-rich-83250.js','/voyage-share-rich-83250.css',
   '/knrm-help.js','/knrm-help.css',
-  '/auth-bootstrap.js','/start-dashboard-71510.js','/start-dashboard-8285.js','/global-dashboard-nav-8290.js','/contessa-start-icon-8290.js','/dashboard-unified-71919-loader.js','/approved-dashboard-8263.js','/approved-dashboard-live-8264.js','/vrm-embed-8312.js','/victron-tank-alarm-8278.js','/settings-notifications-8279.js','/serenity-alarm-notifications-71826.js','/dashboard-buttons-8265.js','/ai-quick-command-8267.js','/rws-water-temp-8233.js','/receipt-reader-pro.js','/receipt-ocr-fix-8234.js','/receipt-ai-first.js','/serenity-dashboard-boat-20260909.webp','/serenity-dashboard-boat-20260926.webp'
+  '/auth-bootstrap.js','/boat-intelligence-maintenance-8328.js','/boat-intelligence-maintenance-8328.css','/start-dashboard-71510.js','/start-dashboard-8285.js','/global-dashboard-nav-8290.js','/contessa-start-icon-8290.js','/dashboard-unified-71919-loader.js','/approved-dashboard-8263.js','/approved-dashboard-live-8264.js','/vrm-embed-8312.js','/victron-tank-alarm-8278.js','/settings-notifications-8279.js','/serenity-alarm-notifications-71826.js','/dashboard-buttons-8265.js','/ai-quick-command-8267.js','/rws-water-temp-8233.js','/receipt-reader-pro.js','/receipt-ocr-fix-8234.js','/receipt-ai-first.js','/serenity-dashboard-boat-20260909.webp','/serenity-dashboard-boat-20260926.webp'
 ]);
 self.addEventListener('fetch',event=>{const request=event.request;if(request.method!=='GET')return;const url=new URL(request.url);if(url.origin!==self.location.origin)return;if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/.netlify/functions/')||url.pathname.startsWith('/victron-gui/'))return;if(request.mode==='navigate'){event.respondWith(networkFirst(request,'/index.html'));return}if(CRITICAL.has(url.pathname)){event.respondWith(networkFirst(request));return}if(url.pathname.endsWith('.js')||url.pathname.endsWith('.css')||url.pathname==='/manifest.json'){event.respondWith(staleWhileRevalidate(request));return}event.respondWith(staleWhileRevalidate(request))});
 function pushPayload(event){if(!event.data)return{};try{return event.data.json()||{}}catch(_){}try{return{body:event.data.text()}}catch(_){return{}}}
