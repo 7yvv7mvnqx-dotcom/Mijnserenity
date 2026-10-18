@@ -7952,6 +7952,7 @@ async function loadTechnicalDashboard(force=false){
     saveTechnicalLocalEvents(technicalEventsCache);
 
     renderTechnicalDashboard();
+    if(typeof msTechPhotosRefresh==='function')void msTechPhotosRefresh();
     refreshHomeAssistantConnectionStatus(false);
     setTechnicalSyncStatus(
       technicalStateCache?.updatedAt
@@ -10222,7 +10223,11 @@ function renderTechnicalEvents(){
               :'Geen motoruren'}
           </small>
           ${event.notes?`<p>${esc(event.notes)}</p>`:''}
+          ${typeof msTechRenderForEvent==='function'?msTechRenderForEvent(event.id):''}
         </div>
+        <button type="button" class="ms-tech-add-photo"
+          onclick="msTechPickForEvent('${event.id}')"
+          title="Foto’s toevoegen" aria-label="Foto’s aan log toevoegen">📷</button>
         <button type="button" class="record-delete-mini"
           onclick="deleteTechnicalEvent('${event.id}')"
           aria-label="Technisch logitem verwijderen">🗑️</button>
@@ -11036,6 +11041,7 @@ async function createTechnicalEvent(event,{silent=false}={}){
 
     saveTechnicalLocalEvents(technicalEventsCache);
     renderTechnicalEvents();
+    return {...data,source:'cloud'};
   }
 
   return normalized;
@@ -11050,20 +11056,24 @@ async function addTechnicalEvent(){
     return;
   }
 
-  await createTechnicalEvent({
+  const savedEvent=await createTechnicalEvent({
     event_date:$('technicalEventDate')?.value||technicalToday(),
     category:$('technicalEventCategory')?.value||'Overig',
     title,
     notes:String($('technicalEventNotes')?.value||'').trim(),
     engine_hours:technicalInputNumber('technicalEventHours')
   });
+  const photoOutcome=typeof msTechPhotosAfterSave==='function'
+    ?await msTechPhotosAfterSave(savedEvent):{failed:0};
 
   $('technicalEventTitle').value='';
   $('technicalEventNotes').value='';
   $('technicalEventHours').value=
     technicalStateCache?.engineHours??'';
   toggleTechnicalEventForm(false);
-  showAppToast('Technisch logitem opgeslagen ✅');
+  showAppToast(photoOutcome.failed
+    ?'Logitem opgeslagen, maar niet alle foto’s. Voeg deze opnieuw toe via 📷.'
+    :'Technisch logitem opgeslagen ✅');
 }
 
 async function deleteTechnicalEvent(id){
@@ -11092,6 +11102,8 @@ async function deleteTechnicalEvent(id){
     }
   }
 
+  if(typeof msTechPhotosAfterDelete==='function')
+    await msTechPhotosAfterDelete(id);
   showAppToast('Technisch logitem verwijderd.');
 }
 
