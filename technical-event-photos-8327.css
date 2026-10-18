@@ -1,0 +1,14 @@
+/* Technische logfoto's — iPhone en iPad */
+.ms-tech-photo-actions{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 5px}
+.ms-tech-photo-actions button{min-height:44px;flex:1 1 130px}
+.ms-tech-photo-description{font-size:.82em;opacity:.8;margin:7px 0}
+.ms-tech-photo-status{min-height:20px;font-size:.82em;margin:8px 0}
+.ms-tech-photo-error{color:#ff9c99}
+.ms-tech-photo-count{font-size:.83em;opacity:.85}
+.ms-tech-pending-photos,.ms-tech-event-photos{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}
+.ms-tech-pending,.ms-tech-event-photo{position:relative;width:82px;height:82px;flex:0 0 82px;border-radius:12px;overflow:hidden;background:#10283e;border:1px solid #456177}
+.ms-tech-pending img,.ms-tech-event-photo img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+.ms-tech-pending button,.ms-tech-photo-remove{position:absolute;top:2px;right:2px;min-width:27px;min-height:27px;padding:0;border:0;border-radius:50%;background:#122638d9;color:white;font-weight:bold;font-size:21px;line-height:27px}
+.technical-event-item .ms-tech-add-photo{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;font-size:21px;background:#183b53;border:1px solid #477085;border-radius:12px;flex-shrink:0;cursor:pointer}
+.technical-event-item .ms-tech-event-photos{padding-bottom:5px}
+@media(max-width:480px){.ms-tech-pending,.ms-tech-event-photo{width:72px;height:72px;flex-basis:72px}.technical-event-item .ms-tech-add-photo{min-width:39px;min-height:39px}}
