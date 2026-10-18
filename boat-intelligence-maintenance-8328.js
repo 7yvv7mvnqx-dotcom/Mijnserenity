@@ -337,6 +337,12 @@
   renderTechnicalMaintenance=function(...args){
     const value=originalPlanner.apply(this,args);decoratePlanner();return value;
   };
+  const originalTechnicalDashboard=renderTechnicalDashboard;
+  renderTechnicalDashboard=function(...args){
+    const value=originalTechnicalDashboard.apply(this,args);
+    ms690RenderPredictive();
+    return value;
+  };
   createModal();
   if(technicalStateCache){ms690RenderPredictive();renderTechnicalMaintenance();}
 })();
