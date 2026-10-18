@@ -27,6 +27,7 @@ root.innerHTML=`<header class="ms-voyage-heading"><div><span class="eyebrow">VOO
 <div class="ms-voyage-actions"><button type="button" data-voyage-route="planner">Route plannen / aanpassen</button><button type="button" data-voyage-route="weather">Eigen vaarweer bekijken</button><a class="ms-voyage-shortcut ms-voyage-knmi-link" href="https://www.knmi.nl/nederland-nu/weer/verwachtingen" target="_blank" rel="noopener noreferrer">🌦️ KNMI-verwachting</a><a class="ms-voyage-shortcut ms-voyage-knmi-link" href="https://www.knmi.nl/nederland-nu/weer/waarschuwingen/overijssel" target="_blank" rel="noopener noreferrer">⚠️ KNMI-waarschuwingen</a><button type="button" id="msVoyageWaterChart">Waterkaart controleren</button><button type="button" data-ms-knrm-help>Hulp op het water</button></div>
 <p id="msVoyageMessage" role="status" aria-live="polite"></p>
 <fieldset id="msVoyageFields" disabled><legend>Gegevens van deze vaartocht</legend><div class="ms-voyage-grid">${fields.map(key=>`<label for="msVoyage-${key}"${multiline.has(key)?' class="ms-voyage-wide"':''}><span>${labels[key]}</span>${multiline.has(key)?`<textarea id="msVoyage-${key}" data-voyage-field="${key}" rows="2" maxlength="6000"></textarea>`:`<input id="msVoyage-${key}" data-voyage-field="${key}" type="${types[key]||'text'}" ${['adults','children'].includes(key)?`min="${key==='adults'?1:0}" max="999" step="1"`:''} maxlength="6000">`}</label>`).join('')}</div>
+<p id="msVoyageArrivalHint" class="ms-voyage-note" role="status" aria-live="polite"></p>
 <p>Gebruik bij een tocht over meerdere dagen de juiste aankomstdatum. Tijden staan in de tijdzone van dit apparaat.</p>
 <h4>Controle voor vertrek</h4><p id="msVoyageProgress" aria-live="polite"></p>
 <div class="ms-voyage-checks">${core.groups.map((group,i)=>`<details ${i===0?'open':''}><summary>${group.title}<span data-voyage-group="${i}"></span></summary>${group.items.map(([id,label])=>`<label class="ms-voyage-check"><input type="checkbox" data-voyage-check="${id}"><span>${label}</span></label>`).join('')}</details>`).join('')}</div>
@@ -48,17 +49,25 @@ function routeCurrent(candidate){
 }
 function records(){try{const list=JSON.parse(localStorage.getItem(storageKey())||'[]');return Array.isArray(list)?list:[]}catch(_){return []}}
 function message(text){$('msVoyageMessage').textContent=text}
-function persist(){
+function persist(silent=false){
   if(!plan||!scope)return false;
   const record={id:String(plan.id),signature:core.signature(plan),scope,data:core.normalize(data),updatedAt:new Date().toISOString()};
   plan.voyagePreparation=record;
   try{
     localStorage.setItem(storageKey(),JSON.stringify([record,...records().filter(item=>item.id!==record.id)].slice(0,40)));
-    storeFailed=false;message('Tochtvoorbereiding op dit apparaat opgeslagen. Bewaar ook je route via ‘Bewaar vaarplan’.');return true;
+    storeFailed=false;if(!silent)message('Tochtvoorbereiding op dit apparaat opgeslagen. Bewaar ook je route via ‘Bewaar vaarplan’.');return true;
   }catch(_){storeFailed=true;message('Opslaan is niet gelukt. Houd dit scherm open en kopieer je vaarplan.');return false}
 }
 function update(){
   const count=core.completed(data);
+  const earliest=plan?core.earliestArrival(plan,data.departure):'';
+  const travelHours=plan?core.estimatedTravelHours(plan):0;
+  $('msVoyage-eta').min=earliest||'';
+  $('msVoyageArrivalHint').textContent=earliest
+    ?'Vroegste aankomst volgens de routeplanner: '+new Date(earliest).toLocaleString('nl-NL',{dateStyle:'medium',timeStyle:'short'})+
+      ' (minimaal '+Math.ceil(travelHours*60)+' minuten inclusief bekende wachttijden; de werkelijke aankomst kan later zijn).'
+    :travelHours>0?'Vul het geplande vertrek in; de verwachte aankomst wordt berekend uit de reistijd.'
+      :'Bereken eerst een route om een minimale aankomsttijd te bepalen.';
   $('msVoyageState').textContent={concept:'Concept',onderweg:'Onderweg · lokaal',aangekomen:'Aangekomen · lokaal'}[data.status];
   $('msVoyageProgress').textContent=`${count} van ${core.ids.length} controlepunten afgevinkt${count<core.ids.length?' · nog punten open':''}.`;
   core.groups.forEach((g,i)=>root.querySelector(`[data-voyage-group="${i}"]`).textContent=`${g.items.filter(([id])=>data.checks[id]).length}/${g.items.length}`);
@@ -87,11 +96,14 @@ function sync(next=context().plan){
   const restored=core.restore(record,next);
   if(!same||changed||restored.changed)data=restored.data;
   plan=next;
-  if(restored.changed){persist();message('Route of vaardatum gewijzigd. Controleer de tochtvoorbereiding opnieuw; de vinkjes zijn gewist.')}
+  const arrivalAdjusted=core.enforceArrival(plan,data);
+  if(restored.changed||arrivalAdjusted)persist(true);
+  if(restored.changed)message('Route of vaardatum gewijzigd. Controleer de tochtvoorbereiding opnieuw; de vinkjes zijn gewist.');
   $('msVoyageFields').disabled=!routeCurrent(plan);
   $('msVoyageRoute').textContent=`${plan.title||'Geplande tocht'} · ${(plan.points||[]).map(p=>p.label||p.name||'Routepunt').join(' → ')} · vaardatum ${plan.date||'niet ingesteld'}`;
   if(!same)message(record?'Bewaarde tochtvoorbereiding geopend.':'Vul de gegevens in en loop de controlepunten door.');
   if(!routeCurrent(plan))message('Routegegevens gewijzigd. Bereken de route opnieuw voordat je dit vaarplan gebruikt.');
+  else if(arrivalAdjusted)message('De verwachte aankomst is aangepast aan de minimaal berekende reistijd.');
   render();
 }
 function validCurrent(){
@@ -121,9 +133,23 @@ function openPreparation(){
 document.addEventListener('click',event=>{if(event.target.closest?.('[data-voyage-open]'))openPreparation()});
 root.addEventListener('input',event=>{
   const key=event.target.dataset.voyageField;if(!key||!validCurrent())return;
-  data[key]=event.target.value;persist();update();
+  data[key]=event.target.value;
+  const adjusted=key==='departure'&&core.enforceArrival(plan,data);
+  if(adjusted)$('msVoyage-eta').value=data.eta;
+  persist();update();
+  if(adjusted&&!storeFailed)message('De verwachte aankomst is bijgewerkt op basis van de reistijd.');
 });
 root.addEventListener('change',event=>{
+  if(event.target.dataset.voyageField==='eta'&&validCurrent()){
+    data.eta=event.target.value;
+    if(core.enforceArrival(plan,data)){
+      event.target.value=data.eta;
+      persist();
+      if(!storeFailed)message('Deze aankomsttijd was te vroeg; de minimale reistijd is toegepast.');
+    }
+    update();
+    return;
+  }
   const key=event.target.dataset.voyageCheck;if(!key||!validCurrent())return;
   data.checks[key]=event.target.checked;persist();update();
 });
@@ -157,7 +183,7 @@ $('msVoyageShare').addEventListener('click',async()=>{
 });
 $('msVoyageStart').addEventListener('click',()=>{
   if(!validCurrent())return;
-  const errors=core.problems(data);
+  const errors=core.problems(data,Date.now(),plan);
   if(errors.length){message(errors.join(' '));return}
   data.status='onderweg';data.startedAt=new Date().toISOString();persist();update();
   if(!storeFailed)message('Vertrek lokaal vastgelegd. Informeer je thuisblijver zelf; KNRM-tracking is niet gestart.');

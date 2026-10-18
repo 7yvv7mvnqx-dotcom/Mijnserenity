@@ -36,12 +36,35 @@ function normalize(value){
 }
 function completed(data){return ids.filter(id=>data.checks?.[id]===true).length}
 function dateTime(value){const n=new Date(value).getTime();return value&&Number.isFinite(n)?n:NaN}
-function problems(data,now=Date.now()){
+function estimatedTravelHours(plan){
+  return Math.max(0,...[plan?.durationHours,plan?.smartAnalysis?.adjustedDurationHours,plan?.dayPlan?.totalHours]
+    .map(Number).filter(value=>Number.isFinite(value)&&value>0));
+}
+function earliestArrival(plan,departure){
+  const start=dateTime(departure),hours=estimatedTravelHours(plan);
+  if(!Number.isFinite(start)||hours<=0)return '';
+  // Round travel time UP to whole minutes; datetime-local uses local time, not UTC.
+  const date=new Date(start+Math.ceil(hours*60)*60000);
+  const two=value=>String(value).padStart(2,'0');
+  return [date.getFullYear(),two(date.getMonth()+1),two(date.getDate())].join('-')+
+    'T'+two(date.getHours())+':'+two(date.getMinutes());
+}
+function enforceArrival(plan,data){
+  const minimum=earliestArrival(plan,data.departure);
+  if(!minimum)return false;
+  if(!Number.isFinite(dateTime(data.eta))||dateTime(data.eta)<dateTime(minimum)){
+    data.eta=minimum;
+    return true;
+  }
+  return false;
+}
+function problems(data,now=Date.now(),plan=null){
   const errors=[];
   const departure=dateTime(data.departure),eta=dateTime(data.eta);
   if(!Number.isFinite(departure))errors.push('Vul de geplande vertrekdatum en -tijd in.');
   if(!Number.isFinite(eta))errors.push('Vul de verwachte aankomstdatum en -tijd in.');
   else if(eta<=now||eta<=departure)errors.push('De verwachte aankomst moet na vertrek en in de toekomst liggen.');
+  else if(plan&&eta<dateTime(earliestArrival(plan,data.departure)))errors.push('De verwachte aankomst is te vroeg voor de berekende reistijd inclusief bekende wachttijden.');
   if(!data.skipper.trim())errors.push('Vul de naam van de schipper in.');
   const adults=Number(data.adults),children=Number(data.children);
   if(!String(data.adults).trim()||!Number.isInteger(adults)||adults<1||adults>999||!Number.isInteger(children)||children<0||children>999)errors.push('Vul een geldig aantal volwassenen (minimaal 1) en kinderen in.');
@@ -70,7 +93,7 @@ function overview(plan,data,boat='Serenity'){
     `Route: ${points.join(' → ')||'Niet ingevuld'}`,`Routebron: ${plan.routeSource||'Niet vermeld'}${plan.routeWarning?' · '+plan.routeWarning:''}`,
     `Vertrek: ${formatDate(data.departure)}`,`Verwachte aankomst: ${formatDate(data.eta)}`,
     `Geschatte afstand: ${Number.isFinite(Number(plan.distanceKm))?Number(plan.distanceKm).toLocaleString('nl-NL',{maximumFractionDigits:1})+' km':'Onbekend'}`,
-    `Geschatte vaartijd: ${Number.isFinite(Number(plan.durationHours))?Math.round(Number(plan.durationHours)*60)+' minuten':'Onbekend'}`,
+    `Geschatte minimale reistijd volgens routeplanner: ${estimatedTravelHours(plan)>0?Math.ceil(estimatedTravelHours(plan)*60)+' minuten':'Onbekend'}`,
     `Schipper: ${data.skipper||'Nog in te vullen'}`,`Opvarenden: ${data.adults||'?'} volwassenen, ${data.children||'0'} kinderen`,
     data.people?'Namen / bijzonderheden: '+data.people:'',`Activiteit: ${data.activity}`,
     '',`Thuisblijver: ${data.contactName||'Nog in te vullen'} · ${data.contactPhone||'Telefoon ontbreekt'}`,
@@ -84,5 +107,5 @@ function overview(plan,data,boat='Serenity'){
     '', 'Dit vaarplan is handmatig gedeeld vanuit MijnSerenity. Er is geen koppeling met KNRM Helpt, geen automatische volgfunctie en geen automatische melding bij te late aankomst. Spreek rechtstreeks af wie wanneer contact opneemt.'
   ].filter(v=>v!=='').join('\n');
 }
-window.MSVoyageCore={groups,ids,empty,normalize,completed,problems,signature,restore,overview};
+window.MSVoyageCore={groups,ids,empty,normalize,completed,problems,signature,restore,overview,estimatedTravelHours,earliestArrival,enforceArrival};
 })();
