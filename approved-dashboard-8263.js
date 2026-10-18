@@ -40,7 +40,11 @@ function installStyle(){
  const s=document.createElement('style');s.id=STYLE;
  s.textContent=`
  :root{--msr-cyan:#1fdcff;--msr-bg:#031623;--msr-panel:#06283b;--msr-line:#0c6688;--msr-muted:#9bb8c6;--msr-green:#27d86e}
- html,body{margin:0!important;width:100%!important;height:100%!important;overflow:hidden!important;background:#02131e!important}
+ /* Alleen het actieve dashboard vergrendelt de document-scroll. Formulieren
+    en lijsten gebruiken normale Safari/muis/trackpad-scroll; pop-ups behouden
+    hun eigen overflow-blokkade. */
+ html,body{margin:0!important;width:100%!important;min-height:100%!important;height:auto!important;overflow-x:hidden!important;background:#02131e!important}
+ body #appView > #costs:not(.hidden){padding-bottom:calc(116px + env(safe-area-inset-bottom,0px))!important;scroll-padding-bottom:116px}
  body.ms8263-home-active{margin:0!important;background:#02131e!important;overflow:hidden!important;overscroll-behavior:none!important}
  body.ms8263-home-active #appView>.tabs,body.ms8263-home-active>.bottom-nav,body.ms8263-home-active #appView>.bottom-nav{display:none!important}
  #dashboard.ms8255-reference-dashboard{padding:0!important;margin:0!important;max-width:none!important;background:#02131e!important;overflow:hidden!important}

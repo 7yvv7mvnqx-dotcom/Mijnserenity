@@ -1,7 +1,7 @@
-/* MijnSerenity 8.32.8 - onderhoud vanuit Boat Intelligence */
-const CACHE_NAME='mijnserenity-8.32.8';
-const BUILD='8.32.8';
-const TOKEN='832070';
+/* MijnSerenity 8.32.9 - scrollherstel voor kosten en formulieren */
+const CACHE_NAME='mijnserenity-8.32.9';
+const BUILD='8.32.9';
+const TOKEN='832090';
 const CORE=[
   '/',
   '/index.html',

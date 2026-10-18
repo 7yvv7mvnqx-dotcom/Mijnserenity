@@ -9,7 +9,7 @@
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='8.32.8';
+  const BUILD='8.32.9';
   const VERSION='830100';
   const CORE_SCRIPT='/app.js?v=832070';
   const loaded=new Set();
