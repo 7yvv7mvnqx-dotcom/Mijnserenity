@@ -100,7 +100,20 @@ function installStyle(){
  #${ROOT} .ms8263-feature.orange{background:linear-gradient(145deg,#d36a0d,#914608)!important}
  #${ROOT} .ms8263-feature.purple{background:linear-gradient(145deg,#724ca4,#50317b)!important}
 
- #${ROOT} .ms8263-feature.navy{background:linear-gradient(145deg,#0880bd,#075a8d)!important}
+ 
+ /* Snelle registraties: compact in desktopkop, extra grote knoppen op mobiel. */
+ #${ROOT} .msr-entry-header{display:flex;align-items:center;gap:7px;margin-left:auto;margin-right:10px}
+ #${ROOT} .msr-entry-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:7px 11px;border:1px solid rgba(119,230,255,.5);border-radius:10px;background:linear-gradient(135deg,#0c6d94,#064b71);color:#fff;text-align:center;font-size:12px;font-weight:800;line-height:1.2;white-space:normal;cursor:pointer}
+ #${ROOT} .msr-entry-button.costs{background:linear-gradient(135deg,#0c745b,#075344);border-color:rgba(113,236,189,.5)}
+ #${ROOT} .msr-entry-button:focus-visible{outline:3px solid #aff3ff;outline-offset:2px}
+ #${ROOT} .msr-entry-mobile{display:none}
+ @media(max-width:950px){
+   #${ROOT} .msr-entry-header{display:none!important}
+   #${ROOT} .msr-entry-mobile{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
+   #${ROOT} .msr-entry-mobile .msr-entry-button{display:flex;flex-direction:column;min-width:0;min-height:62px;padding:9px 7px;font-size:14px}
+   #${ROOT} .msr-entry-mobile .msr-entry-button small{display:block;margin-top:2px;color:#dbedf5;font-size:10px;font-weight:600}
+ }
+#${ROOT} .ms8263-feature.navy{background:linear-gradient(145deg,#0880bd,#075a8d)!important}
  /* 8.30.12: kaarten schuiven omhoog; het bovenste deel blijft zichtbaar op de voorgrond.
     De kaart beweegt uitsluitend omhoog, zodat de onderzijde binnen het eigen Snel-naar-gebied blijft. */
  #${ROOT} .ms8263-main{position:relative!important;z-index:4!important;overflow:visible!important}
@@ -834,10 +847,49 @@ function bindQuickFeatureReveal(root){
    },{passive:true});
  }
 }
+
+function quickEntry(kind){
+ const target=kind==='technical'?'technical':kind==='costs'?'costs':'';
+ if(!target)return;
+ nav(target);
+ setTimeout(()=>{
+   if(kind==='technical'){
+     try{
+       if(typeof window.toggleTechnicalEventForm==='function')window.toggleTechnicalEventForm(true);
+       else document.querySelector('#technical .technical-log-card .technical-card-heading button')?.click();
+     }catch(error){console.warn('Technisch logformulier openen mislukt:',error)}
+     const form=$('technicalEventForm');
+     if(form&&!form.classList.contains('hidden')){
+       form.scrollIntoView({behavior:'smooth',block:'start'});
+       try{$('technicalEventTitle')?.focus({preventScroll:true})}catch(_){}
+     }
+     return;
+   }
+   if($('costId')?.value){
+     if(!window.confirm('Je bewerkt al een kostenpost. Wil je een nieuwe kostenpost beginnen?')){
+       try{window.openCostFormPanel?.()}catch(_){}
+       return;
+     }
+     try{window.cancelCostEdit?.()}catch(_){}
+   }
+   try{window.openCostFormPanel?.()}catch(error){console.warn('Kostenformulier openen mislukt:',error)}
+   const date=$('costDate');
+   if(date&&!date.value){
+     const now=new Date();
+     date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
+   }
+   const panel=$('costFormWrap');
+   if(panel&&!panel.classList.contains('hidden')){
+     panel.scrollIntoView({behavior:'smooth',block:'start'});
+     try{$('costAmount')?.focus({preventScroll:true})}catch(_){}
+   }
+ },120);
+}
 function bind(){
  const root=$(ROOT);if(!root)return;
  installAlarmCloseFix();
  root.querySelectorAll('[data-ms8263-go]:not(.ms8263-feature)').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.ms8263Go)));
+ root.querySelectorAll('[data-msr-quick]').forEach(b=>b.addEventListener('click',()=>quickEntry(b.dataset.msrQuick)));
  bindQuickFeatureReveal(root);
  $('ms8263Theme')?.addEventListener('click',()=>{
    const day=root.dataset.theme==='day';root.dataset.theme=day?'night':'day';
@@ -1118,7 +1170,7 @@ function apply(){
 
   <main class="ms8263-main">
     <section class="msr-panel msr-quick">
-      <div class="msr-quick-head"><strong>SNEL NAAR</strong><button type="button" class="ms-knrm-trigger" data-ms-knrm-help aria-haspopup="dialog" aria-controls="msKnrmHelp">☎ Bel voor hulp</button><button class="msr-edit" data-ms8263-go="settings">Bewerk ✎</button></div>
+      <div class="msr-quick-head"><strong>SNEL NAAR</strong><div class="msr-entry-header" role="group" aria-label="Snelle invoer"><button type="button" class="msr-entry-button" data-msr-quick="technical" aria-label="Technisch logitem toevoegen">＋ Technisch log</button><button type="button" class="msr-entry-button costs" data-msr-quick="costs" aria-label="Kosten toevoegen">＋ Kosten</button></div><button type="button" class="ms-knrm-trigger" data-ms-knrm-help aria-haspopup="dialog" aria-controls="msKnrmHelp">☎ Bel voor hulp</button><button class="msr-edit" data-ms8263-go="settings">Bewerk ✎</button></div>
       <section class="ms8263-features">
         ${feature('technical','battery','Energie',"Accu's & laden",'green')}
         ${feature('technical','cloud','Tanks','Water, diesel, vuilwater','cyan')}
@@ -1127,6 +1179,10 @@ function apply(){
         ${feature('logbook','log','Logboek','Nieuwe logregel','navy')}
         ${feature('planner','route','Vaarplan','Route & tochtvoorbereiding','green')}
       </section>
+      <div class="msr-entry-mobile" role="group" aria-label="Snelle invoer">
+        <button type="button" class="msr-entry-button" data-msr-quick="technical" aria-label="Technisch logitem toevoegen">＋ Technisch log<small>Logitem toevoegen</small></button>
+        <button type="button" class="msr-entry-button costs" data-msr-quick="costs" aria-label="Kosten toevoegen">＋ Kosten<small>Nieuwe uitgave</small></button>
+      </div>
     </section>
 
     <section class="msr-vrm-live" id="ms8318ConsolePanel" aria-label="Victron Cerbo GX Remote Console">
