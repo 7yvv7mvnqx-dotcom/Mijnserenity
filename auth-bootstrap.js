@@ -9,7 +9,7 @@
   window.__msVictronEnergy71950=true;
   window.__msVictronEnergy71960=true;
 
-  const BUILD='8.32.7';
+  const BUILD='8.32.8';
   const VERSION='830100';
   const CORE_SCRIPT='/app.js?v=832070';
   const loaded=new Set();
@@ -32,6 +32,7 @@
     `/ha-live-bridge.js?v=${VERSION}`,
     `/technical-live-sync.js?v=${VERSION}`,
     `/technical-event-photos-8327.js?v=832070`,
+    `/boat-intelligence-maintenance-8328.js?v=832080`,
     `/auto-stop-confirmation-8236.js?v=${VERSION}`
   ];
 
@@ -371,6 +372,7 @@
       ensureCss('marine-glass-mobile-7184.css','msStableShell71919');
       ensureCss('marine-glass-fixes-7193.css','msMarineGlassFixes71919');
       ensureCss('map-next-level-8220.css','msMapNextLevel8220');
+      ensureCss('boat-intelligence-maintenance-8328.css','msBoatMaintenance8328');
       setAuthStatus('Beveiligde inlog wordt geladen…');
 
       /* Updatecontrole blokkeert de zichtbare app nooit. */
