@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061525">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="mijnserenity-build" content="8.32.6">
+<meta name="mijnserenity-build" content="8.32.7">
 <title>MijnSerenity Cloud</title>
 <script>
-window.MIJSERENITY_BUILD='8.32.6';
+window.MIJSERENITY_BUILD='8.32.7';
 window.repairMijnSerenity=async function(){
   const status=document.getElementById('authMsg');
   if(status)status.textContent='App-cache wordt veilig vernieuwd…';
@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
 <link rel="stylesheet" href="knrm-help.css?v=832040">
 <link rel="stylesheet" href="voyage-plan.css?v=832040">
 <link rel="stylesheet" href="voyage-share-rich-83250.css?v=832050">
+<link rel="stylesheet" href="technical-event-photos-8327.css?v=832070">
 <!-- iPhone/iPad: RWS-meetpunt boven de vaste navigatie en onafhankelijk scrollbaar. -->
 <style id="ms83260-water-location-scroll-fix">
 #ms8234WaterLocationSheet.ms8268wo{
@@ -3556,12 +3557,27 @@ document.addEventListener('DOMContentLoaded',window.msSyncBuildVersion,{once:tru
         <label for="technicalEventNotes">Notities</label>
         <textarea id="technicalEventNotes"
           placeholder="Onderdelen, leverancier, kosten of bijzonderheden"></textarea>
+        <label>Foto’s bij dit logitem</label>
+        <div class="ms-tech-photo-actions">
+          <button type="button" class="secondary" onclick="msTechPickPhoto('camera')">📷 Foto maken</button>
+          <button type="button" class="secondary" onclick="msTechPickPhoto('library')">🖼️ Fotobibliotheek</button>
+        </div>
+        <input id="msTechPhotoCamera" type="file" accept="image/*" capture="environment"
+          style="display:none" onchange="msTechQueuePhotos(this.files)">
+        <input id="msTechPhotoLibrary" type="file" accept="image/*" multiple
+          style="display:none" onchange="msTechQueuePhotos(this.files)">
+        <p class="ms-tech-photo-description">Voeg maximaal 6 foto's tegelijk toe. Ook achteraf via 📷 bij een bestaand logitem.</p>
+        <div id="msTechPhotoCount" class="ms-tech-photo-count">Nog geen foto’s geselecteerd</div>
+        <div id="msTechPendingPhotos" class="ms-tech-pending-photos"></div>
+        <p id="msTechPhotosStatus" class="ms-tech-photo-status" role="status" aria-live="polite"></p>
         <div class="actions">
           <button type="button" onclick="addTechnicalEvent()">Logitem opslaan</button>
           <button type="button" class="secondary"
-            onclick="toggleTechnicalEventForm(false)">Annuleren</button>
+            onclick="msTechCancelNewPhotos();toggleTechnicalEventForm(false)">Annuleren</button>
         </div>
       </div>
+      <input id="msTechPhotoExisting" type="file" accept="image/*" multiple
+        style="display:none" onchange="msTechUploadExisting(this.files)">
 
       <div class="technical-log-toolbar">
         <input id="technicalEventSearch" type="search"
