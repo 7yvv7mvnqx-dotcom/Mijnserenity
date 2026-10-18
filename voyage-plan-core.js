@@ -69,6 +69,7 @@ function problems(data,now=Date.now(),plan=null){
   const adults=Number(data.adults),children=Number(data.children);
   if(!String(data.adults).trim()||!Number.isInteger(adults)||adults<1||adults>999||!Number.isInteger(children)||children<0||children>999)errors.push('Vul een geldig aantal volwassenen (minimaal 1) en kinderen in.');
   if(!data.contactName.trim()||!data.contactPhone.trim()||!data.contactAgreement.trim())errors.push('Vul de thuisblijver, het telefoonnummer en de meldafspraak in.');
+  if(data.skipper.trim()&&data.contactName.trim()&&data.skipper.trim().toLocaleLowerCase('nl-NL')===data.contactName.trim().toLocaleLowerCase('nl-NL'))errors.push('De thuisblijver moet iemand zijn die niet meevaart; schipper en thuisblijver mogen niet dezelfde persoon zijn.');
   if(completed(data)!==ids.length)errors.push(`Nog te controleren: ${ids.length-completed(data)} ${ids.length-completed(data)===1?'controlepunt':'controlepunten'}.`);
   return errors;
 }

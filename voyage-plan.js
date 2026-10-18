@@ -26,6 +26,7 @@ root.innerHTML=`<header class="ms-voyage-heading"><div><span class="eyebrow">VOO
 <p class="ms-voyage-note">Dit vaarplan blijft op dit apparaat. Er is geen KNRM-volgfunctie of automatische melding bij te late aankomst. Deel het plan zelf met je thuisblijver en spreek af wanneer jullie contact hebben.</p>
 <div class="ms-voyage-actions"><button type="button" data-voyage-route="planner">Route plannen / aanpassen</button><button type="button" data-voyage-route="weather">Eigen vaarweer bekijken</button><a class="ms-voyage-shortcut ms-voyage-knmi-link" href="https://www.knmi.nl/nederland-nu/weer/verwachtingen" target="_blank" rel="noopener noreferrer">🌦️ KNMI-verwachting</a><a class="ms-voyage-shortcut ms-voyage-knmi-link" href="https://www.knmi.nl/nederland-nu/weer/waarschuwingen/overijssel" target="_blank" rel="noopener noreferrer">⚠️ KNMI-waarschuwingen</a><button type="button" id="msVoyageWaterChart">Waterkaart controleren</button><button type="button" data-ms-knrm-help>Hulp op het water</button></div>
 <p id="msVoyageMessage" role="status" aria-live="polite"></p>
+<p id="msVoyageSafetyWarnings" class="ms-voyage-danger" role="status" aria-live="polite" hidden></p>
 <fieldset id="msVoyageFields" disabled><legend>Gegevens van deze vaartocht</legend><div class="ms-voyage-grid">${fields.map(key=>`<label for="msVoyage-${key}"${multiline.has(key)?' class="ms-voyage-wide"':''}><span>${labels[key]}</span>${multiline.has(key)?`<textarea id="msVoyage-${key}" data-voyage-field="${key}" rows="2" maxlength="6000"></textarea>`:`<input id="msVoyage-${key}" data-voyage-field="${key}" type="${types[key]||'text'}" ${['adults','children'].includes(key)?`min="${key==='adults'?1:0}" max="999" step="1"`:''} maxlength="6000">`}</label>`).join('')}</div>
 <p id="msVoyageArrivalHint" class="ms-voyage-note" role="status" aria-live="polite"></p>
 <p>Gebruik bij een tocht over meerdere dagen de juiste aankomstdatum. Tijden staan in de tijdzone van dit apparaat.</p>
@@ -60,6 +61,14 @@ function persist(silent=false){
 }
 function update(){
   const count=core.completed(data);
+  const safety=[];
+  if(plan){
+    if(data.skipper?.trim()&&data.contactName?.trim()&&data.skipper.trim().toLocaleLowerCase('nl-NL')===data.contactName.trim().toLocaleLowerCase('nl-NL'))safety.push('De thuisblijver is ook de schipper. Kies een contactpersoon die aan wal blijft.');
+    if(!data.contactAgreement?.trim())safety.push('Spreek een meldmoment af en leg vast wat de thuisblijver moet doen bij geen contact.');
+  }
+  const warningEl=$('msVoyageSafetyWarnings');
+  warningEl.textContent=safety.join('\n');
+  warningEl.hidden=!safety.length;
   const earliest=plan?core.earliestArrival(plan,data.departure):'';
   const travelHours=plan?core.estimatedTravelHours(plan):0;
   $('msVoyage-eta').min=earliest||'';
@@ -178,6 +187,10 @@ $('msVoyageCopy').addEventListener('click',copy);
 $('msVoyageShare').addEventListener('click',async()=>{
   if(!validCurrent())return;
   update();
+  if(window.MSVoyageShare?.open){
+    window.MSVoyageShare.open({plan,data,boat:context().boat});
+    return;
+  }
   if(!navigator.share){await copy();return}
   try{await navigator.share({title:'Vaarplan '+(plan.title||'Serenity'),text:$('msVoyageText').value});message('Controleer zelf of je thuisblijver het vaarplan heeft ontvangen. Er is geen automatische melding.')}catch(error){if(error?.name!=='AbortError')await copy()}
 });

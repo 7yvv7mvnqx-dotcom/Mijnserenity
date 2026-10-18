@@ -1,0 +1,51 @@
+/* Serenity 8.32.5 - leesbaar, deelbaar vaarplan op iPhone, iPad en desktop. */
+#msVoyageRichDialog.msvr-dialog{box-sizing:border-box;width:min(760px,calc(100vw - 20px));max-width:760px;max-height:94dvh;overflow-y:auto;margin:auto;padding:0 0 14px;border:1px solid #426881;border-radius:18px;background:#edf4f8;color:#183448;box-shadow:0 24px 70px #0009;position:fixed}
+#msVoyageRichDialog::backdrop{background:#031622c9;backdrop-filter:blur(4px)}
+#msVoyageRichDialog .msvr-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 18px;background:#082c44;color:#fff;font:700 14px system-ui}
+#msVoyageRichDialog .msvr-toolbar button{margin:0;min-height:40px;min-width:42px;padding:5px 10px;background:#17435d;color:#fff;border:1px solid #5c8194;border-radius:9px;font-size:20px;cursor:pointer}
+#msVoyageRichDialog #msvrContent{padding:16px 18px 0;font:15px/1.5 system-ui}
+#msVoyageRichDialog .msvr-hero{display:flex;align-items:center;gap:16px;background:#082b45;color:#fff;padding:16px;border-radius:15px;margin-bottom:12px}
+#msVoyageRichDialog .msvr-logo{width:110px;height:110px;object-fit:contain;flex:0 0 auto;background:#fff;border-radius:12px}
+#msVoyageRichDialog .msvr-kicker{display:block;font-size:11px;letter-spacing:.1em;color:#c3d8e8;font-weight:750}
+#msVoyageRichDialog .msvr-headtext h2{font:750 clamp(21px,5vw,30px)/1.17 system-ui;color:#fff;margin:5px 0}
+#msVoyageRichDialog .msvr-headtext p{font-size:13px;margin:0;color:#dbe9f1}
+#msVoyageRichDialog .msvr-card,#msVoyageRichDialog .msvr-field{overflow-wrap:anywhere}
+#msVoyageRichDialog .msvr-card{border:1px solid #cfdae2;background:#fff;border-radius:13px;padding:13px 16px;margin:12px 0}
+#msVoyageRichDialog .msvr-route{background:#123d58;color:#fff;font-size:16px}
+#msVoyageRichDialog .msvr-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#msVoyageRichDialog .msvr-metrics .msvr-field{border:1px solid #d4e1e9;border-radius:11px;background:#fff;padding:12px}
+#msVoyageRichDialog .msvr-field{padding:8px 0;border-bottom:1px solid #e6eef3}
+#msVoyageRichDialog .msvr-field:last-child{border-bottom:0}
+#msVoyageRichDialog .msvr-key{display:block;color:#567084;font:700 11px/1.5 system-ui;text-transform:uppercase;letter-spacing:.04em}
+#msVoyageRichDialog .msvr-value{display:block;color:#123348;font:650 15px/1.45 system-ui;white-space:pre-wrap}
+#msVoyageRichDialog h3{font:750 20px system-ui;color:#123950;margin:2px 0 8px}
+#msVoyageRichDialog .msvr-important{border:2px solid #438ba0}
+#msVoyageRichDialog .msvr-advice{background:#edf6f9;border-left:4px solid #247e96;border-radius:8px;margin-top:12px;padding:10px 14px}
+#msVoyageRichDialog .msvr-advice p{margin:6px 0 0}
+#msVoyageRichDialog .msvr-count{font-weight:700;color:#204c67}
+#msVoyageRichDialog .msvr-group{margin:14px 0;padding:10px 12px;border-radius:10px;background:#f2f6f9}
+#msVoyageRichDialog .msvr-group h4{color:#163c52;font-size:15px;margin:0 0 7px}
+#msVoyageRichDialog .msvr-group p{display:flex;gap:10px;align-items:baseline;margin:8px 0;font-size:13px}
+#msVoyageRichDialog .msvr-checked{color:#267469}
+#msVoyageRichDialog .msvr-unchecked{color:#5a6675}
+#msVoyageRichDialog .msvr-warning{border:2px solid #d39b52;background:#fff7e9}
+#msVoyageRichDialog .msvr-warning p{margin:9px 0;padding-left:10px;border-left:2px solid #b77925}
+#msVoyageRichDialog .msvr-disclaimer{padding:13px;background:#e7f0f4;color:#3a5a6d;border-radius:10px;font-size:12px}
+#msVoyageRichDialog .msvr-actions{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px 0}
+#msVoyageRichDialog .msvr-actions button{flex:1 1 140px;min-height:46px;border-radius:10px;padding:10px;background:#14506c;border:1px solid #4a7c94;color:#fff;font:700 14px system-ui;cursor:pointer}
+#msVoyageRichDialog .msvr-actions #msvrImage{background:#136c83}
+#msVoyageRichDialog .msvr-actions button:disabled{opacity:.6;cursor:wait}
+#msVoyageRichDialog .msvr-status{margin:6px 18px 0;font:650 13px/1.5 system-ui;color:#745120}
+#msVoyageRichDialog :is(button):focus-visible{outline:3px solid #37a4dd;outline-offset:2px}
+#msVoyagePreparation .ms-voyage-danger{border:1px solid #d99b48;border-left:4px solid #ffb448;padding:10px 14px;border-radius:10px;background:#34271d;color:#ffe1b3!important;white-space:pre-line}
+@media(max-width:530px){#msVoyageRichDialog .msvr-logo{width:76px;height:76px}#msVoyageRichDialog .msvr-hero{padding:11px;gap:10px}#msVoyageRichDialog .msvr-metrics{grid-template-columns:1fr}#msVoyageRichDialog #msvrContent{padding:12px 11px 0}#msVoyageRichDialog .msvr-actions{padding:12px 11px 0}}
+@media print{
+ @page{size:A4;margin:12mm}
+ html,body{background:#fff!important}
+ body>*:not(#msVoyageRichDialog){display:none!important}
+ #msVoyageRichDialog.msvr-dialog{position:static!important;display:block!important;overflow:visible!important;max-height:none!important;width:100%!important;max-width:none!important;padding:0!important;margin:0!important;border:0!important;box-shadow:none!important;background:#fff!important}
+ #msVoyageRichDialog .msvr-toolbar,#msVoyageRichDialog .msvr-actions,#msVoyageRichDialog .msvr-status{display:none!important}
+ #msVoyageRichDialog .msvr-card,#msVoyageRichDialog .msvr-hero,#msVoyageRichDialog .msvr-field{break-inside:avoid}
+ #msVoyageRichDialog #msvrContent{padding:0}
+ #msVoyageRichDialog .msvr-group{break-inside:avoid}
+}
