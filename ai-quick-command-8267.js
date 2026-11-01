@@ -421,6 +421,108 @@
     return out;
   }
 
+
+  // Bootbeheer heeft een eigen (offline + Supabase) gegevensbron.
+  // Gebruik voor een AI-vraag dezelfde boot en de recentste bekende versie.
+  function managementBoatId(){
+    try{return String(currentBoat?.id||currentBoat?.boat_id||currentBoat?.name||'serenity')}catch{return 'serenity'}
+  }
+
+  function localManagementState(){
+    try{
+      const raw=localStorage.getItem('mijnserenity:bootbeheer:v1:'+managementBoatId());
+      const value=raw?JSON.parse(raw):null;
+      return value&&typeof value==='object'?value:null;
+    }catch{return null}
+  }
+
+  function managementDate(value){
+    const ms=Date.parse(String(value||''));
+    return Number.isFinite(ms)?ms:0;
+  }
+
+  async function loadManagementState(){
+    const local=localManagementState();
+    try{
+      const client=typeof sb!=='undefined'?sb:null;
+      const boat=typeof currentBoat!=='undefined'?currentBoat:null;
+      const id=String(boat?.id||boat?.boat_id||'');
+      if(!client||!id)return local;
+      const {data,error}=await client.from('boat_management_state')
+        .select('data,updated_at').eq('boat_id',id).maybeSingle();
+      if(error||!data?.data)return local;
+      const remote=data.data;
+      const remoteDate=Math.max(managementDate(remote.updatedAt),managementDate(data.updated_at));
+      const localDate=managementDate(local?.updatedAt);
+      return !local||remoteDate>localDate+500?remote:local;
+    }catch(error){
+      console.warn('Serenity AI: Bootbeheer tijdelijk niet bereikbaar',error);
+      return local;
+    }
+  }
+
+  function compactManagement(state){
+    if(!state||typeof state!=='object')return null;
+    const text=value=>String(value??'').slice(0,220);
+    const number=value=>{
+      const n=Number(value);
+      return Number.isFinite(n)?n:null;
+    };
+    const rows=(key,max=80)=>{
+      const values=Array.isArray(state[key])?state[key]:[];
+      return values.slice(0,max).filter(item=>item&&typeof item==='object').map(item=>({
+        name:text(item.name||item.title||item.text),
+        qty:number(item.qty),
+        minQty:number(item.minQty),
+        partNo:text(item.partNo),
+        location:text(item.location),
+        category:text(item.category),
+        status:text(item.status),
+        notes:text(item.notes),
+        dueDate:text(item.dueDate||item.nextDate)
+      }));
+    };
+    return safeData({
+      source:'Bootbeheer',
+      updatedAt:state.updatedAt||null,
+      inventory:rows('inventory',120),
+      equipment:rows('equipment',60),
+      maintenance:rows('maintenance',60),
+      tasks:rows('tasks',50),
+      notes:rows('notes',20)
+    });
+  }
+
+  function inventoryAnswer(query,management){
+    const n=normal(query);
+    if(!/\b(voorraad|oliefilter|oliefilters|stock)\b/.test(n))return null;
+    const items=Array.isArray(management?.inventory)?management.inventory:[];
+    if(!items.length)return null;
+    // 'Olie' kan naar motorolie verwijzen: noem de daadwerkelijk geregistreerde artikelnaam.
+    const match=items.filter(item=>{
+      const name=normal(item.name);
+      if(/\bolie\b|\boliefilters?\b/.test(n))return name.includes('olie');
+      if(/\bfilters?\b/.test(n))return name.includes('filter');
+      return name.length>2&&(n.includes(name)||n.split(/\s+/).some(word=>word.length>=4&&name.includes(word)));
+    });
+    if(match.length!==1)return null;
+    const item=match[0],amount=item.qty;
+    if(amount===null||amount===undefined)return null;
+    const label=String(item.name||'voorraadartikel');
+    const unit=Number(amount)===1?'stuk':'stuks';
+    let answer='Volgens Bootbeheer heb je '+amount+' '+unit+' '+label+' op voorraad.';
+    if(item.minQty!==null&&item.minQty!==undefined)answer+=' Minimumvoorraad: '+item.minQty+'.';
+    if(item.partNo)answer+=' Artikelnummer: '+item.partNo+'.';
+    if(/\bolie\b/.test(n)&&normal(label).includes('filter')&&!items.some(v=>/\bmotorolie\b/.test(normal(v.name)))){
+      answer+=' Motorolie zelf staat niet als apart voorraadartikel geregistreerd.';
+    }
+    return answer;
+  }
+
+  function needsManagement(query){
+    return /\b(voorraad|opslag|oliefilter|oliefilters|olie|filters?|onderdelen?|bootbeheer|inventaris|inventarisatie|apparatuur|uitrusting|onderhoud|servicebeurt|checklist|documenten?|takenlijst)\b/.test(normal(query));
+  }
+
   function buildAIContext(query){
     const n=normal(query);
     const financeEntries=detailedFinanceEntries();
@@ -532,6 +634,12 @@
   }
 
   async function askServer(query){
+    const context=buildAIContext(query);
+    if(needsManagement(query)){
+      context.bootManagement=compactManagement(await loadManagementState());
+      const directAnswer=inventoryAnswer(query,context.bootManagement);
+      if(directAnswer)return {action:'answer',answer:directAnswer};
+    }
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),20000);
     try{
@@ -541,7 +649,7 @@
         signal:controller.signal,
         body:JSON.stringify({
           query,
-          context:buildAIContext(query),
+          context,
           history:readHistory()
         })
       });
