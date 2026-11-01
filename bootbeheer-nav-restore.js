@@ -15,7 +15,7 @@
 
   function settingsButtonLabel(button){
     if(button.hasAttribute(NAV_MARK))return false;
-    const value=(button.textContent||'').replace(/\\s+/g,' ').trim().toLowerCase();
+    const value=(button.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
     return value==='instellingen' || value==='⚙ instellingen' ||
       button.dataset?.target==='settings' || button.dataset?.ms8290Go==='settings';
   }
