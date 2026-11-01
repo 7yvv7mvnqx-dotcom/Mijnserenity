@@ -465,6 +465,7 @@
     if(!state||typeof state!=='object')return null;
     const text=value=>String(value??'').slice(0,220);
     const number=value=>{
+      if(value===null||value===undefined||value==='')return null;
       const n=Number(value);
       return Number.isFinite(n)?n:null;
     };
@@ -510,7 +511,7 @@
     if(amount===null||amount===undefined)return null;
     const label=String(item.name||'voorraadartikel');
     const unit=Number(amount)===1?'stuk':'stuks';
-    let answer='Volgens Bootbeheer heb je '+amount+' '+unit+' '+label+' op voorraad.';
+    let answer='Volgens Bootbeheer heb je '+amount+' '+unit+' op voorraad van het artikel '+label+'.';
     if(item.minQty!==null&&item.minQty!==undefined)answer+=' Minimumvoorraad: '+item.minQty+'.';
     if(item.partNo)answer+=' Artikelnummer: '+item.partNo+'.';
     if(/\bolie\b/.test(n)&&normal(label).includes('filter')&&!items.some(v=>/\bmotorolie\b/.test(normal(v.name)))){
@@ -520,7 +521,7 @@
   }
 
   function needsManagement(query){
-    return /\b(voorraad|opslag|oliefilter|oliefilters|olie|filters?|onderdelen?|bootbeheer|inventaris|inventarisatie|apparatuur|uitrusting|onderhoud|servicebeurt|checklist|documenten?|takenlijst)\b/.test(normal(query));
+    return /\b(voorraad|opslag|oliefilter|oliefilters|motorolie|smeerolie|olie|filters?|onderdelen?|bootbeheer|inventaris|inventarisatie|apparatuur|uitrusting|onderhoud|servicebeurt|checklist|documenten?|takenlijst)\b/.test(normal(query));
   }
 
   function buildAIContext(query){
