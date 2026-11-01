@@ -13,6 +13,7 @@
   let channel=null;
   let lastPushedStamp='';
   let syncing=false;
+  let cloudReadVerified=false;
   let observer=null;
   let bootIdAtSubscription='';
 
@@ -85,12 +86,13 @@
 
   async function pullCloud({force=false}={}){
     const client=getSb(),bId=boatId();
-    if(!client||!bId||!userId())return null;
-    if(syncing)return null;
+    if(!client||!bId||!userId())return undefined;
+    if(syncing)return undefined;
     syncing=true;status('Cloud ophalen…','busy');
     try{
       const {data,error}=await client.from(TABLE).select('data,updated_at,updated_by').eq('boat_id',bId).maybeSingle();
       if(error)throw error;
+      cloudReadVerified=true;
       if(!data?.data){status('Cloud verbonden','ok');return null;}
       const local=readLocal();
       const remoteStamp=data.updated_at||data.data?.updatedAt||'';
@@ -108,13 +110,13 @@
     }catch(error){
       console.warn('Bootbeheer cloud ophalen mislukt:',error);
       status('Cloud niet bereikbaar','warn');
-      return null;
+      return undefined;
     }finally{syncing=false}
   }
 
   async function pushCloud({force=false}={}){
     const client=getSb(),bId=boatId(),uId=userId(),local=readLocal();
-    if(!client||!bId||!uId||!local)return false;
+    if(!client||!bId||!uId||!local||!cloudReadVerified)return false;
     const stamp=String(local.updatedAt||'');
     if(!force&&stamp&&stamp===lastPushedStamp)return true;
     if(syncing)return false;
@@ -290,9 +292,9 @@
 
   async function initialSync(){
     if(!boatId()||!userId())return false;
-    const local=readLocal();
     const remote=await pullCloud();
-    if(!remote&&local)await pushCloud({force:true});
+    if(remote===undefined)return false; // Bij een leesfout nooit onbekende cloudgegevens overschrijven.
+    if(!remote)lastPushedStamp=localStamp(); // Bestaande lokale gegevens bewaren; pas na een wijziging uploaden.
     subscribe();decorate();
     return true;
   }
@@ -311,6 +313,7 @@
       if(document.hidden)return;
       wrapOpen();wrapMutations();decorate();
       if(boatId()&&userId()){
+        if(!cloudReadVerified&&!syncing)await initialSync();
         if(localStamp()&&localStamp()!==lastPushedStamp)pushCloud();
         subscribe();
       }
